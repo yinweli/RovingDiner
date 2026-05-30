@@ -55,6 +55,18 @@ RovingDiner-Ops (流浪食堂 RovingDiner) is the rules engine for the turn-base
 
 The project is in an early stage. It currently contains the Sheeter-based game-data pipeline (`gamedata/` → `sheet/` + `sheetdata/`) and the design specs under `doc/`. Business logic (the actual operations loop, modules, runtime instances) is not yet implemented.
 
+## Design Specs (`doc/`)
+
+The project's design is rooted in three spec docs under `doc/`. They are the source of truth that the code (not yet written) must conform to — consult the relevant one before implementing. Each is large (1000+ lines); read the section you need, not the whole file.
+
+| Doc                   | Role                                                                                                                                                                                                                          | Consult when                                                                                                                |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| `營業規格書.md`       | **SSOT for all game rules.** Full spec of the 營業 phase: core flow, mechanics (cards / guests / skills / effects / commands), trigger timings, settlement, end conditions, and the 英文詞彙對照 glossary (§二、英文詞彙對照). | Any question about *what the rules are* or the expected behavior. Every rule detail defers to this file.                   |
+| `營業實作規格書.md`   | **Project architecture & engineering decisions.** Package structure, the core engine (yield-per-unit event stream, single seeded PRNG, determinism), ports (`Operator` / `Presenter` / `Rander` / `Dater`), core↔display decoupling, the portable C# subset, testing strategy, and test-data builders. | Deciding *where code goes*, package / interface design, the engine / event-stream architecture, decoupling, or how to structure tests / test data. |
+| `營業顯示規格書.md`   | **TUI display / operation layer.** The Bubble Tea debug viewer, how the display *consumes* the event stream (fast / slow / step rates), screen layout & panels, event log, interaction & modals, ASCII+CJK rendering policy. | Working on the TUI / display layer, screen rendering, event-log display, or stepping / selection UI.                       |
+
+Hierarchy: `營業規格書.md` is the SSOT for *rules*; `營業實作規格書.md` owns the *engine & architecture* (incl. the event-stream definition); `營業顯示規格書.md` only describes how the display *consumes* that engine. An implementation doc must never contradict the rules spec — if it does, the rules spec wins; flag the discrepancy rather than following the implementation doc.
+
 ## Repository Layout
 
 | Path          | Contents                                                                 |
@@ -62,7 +74,7 @@ The project is in an early stage. It currently contains the Sheeter-based game-d
 | `gamedata/`   | Source xlsx tables and the Sheeter build config/script (`sheeter.yaml`, `build.bat`) |
 | `sheet/`      | Sheeter-generated Go readers. Generated code — DO NOT EDIT by hand.      |
 | `sheetdata/`  | Sheeter-generated JSON data. Generated — DO NOT EDIT by hand.            |
-| `doc/`        | Design specs: `營業規格書.md` (full spec) and `營業實作規格書(TUI).md`    |
+| `doc/`        | Design specs — see [Design Specs](#design-specs-doc). `營業規格書.md` (rules SSOT) · `營業實作規格書.md` (architecture & engine) · `營業顯示規格書.md` (TUI display layer) |
 
 ## Development / Build / Common Commands
 
