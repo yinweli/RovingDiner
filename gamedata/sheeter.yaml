@@ -1,0 +1,19 @@
+﻿source:
+  # 遊戲資料
+  - Award.xlsx
+  - Card.xlsx
+  - Effect.xlsx
+  - Guest.xlsx
+  - Seat.xlsx
+  - Setting.xlsx
+  - Skill.xlsx
+merge:
+exclude:
+output: output
+tag: BCS
+autoKey: true
+lineOfTag: 1
+lineOfName: 3
+lineOfNote: 4
+lineOfField: 2
+lineOfData: 5

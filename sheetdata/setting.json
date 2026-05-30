@@ -1,0 +1,50 @@
+{
+    "DrawMax": {
+        "CodeName": "DrawMax",
+        "CodeNote": "補牌張數上限",
+        "ID": "DrawMax",
+        "Value": [
+            "5"
+        ]
+    },
+    "EnergyMax": {
+        "CodeName": "EnergyMax",
+        "CodeNote": "出牌點數上限",
+        "ID": "EnergyMax",
+        "Value": [
+            "20"
+        ]
+    },
+    "HandMax": {
+        "CodeName": "HandMax",
+        "CodeNote": "手牌張數上限",
+        "ID": "HandMax",
+        "Value": [
+            "10"
+        ]
+    },
+    "Morale": {
+        "CodeName": "Morale",
+        "CodeNote": "餐廳士氣值初值",
+        "ID": "Morale",
+        "Value": [
+            "100"
+        ]
+    },
+    "MoraleMax": {
+        "CodeName": "MoraleMax",
+        "CodeNote": "餐廳士氣值上限",
+        "ID": "MoraleMax",
+        "Value": [
+            "100"
+        ]
+    },
+    "RoundMax": {
+        "CodeName": "RoundMax",
+        "CodeNote": "回合上限",
+        "ID": "RoundMax",
+        "Value": [
+            "15"
+        ]
+    }
+}
