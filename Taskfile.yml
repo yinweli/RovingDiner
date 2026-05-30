@@ -1,0 +1,27 @@
+version: "3"
+
+tasks:
+  # 程式碼格式化
+  lint:
+    ignore_error: true
+    cmds:
+      - golangci-lint fmt # 執行 gofmt + goimports
+      - golangci-lint run --color always
+      - npx markdownlint-cli --fix "*.md"
+      - npx prettier --write --log-level warn --end-of-line lf '*.yml' '*.yaml' '**/*.yml' '**/*.yaml' || true
+
+  # 更新表格
+  sheet:
+    dir: gamedata
+    cmds:
+      - cmd: cmd /c build.bat
+      - task: lint
+
+  # 安裝工具
+  install:
+    ignore_error: true
+    cmds:
+      - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest # 安裝 lint
+      - go install github.com/yinweli/Sheeter/v3/cmd/sheeter@latest # 安裝 sheeter
+      - npm install -g markdownlint-cli # 安裝 markdown 格式化工具
+      - npm install -g prettier # 安裝 yaml 格式化工具
