@@ -24,7 +24,7 @@ const (
 )
 
 // PhaseJumpLegal phaseJump 命令允許設定的「下一階段」合法值集合（不含空字串）。
-// 對應規格書【二十五、動作類命令清單｜phaseJump】。
+// 對應規格書【二十五、操作命令清單｜phaseJump】。
 var PhaseJumpLegal = map[Phase]bool{
 	PhasePlayerAction: true,
 	PhaseGuestAction:  true,
@@ -259,7 +259,7 @@ const (
 	AttrScore       Attr = "score"       // 滿意值（顧客；寫鎖）
 )
 
-// 動作類命令；對應規格書【二十五、動作類命令清單】。
+// 操作命令；對應規格書【二十五、操作命令清單】。
 const (
 	// 卡牌屬性 / 效果
 

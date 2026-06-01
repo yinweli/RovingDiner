@@ -53,7 +53,7 @@ type Property string
 // 以 <引用>.<屬性> 形式存取（如 self.sate、drawLast.cardID、taskGuest.calm）。
 type Attr string
 
-// Command 動作類命令的英文名稱；對應規格書【二十五、動作類命令清單】。
+// Command 操作命令的英文名稱；對應規格書【二十五、操作命令清單】。
 //
 // 屬性修改命令（運算符語法 = += -= *= /= %= @ #）不在此清單，
 // 其可寫屬性見【二十三、屬性清單】與 Property。
