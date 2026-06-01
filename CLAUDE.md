@@ -51,7 +51,7 @@ Format: `Type | Description`
 
 ## Project Overview
 
-RovingDiner-Ops (流浪食堂 RovingDiner) is the rules engine for the turn-based "營業" (operations) phase of a restaurant-management game, written in Go. A single 營業 is one settleable game run: the player processes customers with hand cards and skills while the system advances rounds through trigger timings, an effect queue, and settlement rules.
+RovingDiner (流浪食堂) is the rules engine for the turn-based "營業" (operations) phase of a restaurant-management game, written in Go. A single 營業 is one settleable game run: the player processes customers with hand cards and skills while the system advances rounds through trigger timings, an effect queue, and settlement rules.
 
 The project is in an early stage. It currently contains the Sheeter-based game-data pipeline (`gamedata/` → `sheet/` + `sheetdata/`) and the design specs under `doc/`. Business logic (the actual operations loop, modules, runtime instances) is not yet implemented.
 

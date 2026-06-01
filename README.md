@@ -1,4 +1,4 @@
-# RovingDiner-Ops（流浪食堂 RovingDiner）
+# RovingDiner（流浪食堂）
 
 《流浪食堂 RovingDiner》「營業」階段的回合制規則引擎，以 Go 撰寫。
 
