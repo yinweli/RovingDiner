@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	sheeter "github.com/yinweli/Project_005/sheet"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuiteLoader(t *testing.T) {

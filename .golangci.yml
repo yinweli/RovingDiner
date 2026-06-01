@@ -7,7 +7,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/yinweli/Project_005
+        - github.com/yinweli/RovingDiner
 
 linters:
   default: none

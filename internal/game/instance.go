@@ -1,6 +1,6 @@
 package game
 
-import "github.com/yinweli/Project_005/internal/defines"
+import "github.com/yinweli/RovingDiner/internal/defines"
 
 // Game 營業實例；持有全域屬性與事件型狀態。
 // 對應規格書【五、實例結構｜營業（Game）實例】。

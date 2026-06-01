@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/yinweli/Project_005/internal/defines"
+	"github.com/yinweli/RovingDiner/internal/defines"
 )
 
 func TestSuiteRuntime(t *testing.T) {

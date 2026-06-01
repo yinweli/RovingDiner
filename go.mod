@@ -1,4 +1,4 @@
-module github.com/yinweli/Project_005
+module github.com/yinweli/RovingDiner
 
 go 1.26
 

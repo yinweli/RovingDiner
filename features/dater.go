@@ -3,8 +3,8 @@ package features
 import (
 	"sort"
 
-	"github.com/yinweli/Project_005/internal/game"
-	sheeter "github.com/yinweli/Project_005/sheet"
+	"github.com/yinweli/RovingDiner/internal/game"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 // NewDater 包裝表格資料並預建衍生索引。

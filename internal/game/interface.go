@@ -1,8 +1,8 @@
 package game
 
 import (
-	"github.com/yinweli/Project_005/internal/defines"
-	sheeter "github.com/yinweli/Project_005/sheet"
+	"github.com/yinweli/RovingDiner/internal/defines"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 // 這四個介面是核心對外的唯一邊界；TUI 與測試各自提供實作。
