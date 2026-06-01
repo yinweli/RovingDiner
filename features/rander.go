@@ -2,15 +2,15 @@ package features
 
 import "math/rand"
 
+// NewRander 以指定種子建立亂數來源。
+func NewRander(seed int64) *Rander {
+	return &Rander{rng: rand.New(rand.NewSource(seed))}
+}
+
 // Rander 單一 seeded PRNG，實作 game.Rander。
 // 同 seed 產生同序列，是回歸測試與 bug 重現的基礎；核心不得碰全域亂數。
 type Rander struct {
 	rng *rand.Rand
-}
-
-// NewRander 以指定種子建立亂數來源。
-func NewRander(seed int64) *Rander {
-	return &Rander{rng: rand.New(rand.NewSource(seed))}
 }
 
 // Intn 回傳 [0, n) 的隨機整數；n <= 0 時回傳 0。

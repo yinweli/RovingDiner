@@ -7,16 +7,6 @@ import (
 	sheeter "github.com/yinweli/Project_005/sheet"
 )
 
-// Dater 以 *sheeter.Sheeter 為後端的唯讀靜態表格，實作 game.Dater。
-// 載入後預建衍生索引（抽獎依群組聚合），核心拿到 ready-to-use 的資料。
-type Dater struct {
-	sheeter *sheeter.Sheeter
-	award   map[int32][]*sheeter.Award // 抽獎群組編號 -> 該群組紀錄（依 ID 排序，確保決定性）
-}
-
-// 編譯期確認 Dater 滿足 game.Dater 介面。
-var _ game.Dater = (*Dater)(nil)
-
 // NewDater 包裝表格資料並預建衍生索引。
 func NewDater(s *sheeter.Sheeter) *Dater {
 	this := &Dater{
@@ -35,6 +25,13 @@ func NewDater(s *sheeter.Sheeter) *Dater {
 	} // for
 
 	return this
+}
+
+// Dater 以 *sheeter.Sheeter 為後端的唯讀靜態表格，實作 game.Dater。
+// 載入後預建衍生索引（抽獎依群組聚合），核心拿到 ready-to-use 的資料。
+type Dater struct {
+	sheeter *sheeter.Sheeter
+	award   map[int32][]*sheeter.Award // 抽獎群組編號 -> 該群組紀錄（依 ID 排序，確保決定性）
 }
 
 // Card 取得卡牌資料；不存在時回傳 nil。
@@ -71,3 +68,6 @@ func (this *Dater) Setting(id string) *sheeter.Setting {
 func (this *Dater) Award(group int32) []*sheeter.Award {
 	return this.award[group]
 }
+
+// 編譯期確認 Dater 滿足 game.Dater 介面。
+var _ game.Dater = (*Dater)(nil)
