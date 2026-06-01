@@ -1,0 +1,159 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/yinweli/Project_005
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - dupl
+    - errcheck
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - mnd
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - wrapcheck
+  settings:
+    dupl:
+      threshold: 400
+    dogsled:
+      max-blank-identifiers: 4
+    funlen:
+      lines: 200
+      statements: 150
+    goconst:
+      min-len: 2
+      min-occurrences: 4
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - sloppyReassign
+        - whyNoLint
+        - wrapperFunc
+      settings:
+        hugeParam:
+          sizeThreshold: 128
+    gocyclo:
+      min-complexity: 50
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+      ignored-functions:
+        - strings.SplitN
+        - strconv.FormatFloat
+        - strconv.FormatInt
+        - strconv.FormatUint
+        - strconv.ParseFloat
+        - strconv.ParseInt
+        - strconv.ParseUint
+    lll:
+      line-length: 300
+    misspell:
+      locale: US
+      ignore-rules:
+        - dialogue
+    nolintlint:
+      allow-unused: false
+      require-explanation: false
+      require-specific: false
+    staticcheck:
+      checks: ["all", "-SA1019", "-ST1006", "-S1002", "-QF1012"]
+    whitespace:
+      multi-func: true
+    wrapcheck:
+      ignore-sigs:
+        - errors.New(
+        - errors.Unwrap(
+        - .Wrap(
+        - .Wrapf(
+        - .WithMessage(
+        - .WithMessagef(
+        - .WithStack(
+      ignore-sig-regexps:
+        - \.New.*Error\(
+      ignore-package-globs:
+        - encoding/*
+        - github.com/pkg/*
+        - golang.org/x/sync/singleflight
+    gosec:
+      excludes:
+        - G101
+        - G115
+        - G117
+        - G401
+        - G404
+        - G501
+        - G502
+        - G503
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+    paths:
+      - .idea
+    rules:
+      - text: 'QF1008: could remove embedded field "Option" from selector'
+        linters:
+          - staticcheck
+      - text: 'declaration of "(err|ctx)" shadows declaration at'
+        linters:
+          - govet
+      - text: G306
+        linters:
+          - gosec
+      - text: "mnd: Magic number: 0644"
+        linters:
+          - mnd
+      - path: (.+)_test.go
+        linters:
+          - mnd
+          - dupl
+          - funlen
+          - goconst
