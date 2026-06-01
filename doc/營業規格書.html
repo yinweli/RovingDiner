@@ -1,0 +1,3414 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>流浪食堂 — 營業規格書</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-alt: #f3efe6;
+    --border: #e2dccb;
+    --border-strong: #c9c0a8;
+    --text: #2b2a26;
+    --text-soft: #5c5849;
+    --accent: #b8602f;
+    --accent-soft: #f5e6d8;
+    --accent-2: #4a6c5a;
+    --accent-2-soft: #e2ecdf;
+    --code-bg: #2d2a24;
+    --code-text: #f5ecd9;
+    --code-inline-bg: #efe9d6;
+    --code-inline-text: #7c3f1d;
+    --table-header: #ede4ce;
+    --table-row-alt: #faf6ec;
+    --shadow: 0 1px 3px rgba(60,50,30,0.06), 0 4px 16px rgba(60,50,30,0.04);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+    margin: 0;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15.5px;
+}
+
+.app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+}
+
+aside {
+    width: 280px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 36px;
+}
+aside h2 {
+    margin: 4px 8px 2px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+aside .subtitle {
+    margin: 0 8px 18px;
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: 0.5px;
+}
+.nav-group { margin-top: 18px; }
+.nav-group-title {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    padding: 0 10px 6px;
+    margin: 0 0 6px;
+    border-bottom: 1px solid var(--border);
+}
+.nav-group a {
+    display: block;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    margin-bottom: 1px;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-group a:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.nav-group a.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+.nav-group a.sub {
+    font-size: 13px;
+    padding-left: 16px;
+}
+
+main {
+    max-width: 1180px;
+    padding: 48px 56px 120px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.doc-head {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--border-strong);
+}
+.doc-head .eyebrow {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.doc-head h1 {
+    margin: 0 0 12px;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+.doc-head p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 14px;
+    max-width: 680px;
+}
+
+.doc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 48px;
+    margin-bottom: 56px;
+    box-shadow: var(--shadow);
+}
+.doc > h1:first-child,
+.doc h1 {
+    color: var(--accent);
+    font-size: 28px;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent-soft);
+}
+.doc h2 {
+    border-left: 5px solid var(--accent);
+    padding-left: 14px;
+    font-size: 22px;
+    margin: 36px 0 18px;
+    scroll-margin-top: 24px;
+}
+.sec-num { display: none; }
+.doc h3 {
+    color: var(--accent-2);
+    font-size: 17px;
+    margin: 24px 0 12px;
+    scroll-margin-top: 24px;
+}
+.doc h4 {
+    display: inline-block;
+    background: var(--accent-2-soft);
+    color: var(--accent-2);
+    padding: 2px 12px;
+    border-radius: 4px;
+    font-size: 14.5px;
+    margin: 18px 0 10px;
+}
+
+.doc p { margin: 10px 0; }
+.doc ul, .doc ol { margin: 10px 0; padding-left: 24px; }
+.doc li { margin: 4px 0; }
+.doc strong { color: var(--text); }
+
+.doc hr {
+    border: none;
+    border-top: 1px dashed var(--border-strong);
+    margin: 28px 0;
+}
+
+.doc table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14.5px;
+    background: var(--surface);
+}
+.doc table th, .doc table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+.doc table th {
+    background: var(--table-header);
+    color: var(--text);
+    font-weight: 600;
+}
+.doc table tr:nth-child(even) td { background: var(--table-row-alt); }
+
+.doc blockquote {
+    margin: 18px 0;
+    padding: 12px 20px;
+    background: var(--surface-alt);
+    border-left: 4px solid var(--border-strong);
+    color: var(--text-soft);
+    border-radius: 0 8px 8px 0;
+}
+.doc blockquote p { margin: 4px 0; }
+
+.doc code {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.doc pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 14px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+.doc pre code {
+    background: transparent;
+    color: var(--code-text);
+    padding: 0;
+    font-size: inherit;
+}
+
+.flow-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px 24px;
+    margin: 18px 0 28px;
+    scroll-margin-top: 24px;
+}
+.flow-section h3 {
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent-2);
+}
+.vt-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.vt-btn {
+    background: var(--surface);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.vt-btn:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.vt-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.vt-view { margin-top: 4px; }
+.vt-view.hidden { display: none; }
+.vt-text { padding: 6px 4px; }
+.vt-text ul { padding-left: 22px; }
+.vt-text code {
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.mermaid-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+}
+.mermaid {
+    text-align: center;
+    font-family: inherit;
+}
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border-strong);
+}
+
+/* 名詞 hover tooltip */
+.term {
+    text-decoration: underline dotted var(--accent);
+    text-underline-offset: 3px;
+    cursor: help;
+    color: inherit;
+}
+.term:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+.term-tip {
+    position: fixed;
+    display: none;
+    max-width: 360px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12.8px;
+    line-height: 1.6;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+    z-index: 1000;
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+}
+.term-tip strong {
+    color: var(--code-text);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(245,236,217,0.18);
+    padding-bottom: 4px;
+}
+
+/* 【...】 引用跳轉 */
+a.ref {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent);
+    padding: 0 1px;
+}
+a.ref:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 32px 24px 80px; }
+    .doc { padding: 28px 22px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside>
+    <h2>流浪食堂</h2>
+    <div class="subtitle">RovingDiner — 營業規格書</div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">共用定義</div>
+        <a href="#sec-1" data-target="sec-1">系統概述</a>
+        <a href="#sec-2" data-target="sec-2">英文詞彙對照</a>
+        <a href="#sec-3" data-target="sec-3">名詞列表</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">技能定義</div>
+        <a href="#sec-4" data-target="sec-4">表格結構</a>
+        <a href="#sec-5" data-target="sec-5">實例結構</a>
+        <a href="#sec-6" data-target="sec-6">容器結構</a>
+        <a href="#sec-7" data-target="sec-7">效果類型</a>
+        <a href="#sec-8" data-target="sec-8">目標類型</a>
+        <a href="#sec-9" data-target="sec-9">目標數量</a>
+        <a href="#sec-10" data-target="sec-10">觸發時機</a>
+        <a href="#sec-11" data-target="sec-11">觸發條件</a>
+        <a href="#sec-12" data-target="sec-12">觸發次數</a>
+        <a href="#sec-13" data-target="sec-13">觸發後行為</a>
+        <a href="#sec-14" data-target="sec-14">作用回合</a>
+        <a href="#sec-15" data-target="sec-15">作用順序</a>
+        <a href="#sec-16" data-target="sec-16">堆疊規則</a>
+        <a href="#sec-17" data-target="sec-17">命令</a>
+        <a href="#sec-18" data-target="sec-18">表演資訊</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 核心</div>
+        <a href="#flow-core-1" data-target="flow-core-1" class="sub">營業開始階段</a>
+        <a href="#flow-core-2" data-target="flow-core-2" class="sub">回合開始階段</a>
+        <a href="#flow-core-3" data-target="flow-core-3" class="sub">玩家行動階段</a>
+        <a href="#flow-core-4" data-target="flow-core-4" class="sub">顧客行動階段</a>
+        <a href="#flow-core-5" data-target="flow-core-5" class="sub">回合結束階段</a>
+        <a href="#flow-core-6" data-target="flow-core-6" class="sub">營業成功階段</a>
+        <a href="#flow-core-7" data-target="flow-core-7" class="sub">營業失敗階段</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 獨立</div>
+        <a href="#flow-sub-skill" data-target="flow-sub-skill" class="sub">啟動技能</a>
+        <a href="#flow-sub-trigger" data-target="flow-sub-trigger" class="sub">觸發時機</a>
+        <a href="#flow-sub-exec" data-target="flow-sub-exec" class="sub">執行命令</a>
+        <a href="#flow-sub-advance" data-target="flow-sub-advance" class="sub">推進效果</a>
+        <a href="#flow-sub-cleanup" data-target="flow-sub-cleanup" class="sub">清理效果</a>
+        <a href="#flow-sub-freeze" data-target="flow-sub-freeze" class="sub">凍結語意</a>
+        <a href="#flow-sub-settle" data-target="flow-sub-settle" class="sub">執行結算</a>
+        <a href="#flow-sub-judge" data-target="flow-sub-judge" class="sub">終止判定</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 補充</div>
+        <a href="#sec-21" data-target="sec-21" class="sub">流程補充</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">附錄</div>
+        <a href="#sec-22" data-target="sec-22">觸發時機清單</a>
+        <a href="#sec-23" data-target="sec-23">屬性清單</a>
+        <a href="#sec-24" data-target="sec-24">命令對象清單</a>
+        <a href="#sec-25" data-target="sec-25">動作類命令清單</a>
+        <a href="#sec-26" data-target="sec-26">內建函式清單</a>
+        <a href="#sec-27" data-target="sec-27">運算式</a>
+    </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+    <div class="eyebrow">Roving Diner · Design Spec</div>
+    <h1>流浪食堂 — 營業規格書</h1>
+    <p>單一 SSOT 規格書。流程方塊提供「文字 / 視覺化」雙檢視；專有名詞游標懸停可看解釋，文中【…】可點擊跳至對應章節。</p>
+</header>
+
+<section class="doc" id="front"></section>
+
+<section class="doc" id="flow">
+    <h2 id="sec-19">十九、核心流程</h2>
+
+    <div class="flow-section" id="flow-core-1">
+        <h3>1. 營業開始階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-1"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([營業開始階段]) --> A0["營業開始設置:<br/>從設定表格載入全域設定<br/>設置 回合 = 0<br/>設置 結算旗標 = false<br/>設置 出牌點數 = max(出牌點數, 出牌上限)<br/>清空累積抽牌 / 棄牌 / 出牌 / 流放張數<br/>建立排隊佇列 / 抽牌牌堆 / 前置技能列表<br/>其他..."]
+    A0 --> A1["foreach 該技能 in 前置技能列表:<br/>啟動技能(該技能)"]
+    A1 --> T1[/"觸發時機: **營業開始**"/]
+    T1 --> End([進入回合開始階段])
+
+    class Start,End terminal
+    class A0,A1 action
+    class T1 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-2">
+        <h3>2. 回合開始階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-2"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([回合開始階段]) --> A0["回合準備設置:<br/>設置 回合 += 1<br/>設置 所有「回合 X」事件型屬性 = 0"]
+    A0 --> T1[/"觸發時機: **回合準備**"/]
+    T1 --> A1["回合開始設置:<br/>設置 出牌點數 = max(出牌點數, 出牌上限)<br/>其他..."]
+    A1 --> T2[/"觸發時機: **回合開始**"/]
+    T2 --> B1{"剩餘座位 > 0<br/>and 排隊佇列 > 0?"}
+    B1 -->|是| A2["從排隊佇列彈出 1 位 → 該顧客<br/>加入座位列表<br/>設置 最後入座顧客 = 該顧客<br/>設置 回合入座人數 += 1"]
+    A2 --> T3[/"觸發時機: **顧客入座**"/]
+    T3 --> B1
+    B1 -->|否| B2{"下一階段?"}
+    B2 -->|'顧客行動'| E1([清除 下一階段<br/>進入顧客行動階段])
+    B2 -->|'回合結束'| E2([清除 下一階段<br/>進入回合結束階段])
+    B2 -->|default| E3([清除 下一階段<br/>進入玩家行動階段])
+
+    class Start,E1,E2,E3 terminal
+    class A0,A1,A2 action
+    class B1,B2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-3">
+        <h3>3. 玩家行動階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-3"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([玩家行動階段]) --> B0{"手牌 < 補牌張數上限<br/>&& (抽牌牌堆 + 棄牌牌堆) > 0?"}
+    B0 -->|是| B0a{"抽牌牌堆 <= 0?"}
+    B0a -->|是| A0a["棄牌牌堆隨機洗牌<br/>移至抽牌牌堆"]
+    A0a --> A0
+    B0a -->|否| A0["從抽牌牌堆抽 1 張加入手牌"]
+    A0 --> B0
+    B0 -->|否| T1[/"觸發時機: **玩家開始**"/]
+    T1 --> B1{"下一階段 ∈ {顧客行動, 回合結束}?"}
+    B1 -->|是| F0["視為 玩家結束 事件"]
+    F0 --> B2{"玩家事件?"}
+    B1 -->|否| B2
+
+    B2 -->|玩家出牌 該卡牌| BC1{"該卡牌.封印卡牌 鎖定計數 > 0?"}
+    BC1 -->|是| AC1["不執行出牌<br/>(卡牌封印)"]
+    AC1 --> B1
+    BC1 -->|否| BC2{"cardify != none<br/>&& 剩餘座位 == 0?"}
+    BC2 -->|是| AC2["不執行出牌<br/>(卡牌化卡無空位)"]
+    AC2 --> B1
+    BC2 -->|否| BC3{"出牌點數 >= 出牌費用?"}
+    BC3 -->|否| AC3["不執行出牌"]
+    AC3 --> B1
+    BC3 -->|是| AC4["設置 出牌點數 -= 出牌費用<br/>設置 最後出牌卡牌 = 該卡牌<br/>設置 回合出牌張數 += 1<br/>設置 額外次數 = random[下限, 上限]<br/>(下限 > 上限 \|\| 上限 < 0 時為 0)"]
+    AC4 --> AC5["重複 (1 + 額外次數) 次:<br/>啟動技能: **實例效果列表**"]
+    AC5 --> BC4{"該卡牌.cardify != none?"}
+    BC4 -->|是| AC6["執行 restore(該卡牌)<br/>(系統自動還原綁定顧客)"]
+    AC6 --> BC5
+    BC4 -->|否| BC5{"出牌後流放 鎖定計數 > 0?"}
+    BC5 -->|是| AC7["從手牌移除<br/>加入流放牌堆"]
+    BC5 -->|否| AC8["從手牌移除<br/>加入棄牌牌堆"]
+    AC7 --> T2[/"觸發時機: **玩家出牌**"/]
+    AC8 --> T2
+    T2 --> B1
+
+    B2 -->|玩家結束| T3[/"觸發時機: **玩家結束**"/]
+    T3 --> BE1["foreach 該卡牌 in 剩餘手牌:<br/>未出牌流放 > 0 → 移至流放牌堆<br/>否則 不棄卡牌 == 0 → 棄置至棄牌牌堆<br/>否則 → 留在手牌"]
+    BE1 --> BE2{"下一階段?"}
+    BE2 -->|'回合結束'| EE1([清除 下一階段<br/>進入回合結束階段])
+    BE2 -->|default| EE2([清除 下一階段<br/>進入顧客行動階段])
+
+    class Start,EE1,EE2 terminal
+    class A0,A0a,AC1,AC2,AC3,AC4,AC5,AC6,AC7,AC8,BE1,F0 action
+    class B0,B0a,B1,B2,BC1,BC2,BC3,BC4,BC5,BE2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-4">
+        <h3>4. 顧客行動階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-4"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([顧客行動階段]) --> T1[/"觸發時機: **顧客開始**"/]
+    T1 --> B1{"行動佇列 <= 0<br/>or 下一階段 == '回合結束'?"}
+    B1 -->|是| T2[/"觸發時機: **顧客結束**"/]
+    T2 --> End([清除 下一階段<br/>進入回合結束階段])
+    B1 -->|否| A1["從行動佇列彈出 1 個 → 該行動<br/>設置 最後行動顧客 / 最後行動技能<br/>設置 回合行動次數 += 1"]
+    A1 --> B2{"行動類型 + 封印計數?"}
+    B2 -->|飽食 && 封印飽食技能 > 0| A2["跳過啟動<br/>(行動消費完畢)"]
+    B2 -->|耐心 && 封印耐心技能 > 0| A2
+    B2 -->|否則| A3["啟動技能: **顧客行動技能**"]
+    A2 --> T3[/"觸發時機: **顧客行動**"/]
+    A3 --> T3
+    T3 --> B1
+
+    class Start,End terminal
+    class A1,A2,A3 action
+    class B1,B2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-5">
+        <h3>5. 回合結束階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-5"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([回合結束階段]) --> T1[/"觸發時機: **回合結束**"/]
+    T1 --> A0["回合結束設置:<br/>設置 座位列表 + 遊蕩列表 每位顧客.耐心值 -= 1<br/>if 出牌點數重置封印 鎖定計數 == 0:<br/>設置 出牌點數 = 0<br/>其他..."]
+    A0 --> A1["推進效果"]
+    A1 --> A2["執行結算"]
+    A2 --> End([進入回合開始階段])
+
+    class Start,End terminal
+    class A0,A1,A2 action
+    class T1 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-6">
+        <h3>6. 營業成功階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-6"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([營業成功階段]) --> T1[/"觸發時機: **營業成功**"/]
+    T1 --> End([終止營業: 成功])
+
+    class Start,End terminal
+    class T1 trigger
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-7">
+        <h3>7. 營業失敗階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-7"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([營業失敗階段]) --> T1[/"觸發時機: **營業失敗**"/]
+    T1 --> End([終止營業: 失敗])
+
+    class Start,End terminal
+    class T1 trigger
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <h2 id="sec-20">二十、獨立流程</h2>
+
+    <div class="flow-section" id="flow-sub-skill">
+        <h3>啟動技能</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-skill"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([啟動技能 效果列表, 技能群組編號]) --> A0["設置 沿用來源 = 空集合"]
+    A0 --> B1{"效果列表 > 0?"}
+    B1 -->|否| End([結束啟動技能])
+    B1 -->|是| A1["從效果列表彈出 1 個 → 該效果"]
+    A1 --> B2{"該效果.目標類型?"}
+
+    B2 -->|無目標| A2["本次 self 集合 = 空物件<br/>沿用來源 = 空集合"]
+
+    B2 -->|新選顧客 / 新選手牌| A4n["候選對象 filter:<br/>顧客類: 座位列表 排除 skillImmune 技能群組編號 > 0 者<br/>手牌類: 手牌 無額外 filter"]
+    A4n --> A5n["依【九、目標數量】退化規則<br/>不適用退化時: 暫停流程<br/>玩家選滿 目標數量 個對象"]
+    A5n --> A6n["本次 self 集合 = 選取結果<br/>沿用來源 = 本次 self 集合"]
+
+    B2 -->|隨機顧客 / 隨機手牌| A4r["候選對象 filter:<br/>顧客類: 座位列表 排除 skillImmune 技能群組編號 > 0 者<br/>手牌類: 手牌 無額外 filter"]
+    A4r --> A5r["依【九、目標數量】退化規則<br/>不適用退化時: 系統隨機選 目標數量 個對象"]
+    A5r --> A6r["本次 self 集合 = 選取結果<br/>沿用來源 = 本次 self 集合"]
+
+    B2 -->|沿用顧客 / 沿用手牌| A7["本次 self 集合 = 沿用來源<br/>依【八】沿用規則<br/>沿用來源不變"]
+
+    A2 --> B3{"foreach self in 本次 self 集合<br/>依 該效果.效果類型?"}
+    A6n --> B3
+    A6r --> B3
+    A7 --> B3
+
+    B3 -->|立即| B4{"觸發條件成立?"}
+    B4 -->|是| A8["執行 立即命令"]
+    A8 --> R1(( ))
+    B4 -->|否| R1
+
+    B3 -->|觸發| C1[/"套用 [堆疊處理]"/]
+    C1 --> R1
+
+    B3 -->|常駐| C2[/"套用 [堆疊處理]"/]
+    C2 --> B5{"實際增加層數 > 0?"}
+    B5 -->|是| A9["執行 啟動命令"]
+    A9 --> R1
+    B5 -->|否| R1
+
+    R1 --> B1
+
+    class Start,End terminal
+    class A0,A1,A2,A4n,A4r,A5n,A5r,A6n,A6r,A7,A8,A9 action
+    class B1,B2,B3,B4,B5 decision
+    class C1,C2 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-trigger">
+        <h3>觸發時機</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-trigger"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([觸發時機 時機]) --> A0["從效果佇列篩選:<br/>效果類型 = 觸發 && 觸發時機 = 時機<br/>→ 觸發列表"]
+    A0 --> A1["觸發列表 依「作用順序、效果編號」排序<br/>(作用順序大者優先;<br/>同作用順序時效果編號小者優先)"]
+    A1 --> B1{"觸發列表 > 0?"}
+    B1 -->|否| End([結束觸發時機])
+    B1 -->|是| A2["從觸發列表彈出 1 個 → 該效果"]
+    A2 --> B2{"該效果.觸發條件 成立?"}
+    B2 -->|否| B1
+    B2 -->|是| A5["本次 self 集合 = 該效果.self 集合<br/>(啟動技能時已決定)"]
+
+    A5 --> A6["設置 該效果中止 = false"]
+    A6 --> B4{"foreach self in 本次 self 集合<br/>還有 self?"}
+    B4 -->|有| A7["M = 評估 self.觸發次數"]
+    A7 --> B5{"M <= 0?"}
+    B5 -->|是| A8["設置 該效果中止 = true<br/>break"]
+    A8 --> B6
+    B5 -->|否| A9["重複 (該效果.堆疊層數 × M) 次:<br/>執行 該效果.觸發命令"]
+    A9 --> B4
+    B4 -->|無剩| B6{"該效果中止?"}
+    B6 -->|是| B1
+    B6 -->|否| B7{"該效果.觸發後行為 == 移除?"}
+    B7 -->|是| C1[/"重複 該效果.堆疊層數 次:<br/>執行 該效果.結束命令<br/>從效果佇列移除 該效果"/]
+    C1 --> B1
+    B7 -->|否| B1
+
+    class Start,End terminal
+    class A0,A1,A2,A5,A6,A7,A8,A9 action
+    class B1,B2,B4,B5,B6,B7 decision
+    class C1 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-exec">
+        <h3>執行命令</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-exec"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([執行命令 命令]) --> B1{"命令 含 ( )?"}
+    B1 -->|否 屬性修改命令| A1["依【十七、命令｜1. 屬性修改命令】處理<br/>(賦值符 / 算術式評估 /<br/>屬性鎖定 / 餐廳士氣值 -= 特例)"]
+    B1 -->|是 動作呼叫命令| A2["依【十七、命令｜2. 動作呼叫命令】處理<br/>(算術式參數 / 命令對象解析 /<br/>算術失敗 no-op)<br/>命令對象解析詳見【二十四】<br/>self / selfSame / selfNear 取效果建立時固定值"]
+    A1 --> B2{"結算旗標 == false?"}
+    A2 --> B2
+    B2 -->|是| A3["執行結算"]
+    A3 --> End([返回呼叫流程])
+    B2 -->|否| End
+
+    class Start,End terminal
+    class A1,A2,A3 action
+    class B1,B2 decision
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-advance">
+        <h3>推進效果</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-advance"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([推進效果]) --> A0["從效果佇列篩選:<br/>結束回合 > 0 && 結束回合 <= 當前回合<br/>→ 結束列表"]
+    A0 --> A1["結束列表 依「作用順序、效果編號」排序<br/>(作用順序大者優先;<br/>同作用順序時效果編號小者優先)"]
+    A1 --> B1{"結束列表 > 0?"}
+    B1 -->|否| End([返回呼叫流程])
+    B1 -->|是| A2["從結束列表取下一個 → 該效果"]
+    A2 --> C1[/"重複 該效果.堆疊層數 次:<br/>執行 該效果.結束命令"/]
+    C1 --> A3["從效果佇列移除 該效果"]
+    A3 --> B1
+
+    class Start,End terminal
+    class A0,A1,A2,A3 action
+    class B1 decision
+    class C1 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-cleanup">
+        <h3>清理效果</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-cleanup"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([清理效果 失效對象]) --> A0["從效果佇列篩選:<br/>目標類型 != 無目標 && self 屬於 失效對象<br/>→ 清理列表"]
+    A0 --> A1["清理列表 依「作用順序、效果編號」排序<br/>(作用順序大者優先;<br/>同作用順序時效果編號小者優先)"]
+    A1 --> B1{"清理列表 > 0?"}
+    B1 -->|否| End([返回呼叫流程])
+    B1 -->|是| A2["從清理列表取下一個 → 該效果"]
+    A2 --> C1[/"重複 該效果.堆疊層數 次:<br/>執行 該效果.結束命令"/]
+    C1 --> A3["從效果佇列移除 該效果"]
+    A3 --> B1
+
+    class Start,End terminal
+    class A0,A1,A2,A3 action
+    class B1 decision
+    class C1 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="plain-section" id="flow-sub-freeze">
+        <h3>凍結語意</h3>
+        <div id="flow-sub-freeze-body"></div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-settle">
+        <h3>執行結算</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-settle"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([執行結算]) --> A0["設置 結算旗標 = true"]
+    A0 --> J1[/"套用 [終止判定]"/]
+    J1 --> A1["foreach 該顧客 in 所有顧客:<br/>foreach 門檻 in 飽食門檻列表 (由低到高):<br/>if 飽食值 >= 門檻值 && 門檻 未觸發:<br/>標記已觸發 + 加入行動佇列 (飽食)"]
+    A1 --> A2["foreach 該顧客 (飽食值 >= 飽食值離場線):<br/>設置 最後離場顧客 / 座位 / 回合離場人數 += 1<br/>觸發時機: **顧客離場** + **飽食離場**<br/>從容器移除該顧客<br/>觸發時機: **顧客離場後**<br/>清理效果(該顧客)<br/>設置 餐廳滿意值 += 該顧客.滿意值"]
+    A2 --> J2[/"套用 [終止判定]"/]
+    J2 --> A3["foreach 該顧客 in 所有顧客:<br/>foreach 門檻 in 耐心門檻列表 (由高到低):<br/>if 耐心值 <= 門檻值 && 門檻 未觸發:<br/>標記已觸發 + 加入行動佇列 (耐心)"]
+    A3 --> A4["foreach 該顧客 (耐心值 <= 0):<br/>設置 最後離場顧客 / 座位 / 回合離場人數 += 1<br/>觸發時機: **顧客離場** + **生氣離場**<br/>從容器移除該顧客<br/>觸發時機: **顧客離場後**<br/>清理效果(該顧客)<br/>以該顧客為 damageGuest, 餐廳士氣值 -= 該顧客.士氣值"]
+    A4 --> J3[/"套用 [終止判定]"/]
+    J3 --> B1{"手牌 > 手牌上限?"}
+    B1 -->|是| A5["暫停流程<br/>玩家手動棄牌至 手牌 <= 手牌上限"]
+    A5 --> A6["設置 結算旗標 = false"]
+    B1 -->|否| A6
+    A6 --> End([返回呼叫流程])
+
+    class Start,End terminal
+    class A0,A1,A2,A3,A4,A5,A6 action
+    class B1 decision
+    class J1,J2,J3 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-judge">
+        <h3>[終止判定]</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-judge"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid">
+flowchart TD
+    Start([終止判定]) --> B1{"回合 >= 回合上限<br/>or 餐廳士氣值 <= 0?"}
+    B1 -->|是| A1["設置 結算旗標 = false"]
+    A1 --> End1([進入營業失敗階段])
+    B1 -->|否| B2{"排隊佇列 <= 0<br/>and 座位列表 <= 0<br/>and 遊蕩列表 <= 0<br/>and 卡牌化列表 <= 0?"}
+    B2 -->|是| A2["設置 結算旗標 = false"]
+    A2 --> End2([進入營業成功階段])
+    B2 -->|否| End3([返回呼叫流程])
+
+    class Start,End1,End2,End3 terminal
+    class A1,A2 action
+    class B1,B2 decision
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+
+    <h2 id="sec-21">二十一、流程補充</h2>
+    <div id="flow-extra-body"></div>
+</section>
+
+<section class="doc" id="back"></section>
+
+</main>
+</div>
+
+<!-- ============================================================ -->
+<!-- Markdown payloads                                              -->
+<!-- ============================================================ -->
+
+<script type="text/markdown" id="md-front">
+---
+
+## 一、系統概述
+
+本系統定義《流浪食堂 RovingDiner》營業階段的回合制規則。
+
+一次營業是一場可被結算的遊戲流程。
+
+玩家透過手牌與技能處理顧客。顧客會排隊、入座、行動，最後離場。
+
+系統依照回合推進營業。推進過程會處理觸發時機、效果佇列與結算規則。
+
+### 1. 營業目標
+
+營業的主要目標如下：
+
+- 處理完座位列表、排隊佇列、遊蕩列表與卡牌化列表中的所有顧客。
+- 維持餐廳士氣值大於 0。
+- 在回合達到上限前完成營業。
+
+營業結束條件如下：
+
+- **成功**：`座位列表 <= 0` 且 `排隊佇列 <= 0` 且 `遊蕩列表 <= 0` 且 `卡牌化列表 <= 0`。
+- **失敗**：`回合 >= 回合上限`。
+- **失敗**：`餐廳士氣值 <= 0`。
+
+執行結算時，失敗判定優先於成功判定。
+
+### 2. 核心流程
+
+營業流程依下列階段推進：
+
+- 營業開始。
+- 回合開始。
+- 玩家行動。
+- 顧客行動。
+- 回合結束。
+- 營業成功或營業失敗。
+
+玩家行動以卡牌為核心。玩家可以補牌、出牌，或手動結束行動。
+
+顧客行動以行動佇列為核心。行動佇列由結算流程的飽食 / 耐心門檻命中與 `taskAdd` 命令填入。
+
+回合結束時會推進效果，並執行結算。結算會處理飽食 / 耐心門檻命中（填入行動佇列）、顧客離場、餐廳滿意值、餐廳士氣值與手牌張數上限。
+
+### 3. 核心機制
+
+系統主要由下列機制組成：
+
+- **卡牌**：玩家行動的主要操作單位。出牌會消耗出牌點數，並啟動卡牌實例目前持有的效果列表。
+- **顧客**：營業中的處理對象。顧客以飽食值、耐心值、滿意值與士氣值參與結算。
+- **技能**：效果編號列表。啟動技能時，系統依照列表順序建立並處理效果。
+- **效果**：規則的主要擴充單位。效果可以立即執行，也可以進入效果佇列等待觸發或維持常駐。
+- **命令**：實際改變狀態的操作。命令可修改屬性，也可執行抽牌、棄牌、移動牌堆、啟動效果等動作。
+
+效果類型分為：
+
+- **立即**：建立後檢查觸發條件。條件成立時執行立即命令，不進入效果佇列。
+- **觸發**：進入效果佇列。指定觸發時機到達且條件成立時執行觸發命令；離開佇列時執行結束命令。
+- **常駐**：進入效果佇列。加入佇列時執行啟動命令，離開佇列時執行結束命令。
+
+效果可以使用 self 指向空物件、顧客或卡牌。當 self 失效時，相關效果會依規則清理。
+
+### 4. 資料驅動
+
+系統資料分為靜態表格與執行期實例。
+
+靜態表格定義設定、座位、抽獎、卡牌、顧客、技能與效果。執行期實例保存營業狀態、卡牌狀態、顧客狀態、效果狀態與行動狀態。
+
+卡牌、顧客與效果都以實例方式運作。因此，同一份靜態資料可以在營業中產生多個獨立狀態。
+
+條件對象、命令對象與觸發時機共同構成資料驅動的規則介面。企劃可透過表格配置規則。程式則負責實作固定流程、效果佇列、命令解析與結算規則。
+
+---
+
+## 二、英文詞彙對照
+
+統一中英對應，作為事件命名、屬性引用、命令、欄位、程式碼識別碼的命名依據。
+
+### 主體（字根）
+
+| 中文     | 英文   | 說明                            |
+|:---------|:-------|:--------------------------------|
+| 卡牌     | card   |                                 |
+| 回合     | round  |                                 |
+| 座位     | seat   |                                 |
+| 手牌     | hand   |                                 |
+| 技能     | skill  |                                 |
+| 抽牌牌堆 | deck   |                                 |
+| 抽獎     | award  |                                 |
+| 排隊     | wait   |                                 |
+| 效果     | effect |                                 |
+| 棄牌牌堆 | drop   | 與「棄牌動作」共用字根          |
+| 流放牌堆 | exile  |                                 |
+| 營業     | game   |                                 |
+| 玩家     | user   |                                 |
+| 群組     | group  |                                 |
+| 行動     | task   | 特殊用法：指顧客行動,非泛用任務 |
+| 顧客     | guest  |                                 |
+
+### 動詞
+
+| 中文   | 英文    | 說明                  |
+|:-------|:--------|:----------------------|
+| 入座   | seat    |                       |
+| 全部   | all     |                       |
+| 出(牌) | play    |                       |
+| 加入   | add     |                       |
+| 受損   | damage  |                       |
+| 啟動   | run     |                       |
+| 失敗   | fail    |                       |
+| 成功   | succ    |                       |
+| 抽(牌) | draw    | 同時是抽牌事件前綴    |
+| 指定   | pick    | 玩家手動選取          |
+| 排隊   | wait    |                       |
+| 擲(獎) | roll    |                       |
+| 棄(牌) | drop    | 同時是牌堆字根        |
+| 洗牌   | shuffle |                       |
+| 深複製 | clone   |                       |
+| 淺複製 | copy    |                       |
+| 清除   | clear   | 依群組批次移除        |
+| 準備   | ready   |                       |
+| 產生   | spawn   |                       |
+| 移除   | del     | 依編號 / 對象逐項移除 |
+| 結束   | end     |                       |
+| 設(值) | set     |                       |
+| 變身   | morph   |                       |
+| 開始   | start   |                       |
+| 隨機   | rand    |                       |
+| 離場   | exit    |                       |
+| 頂端   | top     |                       |
+
+### 屬性 / 狀態
+
+| 中文       | 英文   | 說明                      |
+|:-----------|:-------|:--------------------------|
+| 保留(不棄) | keep   |                           |
+| 免疫       | immune |                           |
+| 出牌點數   | energy |                           |
+| 同桌       | same   |                           |
+| 士氣       | morale | 餐廳全域 / 顧客 self 共用 |
+| 權重       | weight |                           |
+| 滿意       | score  | 餐廳全域 / 顧客 self 共用 |
+| 耐心       | calm   |                           |
+| 鄰桌       | near   |                           |
+| 飽食       | sate   |                           |
+
+### 字首修飾
+
+| 中文          | 英文   | 範例                          |
+|:--------------|:-------|:------------------------------|
+| 位於 …(布林) | in     | self.inDeck(位於抽牌牌堆)     |
+| 前置          | prefix | prefixSkill(前置技能)         |
+| 額外          | extra  | extraRunMin(額外發動次數下限) |
+
+### 字尾修飾
+
+| 中文         | 英文   |
+|:-------------|:-------|
+| 上限         | Max    |
+| 剩餘         | Left   |
+| 已命中(門檻) | Hit    |
+| 序           | Index  |
+| 最後一個     | Last   |
+| 格擋         | Block  |
+| 當下數量     | Size   |
+| 累計次數     | Count  |
+| 編號         | ID     |
+| 護盾         | Shield |
+
+### 命名公式
+
+- **事件 / 動作命令**：`<主體><動詞>`（事件如 `cardPlay`、`guestSeat`；命令如 `handAdd`、`effectRun`）；雙主體命令（如 `dropToDeck` / `deckToDrop`）為例外
+- **命令對象集合**：`<主體 / 屬性字根><動詞>`（如 `guestPick`、`deckAll`、`samePick`、`guestWait`）；`selfSame` / `selfNear` 為例外（self 為命令對象、Same / Near 為屬性字根，無主體）
+- **屬性引用**：
+  - self：`<主體>.<屬性>`（如 `self.sate`）
+  - 全域純屬性：無前綴（如 `morale`、`round`）；含字尾修飾時為 `<主體><字尾修飾>`（如 `roundMax`、`seatLeft`、`seatSize`）
+
+---
+
+## 三、名詞列表
+
+- **no-op**：no operation，不執行任何操作。
+- **self**：條件對象 / 命令對象的主語；指效果建立時透過目標類型選取的目標實例（顧客 / 卡牌實例），無目標時為空物件。
+- **下一階段**：營業的全域屬性（字串）；指定回合內向後跳轉的目標階段，合法值 `'玩家行動'` / `'顧客行動'` / `'回合結束'` / `''`（無跳轉）。以 `phaseJump` 命令設定（不含 `''`）；階段轉移時系統自動清除為 `''`。
+- **不棄卡牌**：卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家手動結束」時不會棄置至棄牌牌堆。鎖定計數初值由 卡牌資料.不棄卡牌 載入（true → 1, false → 0），可被命令於執行期修改。
+- **免疫閘門**：【二十、獨立流程｜啟動技能｜堆疊處理】開頭，依 `self.effectImmune` 鎖定計數擋下「`效果群組編號` 命中」的待加入效果的閘門。
+- **全域屬性**：不屬於特定 self 的整體狀態屬性（如餐廳士氣值、回合）；條件式引用時不加前綴。
+- **出牌點數上限**：玩家當回合可用以出牌的點數上限。
+- **出牌後流放**：卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家出牌」後移至流放牌堆而非棄牌牌堆。鎖定計數初值由 卡牌資料.出牌後流放 載入（true → 1, false → 0），可被命令於執行期修改。
+- **出牌費用**：出牌時自出牌點數扣除的數值。
+- **出牌點數**：玩家當回合可用以出牌的點數。
+- **出牌點數保留**：餐廳的全域屬性（數值固定為 0）；鎖定計數 > 0 時跨回合保留 `出牌點數`（回合結束階段跳過 `出牌點數 = 0` 的清零）。
+- **前置技能列表**：營業開始時逐一啟動的技能列表。
+- **剩餘回合**：營業的全域衍生屬性；讀取為 `max(0, 回合上限 - 回合)`，下限夾 0。可被屬性修改命令寫入，寫入會自動轉譯為對 `回合上限` 的調整（例：`剩餘回合 = 2` → `回合上限 = 回合 + 2`、`剩餘回合 += N` → `回合上限 += N`；操作後保證 `回合上限 ≥ 回合`）。失敗仍以 `回合 >= 回合上限` 判定。
+- **剩餘座位**：仍可入座的座位數。
+- **卡牌化列表**：被卡牌化（全凍結保留）的顧客集合；由 `cardify` 命令移入、`restore` 命令移出。不在座位列表中，但仍視為通關條件對象（成功條件需 `卡牌化列表 <= 0`）。位於此列表的顧客進入「全凍結狀態」：屬性修改命令對其 self 屬性一律 no-op、效果佇列中 self == 該顧客的效果於 觸發 / 推進 / 清理 流程一律跳過、不被顧客類命令對象命中、不在【二十、獨立流程｜啟動技能】新選 / 隨機顧客的候選池內。
+- **卡牌化還原**：由 `restore` 命令將卡牌綁定顧客自卡牌化列表移回座位列表（隨機 1 個空 seatID）並解凍其屬性與效果；無空位時 no-op。
+- **卡牌群組編號**：卡牌所屬的卡牌群組編號；`0` 代表未指派群組。
+- **卡牌實例**：由卡牌資料於建立初始牌堆或命令新增卡牌時實例化產生，具獨立實例編號；之後跨手牌 / 抽牌牌堆 / 棄牌牌堆 / 流放牌堆移動時保留實例身分與其狀態，抽牌本身不重新實例化。
+- **卡牌技能**：卡牌資料引用的技能（綁定於卡牌資料）；卡牌實例化時以此技能的效果列表作為「實例效果列表」的初值。
+- **卡牌資料**：卡牌的靜態定義，含「技能編號」與其他屬性（如「不棄卡牌」）。
+- **同桌**：以【四、表格結構｜座位（Seat）表格】的 `同桌座位編號列表` 為準（含自身）。
+- **命令對象**：命令執行時作用的對象；可用清單詳見【二十四、命令對象清單】。
+- **啟動命令**：常駐類型效果加入效果佇列或堆疊層數增加時執行的命令。
+- **回合**：當前回合數。
+- **回合上限**：一場營業允許的回合上限。
+- **士氣值**：顧客的屬性，生氣離場時自餐廳士氣值扣除；不可超過 `士氣值上限`，運算後超出此上限時夾為上限值。
+- **士氣值上限**：顧客的屬性，士氣值的上限；建立顧客實例時自顧客資料載入，可被命令增減。
+- **士氣受損**：餐廳士氣值因 `餐廳士氣值 -=` 運算而實際扣減時觸發的事件；被士氣格擋或士氣護盾完全抵消時不觸發。
+- **失效對象**：self 已失效的對象，例如已離場顧客、已自本場移除（再也無法抽到）的卡牌實例、指向變身前舊實例編號的引用。
+- **實例效果列表**：卡牌實例持有的效果編號列表（允許同一效果編號重複出現）；初值取自其卡牌技能，可被命令增刪。
+- **實例編號**：實例（卡牌實例 / 顧客實例 / 效果實例）的唯一識別碼。
+- **封印卡牌**：卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌不可出牌。鎖定計數初值由 卡牌資料.封印卡牌 載入（true → 1, false → 0）。
+- **封印耐心技能**：顧客的屬性（數值固定為 0）；鎖定計數 > 0 時該顧客的耐心技能於彈出後不啟動（行動仍消費）。鎖定計數初值由 顧客資料.封印耐心技能 載入（true → 1, false → 0），可被命令於執行期修改。
+- **封印閘門**：【十九、核心流程｜4. 顧客行動階段】彈出技能後，依 行動類型 查 `self.封印飽食技能` / `self.封印耐心技能` 鎖定計數決定是否啟動技能的閘門。
+- **封印飽食技能**：顧客的屬性（數值固定為 0）；鎖定計數 > 0 時該顧客的飽食技能於彈出後不啟動（行動仍消費）。鎖定計數初值由 顧客資料.封印飽食技能 載入（true → 1, false → 0），可被命令於執行期修改。
+- **屬性**：執行期可變的狀態容器，含 `{ 數值, 鎖定計數 }`；分全域屬性與 self 屬性兩類。實例結構詳見【五、實例結構｜數值（Value）實例】。
+- **座位列表**：場上座位上的顧客集合。
+- **座位編號**：座位的唯一識別碼；亦為顧客實例的欄位，指顧客占用的座位；位於遊蕩列表 / 卡牌化列表時為 0；座位列表的結算遍歷依此值由小到大排序。
+- **座位表格**：靜態表，定義座位編號、所屬桌次與同桌 / 鄰桌拓樸；詳見【四、表格結構｜座位（Seat）表格】。
+- **手牌**：玩家當回合可使用的卡牌實例。
+- **手牌張數上限**：手牌允許的最大張數。
+- **技能**：效果編號的列表（允許同一效果編號重複出現）；啟動時依此撰寫順序逐一處理。效果定義不在技能內 inline，而是位於「效果表格」。
+- **技能免疫群組**：顧客的屬性（查詢函式，索引 = 技能群組編號）；`self.skillImmune(N)` 鎖定計數 > 0 時，於【二十、獨立流程｜啟動技能】顧客選取階段，當前技能群組編號 = N 者，候選排除此顧客。只能透過 `skillImmuneAdd` / `skillImmuneDel` 命令調整。
+- **抽牌牌堆**：玩家的牌堆之一（內含卡牌實例）。順序以卡牌實例進入時刻為序、新進入者置於頂端、舊進入者位於底端；批次命令逐張依序進入時、頂端會呈現「最後進入者最上層」（即原批次順序的反轉）；玩家抽牌與 `deckTop[N]` 命令對象的「頂端」皆指最新進入者；洗牌時打亂整個排序。
+- **抽獎群組**：抽獎表格中相同 `抽獎群組編號` 的紀錄集合；做為抽選的最小單元。群組總權重 = 0 時視為無有效紀錄、引用此群組的命令該項 no-op。
+- **抽獎表格**：以抽獎群組編號分組、配置卡牌與權重的靜態抽選表格；命令引用其群組以 weighted random 選 1 個卡牌編號。
+- **排隊佇列**：尚未入座的顧客所形成的佇列。
+- **排隊顧客**：尚未入座、在門外排隊的顧客。
+- **效果**：實際執行單位；定義於「效果表格」，具全域唯一的效果編號。
+- **效果佇列**：常駐 / 觸發效果停留處理的佇列。
+- **效果免疫群組**：顧客的屬性（查詢函式，索引 = 效果群組編號）；`self.effectImmune(N)` 鎖定計數 > 0 時，新建立效果群組編號 = N 的效果於 §二十 [堆疊處理] 開頭視為 no-op，已建立 / 執行中的效果不受影響。只能透過 `effectImmuneAdd` / `effectImmuneDel` 命令調整。
+- **效果群組編號**：效果所屬的效果群組編號；`0` 代表未指派群組。
+- **效果表格**：所有效果的中央定義表；技能 / 實例效果列表 / 命令均以效果編號引用其中的效果。
+- **未出牌流放**：卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家手動結束」處理剩餘手牌時必定移至流放牌堆（優先於 `不棄卡牌` 的留在手牌邏輯）。鎖定計數初值由 卡牌資料.未出牌流放 載入（true → 1, false → 0），可被命令於執行期修改。
+- **條件對象**：條件運算式中被讀取以參與判斷的屬性來源；可用屬性詳見【二十三、屬性清單】。
+- **棄牌牌堆**：玩家的牌堆之一（內含卡牌實例）。順序以卡牌實例進入時刻為序、新進入者置於頂端、舊進入者位於底端；批次命令逐張依序進入時、頂端會呈現「最後進入者最上層」（即原批次順序的反轉）；`dropTop[N]` 命令對象的「頂端」指最新進入者。
+- **權重**：抽獎表格欄位；該筆紀錄的相對抽中機率，取值 `0~N`；同群組紀錄依權重做 weighted random 選 1 個卡牌編號。
+- **流放牌堆**：玩家的牌堆之一（內含卡牌實例）。本場營業中無法被使用：補牌邏輯不從中抽出、`cardRun` 對流放牌堆卡視為位置不符 no-op。可透過 `exileToHand` / `exileToDeck` / `exileToDrop` 命令救出；本場營業結束後重置（不在本 spec 範疇）。
+- **滿意值**：顧客的屬性，飽食離場時提供給餐廳滿意值；不可超過 `滿意值上限`，運算後超出此上限時夾為上限值。
+- **滿意值上限**：顧客的屬性，滿意值的上限；建立顧客實例時自顧客資料載入，可被命令增減。
+- **玩家**：營業的主控者；持有手牌、抽牌 / 棄牌 / 流放牌堆，於玩家行動階段抽牌、出牌與結束。
+- **玩家出牌**：玩家於玩家行動階段選 1 張手牌啟動其實例效果列表的動作；詳見【十九、核心流程｜3. 玩家行動階段】。
+- **玩家手動結束**：玩家於玩家行動階段主動結束行動的事件；處理剩餘手牌（依 `未出牌流放` / `不棄卡牌` 判定去向）後依 `下一階段` 進入顧客行動階段或回合結束階段。
+- **生氣離場**：觸發 `exitCalm` 的離場路徑；由結算流程耐心歸 0、或 `guestExit(..., ..., 是否扣士氣=true)` 觸發；自所在容器（座位列表 / 遊蕩列表）移除並扣餐廳士氣值。
+- **目標數量**：效果建立時須選取的目標數量（`1~N`）；詳見【九、目標數量】。
+- **目標類型**：效果建立時是否需要選取 self、選取方式與種類；取值「無目標 / 新選顧客 / 沿用顧客 / 隨機顧客 / 新選手牌 / 沿用手牌 / 隨機手牌」，詳見【八、目標類型】。
+- **立即命令**：立即類型效果於觸發條件成立時執行的命令。
+- **結束命令**：觸發 / 常駐類型效果離開效果佇列或堆疊層數減少時執行的命令。
+- **結束回合**：效果於效果佇列中預定離開的回合數（作用回合 = 0 時設為 0，代表整場營業保留）。
+- **結算旗標**：控制「執行命令」末尾是否再次呼叫「執行結算」，避免結算遞迴。
+- **編號**：資料的唯一識別碼；命名為「主體 + 編號」（如 `卡牌編號`、`顧客編號`、`技能編號`、`效果編號`、`卡牌編號`）。
+- **耐心值**：顧客的屬性，關聯生氣離場；不可為負，運算後低於 0 時夾為 0。
+- **耐心技能**：顧客資料.耐心技能列表中、由耐心門檻命中加入行動佇列的門檻技能；行動類型 = 耐心；於顧客行動階段彈出後啟動（受封印耐心技能閘門控制）。
+- **耐心門檻**：耐心值的階段門檻線（耐心值 ≤ 門檻時觸發）。
+- **行動**：行動佇列中的元素；由「顧客 + 行動類型 + 技能編號」組成（行動類型 = 飽食 / 耐心），於顧客行動階段彈出並啟動技能。
+- **行動佇列**：等待結算行動的佇列。
+- **行動類型**：行動的類型（飽食 / 耐心）；於顧客行動階段用以決定封印閘門查 封印飽食技能 或 封印耐心技能。
+- **補牌張數上限**：玩家行動階段補牌的目標張數。
+- **觸發命令**：觸發類型效果於觸發時機與觸發條件皆成立時執行的命令。
+- **觸發次數**：詳見【十二、觸發次數】。
+- **設定表格**：營業開始時載入全域常數（如 餐廳士氣值上限、手牌張數上限、出牌點數上限、補牌張數上限）的靜態表；詳見【四、表格結構｜設定表格】。
+- **變身**：將卡牌實例 `cardID` 改為依抽獎群組 weighted random 選出的新值；同步重設實例編號（舊實例編號歸入失效對象），並依新卡牌資料載入屬性與實例效果列表。
+- **遊蕩列表**：場上正在遊蕩中的顧客集合；由 `guestRoam` 移入、`guestReturn` 移出。不在座位列表中，但仍視為通關條件對象（成功條件需 `遊蕩列表 <= 0`）；耐心結算照常運作（耐心 -1、耐心 ≤ 0 仍生氣離場），飽食結算因 `self.sate` 鎖定而不會命中。顧客類命令對象（`guestAll` / `guestPick` 等）不會命中遊蕩列表中的顧客。
+- **鄰桌**：以【四、表格結構｜座位（Seat）表格】的 `鄰桌座位編號列表` 為準（不含自身與同桌）。
+- **桌**：座位表格中桌次編號相同的座位集合所構成的邏輯單位；不是一級實例。
+- **桌次編號**：座位表格欄位；同桌次的座位視為同一桌。
+- **鎖定計數**：屬性的鎖定狀態計數；> 0 時屬性視為已鎖定，一般運算對其為 no-op。
+- **門檻技能**：飽食 / 耐心門檻命中時加入行動佇列的技能。
+- **階段**：營業的執行階段；依序為 營業開始 / 回合開始 / 玩家行動 / 顧客行動 / 回合結束，終止時轉入 營業成功 / 營業失敗；詳見【十九、核心流程】。
+- **額外發動次數上限**：卡牌的屬性；玩家出牌時額外發動次數隨機區間的上限。
+- **額外發動次數下限**：卡牌的屬性；玩家出牌時額外發動次數隨機區間的下限。
+- **顧客卡牌化**：由 `cardify` 命令使顧客自座位列表移至卡牌化列表的狀態；同時於玩家手牌生成 1 張綁定該顧客的卡牌（cardID = 命令指定、自動 `不棄卡牌`）；顧客進入「全凍結狀態」（詳見【三、名詞列表｜卡牌化列表】）。
+- **顧客回座**：由 `guestReturn` 命令將遊蕩中的顧客移回座位列表；`剩餘座位 = 0` 時走生氣離場路徑。
+- **顧客行動技能**：於「顧客行動階段」自行動佇列彈出後啟動的技能。
+- **顧客資料**：顧客的靜態定義；屬性詳見【四、表格結構｜顧客（Guest）表格】。
+- **顧客遊蕩**：由 `guestRoam` 命令使顧客自座位列表移至遊蕩列表的狀態；入列時 `self.sate` / `self.sateSeal` / `self.calmSeal` 鎖定計數各 + 1（飽食值不可變、飽食 / 耐心技能彈出時被封印閘門跳過）。
+- **顧客離場**：觸發 `exitAny` 的離場統稱；由結算流程（飽食 / 耐心）或 `guestExit` 命令觸發；任一路徑於自所在容器（座位列表 / 遊蕩列表）移除前皆觸發 `exitAny`，依路徑可同時搭配 `exitSate` / `exitCalm`（互不互斥），移除後觸發 `exitDone`。
+- **飽食值**：顧客的屬性，關聯飽食離場；不可為負，運算後低於 0 時夾為 0。
+- **飽食值離場線**：顧客的屬性，飽食值達到此值時觸發飽食離場；建立顧客實例時自顧客資料載入，可被命令增減。
+- **飽食技能**：顧客資料.飽食技能列表中、由飽食門檻命中加入行動佇列的門檻技能；行動類型 = 飽食；於顧客行動階段彈出後啟動（受封印飽食技能閘門控制）。
+- **飽食門檻**：飽食值的階段門檻線。
+- **飽食離場**：觸發 `exitSate` 的離場路徑；由結算流程飽食達線、或 `guestExit(..., 是否給滿意值=true, ...)` 觸發；自所在容器（座位列表 / 遊蕩列表）移除並提供餐廳滿意值。
+- **餐廳士氣值**：餐廳的全域屬性；範圍 `0 ~ 餐廳士氣值上限`，運算後超出此範圍時夾在邊界。
+- **餐廳士氣值上限**：餐廳士氣值的上限值；於營業開始時自設定表格載入，可被命令增減。
+- **餐廳士氣值格擋**：餐廳的全域屬性；每 1 點抵擋 1 次「餐廳士氣值 `-=`」運算（無視扣減值），優先於餐廳士氣值護盾消耗，下限夾 0。
+- **餐廳士氣值護盾**：餐廳的全域屬性；扣減「餐廳士氣值」時優先消耗，下限夾 0。
+- **餐廳滿意值**：餐廳的全域屬性。
+
+---
+
+## 四、表格結構
+
+### 設定表格
+
+> 定義營業開始時載入的全域設定值。
+
+| 中文名稱       | 英文名稱  | 取值 | 說明                           |
+|:---------------|:----------|:-----|:-------------------------------|
+| 回合上限       | RoundMax  | 數字 | 一場營業允許的回合上限         |
+| 餐廳士氣值     | Morale    | 數字 | 營業開始時的餐廳士氣值初值     |
+| 餐廳士氣值上限 | MoraleMax | 數字 | 餐廳士氣值的上限               |
+| 出牌點數上限   | EnergyMax | 數字 | 玩家每回合可用以出牌的點數上限 |
+| 手牌張數上限   | HandMax   | 數字 | 手牌允許的最大張數             |
+| 補牌張數上限   | DrawMax   | 數字 | 玩家行動階段補牌的目標張數     |
+
+### 座位（Seat）表格
+
+| 中文名稱         | 英文名稱   | 取值        | 說明                                             |
+|:-----------------|:-----------|:------------|:-------------------------------------------------|
+| 座位編號         | ID         | 數字        | 座位的唯一識別碼；對應 `self.seatID` 值域        |
+| 桌次編號         | TableID    | 數字        | 該座位所屬桌次的識別碼；同桌次編號的座位視為同桌 |
+| 同桌座位編號列表 | SameSeatID | `N1,N2,...` | 同桌座位編號集合（含自身）                       |
+| 鄰桌座位編號列表 | NearSeatID | `N1,N2,...` | 鄰桌座位編號集合（不含自身與同桌）               |
+
+- 同桌 / 鄰桌列表須與桌次編號自洽（同桌列表內所有編號的桌次相等；鄰桌列表內無自身與同桌成員）。
+- 該表為靜態定義，執行期不變動。
+
+### 抽獎（Award）表格
+
+| 中文名稱     | 英文   | 取值  | 說明                                   |
+|:-------------|:-------|:------|:---------------------------------------|
+| 流水號       | ID     | 數字  | 抽獎紀錄的唯一識別碼                   |
+| 抽獎群組編號 | Group  | 數字  | 抽獎群組的識別碼（同群組多筆紀錄共用） |
+| 卡牌編號     | CardID | 數字  | 該筆紀錄的卡牌編號                     |
+| 權重         | Weight | `0~N` | 抽獎時的相對權重                       |
+
+- 同抽獎群組編號的紀錄依權重做 weighted random 選 1 個卡牌編號。
+- 群組總權重 = 0 時視為該群組無有效紀錄；引用此群組的命令該項 no-op。
+
+### 卡牌（Card）表格
+
+| 中文名稱         | 英文名稱    | 取值      | 說明                                                                              |
+|:-----------------|:------------|:----------|:----------------------------------------------------------------------------------|
+| 卡牌編號         | ID          | 數字      | 卡牌的唯一識別碼                                                                  |
+| 卡牌名稱         | Name        | 字串      | 卡牌名稱                                                                          |
+| 卡牌群組編號     | Group       | `0` / `N` | 卡牌所屬的卡牌群組編號；`0` 代表未指派群組                                        |
+| 出牌費用         | Cost        | `0~N`     | 出牌時自出牌點數扣除的數值                                                        |
+| 額外發動次數下限 | ExtraRunMin | `0~N`     | 出牌時額外發動次數的隨機區間下限                                                  |
+| 額外發動次數上限 | ExtraRunMax | `0~N`     | 出牌時額外發動次數的隨機區間上限                                                  |
+| 不棄卡牌         | Keep        | 布林      | 是否預設不棄（卡牌實例化時 不棄卡牌 鎖定計數載入：true → 1, false → 0）         |
+| 封印卡牌         | Seal        | 布林      | 是否預設封印（卡牌實例化時 封印卡牌 鎖定計數載入：true → 1, false → 0）         |
+| 出牌後流放       | PlayExile   | 布林      | 是否預設出牌後流放（卡牌實例化時 出牌後流放 鎖定計數載入：true → 1, false → 0） |
+| 未出牌流放       | UnplayExile | 布林      | 是否預設未出牌流放（卡牌實例化時 未出牌流放 鎖定計數載入：true → 1, false → 0） |
+| 技能編號         | SkillID     | 數字      | 卡牌實例化時，以該技能效果列表作為實例效果列表初值                                |
+
+### 顧客（Guest）表格
+
+| 中文名稱     | 英文名稱    | 取值                                 | 說明                                                                                  |
+|:-------------|:------------|:-------------------------------------|:--------------------------------------------------------------------------------------|
+| 顧客編號     | ID          | 數字                                 | 顧客的唯一識別碼                                                                      |
+| 顧客名稱     | Name        | 字串                                 | 顧客名稱                                                                              |
+| 滿意值       | Score       | `0~N`                                | 滿意值的初值                                                                          |
+| 滿意值上限   | ScoreMax    | `0~N`                                | 滿意值的上限                                                                          |
+| 士氣值       | Morale      | `0~N`                                | 士氣值的初值                                                                          |
+| 士氣值上限   | MoraleMax   | `0~N`                                | 士氣值的上限                                                                          |
+| 飽食值離場線 | SateMax     | `1~N`                                | 飽食值的離場線                                                                        |
+| 耐心值       | Calm        | `0~N`                                | 顧客初始耐心值                                                                        |
+| 封印飽食技能 | SateSeal    | 布林                                 | 是否預設封印飽食技能（顧客實例化時 封印飽食技能 鎖定計數載入：true → 1, false → 0） |
+| 封印耐心技能 | CalmSeal    | 布林                                 | 是否預設封印耐心技能（顧客實例化時 封印耐心技能 鎖定計數載入：true → 1, false → 0） |
+| 飽食技能列表 | SateSkillID | `飽食值^技能編號,飽食值^技能編號...` | 飽食門檻與門檻技能的配對列表                                                          |
+| 耐心技能列表 | CalmSkillID | `耐心值^技能編號,耐心值^技能編號...` | 耐心門檻與門檻技能的配對列表                                                          |
+
+### 技能（Skill）表格
+
+| 中文名稱     | 英文名稱 | 取值      | 說明                                                           |
+|:-------------|:---------|:----------|:---------------------------------------------------------------|
+| 技能編號     | ID       | 數字      | 技能的唯一識別碼                                               |
+| 技能名稱     | Name     | 字串      | 技能名稱                                                       |
+| 技能圖示     | Icon     | 字串      | 技能於介面上顯示的圖示（卡牌面、行動佇列、技能列表等）         |
+| 技能群組編號 | Group    | `0` / `N` | 技能所屬的技能群組編號；`0` 代表未指派群組；供顧客技能免疫使用 |
+| 效果編號列表 | EffectID | 數字集合  | 此技能引用的效果編號多重集合（允許同一效果編號重複出現）       |
+
+### 效果（Effect）表格
+
+| 中文名稱     | 英文名稱       | 取值                                                                     | 說明                                       |
+|:-------------|:---------------|:-------------------------------------------------------------------------|:-------------------------------------------|
+| 效果編號     | ID             | 數字                                                                     | 效果的唯一識別碼                           |
+| 效果名稱     | Name           | 字串                                                                     | 效果名稱                                   |
+| 效果類型     | Type           | 立即 / 觸發 / 常駐                                                       | 詳見【七、效果類型】                       |
+| 效果群組編號 | Group          | `0` / `N`                                                                | 效果所屬的效果群組編號；`0` 代表未指派群組 |
+| 目標類型     | TargetType     | 無目標 / 新選顧客 / 沿用顧客 / 隨機顧客 / 新選手牌 / 沿用手牌 / 隨機手牌 | 詳見【八、目標類型】                       |
+| 目標數量     | TargetCount    | `1~N`                                                                    | 詳見【九、目標數量】                       |
+| 觸發時機     | TriggerType    | 列舉                                                                     | 詳見【十、觸發時機】                       |
+| 觸發條件     | TriggerCond    | 字串                                                                     | 詳見【十一、觸發條件】                     |
+| 觸發次數     | TriggerCount   | 字串                                                                     | 詳見【十二、觸發次數】                     |
+| 觸發後行為   | TriggerAfter   | 保留 / 移除                                                              | 詳見【十三、觸發後行為】                   |
+| 作用回合     | RunRound       | `0` / `N`                                                                | 詳見【十四、作用回合】                     |
+| 作用順序     | RunOrder       | `0~999999`                                                               | 詳見【十五、作用順序】                     |
+| 堆疊層數     | Stack          | `0~N`                                                                    | 詳見【十六、堆疊規則】                     |
+| 堆疊上限     | StackMax       | `0` / `1` / `N`                                                          | 詳見【十六、堆疊規則】                     |
+| 堆疊時間     | StackTime      | 不變 / 刷新                                                              | 詳見【十六、堆疊規則】                     |
+| 立即命令     | CommandImmed   | 字串                                                                     | 詳見【七、效果類型】                       |
+| 觸發命令     | CommandTrigger | 字串                                                                     | 詳見【七、效果類型】                       |
+| 啟動命令     | CommandStart   | 字串                                                                     | 詳見【七、效果類型】                       |
+| 結束命令     | CommandEnd     | 字串                                                                     | 詳見【七、效果類型】                       |
+
+各欄位適用類型矩陣（v 表示該類型使用此欄位）：
+
+| 中文名稱     | 立即 | 觸發 | 常駐 |
+|:-------------|:----:|:----:|:----:|
+| 效果群組編號 |      |  v   |  v   |
+| 目標類型     |  v   |  v   |  v   |
+| 目標數量     |  v   |  v   |  v   |
+| 觸發時機     |      |  v   |      |
+| 觸發條件     |  v   |  v   |      |
+| 觸發次數     |  v   |  v   |      |
+| 觸發後行為   |      |  v   |      |
+| 作用回合     |      |  v   |  v   |
+| 堆疊層數     |      |  v   |  v   |
+| 堆疊上限     |      |  v   |  v   |
+| 堆疊時間     |      |  v   |  v   |
+| 立即命令     |  v   |      |      |
+| 觸發命令     |      |  v   |      |
+| 啟動命令     |      |      |  v   |
+| 結束命令     |      |  v   |  v   |
+
+---
+
+## 五、實例結構
+
+### 數值（Value）實例
+
+執行期可變屬性的統一容器；後續各 實例 中標註為「數值實例」的欄位皆為此結構。
+
+| 中文名稱 | 英文  | 說明                                                                   |
+|:---------|:------|:-----------------------------------------------------------------------|
+| 數值     | Value | 屬性當前數值（整數）；可被 屬性修改命令 一般運算（`= += -= *= /= %=`） |
+| 鎖定計數 | Lock  | 屬性鎖定狀態計數；由 `@` / `#` 控制；> 0 時一般運算對該屬性為 no-op    |
+
+- 純計數型屬性的 數值 欄固定為 0，狀態完全表達於鎖定計數；詳見【二十三、屬性清單】中 `@ #` 欄屬性。
+
+### 營業（Game）實例
+
+| 中文名稱       | 英文         | 類型     | 說明                                                                                                                                            |
+|:---------------|:-------------|:---------|:------------------------------------------------------------------------------------------------------------------------------------------------|
+| 餐廳士氣值     | Morale       | 數值實例 | 餐廳的全域屬性；數值初值取自設定表格                                                                                                            |
+| 餐廳士氣值上限 | MoraleMax    | 數值實例 | 餐廳士氣值的上限；數值初值取自設定表格                                                                                                          |
+| 餐廳士氣值護盾 | MoraleShield | 數值實例 | 餐廳的全域屬性；扣減餐廳士氣值時優先消耗，下限夾 0                                                                                              |
+| 餐廳士氣值格擋 | MoraleBlock  | 數值實例 | 餐廳的全域屬性；每 1 點抵擋 1 次「餐廳士氣值 `-=`」（無視扣減值），優先於餐廳士氣值護盾消耗，下限夾 0                                           |
+| 餐廳滿意值     | Score        | 數值實例 | 餐廳的全域屬性（玩家營業獎勵貨幣）                                                                                                              |
+| 出牌點數       | Energy       | 數值實例 | 玩家當回合可用以出牌的點數                                                                                                                      |
+| 出牌點數上限   | EnergyMax    | 數值實例 | 出牌點數的上限；數值初值取自設定表格                                                                                                            |
+| 出牌點數保留   | EnergyKeep   | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 跨回合保留 `出牌點數`（回合結束跳過 `出牌點數 = 0` 的清零）                                                       |
+| 手牌張數上限   | HandMax      | 數值實例 | 手牌允許的最大張數；數值初值取自設定表格                                                                                                        |
+| 補牌張數上限   | DrawMax      | 數值實例 | 玩家行動階段補牌的目標張數；數值初值取自設定表格                                                                                                |
+| 下一階段       | NextPhase    | 列舉     | 跳轉目標階段名稱；合法值 `'玩家行動'` / `'顧客行動'` / `'回合結束'` / `''`；以 `phaseJump` 命令設定（不含 `''`）；階段轉移時系統自動清除為 `''` |
+| 回合           | Round        | 數字     | 當前回合數                                                                                                                                      |
+| 回合上限       | RoundMax     | 數字     | 一場營業允許的回合上限；數值初值取自設定表格                                                                                                    |
+| 士氣受損值     | DamageValue  | 數字     | 最近一次餐廳士氣值實際扣減值；觸發 `damage` 時更新                                                                                              |
+| 士氣受損顧客   | DamageGuest  | 引用     | 最近一次造成餐廳士氣值實際扣減的顧客；無顧客來源時為空物件                                                                                      |
+| 最後入座顧客   | SeatLast     | 引用     | 顧客實例；每 `guestSeat` 觸發時更新                                                                                                             |
+| 回合入座人數   | SeatCount    | 數字     | 每 `guestSeat` 觸發時 +1；回合開始時歸零                                                                                                        |
+| 最後離場顧客   | ExitLast     | 引用     | 顧客實例；每 `exitAny` 觸發時更新（涵蓋 exitSate / exitCalm）                                                                                   |
+| 最後離場座位   | ExitLastSeat | 數字     | 每 `exitAny` 觸發時更新為 該顧客.seatID（自遊蕩列表離場者為 0）                                                                                 |
+| 回合離場人數   | ExitCount    | 數字     | 每 `exitAny` 觸發時 +1；回合開始時歸零                                                                                                          |
+| 最後行動顧客   | TaskGuest    | 引用     | 顧客實例；每 `guestTask` 觸發時更新                                                                                                             |
+| 最後行動技能   | TaskSkill    | 數字     | 技能編號；每 `guestTask` 觸發時更新                                                                                                             |
+| 回合行動次數   | TaskCount    | 數字     | 每 `guestTask` 觸發時 +1；回合開始時歸零                                                                                                        |
+| 最後抽出卡牌   | DrawLast     | 引用     | 卡牌實例；每 `cardDraw` 觸發時更新                                                                                                              |
+| 回合抽牌張數   | DrawCount    | 數字     | 每 `cardDraw` 觸發時 +1；回合開始時歸零                                                                                                         |
+| 累積抽牌張數   | DrawTotal    | 多重集合 | 自營業開始累積至今，按 `cardGroup` 分組的張數；每 `cardDraw` 觸發時對應 bucket +1；營業開始時清零                                               |
+| 最後棄置卡牌   | DropLast     | 引用     | 卡牌實例；每 `cardDrop` 觸發時更新                                                                                                              |
+| 回合棄牌張數   | DropCount    | 數字     | 每 `cardDrop` 觸發時 +1；回合開始時歸零                                                                                                         |
+| 累積棄牌張數   | DropTotal    | 多重集合 | 自營業開始累積至今，按 `cardGroup` 分組的張數；每 `cardDrop` 觸發時對應 bucket +1；營業開始時清零                                               |
+| 最後出牌卡牌   | PlayLast     | 引用     | 卡牌實例；每 `cardPlay` 觸發時更新                                                                                                              |
+| 回合出牌張數   | PlayCount    | 數字     | 每 `cardPlay` 觸發時 +1；回合開始時歸零                                                                                                         |
+| 累積出牌張數   | PlayTotal    | 多重集合 | 自營業開始累積至今，按 `cardGroup` 分組的張數；每 `cardPlay` 觸發時對應 bucket +1；營業開始時清零                                               |
+| 最後流放卡牌   | ExileLast    | 引用     | 卡牌實例；每 `cardExile` 觸發時更新                                                                                                             |
+| 回合流放張數   | ExileCount   | 數字     | 每 `cardExile` 觸發時 +1；回合開始時歸零                                                                                                        |
+| 累積流放張數   | ExileTotal   | 多重集合 | 自營業開始累積至今，按 `cardGroup` 分組的張數；每 `cardExile` 觸發時對應 bucket +1；營業開始時清零                                              |
+| 最後變身卡牌   | MorphLast    | 引用     | 卡牌實例；每 `cardMorph` 觸發時更新                                                                                                             |
+| 回合變身次數   | MorphCount   | 數字     | 每 `cardMorph` 觸發時 +1；回合開始時歸零                                                                                                        |
+| 變身前卡牌編號 | MorphOldID   | 數字     | 上一次變身前的 `cardID`；每 `cardMorph` 觸發時更新                                                                                              |
+| 變身後卡牌編號 | MorphNewID   | 數字     | 上一次變身後的 `cardID`；每 `cardMorph` 觸發時更新                                                                                              |
+
+### 卡牌（Card）實例
+
+| 中文名稱         | 英文        | 類型     | 說明                                                                                                                                |
+|:-----------------|:------------|:---------|:------------------------------------------------------------------------------------------------------------------------------------|
+| 實例編號         | InstanceID  | 數字     | 實例的唯一識別碼                                                                                                                    |
+| 卡牌編號         | CardID      | 數字     | 引用對應卡牌資料                                                                                                                    |
+| 出牌費用         | Cost        | 數值實例 | 出牌時自出牌點數扣除的數值；數值初值取自卡牌資料                                                                                    |
+| 額外發動次數下限 | ExtraRunMin | 數值實例 | 出牌時額外發動次數隨機區間下限；數值初值取自卡牌資料.額外發動次數下限                                                               |
+| 額外發動次數上限 | ExtraRunMax | 數值實例 | 出牌時額外發動次數隨機區間上限；數值初值取自卡牌資料.額外發動次數上限                                                               |
+| 不棄卡牌         | Keep        | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 玩家手動結束時不棄置；鎖定計數初值由 卡牌資料.不棄卡牌 載入                                           |
+| 封印卡牌         | Seal        | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 該卡牌不可出牌；鎖定計數 初值由 卡牌資料.封印卡牌 載入                                                |
+| 出牌後流放       | PlayExile   | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 玩家出牌後移至流放牌堆而非棄牌牌堆；鎖定計數初值由 卡牌資料.出牌後流放 載入                           |
+| 未出牌流放       | UnplayExile | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 玩家手動結束處理剩餘手牌時必定移至流放牌堆（優先於不棄卡牌）；鎖定計數初值由 卡牌資料.未出牌流放 載入 |
+| 實例效果列表     | EffectID    | 集合     | 當前持有的效果編號多重集合；初值取自卡牌技能                                                                                        |
+| 卡牌化來源顧客   | Cardify     | 引用     | 引用卡牌化來源的顧客實例；初值 none；由 `cardify` 命令設定、`restore` 命令清除                                                      |
+
+### 顧客（Guest）實例
+
+| 中文名稱       | 英文         | 類型     | 說明                                                                                                              |
+|:---------------|:-------------|:---------|:------------------------------------------------------------------------------------------------------------------|
+| 實例編號       | InstanceID   | 數字     | 實例的唯一識別碼                                                                                                  |
+| 顧客編號       | GuestID      | 數字     | 引用對應顧客資料                                                                                                  |
+| 座位編號       | SeatID       | 數字     | 顧客占用的座位編號；位於遊蕩列表 / 卡牌化列表時為 0                                                               |
+| 滿意值         | Score        | 數值實例 | 數值初值取自顧客資料                                                                                              |
+| 滿意值上限     | ScoreMax     | 數值實例 | 數值初值取自顧客資料                                                                                              |
+| 士氣值         | Morale       | 數值實例 | 數值初值取自顧客資料                                                                                              |
+| 士氣值上限     | MoraleMax    | 數值實例 | 數值初值取自顧客資料                                                                                              |
+| 飽食值         | Sate         | 數值實例 |                                                                                                                   |
+| 耐心值         | Calm         | 數值實例 |                                                                                                                   |
+| 封印飽食技能   | SateSeal     | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 飽食技能封印；鎖定計數初值由 顧客資料.封印飽食技能 載入                             |
+| 封印耐心技能   | CalmSeal     | 數值實例 | 數值固定為 0；鎖定計數 > 0 → 耐心技能封印；鎖定計數初值由 顧客資料.封印耐心技能 載入                             |
+| 已觸發飽食門檻 | SateHit      | 集合     | 已觸發過的飽食門檻集合（避免重複觸發）                                                                            |
+| 已觸發耐心門檻 | CalmHit      | 集合     | 已觸發過的耐心門檻集合（避免重複觸發）                                                                            |
+| 效果免疫群組   | EffectImmune | 集合     | 索引型：效果群組編號 → 鎖定計數；預設空。透過 `effectImmuneAdd` / `effectImmuneDel` 命令調整                     |
+| 技能免疫群組   | SkillImmune  | 集合     | 索引型：技能群組編號 → 鎖定計數；預設空。透過 `skillImmuneAdd` / `skillImmuneDel` 命令調整                       |
+| 凍結起始回合   | Freeze       | 數字     | 由 `cardify` 命令設為當前回合（記錄進入卡牌化列表的回合）；`restore` 解凍時用於計算結束回合延後量，解凍後重置為 0 |
+
+### 效果（Effect）實例
+
+| 中文名稱  | 英文       | 類型 | 說明                                                                  |
+|:----------|:-----------|:-----|:----------------------------------------------------------------------|
+| 實例編號  | InstanceID | 數字 | 實例的唯一識別碼                                                      |
+| 效果編號  | EffectID   | 數字 | 引用對應效果資料                                                      |
+| 結束回合  | Expire     | 數字 | 效果於效果佇列預定離開的回合（作用回合 = 0 時為 0，代表整場營業保留） |
+| 當前層數  | Stack      | 數字 | 當前堆疊到的層數                                                      |
+| self 物件 | Self       | 引用 | 可以是空物件 / 顧客 / 卡牌                                            |
+
+### 行動（Action）實例
+
+| 中文名稱 | 英文     | 類型 | 說明                             |
+|:---------|:---------|:-----|:---------------------------------|
+| 顧客     | Guest    | 引用 | 顧客實例                         |
+| 行動類型 | TaskType | 列舉 | 合法值 `'飽食'` / `'耐心'`       |
+| 技能編號 | SkillID  | 數字 | 顧客行動階段彈出後啟動的技能編號 |
+
+---
+
+## 六、容器結構
+
+> 執行期儲存實例 / 編號的容器集合；單一實例的欄位詳見【五、實例結構】。
+
+| 容器       | 元素     | 順序                     | 說明                                                                                                 |
+|:-----------|:---------|:-------------------------|:-----------------------------------------------------------------------------------------------------|
+| 手牌       | 卡牌實例 | 玩家檢視序               | 【三、名詞列表｜手牌】                                                                               |
+| 抽牌牌堆   | 卡牌實例 | 先進後出（新進入者置頂） | 【三、名詞列表｜抽牌牌堆】                                                                           |
+| 棄牌牌堆   | 卡牌實例 | 先進後出（新進入者置頂） | 【三、名詞列表｜棄牌牌堆】                                                                           |
+| 流放牌堆   | 卡牌實例 | 先進後出（新進入者置頂） | 【三、名詞列表｜流放牌堆】                                                                           |
+| 排隊佇列   | 顧客實例 | 先進先出                 | 【三、名詞列表｜排隊佇列】                                                                           |
+| 座位列表   | 顧客實例 | 座位編號                 | 【三、名詞列表｜座位列表】                                                                           |
+| 遊蕩列表   | 顧客實例 | 順序無關                 | 【三、名詞列表｜遊蕩列表】                                                                           |
+| 卡牌化列表 | 顧客實例 | 順序無關                 | 【三、名詞列表｜卡牌化列表】                                                                         |
+| 效果佇列   | 效果實例 | 順序無關                 | 處理時依【十五、作用順序】排序；堆疊規則詳見【十六、堆疊規則】；推進 / 清理詳見【二十、獨立流程】    |
+| 行動佇列   | 行動實例 | 先進先出                 | 填入：【二十、獨立流程｜執行結算】（飽食 / 耐心門檻命中）；彈出：【十九、核心流程｜4. 顧客行動階段】 |
+
+---
+
+## 七、效果類型
+
+- **立即**：不進入效果佇列；於**建立當下（目標選定後）**檢查觸發條件，符合則立即執行 立即命令，不符則直接丟棄；不會在後續觸發時機重新檢查。
+- **觸發**：進入效果佇列；當觸發時機與觸發條件皆符合時，執行 觸發命令；離開佇列（作用回合結束或被移除）時執行 結束命令。
+- **常駐**：進入效果佇列，以生命週期語意運作——加入佇列時執行 啟動命令，離開佇列（作用回合結束或被移除）時執行 結束命令。
+
+---
+
+## 八、目標類型
+
+用以指定此效果建立時是否需要選取 self、選取方式與種類，包含以下項目：
+
+- **無目標**：不須選取 self；命令中 `self` 為空物件。
+- **新選顧客**：建立效果時暫停流程，等玩家手動選取顧客作為 self；每位選取的顧客各自建立一個效果，該效果的 self 即為此顧客。
+- **沿用顧客**：建立效果時繼承同一啟動技能流程內前一個效果的 self；若前一個不存在、型別不符（前一個是無目標 / 手牌類），退化為「新選顧客」。
+- **隨機顧客**：建立效果時系統隨機選取顧客作為 self；每位選取的顧客各自建立一個效果，該效果的 self 即為此顧客。
+- **新選手牌**：建立效果時暫停流程，等玩家手動選取手牌作為 self；每張選取的手牌各自建立一個效果，該效果的 self 即為此手牌。
+- **沿用手牌**：建立效果時繼承同一啟動技能流程內前一個效果的 self；若前一個不存在、型別不符（前一個是無目標 / 顧客類），退化為「新選手牌」。
+- **隨機手牌**：建立效果時系統隨機選取手牌作為 self；每張選取的手牌各自建立一個效果，該效果的 self 即為此手牌。
+
+### self 失效
+
+- **顧客 / 手牌類型**：self 已固定後，若 self 對象失效（顧客離場、卡牌實例自本場移除），該效果失效；常駐 / 觸發效果依【二十、獨立流程｜清理效果】處理。
+- **無目標類型**：self 從建立起即為空物件，命令引用 `self` 時無命令對象可作用、視為 no-op；不適用本節失效規則。
+
+### 與命令對象的區別
+
+目標類型與命令對象（詳見【二十四、命令對象清單】）常被混為一談，實際上位於不同層、不同時機運作：
+
+- **目標類型**：效果規格欄位；效果建立時為該效果綁定一個 self（顧客 / 手牌 / 空物件）。屬於 **效果層** 設計。
+- **命令對象**：每個命令各自指定；命令執行時解析這次要作用的對象集合。屬於 **命令層** 設計。
+
+兩者僅在命令對象屬於 `self` 系列時才產生依賴：
+
+- `self` / `selfNear` / `selfSame` → 以目標類型綁定的 self 為起點解析。
+- 其餘命令對象（`guestAll`、`handPick`、`drawLast` …）→ 與目標類型無關，獨立解析。
+
+思考順序建議：
+
+1. 先決定此效果要綁什麼 self → 設目標類型。
+2. 再決定每個命令要作用到誰 → 各命令各設命令對象，可選用 `self` 系列、亦可用其他來源。
+
+進階差異（fan-out 行為）詳見【二十四、命令對象清單｜命令對象路徑 vs 目標類型路徑（區分指引）】。
+
+---
+
+## 九、目標數量
+
+用以指定此效果建立時須選取的目標數量（`1~N`）。
+
+- 目標類型為「無目標」「沿用顧客」「沿用手牌」時，目標數量不會起作用（取值不影響流程）。
+  - 沿用類型完整繼承前一個效果的 self（可能多個），不受本次目標數量約束。
+- 目標類型為「新選顧客」「新選手牌」「隨機顧客」「隨機手牌」時，目標數量代表須選取的目標數量（候選多於此數時須選滿、不得少選）；**每個選取的目標各自建立一個效果**，該效果的 self 即為此目標（1 個顧客或 1 張手牌）。
+- **退化規則**（「新選XX」與「隨機XX」適用）：建立時若當前可選對象數量小於或等於「目標數量」，直接以當前可選的全部對象作為選取結果。
+  - 例：目標數量 = 3、手牌僅有 2 張 → 建立 2 個效果，每個 self 各為其中 1 張手牌。
+  - 例：目標數量 = 2、場上無顧客 → 不建立任何效果。
+
+---
+
+## 十、觸發時機
+
+【十九、核心流程】中會訂定數個觸發時機，效果可於執行流程到達該時機時觸發。
+
+- 觸發時機僅作為**時間訊號**，不攜帶任何資料；條件對象 / 命令對象均由 self 與全域屬性提供。
+- 具體時機點清單詳見【二十二、觸發時機清單】。
+
+---
+
+## 十一、觸發條件
+
+觸發條件採用【二十七、運算式】定義的完整運算式（含算術 + 比較 + 邏輯）。
+
+評估失敗 → **條件不成立**（不觸發），不視為錯誤。
+
+---
+
+## 十二、觸發次數
+
+觸發次數採用【二十七、運算式】定義的 `<算術式>`（不含邏輯運算）。
+
+- 留空 → 默認 `1`
+- 結果 < 0、評估失敗 → 視為 `0`
+- 結果 = 0 → 視為條件不成立（不觸發、不執行命令）
+
+每次觸發 觸發命令 連續執行 (堆疊層數 × 觸發次數) 次；結束命令 不受影響（仍只依堆疊層數）。
+
+---
+
+## 十三、觸發後行為
+
+- **保留**：效果觸發後保留於效果佇列中。
+- **移除**：效果觸發後從效果佇列中移除。
+
+僅 觸發 類型適用；立即類型不進入佇列，常駐類型沒有「觸發」概念（採生命週期語意），皆不適用。
+
+---
+
+## 十四、作用回合
+
+- `0`：整場營業
+- `N`（>0）：持續 N 個回合（建立回合計為第 1 回合，於第 (建立回合 + N − 1) 回合的回合結束時推進移除）
+
+立即類型不讀取此欄位（填寫 0 / N / 留空皆可），解析時忽略。
+
+---
+
+## 十五、作用順序
+
+處理效果佇列相關流程時，依此值排出順序——數字越大越先執行（範圍 `0~999999`）。當作用順序相同時，再以效果編號小者優先決定先後。
+
+啟動技能時不使用作用順序排序，依技能 / 實例效果列表的撰寫順序逐一處理。
+
+---
+
+## 十六、堆疊規則
+
+堆疊層數（控制每次進行堆疊時要增加的層數，不會超過堆疊上限）：
+
+- `0` / `1`：每次堆 1 層
+- `N`（>1）：每次堆 N 層
+
+堆疊上限：
+
+- `0`：可堆疊，無上限
+- `1`：最多 1 層（再次堆疊不會增加層數）
+- `N`（>1）：可堆疊，最多 N 層
+
+堆疊時間（控制再次堆疊時的作用回合處理方式）：
+
+- **不變**：保留原本剩餘的作用回合
+- **刷新**：重置作用回合為初始值
+
+堆疊語意：
+
+- **常駐類型**：每加一層執行一次 啟動命令，每退一層執行一次 結束命令。
+- **觸發類型**：執行時會連續執行 N 次 觸發命令；離開佇列時連續執行 N 次 結束命令。
+- 再次堆疊時，作用回合依「堆疊時間」處理（不變或刷新）。
+- 已達堆疊上限時，再次堆疊**不會增加層數**（但作用回合仍依「堆疊時間」處理）。
+- 再次建立效果時，需判斷是否為佇列中既有效果的同一份；同一份則執行堆疊，否則作為新效果加入佇列。
+
+---
+
+## 十七、命令
+
+命令分為兩類，依語意採用不同語法：
+
+### 1. 屬性修改命令
+
+對既有屬性進行賦值或數值運算，採複合賦值語法：
+
+```
+<左值> <賦值符> [<算術式>]
+```
+
+- 左值：左值不會帶 `()`，與動作呼叫命令以此區隔。允許範圍：
+  - 全域屬性：【二十三、屬性清單】主表 類別欄為「全域」且 存取欄非空者
+  - 引用屬性：`<引用>.<屬性>` 寫法，其中
+    - `<引用>` 為【二十三、屬性清單】主表 類別欄為「卡牌引用 / 顧客引用 / 卡牌兼顧客引用」者
+    - `<屬性>` 為對應「卡牌引用屬性」/「顧客引用屬性」sub-table 存取欄非空者
+- 賦值符：`=` `+=` `-=` `*=` `/=` `%=` `@` `#`（半形）
+  - `=` `+=` `-=` `*=` `/=` `%=`：必帶算術式；語意同現實複合賦值（`屬性 += N` 等同「屬性 = 屬性 + N」）。
+  - `@`：鎖定運算符，鎖定計數 `+= 1`；**不帶算術式**。
+  - `#`：解鎖運算符，鎖定計數 `-= 1`；**不帶算術式**。對鎖定計數為 0 的屬性執行 `#` 為 no-op（不會降為負）。
+  - 屬性鎖定計數 > 0 時視為已鎖定，帶值賦值（`=` `+=` `-=` `*=` `/=` `%=`）對該屬性為 no-op。
+  - 鎖定 / 解鎖完全由企劃明文操控，系統不會自動清理計數；常駐效果結束時若未自行解鎖，殘留的鎖定計數會繼續保留。
+- 算術式（RHS）：詳見【二十七、運算式】；可引用整數常數、全域數值屬性、`self.<屬性>`、條件對象。
+- 算術評估失敗 → 本命令 no-op（不寫回、不觸發特例）。
+- 運算順序：先評估算術式得到 N → 依賦值符與屬性套規則 → 結果若為小數一律四捨五入至整數 → 若屬性有範圍 clamp 則夾在邊界 → 寫回屬性。
+- 引用解析語意（左值為引用屬性時）：
+  - 引用解析為空物件 / 型別不符 / 屬性不存在 → 該命令 no-op
+  - 鎖定計數判定（`@` / `#` / 帶值賦值的鎖定夾止）依引用所指對象套用
+- 特例（餐廳士氣值 `-=`）：僅作用於全域 `morale` 左值；對引用屬性的 `-=` 走一般運算。解析得到扣減值 N 後依下列順序消耗（僅 `-=` 適用；`=` / `+=` / `*=` / `/=` / `%=` 不啟動此特例）：
+  - 若 餐廳士氣值格擋 > 0 → 餐廳士氣值格擋 `-= 1`，本次無視 N，結束。
+  - 否則：d = min(N, 餐廳士氣值護盾) → 餐廳士氣值護盾 `-= d` → N `-= d`。
+  - 若 N > 0 → 對餐廳士氣值執行一般 `-= N` 運算，並記錄餐廳士氣值運算前後差值作為實際扣減值。
+  - 若實際扣減值 > 0 → 設置 `damageValue` = 實際扣減值、`damageGuest` = 本次扣減來源顧客（無顧客來源時為空物件），觸發時機：**士氣受損**。
+- 空白：忽略多餘空白
+
+### 2. 動作呼叫命令
+
+執行帶有參數的動作，採函式語法：
+
+```
+<命令>(命令對象, <參數1>, <參數2>, ...)
+```
+
+- 主命令括號：`(` `)`（半形）
+- 命令對象帶參數括號：`[` `]`（半形）
+- 參數分隔：`,`（半形）
+- `命令對象` 為固定的第一個參數，必須填寫；無命令對象時填 `none`。
+- 其餘參數依命令需求填入。
+- **數值型參數**：採用【二十七、運算式】定義的算術式；可引用整數常數、全域數值屬性、`self.<屬性>`、條件對象。
+- 算術評估失敗 → **整個動作 no-op**（單一參數失敗即放棄整個命令）。
+- varargs（可變數量 trailing 參數）：命令尾端依命令定義可接 0 ~ M 個額外參數（如 `handCopy` 的附加效果編號）。
+- 空白：忽略多餘空白
+- **命令對象帶參數**：當命令對象本身帶參數（如 `handPick[N, 卡牌編號]`、`deckTop[N]`），使用 `[` `]` 區隔；整個帶 `[...]` 的命令對象視為第一參數的一個 token；命令對象內部的 `,` 為其本身參數分隔，不與外層 `,` 衝突；**命令對象內部的數值參數同樣採算術式**。
+
+#### 命令對象（第一參數）
+
+可用命令對象詳見【二十四、命令對象清單】。
+
+`self` / `selfSame` / `selfNear` 於效果建立時即固定，後續執行皆使用此固定的命令對象；其他命令對象於每次執行時重新解析。
+
+「指定 xxx」中斷規則、退化規則、filter 規則詳見【二十四、命令對象清單】。
+
+### 3. 範例
+
+#### 屬性修改命令
+
+- `攻擊力 = 10`
+  → 攻擊力設為 10
+- `血量 += 5`
+  → 血量加 5
+- `防禦力 *= 2`
+  → 防禦力乘以 2
+- `攻擊力 += self.sate / 2`
+  → 攻擊力加「self.sate 的一半」（算術式內含 self 屬性 + 整數除法四捨五入）
+- `morale -= self.score * 2`
+  → 餐廳士氣值扣「self.score 的兩倍」，觸發 `-=` 特例（依格擋 → 護盾 → morale 順序消耗）
+- `攻擊力 @`
+  → 鎖定攻擊力於當前值
+- `攻擊力 #`
+  → 解除攻擊力鎖定（保留當前值）
+- `damageGuest.sate += damageValue`
+  → 把本次士氣受損值加到肇事顧客的飽食值（damage 時機；無顧客來源時 damageGuest 為空 → no-op）
+- `drawLast.cardSeal @`
+  → 把最近抽進手牌的卡牌封印
+
+#### 動作呼叫命令
+
+- `deckToHand(deckTop[2], false)`
+  → 從抽牌牌堆頂端取 2 張加入手牌（不洗牌）；deck 不足且 drop 有卡時自動洗牌補回
+- `handAdd(none, 10031, 1)`
+  → 依卡牌編號 10031 實例化 1 張新卡牌加入手牌
+- `deckToHand(deckTop[drawMax - 2], false)`
+  → 從抽牌牌堆頂端取「補牌張數上限 - 2」張加入手牌（算術參數含全域屬性）
+- `deckToHand(deckTop[self.sate / 2 + 1], false)`
+  → 從抽牌牌堆頂端取「self.sate 一半 + 1」張加入手牌（算術參數含 self 屬性）
+- `guestSpawn(none, 顧客編號, exitLastSeat)`
+  → 在最後離場座位產生指定顧客（算術參數含全域屬性）
+- `phaseJump(none, '玩家行動')`
+  → 跳轉至玩家行動階段（字串字面值 `'玩家行動'`）
+- `deckToHand(deckTop[energy / 0], false)`
+  → 算術評估失敗（除 0）→ 整個 deckToHand 不執行
+- `taskAdd(self, '飽食', 30001)`
+  → 將「self（顧客）+ 行動類型 飽食 + 技能編號 30001」加入行動佇列尾端
+- `cardEffectAdd(handPick[1, 0], 20042)`
+  → 對玩家所選 1 張手牌實例（任意編號），於其實例效果列表加入 1 個效果編號 20042
+- `cardEffectDel(self, 20042)`
+  → 對 self（限 self 為卡牌實例時）的實例效果列表，移除 1 個效果編號 20042（卡上無此編號視為 no-op）
+- `cardEffectDelAll(dropRand[1, 0], 20042)`
+  → 對棄牌牌堆中隨機 1 張卡牌實例（任意編號）的實例效果列表，移除全部效果編號 20042
+
+具體命令項目將於後續訂定。
+
+---
+
+## 十八、表演資訊
+
+每個效果可填寫自己的表演資訊，執行時與該效果攜帶的對象目標結合，即可在正確的目標上表演。
+其餘細節（如多個效果同時在同一目標表演的順序與時長控制等）之後再討論。
+
+---
+</script>
+
+<script type="text/markdown" id="md-flow-extra">
+### 前置技能的撰寫約束
+
+此階段啟動前置技能時，**座位列表與手牌皆為空**。【八、目標類型】規定 `self` / `selfSame` / `selfNear` 於效果建立時即固定、不隨後續場況更新（退化規則下會直接不建立效果），因此撰寫前置技能時建議：
+
+- **建議使用「無目標」**：此時座位列表與手牌皆空，若目標類型選 新選顧客 / 新選手牌 / 隨機顧客 / 隨機手牌 / 沿用顧客 / 沿用手牌（沿用會退化為新選），當前無可選對象，依退化規則不會建立任何效果。
+- **欲操作後續才出現的顧客或手牌**：請以「觸發效果」掛載至適當觸發時機（如 `顧客入座`、`手牌補充` 等），並於 立即 / 觸發 / 啟動 命令內使用動態命令對象（`全部顧客`、`隨機顧客`、`指定手牌` 等）取得當下命令對象。
+- **可直接於開場進行的操作**：修改全域屬性、加入卡牌至抽牌牌堆或棄牌牌堆等不需引用 `self` 的命令。
+
+### 卡牌技能的撰寫提醒
+
+玩家出牌流程中，**啟動實例效果列表時該卡牌實例仍位於手牌**，待啟動完成後才移至棄牌牌堆。因此：
+
+- `全部手牌` / `隨機手牌` / `指定手牌` 等命令對象會將「正在打出的這張卡牌實例」列入候選，若不希望命中自身需自行排除。
+- 若需以「打出後」的手牌狀態為基準，可改用觸發效果掛載至 `玩家出牌` 時機（該時機卡牌實例已移入棄牌牌堆）。
+- 實例效果列表的內容可能已被命令增刪過（與卡牌資料引用的卡牌技能不一定相同），啟動時以卡牌實例當下的內容為準。
+
+### 結算補充
+
+- **self 失效**：顧客離場 / 卡牌自本場移除後，立即執行清理效果（詳見【二十、獨立流程｜清理效果】）。
+- **行動佇列**：由本流程的飽食 / 耐心門檻步驟動態填充，於「顧客行動階段」彈出消費。
+- **時機 context 過濾**：飽食 / 生氣時機為全局訊號；若效果想表達「自己離場時觸發」，需於觸發條件寫 `self == exitLast`。士氣受損時機可用 `damageGuest` / `damageValue` 取得來源顧客與實際扣減值。其他事件型時機（入座 / 抽牌 / 出牌 / 顧客行動等）比照 `最後入座顧客`、`最後抽出卡牌`、`最後出牌卡牌`、`最後行動顧客` 等屬性，詳見【五、實例結構｜營業（Game）實例】。
+
+### 凍結語意
+
+位於卡牌化列表的顧客 A 進入「全凍結狀態」，作用範圍：
+
+- **屬性凍結**：屬性修改命令（`= / += / -= / *= / /= / %= / @ / #`）作用於 `self == A` 時一律 no-op — 耐心值 / 飽食值 / 滿意值 / 士氣值 / 各上限 / 各封印計數通通不變。
+- **效果凍結**：效果佇列中 self == A 的效果於【觸發時機】【推進效果】【清理效果】流程一律跳過（不觸發、結束回合不推進、不清理）；A 不視為失效對象。
+- **技能凍結**：A 不在【執行結算】「所有顧客」涵蓋範圍內，飽食門檻 / 耐心門檻不會命中，不會加入行動佇列 — 飽食技能 / 耐心技能自然不發動。
+- **指令隔離**：A 不被顧客類命令對象（`guestAll` / `guestPick` / `guestRand` / `nearXxx` / `sameXxx`）命中；也不在【二十、獨立流程｜啟動技能】新選 / 隨機顧客的候選池內。
+
+進入 / 退出由 `cardify` / `restore` 命令控制；解凍時對 A 身上所有 結束回合 > 0 的效果，結束回合 += (當前回合 - A.freeze)，使凍結期間不消耗作用回合。
+</script>
+
+<script type="text/markdown" id="md-back">
+## 二十二、觸發時機清單
+
+| 英文名稱   | 中文名稱   | 所屬階段     | 說明                                                                                                                                     |
+|:-----------|:-----------|:-------------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| gameStart  | 營業開始   | 營業開始階段 | 前置技能啟動後                                                                                                                           |
+| roundReady | 回合準備   | 回合開始階段 | 回合數遞增後、回合開始設置前                                                                                                             |
+| roundStart | 回合開始   | 回合開始階段 | 回合開始設置後                                                                                                                           |
+| guestSeat  | 顧客入座   | 回合開始階段 | 每彈出 1 位顧客入座後                                                                                                                    |
+| cardDraw   | 手牌補充   | 任意         | 每張卡牌進入手牌後                                                                                                                       |
+| userStart  | 玩家開始   | 玩家行動階段 | 補牌完成後                                                                                                                               |
+| userEnd    | 玩家結束   | 玩家行動階段 | 進入玩家行動結束流程後、處理剩餘手牌前（觸發來源：玩家手動結束，或 `下一階段 ∈ {'顧客行動', '回合結束'}`）                              |
+| cardDrop   | 卡牌棄置   | 任意         | 每張卡牌進入棄牌牌堆後                                                                                                                   |
+| cardExile  | 卡牌流放   | 任意         | 每張卡牌進入流放牌堆後                                                                                                                   |
+| cardMorph  | 卡牌變身   | 任意         | 卡牌實例完成變身處理流程（含清理效果）後                                                                                                 |
+| cardPlay   | 玩家出牌   | 任意         | 實例效果列表啟動、卡牌移至棄牌牌堆後                                                                                                     |
+| guestStart | 顧客開始   | 顧客行動階段 | 進入顧客行動階段後                                                                                                                       |
+| guestTask  | 顧客行動   | 顧客行動階段 | 每彈出 1 個行動、啟動顧客行動技能後                                                                                                      |
+| guestEnd   | 顧客結束   | 顧客行動階段 | 行動佇列清空後                                                                                                                           |
+| roundEnd   | 回合結束   | 回合結束階段 | 進入回合結束階段後                                                                                                                       |
+| exitAny    | 顧客離場   | 任意         | 顧客因任何原因離場前（該顧客仍在所在容器）；任何離場路徑（飽食 / 耐心結算、`guestExit` 命令不論旗標）皆觸發；於 exitSate / exitCalm 之前 |
+| exitSate   | 飽食離場   | 任意         | 顧客「提供滿意值離場」前（該顧客仍在所在容器）；飽食結算或 `guestExit(..., 是否給滿意值=true, ...)` 皆觸發                               |
+| exitCalm   | 生氣離場   | 任意         | 顧客「扣士氣離場」前（該顧客仍在所在容器）；耐心結算或 `guestExit(..., ..., 是否扣士氣=true)` 皆觸發                                     |
+| exitDone   | 顧客離場後 | 任意         | 顧客自所在容器移除後、清理效果前；於 `exitAny` / `exitSate` / `exitCalm` 之後；典型用於「接座」類效果（座位已空、`exitLastSeat` 已更新） |
+| damage     | 士氣受損   | 執行命令     | 餐廳士氣值因 `餐廳士氣值 -=` 運算實際扣減後                                                                                              |
+| gameSucc   | 營業成功   | 營業成功階段 | 結算判定 `排隊佇列 <= 0 且 座位列表 <= 0 且 遊蕩列表 <= 0 且 卡牌化列表 <= 0` 後                                                         |
+| gameFail   | 營業失敗   | 營業失敗階段 | 結算判定 `餐廳士氣值 <= 0` 或回合上限觸發後                                                                                              |
+
+- **「任意」階段標示**：表示該時機可在多個階段被觸發，非固定於單一階段。
+- **system-level 自動觸發**：`cardDraw` / `cardDrop` / `cardExile` 由系統在卡牌進入手牌 / 棄牌牌堆 / 流放牌堆時自動觸發；對應事件型屬性（`drawLast` / `drawCount` / `drawTotal` / `dropLast` / `dropCount` / `dropTotal` / `exileLast` / `exileCount` / `exileTotal`）由系統自動更新。流程 / 命令層級不需明文寫出這些觸發與屬性更新。
+- **流程 / 命令明文觸發**：其他時機（`cardPlay` / `userStart` / `damage` / 顧客離場 / 入座 / 行動 / `cardMorph` 等）由對應流程或命令明文觸發；對應事件型屬性（`playLast/Count/Total` / `seatLast/Count` / `exitLast/Count/LastSeat` / `taskCount/Guest/Skill` / `damageGuest/Value` / `morphLast/Count` / `morphOldID` / `morphNewID`）由對應流程或命令明文更新。
+
+---
+
+## 二十三、屬性清單
+
+| 英文名稱          | 中文名稱           | 類別           | 存取 | 時機     | 說明                                                                                                                                                                              |
+|:------------------|:-------------------|:---------------|:----:|:---------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cardifySize       | 卡牌化列表當下大小 | 全域           |      |          | 卡牌化列表當下大小                                                                                                                                                                |
+| damageGuest       | 士氣受損顧客       | 顧客引用       |      | 士氣受損 | 本次造成餐廳士氣值實際扣減的顧客，若非顧客來源則為空物件                                                                                                                          |
+| damageValue       | 士氣受損值         | 全域           |      | 士氣受損 | 本次餐廳士氣值實際扣減值                                                                                                                                                          |
+| deckSize(N)       | 抽牌牌堆卡牌張數   | 全域           |      |          | 查詢函式；抽牌牌堆中卡牌群組編號 = `N` 的卡牌張數；`N == 0` 回傳抽牌牌堆當下大小（不過濾）                                                                                        |
+| drawCount         | 回合抽牌張數       | 全域           |      | 手牌補充 | 每抽 1 張 +1                                                                                                                                                                      |
+| drawLast          | 最後抽出卡牌       | 卡牌引用       |      | 手牌補充 | 每抽 1 張更新                                                                                                                                                                     |
+| drawMax           | 補牌張數上限       | 全域           | 寫鎖 |          | 玩家行動階段補牌的目標張數                                                                                                                                                        |
+| drawTotal(N)      | 累積抽牌張數       | 全域           |      | 手牌補充 | 查詢函式；自營業開始累積至今，cardDraw 事件中 cardGroup == `N` 的張數；`N == 0` 回傳累積總量（不過濾）                                                                            |
+| dropCount         | 回合棄牌張數       | 全域           |      | 卡牌棄置 | 每棄 1 張 +1                                                                                                                                                                      |
+| dropLast          | 最後棄置卡牌       | 卡牌引用       |      | 卡牌棄置 | 每棄 1 張更新                                                                                                                                                                     |
+| dropSize(N)       | 棄牌牌堆卡牌張數   | 全域           |      |          | 查詢函式；棄牌牌堆中卡牌群組編號 = `N` 的卡牌張數；`N == 0` 回傳棄牌牌堆當下大小（不過濾）                                                                                        |
+| dropTotal(N)      | 累積棄牌張數       | 全域           |      | 卡牌棄置 | 查詢函式；自營業開始累積至今，cardDrop 事件中 cardGroup == `N` 的張數；`N == 0` 回傳累積總量（不過濾）                                                                            |
+| energy            | 出牌點數           | 全域           | 寫鎖 |          | 玩家當回合可用以出牌的點數                                                                                                                                                        |
+| energyMax         | 出牌點數上限       | 全域           | 寫鎖 |          | 玩家當回合可用以出牌的點數上限                                                                                                                                                    |
+| energyKeep        | 出牌點數保留       | 全域           |  鎖  |          | 屬性容器，數值固定為 0；鎖定計數 > 0 → 跨回合保留出牌點數（回合結束跳過 出牌點數 清零）                                                                                          |
+| exileCount        | 回合流放張數       | 全域           |      | 卡牌流放 | 每流放 1 張 +1                                                                                                                                                                    |
+| exileLast         | 最後流放卡牌       | 卡牌引用       |      | 卡牌流放 | 每流放 1 張更新                                                                                                                                                                   |
+| exileSize(N)      | 流放牌堆卡牌張數   | 全域           |      |          | 查詢函式；流放牌堆中卡牌群組編號 = `N` 的卡牌張數；`N == 0` 回傳流放牌堆當下大小（不過濾）                                                                                        |
+| exileTotal(N)     | 累積流放張數       | 全域           |      | 卡牌流放 | 查詢函式；自營業開始累積至今，cardExile 事件中 cardGroup == `N` 的張數；`N == 0` 回傳累積總量（不過濾）                                                                           |
+| exitCount         | 回合離場人數       | 全域           |      | 顧客離場 | 每 `exitAny` 觸發 1 次 +1                                                                                                                                                         |
+| exitLast          | 最後離場顧客       | 顧客引用       |      | 顧客離場 | 每 `exitAny` 觸發 1 次更新                                                                                                                                                        |
+| exitLastSeat      | 最後離場座位       | 全域           |      | 顧客離場 | 每 `exitAny` 觸發時更新為 `self.seatID`（自遊蕩列表離場者為 0）                                                                                                                   |
+| guestSize         | 店內顧客當下總數   | 全域           |      |          | 衍生屬性，回傳 `seatSize + waitSize + roamSize + cardifySize`                                                                                                                     |
+| handMax           | 手牌張數上限       | 全域           | 寫鎖 |          | 手牌允許的最大張數                                                                                                                                                                |
+| handSize(N)       | 手牌卡牌張數       | 全域           |      |          | 查詢函式；手牌中卡牌群組編號 = `N` 的卡牌張數；`N == 0` 回傳手牌當下大小（不過濾）                                                                                                |
+| morale            | 餐廳士氣值         | 全域           | 寫鎖 |          | 餐廳的全域屬性（失敗線：≤ 0 時營業失敗）                                                                                                                                         |
+| moraleBlock       | 餐廳士氣值格擋     | 全域           | 寫鎖 |          | 每 1 點抵擋 1 次「餐廳士氣值 `-=`」（無視扣減值），優先於 moraleShield 消耗，下限夾 0                                                                                             |
+| moraleMax         | 餐廳士氣值上限     | 全域           | 寫鎖 |          | 餐廳士氣值的上限                                                                                                                                                                  |
+| moraleShield      | 餐廳士氣值護盾     | 全域           | 寫鎖 |          | 扣減餐廳士氣值時優先消耗，下限夾 0                                                                                                                                                |
+| morphCount        | 回合變身次數       | 全域           |      | 卡牌變身 | 每變身 1 次 +1                                                                                                                                                                    |
+| morphLast         | 最後變身卡牌       | 卡牌引用       |      | 卡牌變身 | 每變身 1 次更新                                                                                                                                                                   |
+| morphNewID        | 變身後卡牌編號     | 全域           |      | 卡牌變身 | 上一次變身後的 `cardID`                                                                                                                                                           |
+| morphOldID        | 變身前卡牌編號     | 全域           |      | 卡牌變身 | 上一次變身前的 `cardID`                                                                                                                                                           |
+| nextPhase         | 下一階段           | 全域           |      |          | 跳轉目標階段名稱（字串；合法值 `'玩家行動'` / `'顧客行動'` / `'回合結束'` / `''`）；唯讀於屬性修改命令，僅可透過 `phaseJump` 命令設定（不含 `''`）；階段轉移時系統自動清除為 `''` |
+| playCount         | 回合出牌張數       | 全域           |      | 玩家出牌 | 每出 1 張 +1                                                                                                                                                                      |
+| playLast          | 最後出牌卡牌       | 卡牌引用       |      | 玩家出牌 | 每出 1 張更新                                                                                                                                                                     |
+| playTotal(N)      | 累積出牌張數       | 全域           |      | 玩家出牌 | 查詢函式；自營業開始累積至今，cardPlay 事件中 cardGroup == `N` 的張數；`N == 0` 回傳累積總量（不過濾）                                                                            |
+| roamSize          | 遊蕩列表當下大小   | 全域           |      |          | 遊蕩列表當下大小                                                                                                                                                                  |
+| round             | 回合               | 全域           |  寫  |          | 當前回合數                                                                                                                                                                        |
+| roundLeft         | 剩餘回合           | 全域           |  寫  |          | 衍生屬性：讀取 = `max(0, 回合上限 - 回合)`；寫入自動轉譯為對 `回合上限` 的調整（例 `剩餘回合 = N` → `回合上限 = 回合 + N`），操作後 clamp 使 `回合上限 ≥ 回合`                  |
+| roundMax          | 回合上限           | 全域           |  寫  |          | 一場營業允許的回合上限                                                                                                                                                            |
+| score             | 餐廳滿意值         | 全域           | 寫鎖 |          | 餐廳的全域屬性（玩家營業獎勵貨幣）                                                                                                                                                |
+| seatCount         | 回合入座人數       | 全域           |      | 顧客入座 | 每入座 1 位 +1                                                                                                                                                                    |
+| seatLast          | 最後入座顧客       | 顧客引用       |      | 顧客入座 | 每入座 1 位更新                                                                                                                                                                   |
+| seatLeft          | 剩餘座位           | 全域           |      |          | 仍可入座的座位數                                                                                                                                                                  |
+| seatSize          | 座位列表當下大小   | 全域           |      |          | 座位列表當下大小                                                                                                                                                                  |
+| self              | 自身               | 卡牌兼顧客引用 |      |          | 效果建立時固定的對象；依【八、目標類型】動態為卡牌 / 顧客 / 空物件；可作為引用使用 dot-syntax                                                                                     |
+| tableCount(op, K) | 桌數查詢           | 全域           |      |          | 查詢函式；回傳桌上人數與 K 滿足 op 比較關係的桌數；詳見【二十七、運算式｜9. 查詢函式】                                                                                            |
+| tableGuest(N)     | 桌次顧客數         | 全域           |      |          | 查詢函式；座位表格中桌次編號 = N 的座位上的顧客數量；`N == 0` 不命中任何桌次                                                                                                      |
+| tableSize         | 桌數總量           | 全域           |      |          | 衍生屬性：座位表格中不同桌次編號的數量                                                                                                                                            |
+| taskCount         | 回合行動次數       | 全域           |      | 顧客行動 | 每行動 1 次 +1                                                                                                                                                                    |
+| taskGuest         | 最後行動顧客       | 顧客引用       |      | 顧客行動 | 每行動 1 次更新                                                                                                                                                                   |
+| taskSize          | 行動佇列當下大小   | 全域           |      |          | 行動佇列當下大小                                                                                                                                                                  |
+| taskSkill         | 最後行動技能       | 全域           |      | 顧客行動 | 每行動 1 次更新                                                                                                                                                                   |
+| waitSize          | 排隊佇列當下大小   | 全域           |      |          | 排隊佇列當下大小                                                                                                                                                                  |
+
+- **本表雙用途**：作為【十一、觸發條件】的條件對象讀取來源，亦作為【十七、命令｜1. 屬性修改命令】的可寫屬性清單。
+- **存取欄取值**：`寫` = 數值，可一般運算但無鎖定計數，運算符 `= += -= *= /= %=`；`寫鎖` = 數值，可一般運算 + 鎖定／解鎖，運算符 `= += -= *= /= %= @ #`；`鎖` = 純計數封印，僅鎖定／解鎖，運算符 `@ #`；空白 = 唯讀（由系統 / 流程管理，不應由屬性修改命令寫入）。
+- **事件型更新時機**:詳見【五、實例結構｜營業（Game）實例】。
+- **離場原因區分**：以觸發時機（飽食離場 / 生氣離場）配合 `self == exitLast` 判斷。
+- **鎖定計數查詢**：存取欄為 `寫鎖` / `鎖` 的屬性，加 `Lock` 後綴取得其鎖定計數，例：`morale` → `moraleLock`、`self.sate` → `self.sateLock`、`drawLast.cardSeal` → `drawLast.cardSealLock`。
+- **查詢函式**：名稱帶 `(...)` 的屬性為查詢函式，傳入參數取值（如 `tableCount('>=', 2)`、`drawLast.effectStack(101)`）；讀取時填入具體值（例：`self.effectImmune(5) > 0`）。寫入透過對應命令（不支援屬性修改命令）。
+- **物件引用**：本表 `類別` 欄為 `卡牌引用` / `顧客引用` / `卡牌兼顧客引用` 的條目即為物件引用；可用 dot-syntax 存取其屬性（如 `drawLast.cardID`、`taskGuest.calm`、`self.cost`），可用屬性集詳見下方「卡牌引用屬性」/「顧客引用屬性」表（語法詳見【二十七、運算式｜1. 文法】）。
+
+### 卡牌引用屬性
+
+對應主表中 `類別 = 卡牌引用 / 卡牌兼顧客引用` 的引用，可用 dot-syntax `<引用>.<屬性>` / `<引用>.<屬性>(...)` 存取下列屬性。
+
+| 屬性           | 中文名稱         | 存取 | 說明                                                                                                                                                    |
+|:---------------|:-----------------|:----:|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cardEffect(N)  | 卡牌帶效果數     |      | 查詢函式；卡牌的「實例效果列表」中 effectID == `N` 的個數；`N == 0` 不命中                                                                              |
+| cardGroup      | 卡牌群組編號     |      | 卡牌所屬的卡牌群組編號；`0` 代表未指派群組                                                                                                              |
+| cardID         | 卡牌編號         |      | 卡牌資料的唯一識別碼                                                                                                                                    |
+| cardify        | 卡牌化來源顧客   |      | 引用卡牌化來源的顧客實例；初值 none；由 `cardify` 命令設定、`restore` 命令清除                                                                          |
+| cardSeal       | 封印卡牌         |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 該卡牌不可出牌                                                                                                  |
+| cost           | 出牌費用         | 寫鎖 | 出牌時自出牌點數扣除的數值                                                                                                                              |
+| effectGroup(N) | 已帶群組效果數   |      | 查詢函式；效果佇列中 self 等於該對象 且 `效果群組編號` = `N` 的效果項目個數（不加總層數）；不存在則為 `0`；`N == 0` 不命中（亦適用顧客引用）            |
+| effectStack(N) | 已帶效果層數     |      | 查詢函式；效果佇列中 self 等於該對象 且 `effectID == N` 的效果項目層數（同 self+effectID 已依【十六、堆疊規則】合併）；不存在則為 `0`（亦適用顧客引用） |
+| extraRunMax    | 額外發動次數上限 | 寫鎖 | 出牌時額外發動次數隨機區間上限                                                                                                                          |
+| extraRunMin    | 額外發動次數下限 | 寫鎖 | 出牌時額外發動次數隨機區間下限                                                                                                                          |
+| inDeck         | 位於抽牌牌堆     |      | 布林；卡牌實例位於抽牌牌堆時為 true                                                                                                                     |
+| inDrop         | 位於棄牌牌堆     |      | 布林；卡牌實例位於棄牌牌堆時為 true                                                                                                                     |
+| inExile        | 位於流放牌堆     |      | 布林；卡牌實例位於流放牌堆時為 true                                                                                                                     |
+| inHand         | 位於手牌         |      | 布林；卡牌實例位於手牌時為 true                                                                                                                         |
+| keep           | 不棄卡牌         |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 不棄                                                                                                            |
+| playExile      | 出牌後流放       |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 玩家出牌後移至流放牌堆而非棄牌牌堆                                                                              |
+| unplayExile    | 未出牌流放       |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 玩家手動結束時必定移至流放牌堆（優先於不棄卡牌）                                                                |
+
+### 顧客引用屬性
+
+對應主表中 `類別 = 顧客引用 / 卡牌兼顧客引用` 的引用，可用 dot-syntax `<引用>.<屬性>` / `<引用>.<屬性>(...)` 存取下列屬性。
+
+| 屬性            | 中文名稱       | 存取 | 說明                                                                                                                                                                                |
+|:----------------|:---------------|:----:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| calm            | 耐心值         | 寫鎖 | 顧客當前耐心值                                                                                                                                                                      |
+| calmHit         | 已觸發耐心門檻 |      | 已觸發耐心門檻列表；讀取為列表大小（門檻命中數）                                                                                                                                    |
+| calmSeal        | 封印耐心技能   |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 耐心技能封印                                                                                                                                |
+| effectGroup(N)  | 已帶群組效果數 |      | 查詢函式；效果佇列中 self 等於該對象 且 `效果群組編號` = `N` 的效果項目個數（不加總層數）；不存在則為 `0`；`N == 0` 不命中（亦適用卡牌引用）                                        |
+| effectImmune(N) | 效果免疫群組   |      | 查詢函式；效果群組編號 = N 的免疫鎖定計數，> 0 時於 §二十 [堆疊處理] 開頭擋下新建立效果；只能透過 `effectImmuneAdd` / `effectImmuneDel` 命令調整                                   |
+| effectStack(N)  | 已帶效果層數   |      | 查詢函式；效果佇列中 self 等於該對象 且 `effectID == N` 的效果項目層數（同 self+effectID 已依【十六、堆疊規則】合併）；不存在則為 `0`（亦適用卡牌引用）                             |
+| freeze          | 凍結起始回合   |      | `cardify` 時設為當前回合（記錄進入卡牌化列表的回合）；`restore` 解凍時用於計算結束回合延後量，解凍後重置為 0                                                                        |
+| guestID         | 顧客編號       |      | 顧客資料的唯一識別碼                                                                                                                                                                |
+| morale          | 士氣值         | 寫鎖 | 顧客當前士氣值（生氣離場時自餐廳士氣值扣除）                                                                                                                                        |
+| moraleMax       | 士氣值上限     | 寫鎖 | 顧客士氣值的上限                                                                                                                                                                    |
+| nearSize        | 鄰桌當下大小   |      | 鄰桌顧客數量（不含自身與同桌）                                                                                                                                                      |
+| sameSize        | 同桌當下大小   |      | 同桌顧客數量（含自身）                                                                                                                                                              |
+| sate            | 飽食值         | 寫鎖 | 顧客當前飽食值                                                                                                                                                                      |
+| sateHit         | 已觸發飽食門檻 |      | 已觸發飽食門檻列表；讀取為列表大小（門檻命中數）                                                                                                                                    |
+| sateMax         | 飽食值離場線   | 寫鎖 | 顧客飽食值的離場線                                                                                                                                                                  |
+| sateSeal        | 封印飽食技能   |  鎖  | 屬性容器，數值固定為 0；鎖定計數 > 0 → 飽食技能封印                                                                                                                                |
+| score           | 滿意值         | 寫鎖 | 顧客當前滿意值（飽食離場時提供給餐廳）                                                                                                                                              |
+| scoreMax        | 滿意值上限     | 寫鎖 | 顧客滿意值的上限                                                                                                                                                                    |
+| seatID          | 座位編號       |      | 顧客占用的座位編號；位於遊蕩列表 / 卡牌化列表時為 0                                                                                                                                 |
+| skillImmune(N)  | 技能免疫群組   |      | 查詢函式；技能群組編號 = N 的免疫鎖定計數，> 0 時於【二十、獨立流程｜啟動技能】顧客選取階段被排除（當前技能群組編號 = N 時）；只能透過 `skillImmuneAdd` / `skillImmuneDel` 命令調整 |
+
+---
+
+## 二十四、命令對象清單
+
+| 英文名稱    | 中文名稱     | 參數        | 解析方式                                                      | 需玩家輸入 |
+|:------------|:-------------|:------------|:--------------------------------------------------------------|:-----------|
+| none        | 無           |             | 表示無命令對象                                                | 否         |
+| self        | 自身         |             | 引用【八、目標類型】建立時固定的 self                         | 否         |
+| selfNear    | 鄰桌         |             | self 的鄰桌顧客（不含 self 自身與 self 同桌的顧客）           | 否         |
+| selfSame    | 同桌         |             | self 的同桌顧客（含 self 自身）                               | 否         |
+| damageGuest | 士氣受損顧客 |             | 取最近一次士氣受損來源顧客；若來源非顧客或尚無來源則為空集合  | 否         |
+| drawLast    | 最後抽出卡牌 |             | 取最後抽出卡牌；若無則為空集合                                | 否         |
+| dropLast    | 最後棄置卡牌 |             | 取最後棄置卡牌；若無則為空集合                                | 否         |
+| exileLast   | 最後流放卡牌 |             | 取最後流放卡牌；若無則為空集合                                | 否         |
+| exitLast    | 最後離場顧客 |             | 取最後離場顧客；若無則為空集合                                | 否         |
+| morphLast   | 最後變身卡牌 |             | 取最後變身卡牌；若無則為空集合                                | 否         |
+| playLast    | 最後出牌卡牌 |             | 取最後出牌卡牌；若無則為空集合                                | 否         |
+| seatLast    | 最後入座顧客 |             | 取最後入座顧客；若無則為空集合                                | 否         |
+| taskGuest   | 最後行動顧客 |             | 取最後行動顧客；若無則為空集合                                | 否         |
+| guestAll    | 全部顧客     |             | 取當下全部顧客                                                | 否         |
+| guestPick   | 指定顧客     | N           | 暫停流程，玩家從顧客中挑最多 N 位                             | **是**     |
+| guestRand   | 隨機顧客     | N           | 系統從顧客中隨機選最多 N 位                                   | 否         |
+| guestWait   | 排隊顧客     | N           | 取排隊前 N 位                                                 | 否         |
+| nearPick    | 指定顧客鄰桌 |             | 暫停流程，玩家選 1 顧客，再取其鄰桌（不含自身與其同桌）       | **是**     |
+| nearRand    | 隨機顧客鄰桌 |             | 系統隨機選 1 顧客，再取其鄰桌（不含自身與其同桌）             | 否         |
+| samePick    | 指定顧客桌   |             | 暫停流程，玩家選 1 顧客，再取其同桌（含自身）                 | **是**     |
+| sameRand    | 隨機顧客桌   |             | 系統隨機選 1 顧客，再取其同桌（含自身）                       | 否         |
+| handAll     | 全部手牌     | 卡牌編號    | 取手牌；卡牌編號 = 0 取全部、= X 篩出編號 X                   | 否         |
+| handPick    | 指定手牌     | N；卡牌編號 | 暫停流程，玩家從手牌（依編號 filter 後）挑最多 N 張           | **是**     |
+| handRand    | 隨機手牌     | N；卡牌編號 | 系統從手牌（依編號 filter 後）隨機選最多 N 張                 | 否         |
+| deckAll     | 全部抽牌牌堆 | 卡牌編號    | 取抽牌牌堆；filter 規則同 `handAll`                           | 否         |
+| deckPick    | 指定抽牌牌堆 | N；卡牌編號 | 暫停流程，玩家從抽牌牌堆（依編號 filter 後）挑最多 N 張       | **是**     |
+| deckRand    | 隨機抽牌牌堆 | N；卡牌編號 | 系統從抽牌牌堆（依編號 filter 後）隨機選最多 N 張             | 否         |
+| deckTop     | 抽牌牌堆頂端 | N           | 取抽牌牌堆頂端 N 張；不足時 auto-shuffle 補回（規則詳見下方） | 否         |
+| dropAll     | 全部棄牌牌堆 | 卡牌編號    | 取棄牌牌堆；filter 規則同 `handAll`                           | 否         |
+| dropPick    | 指定棄牌牌堆 | N；卡牌編號 | 暫停流程，玩家從棄牌牌堆（依編號 filter 後）挑最多 N 張       | **是**     |
+| dropRand    | 隨機棄牌牌堆 | N；卡牌編號 | 系統從棄牌牌堆（依編號 filter 後）隨機選最多 N 張             | 否         |
+| dropTop     | 棄牌牌堆頂端 | N           | 取棄牌牌堆頂端 N 張；不足 → 取全部                           | 否         |
+| exileAll    | 全部流放牌堆 | 卡牌編號    | 取流放牌堆；filter 規則同 `handAll`                           | 否         |
+| exilePick   | 指定流放牌堆 | N；卡牌編號 | 暫停流程，玩家從流放牌堆（依編號 filter 後）挑最多 N 張       | **是**     |
+| exileRand   | 隨機流放牌堆 | N；卡牌編號 | 系統從流放牌堆（依編號 filter 後）隨機選最多 N 張             | 否         |
+
+- **參數規則**：表中參數欄非空的命令對象必須帶完整參數（無預設值）；裸寫無參數版視為語法錯誤。
+- **顧客類命令對象解析範圍**：`guestAll` / `guestPick` / `guestRand` / `nearPick` / `nearRand` / `samePick` / `sameRand` 解析時僅取**座位列表**中的顧客，不命中遊蕩列表 / 卡牌化列表；`guestWait` 僅取排隊佇列。
+- **`selfSame` / `selfNear` 邊界規則**：`self` 非顧客時，`selfSame` / `selfNear` 視為空集合。
+- **N 規則**：
+  - N > 0：取 N 張；候選 <= N 退化取全部（`Pick` 不彈介面）；候選 > N 時 `Pick` 暫停玩家挑、`Rand` 隨機抽
+  - N = 0：空集合
+  - N < 0：
+    - `Rand`：隨機保留 abs(N) 張、其餘取出；候選 <= abs(N) → 取出為空集合
+    - `Pick` / `Top`：視為空集合
+  - `Pick` 暫停時玩家不可取消、必須選出。
+- **filter 規則**（`handXxx` / `deckXxx` / `dropXxx`）：卡牌編號 = `0` 視為任意（無 filter）；卡牌編號 = X 視為「位於該牌堆 / 手牌且 `self.cardID == X`」者。
+- **`deckTop` auto-shuffle 規則**：
+  - deck >= N → 取頂端 N 張
+  - deck < N 且 deck + drop >= N → 先將棄牌牌堆隨機洗牌移至抽牌牌堆 → 再取頂端 N 張
+  - deck + drop < N → 取全部（drop 仍洗進 deck）
+  - `deckTop` 是唯一在解析時會修改狀態的命令對象（承接舊 `deckToHandN` 的補牌語義）；其他命令對象一律只讀。
+
+### 命令對象路徑 vs 目標類型路徑（區分指引）
+
+兩條路徑都可對 N 個對象作用，但語義不同：
+
+| 路徑             | 寫法                                                     | 行為                                                          |
+|:-----------------|:---------------------------------------------------------|:--------------------------------------------------------------|
+| **目標類型路徑** | 新選 / 隨機 XX + 目標數量 = N                            | 建立 **N 個獨立 effect**，各自 self、各自進效果佇列、各自堆疊 |
+| **命令對象路徑** | 無目標 + 命令對象 `XxxPick / Rand / Top / All`（帶參數） | 建立 **1 個 effect**，命令在執行時對 N 個對象 fan-out         |
+
+撰寫指引：
+
+- 「每個目標各自疊層 / 各自結束 / 各自需要進入效果佇列」→ 目標類型路徑
+- 「一次性地對 N 個對象批次施作（無獨立生命週期）」→ 命令對象路徑
+
+---
+
+## 二十五、動作類命令清單
+
+| 英文名稱         | 中文名稱             | 參數                             | 說明                                                                                                                                                                                             |
+|:-----------------|:---------------------|:---------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cardCostAdd      | 出牌費用增減         | 對象；N                          | 對命令對象的每張卡牌實例執行 出牌費用 + N；結果低於 0 時夾為 0                                                                                                                                   |
+| cardCostMul      | 出牌費用倍率         | 對象；N                          | 對命令對象的每張卡牌實例執行 出牌費用 * N；結果四捨五入至整數，低於 0 時夾為 0                                                                                                                   |
+| cardCostSet      | 出牌費用設值         | 對象；N                          | 對命令對象的每張卡牌實例執行 出牌費用 = N；N < 0 時夾為 0                                                                                                                                        |
+| cardEffectAdd    | 卡牌增加效果         | 對象；效果編號                   | 對命令對象的每張卡牌實例的實例效果列表加入 1 個效果編號                                                                                                                                          |
+| cardEffectDel    | 卡牌移除效果         | 對象；效果編號                   | 對命令對象的每張卡牌實例的實例效果列表移除 1 個效果編號（卡上無此編號該項 no-op）                                                                                                                |
+| cardEffectDelAll | 卡牌移除全部效果     | 對象；效果編號                   | 對命令對象的每張卡牌實例的實例效果列表移除全部該效果編號                                                                                                                                         |
+| cardify          | 卡牌化顧客           | 對象；卡牌編號                   | 對命令對象的每位顧客依序執行 cardify 處理流程（詳見下方；顧客不在座位列表 / 卡牌資料不存在該項 no-op）                                                                                           |
+| cardRun          | 強制發動卡牌         | 對象；消耗點數；進棄牌堆         | 對命令對象的每張卡牌實例依序執行 cardRun 處理流程（詳見下方）                                                                                                                                    |
+| deckAdd          | 加牌入抽牌牌堆       | none；卡牌編號；N                | 依卡牌編號實例化 N 張新卡牌加入抽牌牌堆；N <= 0 時 no-op                                                                                                                                         |
+| deckClone        | 深複製卡牌至抽牌牌堆 | 對象；N；洗牌；附加效果編號 1..M | 依命令對象的每張卡牌實例之**當前完整狀態**深複製 N 張新卡加入抽牌牌堆（詳見下方 Copy / Clone 處理流程）；可指定操作後是否洗牌                                                                    |
+| deckCopy         | 淺複製卡牌至抽牌牌堆 | 對象；N；洗牌；附加效果編號 1..M | 依命令對象的每張卡牌實例之 `cardID` **淺複製** N 張新卡（屬性 / 實例效果列表載入卡牌資料初始值）加入抽牌牌堆（詳見下方 Copy / Clone 處理流程）；可指定操作後是否洗牌                             |
+| deckMorph        | 抽牌牌堆變身         | 對象；抽獎群組編號               | 對命令對象的每張位於抽牌牌堆的卡牌實例執行變身處理流程（詳見下方）；位置不符該項 no-op                                                                                                           |
+| deckRoll         | 抽獎加牌入抽牌牌堆   | none；抽獎群組編號；N            | 對抽獎群組 weighted random 選卡牌編號實例化 N 張新卡牌加入抽牌牌堆（每張獨立 roll）；N <= 0 或群組總權重 = 0 時 no-op                                                                            |
+| deckShuffle      | 抽牌牌堆洗牌         | none                             | 將抽牌牌堆隨機洗牌                                                                                                                                                                               |
+| deckToDrop       | 抽牌牌堆移至棄牌牌堆 | 對象；洗牌                       | 將命令對象的每張位於抽牌牌堆的卡牌實例移至棄牌牌堆；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                           |
+| deckToExile      | 抽牌牌堆移至流放牌堆 | 對象；洗牌                       | 將命令對象的每張位於抽牌牌堆的卡牌實例移至流放牌堆；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                           |
+| deckToHand       | 抽牌牌堆移至手牌     | 對象；洗牌                       | 將命令對象的每張位於抽牌牌堆的卡牌實例移至手牌；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                               |
+| dropAdd          | 加牌入棄牌牌堆       | none；卡牌編號；N                | 依卡牌編號實例化 N 張新卡牌加入棄牌牌堆；N <= 0 時 no-op                                                                                                                                         |
+| dropClone        | 深複製卡牌至棄牌牌堆 | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之**當前完整狀態**深複製 N 張新卡加入棄牌牌堆（詳見下方 Copy / Clone 處理流程）                                                                                          |
+| dropCopy         | 淺複製卡牌至棄牌牌堆 | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之 `cardID` **淺複製** N 張新卡加入棄牌牌堆（詳見下方 Copy / Clone 處理流程）                                                                                            |
+| dropMorph        | 棄牌牌堆變身         | 對象；抽獎群組編號               | 對命令對象的每張位於棄牌牌堆的卡牌實例執行變身處理流程（詳見下方）；位置不符該項 no-op                                                                                                           |
+| dropRoll         | 抽獎加牌入棄牌牌堆   | none；抽獎群組編號；N            | 對抽獎群組 weighted random 選卡牌編號實例化 N 張新卡牌加入棄牌牌堆（每張獨立 roll）；N <= 0 或群組總權重 = 0 時 no-op                                                                            |
+| dropToDeck       | 棄牌牌堆移至抽牌牌堆 | 對象；洗牌                       | 將命令對象的每張位於棄牌牌堆的卡牌實例移至抽牌牌堆；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                           |
+| dropToExile      | 棄牌牌堆移至流放牌堆 | 對象                             | 將命令對象的每張位於棄牌牌堆的卡牌實例移至流放牌堆                                                                                                                                               |
+| dropToHand       | 棄牌牌堆移至手牌     | 對象                             | 將命令對象的每張位於棄牌牌堆的卡牌實例移至手牌                                                                                                                                                   |
+| effectClear      | 清除群組效果         | 對象；效果群組編號 1..N          | 從效果佇列清除 self ∈ 命令對象集合 且具指定效果群組編號的效果；對象 = `none` 為全域掃描；效果群組編號 `0` 不命中任何效果；同一效果命中多個指定效果群組時只清除一次；依堆疊層數執行 N 次結束命令 |
+| effectDel        | 移除效果             | 對象；效果編號；N                | 對每個 e ∈ 命令對象以 e 為 self：查既有同編號效果，當前層數 -= min(N, 當前層數)，執行 結束命令 對應次數；層數 ≤ 0 時自佇列移除；不存在或 `N <= 0` 時 no-op                                     |
+| effectImmuneAdd  | 賦予效果免疫         | 對象；效果群組編號 1..M          | 對命令對象的每位顧客，對每個指定效果群組編號 `self.effectImmune(N)` 鎖定計數 + 1（varargs trailing 參數）                                                                                        |
+| effectImmuneDel  | 解除效果免疫         | 對象；效果群組編號 1..M          | 對命令對象的每位顧客，對每個指定效果群組編號 `self.effectImmune(N)` 鎖定計數 - 1（夾 ≥ 0；varargs trailing 參數）                                                                               |
+| effectRun        | 啟動效果             | 對象；效果編號；N                | 對命令對象的每個元素，以其為 self 套用 [堆疊處理]（本次增加層數依 §二十 [堆疊處理] 規則：`N > 0` 用 N，`N = 0` 用 effect 定義 `堆疊層數`）；只忽略 目標類型 + 目標數量 兩項，其他設定全部保留   |
+| exileAdd         | 加牌入流放牌堆       | none；卡牌編號；N                | 依卡牌編號實例化 N 張新卡牌加入流放牌堆；N <= 0 時 no-op                                                                                                                                         |
+| exileClone       | 深複製卡牌至流放牌堆 | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之**當前完整狀態**深複製 N 張新卡加入流放牌堆（詳見下方 Copy / Clone 處理流程）                                                                                          |
+| exileCopy        | 淺複製卡牌至流放牌堆 | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之 `cardID` **淺複製** N 張新卡加入流放牌堆（詳見下方 Copy / Clone 處理流程）                                                                                            |
+| exileMorph       | 流放牌堆變身         | 對象；抽獎群組編號               | 對命令對象的每張位於流放牌堆的卡牌實例執行變身處理流程（詳見下方）；位置不符該項 no-op                                                                                                           |
+| exileRoll        | 抽獎加牌入流放牌堆   | none；抽獎群組編號；N            | 對抽獎群組 weighted random 選卡牌編號實例化 N 張新卡牌加入流放牌堆（每張獨立 roll）；N <= 0 或群組總權重 = 0 時 no-op                                                                            |
+| exileToDeck      | 流放牌堆移至抽牌牌堆 | 對象；洗牌                       | 將命令對象的每張位於流放牌堆的卡牌實例移至抽牌牌堆；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                           |
+| exileToDrop      | 流放牌堆移至棄牌牌堆 | 對象                             | 將命令對象的每張位於流放牌堆的卡牌實例移至棄牌牌堆                                                                                                                                               |
+| exileToHand      | 流放牌堆移至手牌     | 對象                             | 將命令對象的每張位於流放牌堆的卡牌實例移至手牌                                                                                                                                                   |
+| guestExit        | 顧客離場             | 對象；是否給滿意值；是否扣士氣   | 對命令對象的每位顧客依序執行 guestExit 處理流程（詳見下方）                                                                                                                                      |
+| guestPart        | 改變顧客部位         | 對象；部位編號；配件編號         | 規格待後續定案                                                                                                                                                                                   |
+| guestReturn      | 顧客回座             | 對象                             | 對命令對象的每位顧客依序執行 guestReturn 處理流程（詳見下方；位置不符該項 no-op）                                                                                                                |
+| guestRoam        | 顧客遊蕩             | 對象                             | 對命令對象的每位顧客（限位於座位列表者）：自座位列表移除、加入遊蕩列表尾端；同時 `self.sate` / `self.sateSeal` / `self.calmSeal` 鎖定計數各 + 1（自動鎖）；位置不符該項 no-op                    |
+| guestSeat        | 顧客入座             | none                             | 從排隊佇列彈出 1 位顧客加入座位列表                                                                                                                                                              |
+| guestSkin        | 改變顧客外觀         | 對象；外觀編號                   | 規格待後續定案                                                                                                                                                                                   |
+| guestSpawn       | 產生顧客             | none；顧客編號；座位編號         | 依顧客編號實例化 1 位新顧客、依座位編號決定加入座位列表或遊蕩列表（詳見下方 guestSpawn 處理流程）                                                                                                |
+| handAdd          | 加牌入手牌           | none；卡牌編號；N                | 依卡牌編號實例化 N 張新卡牌加入手牌；N <= 0 時 no-op                                                                                                                                             |
+| handClone        | 深複製卡牌至手牌     | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之**當前完整狀態**深複製 N 張新卡加入手牌（詳見下方 Copy / Clone 處理流程）                                                                                              |
+| handCopy         | 淺複製卡牌至手牌     | 對象；N；附加效果編號 1..M       | 依命令對象的每張卡牌實例之 `cardID` **淺複製** N 張新卡加入手牌（詳見下方 Copy / Clone 處理流程）                                                                                                |
+| handMorph        | 手牌變身             | 對象；抽獎群組編號               | 對命令對象的每張位於手牌的卡牌實例執行變身處理流程（詳見下方）；位置不符該項 no-op                                                                                                               |
+| handRoll         | 抽獎加牌入手牌       | none；抽獎群組編號；N            | 對抽獎群組 weighted random 選卡牌編號實例化 N 張新卡牌加入手牌（每張獨立 roll）；N <= 0 或群組總權重 = 0 時 no-op                                                                                |
+| handToDeck       | 手牌移至抽牌牌堆     | 對象；洗牌                       | 將命令對象的每張位於手牌的卡牌實例移至抽牌牌堆；可指定操作完成後是否將抽牌牌堆洗牌                                                                                                               |
+| handToDrop       | 手牌移至棄牌牌堆     | 對象                             | 將命令對象的每張位於手牌的卡牌實例移至棄牌牌堆                                                                                                                                                   |
+| handToExile      | 手牌移至流放牌堆     | 對象                             | 將命令對象的每張位於手牌的卡牌實例移至流放牌堆                                                                                                                                                   |
+| phaseJump        | 階段跳轉             | none；階段名稱                   | 設 `下一階段 = 階段名稱`；階段名稱 ∈ {`玩家行動`, `顧客行動`, `回合結束`}；不在此集合則 no-op                                                                                                   |
+| restore          | 卡牌化還原           | 對象                             | 對命令對象的每張卡牌實例依序執行 restore 處理流程（詳見下方；`self.cardify = none` / `剩餘座位 = 0` 該項 no-op）                                                                                 |
+| skillImmuneAdd   | 賦予技能免疫         | 對象；技能群組編號 1..M          | 對命令對象的每位顧客，對每個指定技能群組編號 `self.skillImmune(N)` 鎖定計數 + 1（varargs trailing 參數）                                                                                         |
+| skillImmuneDel   | 解除技能免疫         | 對象；技能群組編號 1..M          | 對命令對象的每位顧客，對每個指定技能群組編號 `self.skillImmune(N)` 鎖定計數 - 1（夾 ≥ 0；varargs trailing 參數）                                                                                |
+| taskAdd          | 加入行動             | 對象；行動類型；技能編號         | 對命令對象的每位顧客，將「該顧客 + 行動類型 + 技能編號」加入行動佇列尾端（行動類型 = 飽食 / 耐心）                                                                                               |
+| waitAdd          | 加顧客入排隊佇列     | none；顧客編號；N                | 依顧客編號實例化 N 位新顧客，插入排隊佇列前端（優先入座）；N <= 0 或顧客資料不存在時 no-op                                                                                                       |
+
+- 餐廳士氣值 / 餐廳滿意值 / 出牌點數 / `self.<屬性>` 等屬性的修改使用【十七、命令｜1. 屬性修改命令】（運算符語法），不列於本表。
+- **命令對象集合**：第 1 參數的命令對象解析後恆為集合（可能為空、可能多個）；命令對該集合逐個元素處理。
+- **型別 / 位置不符 → 該項 no-op**：當集合內某元素型別或位置不符命令預期（如 `cardEffectAdd` 預期卡牌實例、`deckToHand` 預期位於抽牌牌堆的卡牌實例），該元素於本次命令視為 no-op，不影響其他元素處理。
+- **空集合 → 整體 no-op**。
+
+### cardRun 處理流程
+
+對命令對象的每張卡牌實例依序執行（不限於手牌；可為手牌 / 抽牌牌堆 / 棄牌牌堆中的卡牌實例；流放牌堆的卡視為位置不符 → 該項 no-op）：
+
+1. 封印閘門 `self.cardSealLock > 0` → no-op
+2. 消耗點數 = true 且 出牌點數 < 出牌費用 → no-op
+3. 消耗點數 = true → 出牌點數 - 出牌費用
+4. 設置 最後出牌卡牌 = 該卡牌、回合出牌張數 + 1
+5. 啟動其實例效果列表
+6. 進棄牌堆 = true → 從原位置移至棄牌牌堆（該卡牌已在棄牌牌堆者 no-op）
+7. 觸發 **玩家出牌**
+
+### copy / clone 處理流程
+
+對命令對象的每張卡牌實例（source）依序執行：
+
+1. 依複製類型實例化 N 張新卡：
+   - **copy（淺複製）**：新卡的 `cardID` = source.cardID；屬性（出牌費用 / 不棄卡牌 / 封印卡牌 / 出牌後流放 / 未出牌流放 / 額外發動次數下限 / 額外發動次數上限 含鎖定計數）與實例效果列表載入卡牌資料初始值
+   - **clone（深複製）**：新卡的 `cardID` = source.cardID；屬性（出牌費用 / 不棄卡牌 / 封印卡牌 / 出牌後流放 / 未出牌流放 / 額外發動次數下限 / 額外發動次數上限 含鎖定計數）與實例效果列表深複製 source 當前狀態
+   - **卡牌化來源顧客**：copy / clone 皆設為 `none`（不沿用 source 綁定，避免兩張卡綁同一顧客）
+   - 實例編號：每張新卡重新生成（不沿用 source 的實例編號）
+2. 附加效果編號（命令尾端 `,` 分隔的可變數量 trailing 參數，0 ~ M 個）— 對每張新卡的實例效果列表附加所列效果編號
+3. 將每張新卡加入目的地（hand / deck / drop / exile）；對應的 system-level 觸發（`cardDraw` / `cardDrop` / `cardExile`）與屬性更新（`drawLast` / `drawCount` 等）由系統自動處理
+
+附加效果編號為命令尾端的 varargs 參數，省略表示不附加。例如：
+
+- `handCopy(handPick[1, 0], 3)` — 淺複製 3 份至手牌、不附加效果
+- `handCopy(handPick[1, 0], 3, 20042)` — 同上、每張新卡附加效果 20042
+- `handCopy(handPick[1, 0], 3, 20042, 20055)` — 每張新卡附加效果 20042 + 20055
+
+### 變身處理流程
+
+對命令對象的每張卡牌實例（source）依序執行：
+
+1. 抽獎：依抽獎群組編號從抽獎表格 weighted random 取出 1 個卡牌編號作為新 cardID（群組總權重 = 0 → 該項 no-op）
+2. 設置 source.cardID = 新 cardID
+3. 重新分配 source 的實例編號（舊實例編號 → 失效對象）
+4. 依新卡牌資料載入 source 的 出牌費用 / 不棄卡牌 鎖定計數 / 封印卡牌 鎖定計數 / 實例效果列表
+5. 立即執行清理效果（處理舊實例編號殘留於效果佇列的效果）
+6. 設置 `morphLast` = source、`morphOldID` = 舊 cardID、`morphNewID` = 新 cardID、`morphCount` + 1
+7. 觸發時機：**卡牌變身**
+
+source 自身停留在原牌堆位置；不觸發 `cardDraw` / `cardDrop` / `cardExile`。
+
+### guestExit 處理流程
+
+對命令對象的每位顧客依序執行：
+
+1. 設置 `exitLast` = 該顧客、`exitLastSeat` = 該顧客.seatID、`exitCount` + 1
+2. 觸發時機：**顧客離場**（`exitAny`）
+3. 是否給滿意值 = true → 觸發時機：**飽食離場**（`exitSate`）
+4. 是否扣士氣 = true → 觸發時機：**生氣離場**（`exitCalm`）
+5. 從所在容器（座位列表 / 遊蕩列表）移除該顧客
+6. 觸發時機：**顧客離場後**（`exitDone`）
+7. 將該顧客視為失效對象並執行清理效果
+8. 是否給滿意值 = true → `餐廳滿意值 += 該顧客.滿意值`
+9. 是否扣士氣 = true → 以該顧客作為 `damageGuest` 執行 `餐廳士氣值 -= 該顧客.士氣值`（走【十七、命令｜1. 屬性修改命令】之餐廳士氣值 `-=` 特例）
+
+### guestReturn 處理流程
+
+對命令對象的每位顧客依序執行（限位於遊蕩列表者；其他位置該項 no-op）：
+
+1. `self.sate` / `self.sateSeal` / `self.calmSeal` 鎖定計數各 - 1（解鎖入列時的自動鎖）
+2. 當 `剩餘座位 > 0`：
+   - 自遊蕩列表移除該顧客
+   - 加入座位列表尾端（不觸發 `guestSeat`）
+3. 當 `剩餘座位 = 0`：
+   - 走 `guestExit(該顧客, false, true)` 流程（自步驟 1 開始）
+
+### guestSpawn 處理流程
+
+依參數依序判斷（顧客資料不存在 → 整體 no-op）：
+
+1. **座位編號 = 0**（產生遊蕩中顧客）：
+   - 依顧客編號實例化 1 位新顧客
+   - 將新顧客 `self.sate` / `self.sateSeal` / `self.calmSeal` 鎖定計數各 + 1（與 `guestRoam` 自動鎖一致；維持「位於遊蕩列表 ↔ 三項屬性鎖定」不變式）
+   - 加入遊蕩列表
+2. **座位編號 = N（N > 0）**（產生座位顧客）：
+   - 當 N 不存在於座位表格中、或 `座位列表` 中已有 seatID = N 的顧客 → no-op
+   - 否則：依顧客編號實例化 1 位新顧客、設置新顧客 `seatID = N`、加入座位列表
+3. **其他取值（N < 0）**：no-op
+
+典型用法：搭配 `exitDone` 觸發時機 + 全域屬性 `exitLastSeat` 接續離場顧客的座位 — 如「顧客離場招喚」效果於 `exitDone`（顧客已自所在容器移除後）觸發 `guestSpawn(none, 顧客編號, exitLastSeat)`，自座位離場者沿用原座位、自遊蕩離場者沿用遊蕩態（`exitLastSeat = 0`）。
+
+### cardify 處理流程
+
+對命令對象的每位顧客依序執行（顧客不在座位列表 / 卡牌資料不存在 → 該項 no-op）：
+
+1. 自座位列表移除該顧客
+2. 加入卡牌化列表
+3. 設置 該顧客.freeze = 當前回合
+4. 依卡牌編號實例化 1 張新卡牌 C（屬性 / 實例效果列表載入卡牌資料初始值）
+5. 設置 C.cardify = 該顧客
+6. C 的「不棄卡牌」鎖定計數 + 1
+7. C 加入手牌
+
+### restore 處理流程
+
+對命令對象的每張卡牌實例依序執行（`self.cardify = none` / `剩餘座位 = 0` → 該項 no-op）：
+
+1. 設 A = self.cardify
+2. A 自卡牌化列表移除
+3. A.seatID = 座位列表中**隨機 1 個空 seatID**；A 加入座位列表
+4. 對效果佇列中 self == A 且 結束回合 > 0 的效果，結束回合 += (當前回合 - A.freeze)
+5. A.freeze = 0
+6. self.cardify = none
+7. self 的「不棄卡牌」鎖定計數 - 1
+
+---
+
+## 二十六、內建函式清單
+
+| 英文名稱 | 中文名稱 | 參數數量  | 說明                 |
+|:---------|:---------|:----------|:---------------------|
+| max      | 取最大值 | 至少 2 個 | 回傳所有參數的最大值 |
+| min      | 取最小值 | 至少 2 個 | 回傳所有參數的最小值 |
+
+- 內建函式為純運算函式，不讀取系統狀態，僅對輸入參數運算；與【二十三、屬性清單】的查詢函式區隔。
+- 文法 `<內建函式名>( <算術式> {, <算術式>} )` 詳見【二十七、運算式｜1. 文法】。
+- **評估失敗**：任一參數評估失敗、任一參數非數值（字串 / 布林 / 物件引用）→ 整個函式失敗。
+
+---
+
+## 二十七、運算式
+
+本章定義 spec 所有「運算式」共用語法，作為【十一、觸發條件】+【十二、觸發次數】+【十七、命令】的共用 SSOT。
+
+以現實運算式規則為基礎，含下列遊戲專有設計：
+
+- 邏輯詞 `AND` `OR` 不區分大小寫（非 `&&` `||`）。
+- 一元否定 `!`。
+- 屬性鎖定 / 解鎖 `@` `#`（僅【十七、命令｜1. 屬性修改命令】最外層使用、不出現在算術式內）。
+- 算術中間值可為小數（含小數字面值與 `+` `-` `*` `/` `%` 結果），運算過程不四捨五入；最終值由呼叫方寫回屬性時統一四捨五入（詳見【十七、命令｜1. 屬性修改命令】運算順序）。
+- 四捨五入採 half-away-from-zero：`2.4` → `2`、`2.5` → `3`、`-2.4` → `-2`、`-2.5` → `-3`。
+- 評估失敗不拋錯，以「評估失敗狀態」回傳；後續行為由呼叫方各自定義。
+
+### 1. 文法（BNF）
+
+```
+<運算式>       ::= <邏輯式> [? <運算式> : <運算式>]
+<邏輯式>       ::= <子句> {(AND | OR) <子句>}
+<子句>         ::= [!] <比較>
+                 | [!] ( <運算式> )
+<比較>         ::= <算術式> [<比較符> <算術式>]
+<比較符>       ::= < | > | <= | >= | == | !=
+<算術式>       ::= <項> {(+ | -) <項>}
+<項>           ::= <因子> {(* | / | %) <因子>}
+<因子>         ::= <字面值> | <條件對象> | <內建函式> | ( <算術式> )
+<條件對象>     ::= <屬性> | <查詢函式> | <引用屬性> | <引用查詢函式> | self
+<屬性>         ::= <屬性名>
+<查詢函式>     ::= <屬性名>( <參數列表> )
+<內建函式>     ::= <內建函式名>( <算術式> {, <算術式>} )    // <內建函式名> 詳見【二十六、內建函式清單】
+<引用屬性>     ::= <引用名>.<屬性名>
+<引用查詢函式> ::= <引用名>.<屬性名>( <參數列表> )
+<引用名>       ::= self | <物件引用名>     // <物件引用名> 詳見【二十三、屬性清單】類別欄
+<參數列表>     ::= <參數> [, <參數>]*
+<參數>         ::= <算術式> | <字串>
+<字面值>       ::= <整數> | <小數> | <字串> | <布林>
+```
+
+`{…}` 表示零次以上重複（左結合），`[…]` 表示可選。`+ - * / %` 與 `AND OR` 皆採左結合；三元 `? :` 採右結合，且僅評估被選中的分支。
+
+### 2. 運算符
+
+| 類別              | 運算符                          | 備註                                                                 |
+|:------------------|:--------------------------------|:---------------------------------------------------------------------|
+| 算術 (arithmetic) | `+` `-` `*` `/` `%`             | 中間值可為小數；運算過程不四捨五入；最終值由呼叫方寫回時統一四捨五入 |
+| 比較 (comparison) | `<` `>` `<=` `>=` `==` `!=`     | 物件引用比較：`==` / `!=` 比實例編號；空物件只與空物件相等           |
+| 邏輯 (logical)    | `!`（一元）/ `AND` `OR`（二元） | `AND` `OR` 不區分大小寫                                              |
+| 分組 (grouping)   | `(` `)`                         | 邏輯 / 算術任一層級皆可；parser 依位置決定意義                       |
+| 三元 (ternary)    | `? :`                           | 條件成真選真值分支、成假選假值分支；只評估被選中的分支；右結合       |
+
+### 3. 優先順序（precedence，由高到低）
+
+1. 括號 (grouping)：`(` `)`
+2. 乘除取餘 (multiplicative)：`*` `/` `%`
+3. 加減 (additive)：`+` `-`
+4. 比較 (comparison)：`<` `>` `<=` `>=` `==` `!=`
+5. 否定 (NOT)：`!`
+6. 邏輯且 (AND)：`AND`
+7. 邏輯或 (OR)：`OR`
+8. 三元 (ternary)：`? :`（右結合）
+
+### 4. 字面值（literal）
+
+| 類型           | 寫法                 | 範例                       |
+|:---------------|:---------------------|:---------------------------|
+| 整數 (integer) | 直接書寫             | `5`、`-3`、`100`           |
+| 小數 (decimal) | 直接書寫             | `1.5`、`0.25`、`-0.5`      |
+| 字串 (string)  | 以單引號 `'…'` 包夾 | `'玩家行動'`、`'顧客行動'` |
+| 布林 (boolean) | 不區分大小寫         | `true`、`false`、`TRUE`    |
+
+### 5. 條件對象（屬性 / 查詢函式 / 引用屬性 / 引用查詢函式 / self）
+
+引用 spec 中可讀取的值，四類來源：
+
+1. **屬性**：全域屬性名（如 `morale`、`round`、`drawCount`）。
+2. **查詢函式**：全域查詢函式（如 `tableCount('>=', 2)`、`handSize(2)`）。
+3. **引用屬性 / 引用查詢函式**：以物件引用為主體加 `.<屬性名>` 或 `.<屬性名>( ... )`（如 `drawLast.cardID`、`drawLast.cardGroup`、`self.calm`、`taskGuest.score`、`self.effectStack(101)`）；可用屬性集為【二十三、屬性清單】中對應引用型別的「卡牌引用屬性 / 顧客引用屬性」表所列。
+4. **`self`**：可單獨作為引用使用，與其他物件引用使用 `==` / `!=` 比較。
+
+可用條件對象詳見【二十三、屬性清單】；查詢函式語意詳見 §9。
+
+引用為空物件 / 型別不符 → 該存取評估失敗（依呼叫方規則）。
+
+### 6. 「省略比較符」的布林判定
+
+`<比較>` 只寫單一算術式（無比較符）時：
+
+- 結果為非 0 數值 → 真
+- 結果為 0 → 假
+- 結果為非數值（字串 / 布林 / 物件引用）→ 評估失敗
+
+### 7. 評估失敗條件
+
+| 失敗條件         | 觸發場景                                                                                                              |
+|:-----------------|:----------------------------------------------------------------------------------------------------------------------|
+| 條件對象解析失敗 | 引用不存在的全域屬性 / 與 self 型別不符 / self 未固定                                                                 |
+| 除 0 / 取餘 0    | 算術式 `/0` 或 `%0`                                                                                                   |
+| 非數值參與算術   | 字串 / 布林 / 物件引用 出現在算術式中（除 0 / 取餘 0 視為「除 0 / 取餘 0」處理）                                      |
+| 比較跨型別       | 比較符兩側型別不符（數值 vs 字串 / 數值 vs 物件引用 / 字串 vs 物件引用 等）；物件引用 vs 物件引用為合法（比實例編號） |
+| 三元條件失敗     | 三元 `? :` 條件位置評估失敗 → 整個三元失敗（兩分支皆不評估）；條件成功時，未被選中的分支即使會失敗也不影響整體       |
+
+### 8. 評估失敗的回傳狀態
+
+本節不規定後續行為，由呼叫方各自定義：
+
+- 【十一、觸發條件】→ 條件不成立（不觸發）
+- 【十二、觸發次數】→ 視為 `0`
+- 【十七、命令｜1. 屬性修改命令】→ 該命令 no-op
+- 【十七、命令｜2. 動作呼叫命令】→ 該動作 no-op
+
+### 9. 查詢函式
+
+帶參數的條件對象，語法為 `<屬性名>( <參數列表> )` 或 `self.<屬性名>( <參數列表> )`。可用查詢函式詳見【二十三、屬性清單】。
+
+---
+</script>
+
+<!-- ============ Flow text payloads ============ -->
+
+<script type="text/markdown" id="md-flow-core-1">
+```
+營業開始設置 {
+  從設定表格載入全域設定
+  設置 回合 = 0
+  設置 結算旗標 = false
+  設置 出牌點數 = max(出牌點數, 出牌點數上限)
+  清空累積抽牌 / 棄牌 / 出牌 / 流放張數（4 個多重集合）
+  從外部資料建立排隊佇列
+  從外部資料建立抽牌牌堆（依卡牌資料實例化為卡牌實例）
+  從外部資料建立前置技能列表
+  其他...
+}
+
+foreach 該技能 in 前置技能列表 {
+  啟動技能：該技能
+}
+
+觸發時機：**營業開始**
+進入回合開始階段
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-2">
+```
+回合準備設置 {
+  設置 回合 += 1
+  設置 所有「回合 X」事件型屬性 = 0
+}
+
+觸發時機：**回合準備**
+
+回合開始設置 {
+  設置 出牌點數 = max(出牌點數, 出牌點數上限)
+  其他...
+}
+
+觸發時機：**回合開始**
+
+while 剩餘座位 > 0 && 排隊佇列 > 0 {
+  設置 該顧客 = 從排隊佇列彈出 1 位
+  將該顧客加入座位列表
+  設置 最後入座顧客 = 該顧客
+  設置 回合入座人數 += 1
+  觸發時機：**顧客入座**
+}
+
+switch 下一階段 {
+case '顧客行動': 
+  清除 下一階段
+  進入顧客行動階段
+
+case '回合結束': 
+  清除 下一階段
+  進入回合結束階段
+
+default:
+  清除 下一階段
+  進入玩家行動階段
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-3">
+```
+while 手牌 < 補牌張數上限 && (抽牌牌堆 + 棄牌牌堆) > 0 {
+  if 抽牌牌堆 <= 0 {
+    將棄牌牌堆隨機洗牌後移至抽牌牌堆（此時棄牌牌堆應為空）
+  }
+
+  從抽牌牌堆抽 1 張卡牌加入手牌
+}
+
+觸發時機：**玩家開始**
+
+while true {
+  if 下一階段 ∈ {'顧客行動', '回合結束'} {
+    視為 玩家結束 事件
+  }
+
+  switch 玩家事件 {
+  case 玩家出牌 該卡牌:
+    if 該卡牌.封印卡牌 鎖定計數 > 0 {
+      不執行出牌（卡牌封印）
+    } else if 該卡牌.cardify != none && 剩餘座位 == 0 {
+      不執行出牌（卡牌化卡無空位）
+    } else if 出牌點數 >= 出牌費用 {
+      設置 出牌點數 -= 出牌費用
+      設置 最後出牌卡牌 = 該卡牌
+      設置 回合出牌張數 += 1
+      設置 額外次數 = 在 [該卡牌.額外發動次數下限, 該卡牌.額外發動次數上限] 範圍內隨機取整數（下限 > 上限 || 上限 < 0 時為 0）
+
+      重複 (1 + 額外次數) 次 {
+        啟動技能：**實例效果列表**
+      }
+
+      if 該卡牌.cardify != none {
+        執行 restore(該卡牌)（系統自動還原綁定顧客）
+      }
+
+      if 該卡牌.出牌後流放 鎖定計數 > 0 {
+        從手牌移除該卡牌加入流放牌堆
+      } else {
+        從手牌移除該卡牌加入棄牌牌堆
+      }
+
+      觸發時機：**玩家出牌**
+    } else {
+      不執行出牌
+    }
+
+  case 玩家結束:
+    觸發時機：**玩家結束**
+
+    foreach 該卡牌 in 剩餘手牌 {
+      if 該卡牌.未出牌流放 鎖定計數 > 0 {
+        移至流放牌堆
+      } else if 該卡牌.不棄卡牌 鎖定計數 == 0 {
+        棄置至棄牌牌堆
+      } else {
+        留在手牌
+      }
+    }
+
+    switch 下一階段 {
+    case '回合結束':
+      清除 下一階段
+      進入回合結束階段
+
+    default:
+      清除 下一階段
+      進入顧客行動階段
+    }
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-4">
+```
+觸發時機：**顧客開始**
+
+while true {
+  if 行動佇列 <= 0 || 下一階段 == '回合結束' {
+    觸發時機：**顧客結束**
+    清除 下一階段
+    進入回合結束階段
+  }
+
+  設置 該行動 = 從行動佇列彈出 1 個
+  設置 最後行動顧客 = 該行動.顧客
+  設置 最後行動技能 = 該行動.技能編號
+  設置 回合行動次數 += 1
+
+  if 該行動.類型 == 飽食 && 該行動.顧客.封印飽食技能 鎖定計數 > 0 {
+    跳過啟動（行動消費完畢）
+  } else if 該行動.類型 == 耐心 && 該行動.顧客.封印耐心技能 鎖定計數 > 0 {
+    跳過啟動（行動消費完畢）
+  } else {
+    啟動技能：**顧客行動技能**
+  }
+
+  觸發時機：**顧客行動**
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-5">
+```
+觸發時機：**回合結束**
+
+回合結束設置 {
+  設置 座位列表與遊蕩列表中每位顧客.耐心值 -= 1
+
+  if 出牌點數保留 鎖定計數 == 0 {
+    設置 出牌點數 = 0
+  }
+
+  其他...
+}
+
+推進效果
+執行結算
+進入回合開始階段
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-6">
+```
+進入條件：由 執行結算（排隊佇列 <= 0 && 座位列表 <= 0 && 遊蕩列表 <= 0 && 卡牌化列表 <= 0）觸發
+觸發時機：**營業成功**
+終止營業：**成功**
+```
+</script>
+
+<script type="text/markdown" id="md-flow-core-7">
+```
+進入條件：由 執行結算（回合 >= 回合上限 || 餐廳士氣值 <= 0）觸發
+觸發時機：**營業失敗**
+終止營業：**失敗**
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-skill">
+啟動技能流程的輸入為效果列表與技能群組編號：
+
+- **效果列表**：一份效果編號列表。典型來源為一個 named 技能；卡牌打出時則為該卡牌實例當前的效果列表。
+- **技能群組編號**：顧客選取時用作 `skillImmune(N)` 的索引（排除該群組免疫的顧客）。來源依呼叫情境：
+  - 卡牌出牌：卡牌資料.技能.技能群組編號
+  - 顧客行動：行動.技能.技能群組編號
+  - 前置技能：該技能.技能群組編號
+  - 無對應來源：0
+
+流程內部依效果編號查「效果表格」取得對應的效果定義後處理。
+
+```
+啟動技能(效果列表, 技能群組編號) {
+  設置 沿用來源 = 空集合
+
+  while true {
+    if 效果列表 <= 0 {
+      結束啟動技能
+    }
+
+    設置 該效果 = 從效果列表彈出 1 個
+
+    switch 該效果.目標類型 {
+    case 無目標:
+      設置 本次 self 集合 = [空物件]
+      設置 沿用來源 = 空集合
+
+    case 新選顧客 | 新選手牌:
+      候選對象 filter：
+        顧客類：限定座位列表（自動排除遊蕩列表 / 卡牌化列表），再排除 self.skillImmune(技能群組編號) > 0 者
+        手牌類：限定手牌（無額外 filter）
+      依【九、目標數量】退化規則決定選取結果；不適用退化時暫停流程讓玩家選滿 目標數量 個對象
+      設置 本次 self 集合 = 選取結果
+      設置 沿用來源 = 本次 self 集合
+
+    case 隨機顧客 | 隨機手牌:
+      候選對象 filter：
+        顧客類：限定座位列表（自動排除遊蕩列表 / 卡牌化列表），再排除 self.skillImmune(技能群組編號) > 0 者
+        手牌類：限定手牌（無額外 filter）
+      依【九、目標數量】退化規則決定選取結果；不適用退化時系統隨機選 目標數量 個對象
+      設置 本次 self 集合 = 選取結果
+      設置 沿用來源 = 本次 self 集合
+
+    case 沿用顧客 | 沿用手牌:
+      設置 本次 self 集合 = 沿用來源（依【八、目標類型】沿用規則；沿用來源不變）
+    }
+
+    foreach self in 本次 self 集合 {
+      switch 該效果.效果類型 {
+      case 立即:
+        if 觸發條件成立 {
+          執行 立即命令
+        }
+
+      case 觸發:
+        套用 [堆疊處理]
+
+      case 常駐:
+        套用 [堆疊處理]
+
+        if 實際增加層數 > 0 {
+          執行 啟動命令
+        }
+      }
+    }
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-trigger">
+```
+觸發時機(時機) {
+  設置 觸發列表 = 從效果佇列篩選（效果類型 = 觸發 && 觸發時機 = 時機）
+  觸發列表 依「作用順序、效果編號」排序
+              （作用順序大者優先；同作用順序時效果編號小者優先）
+
+  while true {
+    if 觸發列表 <= 0 {
+      結束觸發時機
+    }
+
+    設置 該效果 = 從觸發列表彈出 1 個
+
+    if 該效果.觸發條件 不成立 {
+      continue
+    }
+
+    設置 本次 self 集合 = 該效果.self 集合（啟動技能時已決定）
+
+    設置 該效果中止 = false
+    foreach self in 本次 self 集合 {
+      設置 M = 評估 self.觸發次數
+
+      if M <= 0 {
+        設置 該效果中止 = true
+        break
+      }
+
+      重複 (該效果.堆疊層數 × M) 次 {
+        執行 該效果.觸發命令
+      }
+    }
+
+    if 該效果中止 {
+      continue
+    }
+
+    if 該效果.觸發後行為 == 移除 {
+      重複 該效果.堆疊層數 次 {
+        執行 該效果.結束命令
+      }
+
+      從效果佇列移除 該效果
+    }
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-advance">
+```
+推進效果() {
+  設置 結束列表 = 從效果佇列篩選（結束回合 > 0 && 結束回合 <= 當前回合）
+  結束列表 依「作用順序、效果編號」排序
+              （作用順序大者優先；同作用順序時效果編號小者優先）
+
+  foreach 該效果 in 結束列表 {
+    重複 該效果.堆疊層數 次 {
+      執行 該效果.結束命令
+    }
+
+    從效果佇列移除 該效果
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-cleanup">
+```
+清理效果(失效對象) {
+  設置 清理列表 = 從效果佇列篩選（目標類型 != 無目標 && self 屬於 失效對象）
+  清理列表 依「作用順序、效果編號」排序
+              （作用順序大者優先；同作用順序時效果編號小者優先）
+
+  foreach 該效果 in 清理列表 {
+    重複 該效果.堆疊層數 次 {
+      執行 該效果.結束命令
+    }
+
+    從效果佇列移除 該效果
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-freeze">
+位於卡牌化列表的顧客 A 進入「全凍結狀態」，作用範圍：
+
+- **屬性凍結**：屬性修改命令（`= / += / -= / *= / /= / %= / @ / #`）作用於 `self == A` 時一律 no-op — 耐心值 / 飽食值 / 滿意值 / 士氣值 / 各上限 / 各封印計數通通不變。
+- **效果凍結**：效果佇列中 self == A 的效果於【觸發時機】【推進效果】【清理效果】流程一律跳過（不觸發、結束回合不推進、不清理）；A 不視為失效對象。
+- **技能凍結**：A 不在【執行結算】「所有顧客」涵蓋範圍內，飽食門檻 / 耐心門檻不會命中，不會加入行動佇列 — 飽食技能 / 耐心技能自然不發動。
+- **指令隔離**：A 不被顧客類命令對象（`guestAll` / `guestPick` / `guestRand` / `nearXxx` / `sameXxx`）命中；也不在【二十、獨立流程｜啟動技能】新選 / 隨機顧客的候選池內。
+
+進入 / 退出由 `cardify` / `restore` 命令控制；解凍時對 A 身上所有 結束回合 > 0 的效果，結束回合 += (當前回合 - A.freeze)，使凍結期間不消耗作用回合。
+</script>
+
+<script type="text/markdown" id="md-flow-sub-exec">
+```
+執行命令(命令) {
+  if 命令 無 () {
+    依【十七、命令｜1. 屬性修改命令】處理
+        （含賦值符 / 算術式評估 / 屬性鎖定 / 餐廳士氣值 -= 特例）
+  } else {
+    依【十七、命令｜2. 動作呼叫命令】處理
+        （含算術式參數 / 命令對象解析 / 算術失敗 no-op）
+        命令對象解析詳見【二十四、命令對象清單】
+        （含 N 邊界、退化、filter、deckTop auto-shuffle 等）
+        self / selfSame / selfNear 取效果建立時固定值
+  }
+
+  if 結算旗標 == false {
+    執行結算
+  }
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-settle">
+本流程「所有顧客」涵蓋 座位列表（座位編號）與 遊蕩列表（順序無關）；遊蕩列表中的顧客因 `self.sate` 鎖定不會命中飽食門檻 / 飽食離場，但耐心門檻 / 生氣離場照常運作（耐心技能於彈出時被 `self.calmSeal` 封印閘門跳過）。
+
+```
+執行結算() {
+  設置 結算旗標 = true
+
+  套用 [終止判定]
+
+  foreach 該顧客 in 所有顧客 {
+    foreach 門檻 in 該顧客.飽食門檻列表（由低到高） {
+      if 該顧客.飽食值 >= 門檻.門檻值 && 門檻 不在 該顧客.已觸發飽食門檻 {
+        將 門檻 加入 該顧客.已觸發飽食門檻
+        將「該顧客 + 對應門檻技能」加入行動佇列（行動類型 = 飽食）
+      }
+    }
+  }
+
+  foreach 該顧客 in 所有顧客（飽食值 >= 飽食值離場線） {
+    設置 最後離場顧客 = 該顧客
+    設置 最後離場座位 = 該顧客.seatID
+    設置 回合離場人數 += 1
+    觸發時機：**顧客離場**
+    觸發時機：**飽食離場**
+    從所在容器（座位列表 / 遊蕩列表）移除該顧客
+    觸發時機：**顧客離場後**
+    清理效果(該顧客)
+    設置 餐廳滿意值 += 該顧客.滿意值
+  }
+
+  套用 [終止判定]
+
+  foreach 該顧客 in 所有顧客 {
+    foreach 門檻 in 該顧客.耐心門檻列表（由高到低） {
+      if 該顧客.耐心值 <= 門檻.門檻值 && 門檻 不在 該顧客.已觸發耐心門檻 {
+        將 門檻 加入 該顧客.已觸發耐心門檻
+        將「該顧客 + 對應門檻技能」加入行動佇列（行動類型 = 耐心）
+      }
+    }
+  }
+
+  foreach 該顧客 in 所有顧客（耐心值 <= 0） {
+    設置 最後離場顧客 = 該顧客
+    設置 最後離場座位 = 該顧客.seatID
+    設置 回合離場人數 += 1
+    觸發時機：**顧客離場**
+    觸發時機：**生氣離場**
+    從所在容器（座位列表 / 遊蕩列表）移除該顧客
+    觸發時機：**顧客離場後**
+    清理效果(該顧客)
+    以該顧客作為 damageGuest，設置 餐廳士氣值 -= 該顧客.士氣值
+  }
+
+  套用 [終止判定]
+
+  if 手牌 > 手牌張數上限 {
+    暫停流程，等玩家手動選擇手牌逐張棄置至棄牌牌堆，直到 手牌 <= 手牌張數上限
+  }
+
+  設置 結算旗標 = false
+}
+```
+</script>
+
+<script type="text/markdown" id="md-flow-sub-judge">
+失敗優先於成功，命中則立即跳出結算進入對應階段。
+
+```
+[終止判定]() {
+  if 回合 >= 回合上限 || 餐廳士氣值 <= 0 {
+    設置 結算旗標 = false
+    進入營業失敗階段
+  } else if 排隊佇列 <= 0 && 座位列表 <= 0 && 遊蕩列表 <= 0 && 卡牌化列表 <= 0 {
+    設置 結算旗標 = false
+    進入營業成功階段
+  }
+}
+```
+</script>
+
+<!-- ============ Terms data ============ -->
+
+<script type="application/json" id="terms-data">
+{
+"no-op": "no operation，不執行任何操作。",
+"self": "條件對象 / 命令對象的主語；指效果建立時透過目標類型選取的目標實例（顧客 / 卡牌實例），無目標時為空物件。",
+"下一階段": "營業的全域屬性（字串）；指定回合內向後跳轉的目標階段，合法值 `'玩家行動'` / `'顧客行動'` / `'回合結束'` / `''`（無跳轉）。以 `phaseJump` 命令設定（不含 `''`）；階段轉移時系統自動清除為 `''`。",
+"不棄卡牌": "卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家手動結束」時不會棄置至棄牌牌堆。鎖定計數初值由 卡牌資料.不棄卡牌 載入（true → 1, false → 0），可被命令於執行期修改。",
+"免疫閘門": "【二十、獨立流程｜啟動技能｜堆疊處理】開頭，依 `self.effectImmune` 鎖定計數擋下「`效果群組編號` 命中」的待加入效果的閘門。",
+"全域屬性": "不屬於特定 self 的整體狀態屬性（如餐廳士氣值、回合）；條件式引用時不加前綴。",
+"出牌點數上限": "玩家當回合可用以出牌的點數上限。",
+"出牌後流放": "卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家出牌」後移至流放牌堆而非棄牌牌堆。鎖定計數初值由 卡牌資料.出牌後流放 載入（true → 1, false → 0），可被命令於執行期修改。",
+"出牌費用": "出牌時自出牌點數扣除的數值。",
+"出牌點數": "玩家當回合可用以出牌的點數。",
+"出牌點數保留": "餐廳的全域屬性（數值固定為 0）；鎖定計數 > 0 時跨回合保留 `出牌點數`（回合結束階段跳過 `出牌點數 = 0` 的清零）。",
+"前置技能列表": "營業開始時逐一啟動的技能列表。",
+"剩餘回合": "營業的全域衍生屬性；讀取為 `max(0, 回合上限 - 回合)`，下限夾 0。可被屬性修改命令寫入，寫入會自動轉譯為對 `回合上限` 的調整（例：`剩餘回合 = 2` → `回合上限 = 回合 + 2`、`剩餘回合 += N` → `回合上限 += N`；操作後保證 `回合上限 ≥ 回合`）。失敗仍以 `回合 >= 回合上限` 判定。",
+"剩餘座位": "仍可入座的座位數。",
+"卡牌化列表": "被卡牌化（全凍結保留）的顧客集合；由 `cardify` 命令移入、`restore` 命令移出。不在座位列表中，但仍視為通關條件對象（成功條件需 `卡牌化列表 <= 0`）。位於此列表的顧客進入「全凍結狀態」：屬性修改命令對其 self 屬性一律 no-op、效果佇列中 self == 該顧客的效果於 觸發 / 推進 / 清理 流程一律跳過、不被顧客類命令對象命中、不在【二十、獨立流程｜啟動技能】新選 / 隨機顧客的候選池內。",
+"卡牌化還原": "由 `restore` 命令將卡牌綁定顧客自卡牌化列表移回座位列表（隨機 1 個空 seatID）並解凍其屬性與效果；無空位時 no-op。",
+"卡牌群組編號": "卡牌所屬的卡牌群組編號；`0` 代表未指派群組。",
+"卡牌實例": "由卡牌資料於建立初始牌堆或命令新增卡牌時實例化產生，具獨立實例編號；之後跨手牌 / 抽牌牌堆 / 棄牌牌堆 / 流放牌堆移動時保留實例身分與其狀態，抽牌本身不重新實例化。",
+"卡牌技能": "卡牌資料引用的技能（綁定於卡牌資料）；卡牌實例化時以此技能的效果列表作為「實例效果列表」的初值。",
+"卡牌資料": "卡牌的靜態定義，含「技能編號」與其他屬性（如「不棄卡牌」）。",
+"同桌": "以【四、表格結構｜座位（Seat）表格】的 `同桌座位編號列表` 為準（含自身）。",
+"命令對象": "命令執行時作用的對象；可用清單詳見【二十四、命令對象清單】。",
+"啟動命令": "常駐類型效果加入效果佇列或堆疊層數增加時執行的命令。",
+"回合": "當前回合數。",
+"回合上限": "一場營業允許的回合上限。",
+"士氣值": "顧客的屬性，生氣離場時自餐廳士氣值扣除；不可超過 `士氣值上限`，運算後超出此上限時夾為上限值。",
+"士氣值上限": "顧客的屬性，士氣值的上限；建立顧客實例時自顧客資料載入，可被命令增減。",
+"士氣受損": "餐廳士氣值因 `餐廳士氣值 -=` 運算而實際扣減時觸發的事件；被士氣格擋或士氣護盾完全抵消時不觸發。",
+"失效對象": "self 已失效的對象，例如已離場顧客、已自本場移除（再也無法抽到）的卡牌實例、指向變身前舊實例編號的引用。",
+"實例效果列表": "卡牌實例持有的效果編號列表（允許同一效果編號重複出現）；初值取自其卡牌技能，可被命令增刪。",
+"實例編號": "實例（卡牌實例 / 顧客實例 / 效果實例）的唯一識別碼。",
+"封印卡牌": "卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌不可出牌。鎖定計數初值由 卡牌資料.封印卡牌 載入（true → 1, false → 0）。",
+"封印耐心技能": "顧客的屬性（數值固定為 0）；鎖定計數 > 0 時該顧客的耐心技能於彈出後不啟動（行動仍消費）。鎖定計數初值由 顧客資料.封印耐心技能 載入（true → 1, false → 0），可被命令於執行期修改。",
+"封印閘門": "【十九、核心流程｜4. 顧客行動階段】彈出技能後，依 行動類型 查 `self.封印飽食技能` / `self.封印耐心技能` 鎖定計數決定是否啟動技能的閘門。",
+"封印飽食技能": "顧客的屬性（數值固定為 0）；鎖定計數 > 0 時該顧客的飽食技能於彈出後不啟動（行動仍消費）。鎖定計數初值由 顧客資料.封印飽食技能 載入（true → 1, false → 0），可被命令於執行期修改。",
+"屬性": "執行期可變的狀態容器，含 `{ 數值, 鎖定計數 }`；分全域屬性與 self 屬性兩類。實例結構詳見【五、實例結構｜數值（Value）實例】。",
+"座位列表": "場上座位上的顧客集合。",
+"座位編號": "座位的唯一識別碼；亦為顧客實例的欄位，指顧客占用的座位；位於遊蕩列表 / 卡牌化列表時為 0；座位列表的結算遍歷依此值由小到大排序。",
+"座位表格": "靜態表，定義座位編號、所屬桌次與同桌 / 鄰桌拓樸；詳見【四、表格結構｜座位（Seat）表格】。",
+"手牌": "玩家當回合可使用的卡牌實例。",
+"手牌張數上限": "手牌允許的最大張數。",
+"技能": "效果編號的列表（允許同一效果編號重複出現）；啟動時依此撰寫順序逐一處理。效果定義不在技能內 inline，而是位於「效果表格」。",
+"技能免疫群組": "顧客的屬性（查詢函式，索引 = 技能群組編號）；`self.skillImmune(N)` 鎖定計數 > 0 時，於【二十、獨立流程｜啟動技能】顧客選取階段，當前技能群組編號 = N 者，候選排除此顧客。只能透過 `skillImmuneAdd` / `skillImmuneDel` 命令調整。",
+"抽牌牌堆": "玩家的牌堆之一（內含卡牌實例）。順序以卡牌實例進入時刻為序、新進入者置於頂端、舊進入者位於底端；批次命令逐張依序進入時、頂端會呈現「最後進入者最上層」（即原批次順序的反轉）；玩家抽牌與 `deckTop[N]` 命令對象的「頂端」皆指最新進入者；洗牌時打亂整個排序。",
+"抽獎群組": "抽獎表格中相同 `抽獎群組編號` 的紀錄集合；做為抽選的最小單元。群組總權重 = 0 時視為無有效紀錄、引用此群組的命令該項 no-op。",
+"抽獎表格": "以抽獎群組編號分組、配置卡牌與權重的靜態抽選表格；命令引用其群組以 weighted random 選 1 個卡牌編號。",
+"排隊佇列": "尚未入座的顧客所形成的佇列。",
+"排隊顧客": "尚未入座、在門外排隊的顧客。",
+"效果": "實際執行單位；定義於「效果表格」，具全域唯一的效果編號。",
+"效果佇列": "常駐 / 觸發效果停留處理的佇列。",
+"效果免疫群組": "顧客的屬性（查詢函式，索引 = 效果群組編號）；`self.effectImmune(N)` 鎖定計數 > 0 時，新建立效果群組編號 = N 的效果於 §二十 [堆疊處理] 開頭視為 no-op，已建立 / 執行中的效果不受影響。只能透過 `effectImmuneAdd` / `effectImmuneDel` 命令調整。",
+"效果群組編號": "效果所屬的效果群組編號；`0` 代表未指派群組。",
+"效果表格": "所有效果的中央定義表；技能 / 實例效果列表 / 命令均以效果編號引用其中的效果。",
+"未出牌流放": "卡牌的屬性（數值固定為 0）；鎖定計數 > 0 時該卡牌實例於「玩家手動結束」處理剩餘手牌時必定移至流放牌堆（優先於 `不棄卡牌` 的留在手牌邏輯）。鎖定計數初值由 卡牌資料.未出牌流放 載入（true → 1, false → 0），可被命令於執行期修改。",
+"條件對象": "條件運算式中被讀取以參與判斷的屬性來源；可用屬性詳見【二十三、屬性清單】。",
+"棄牌牌堆": "玩家的牌堆之一（內含卡牌實例）。順序以卡牌實例進入時刻為序、新進入者置於頂端、舊進入者位於底端；批次命令逐張依序進入時、頂端會呈現「最後進入者最上層」（即原批次順序的反轉）；`dropTop[N]` 命令對象的「頂端」指最新進入者。",
+"權重": "抽獎表格欄位；該筆紀錄的相對抽中機率，取值 `0~N`；同群組紀錄依權重做 weighted random 選 1 個卡牌編號。",
+"流放牌堆": "玩家的牌堆之一（內含卡牌實例）。本場營業中無法被使用：補牌邏輯不從中抽出、`cardRun` 對流放牌堆卡視為位置不符 no-op。可透過 `exileToHand` / `exileToDeck` / `exileToDrop` 命令救出；本場營業結束後重置（不在本 spec 範疇）。",
+"滿意值": "顧客的屬性，飽食離場時提供給餐廳滿意值；不可超過 `滿意值上限`，運算後超出此上限時夾為上限值。",
+"滿意值上限": "顧客的屬性，滿意值的上限；建立顧客實例時自顧客資料載入，可被命令增減。",
+"玩家": "營業的主控者；持有手牌、抽牌 / 棄牌 / 流放牌堆，於玩家行動階段抽牌、出牌與結束。",
+"玩家出牌": "玩家於玩家行動階段選 1 張手牌啟動其實例效果列表的動作；詳見【十九、核心流程｜3. 玩家行動階段】。",
+"玩家手動結束": "玩家於玩家行動階段主動結束行動的事件；處理剩餘手牌（依 `未出牌流放` / `不棄卡牌` 判定去向）後依 `下一階段` 進入顧客行動階段或回合結束階段。",
+"生氣離場": "觸發 `exitCalm` 的離場路徑；由結算流程耐心歸 0、或 `guestExit(..., ..., 是否扣士氣=true)` 觸發；自所在容器（座位列表 / 遊蕩列表）移除並扣餐廳士氣值。",
+"目標數量": "效果建立時須選取的目標數量（`1~N`）；詳見【九、目標數量】。",
+"目標類型": "效果建立時是否需要選取 self、選取方式與種類；取值「無目標 / 新選顧客 / 沿用顧客 / 隨機顧客 / 新選手牌 / 沿用手牌 / 隨機手牌」，詳見【八、目標類型】。",
+"立即命令": "立即類型效果於觸發條件成立時執行的命令。",
+"結束命令": "觸發 / 常駐類型效果離開效果佇列或堆疊層數減少時執行的命令。",
+"結束回合": "效果於效果佇列中預定離開的回合數（作用回合 = 0 時設為 0，代表整場營業保留）。",
+"結算旗標": "控制「執行命令」末尾是否再次呼叫「執行結算」，避免結算遞迴。",
+"編號": "資料的唯一識別碼；命名為「主體 + 編號」（如 `卡牌編號`、`顧客編號`、`技能編號`、`效果編號`、`卡牌編號`）。",
+"耐心值": "顧客的屬性，關聯生氣離場；不可為負，運算後低於 0 時夾為 0。",
+"耐心技能": "顧客資料.耐心技能列表中、由耐心門檻命中加入行動佇列的門檻技能；行動類型 = 耐心；於顧客行動階段彈出後啟動（受封印耐心技能閘門控制）。",
+"耐心門檻": "耐心值的階段門檻線（耐心值 ≤ 門檻時觸發）。",
+"行動": "行動佇列中的元素；由「顧客 + 行動類型 + 技能編號」組成（行動類型 = 飽食 / 耐心），於顧客行動階段彈出並啟動技能。",
+"行動佇列": "等待結算行動的佇列。",
+"行動類型": "行動的類型（飽食 / 耐心）；於顧客行動階段用以決定封印閘門查 封印飽食技能 或 封印耐心技能。",
+"補牌張數上限": "玩家行動階段補牌的目標張數。",
+"觸發命令": "觸發類型效果於觸發時機與觸發條件皆成立時執行的命令。",
+"觸發次數": "詳見【十二、觸發次數】。",
+"設定表格": "營業開始時載入全域常數（如 餐廳士氣值上限、手牌張數上限、出牌點數上限、補牌張數上限）的靜態表；詳見【四、表格結構｜設定表格】。",
+"變身": "將卡牌實例 `cardID` 改為依抽獎群組 weighted random 選出的新值；同步重設實例編號（舊實例編號歸入失效對象），並依新卡牌資料載入屬性與實例效果列表。",
+"遊蕩列表": "場上正在遊蕩中的顧客集合；由 `guestRoam` 移入、`guestReturn` 移出。不在座位列表中，但仍視為通關條件對象（成功條件需 `遊蕩列表 <= 0`）；耐心結算照常運作（耐心 -1、耐心 ≤ 0 仍生氣離場），飽食結算因 `self.sate` 鎖定而不會命中。顧客類命令對象（`guestAll` / `guestPick` 等）不會命中遊蕩列表中的顧客。",
+"鄰桌": "以【四、表格結構｜座位（Seat）表格】的 `鄰桌座位編號列表` 為準（不含自身與同桌）。",
+"桌": "座位表格中桌次編號相同的座位集合所構成的邏輯單位；不是一級實例。",
+"桌次編號": "座位表格欄位；同桌次的座位視為同一桌。",
+"鎖定計數": "屬性的鎖定狀態計數；> 0 時屬性視為已鎖定，一般運算對其為 no-op。",
+"門檻技能": "飽食 / 耐心門檻命中時加入行動佇列的技能。",
+"階段": "營業的執行階段；依序為 營業開始 / 回合開始 / 玩家行動 / 顧客行動 / 回合結束，終止時轉入 營業成功 / 營業失敗；詳見【十九、核心流程】。",
+"額外發動次數上限": "卡牌的屬性；玩家出牌時額外發動次數隨機區間的上限。",
+"額外發動次數下限": "卡牌的屬性；玩家出牌時額外發動次數隨機區間的下限。",
+"顧客卡牌化": "由 `cardify` 命令使顧客自座位列表移至卡牌化列表的狀態；同時於玩家手牌生成 1 張綁定該顧客的卡牌（cardID = 命令指定、自動 `不棄卡牌`）；顧客進入「全凍結狀態」（詳見【三、名詞列表｜卡牌化列表】）。",
+"顧客回座": "由 `guestReturn` 命令將遊蕩中的顧客移回座位列表；`剩餘座位 = 0` 時走生氣離場路徑。",
+"顧客行動技能": "於「顧客行動階段」自行動佇列彈出後啟動的技能。",
+"顧客資料": "顧客的靜態定義；屬性詳見【四、表格結構｜顧客（Guest）表格】。",
+"顧客遊蕩": "由 `guestRoam` 命令使顧客自座位列表移至遊蕩列表的狀態；入列時 `self.sate` / `self.sateSeal` / `self.calmSeal` 鎖定計數各 + 1（飽食值不可變、飽食 / 耐心技能彈出時被封印閘門跳過）。",
+"顧客離場": "觸發 `exitAny` 的離場統稱；由結算流程（飽食 / 耐心）或 `guestExit` 命令觸發；任一路徑於自所在容器（座位列表 / 遊蕩列表）移除前皆觸發 `exitAny`，依路徑可同時搭配 `exitSate` / `exitCalm`（互不互斥），移除後觸發 `exitDone`。",
+"飽食值": "顧客的屬性，關聯飽食離場；不可為負，運算後低於 0 時夾為 0。",
+"飽食值離場線": "顧客的屬性，飽食值達到此值時觸發飽食離場；建立顧客實例時自顧客資料載入，可被命令增減。",
+"飽食技能": "顧客資料.飽食技能列表中、由飽食門檻命中加入行動佇列的門檻技能；行動類型 = 飽食；於顧客行動階段彈出後啟動（受封印飽食技能閘門控制）。",
+"飽食門檻": "飽食值的階段門檻線。",
+"飽食離場": "觸發 `exitSate` 的離場路徑；由結算流程飽食達線、或 `guestExit(..., 是否給滿意值=true, ...)` 觸發；自所在容器（座位列表 / 遊蕩列表）移除並提供餐廳滿意值。",
+"餐廳士氣值": "餐廳的全域屬性；範圍 `0 ~ 餐廳士氣值上限`，運算後超出此範圍時夾在邊界。",
+"餐廳士氣值上限": "餐廳士氣值的上限值；於營業開始時自設定表格載入，可被命令增減。",
+"餐廳士氣值格擋": "餐廳的全域屬性；每 1 點抵擋 1 次「餐廳士氣值 `-=`」運算（無視扣減值），優先於餐廳士氣值護盾消耗，下限夾 0。",
+"餐廳士氣值護盾": "餐廳的全域屬性；扣減「餐廳士氣值」時優先消耗，下限夾 0。",
+"餐廳滿意值": "餐廳的全域屬性。"
+}
+</script>
+
+<script>
+(function () {
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+
+    // ----- Markdown 渲染 -----
+    function renderMd(targetId, sourceId) {
+        const target = document.getElementById(targetId);
+        const source = document.getElementById(sourceId);
+        if (target && source) {
+            target.innerHTML = marked.parse(source.textContent.trim());
+        }
+    }
+    renderMd('front', 'md-front');
+    renderMd('flow-extra-body', 'md-flow-extra');
+    renderMd('flow-sub-freeze-body', 'md-flow-sub-freeze');
+    renderMd('back', 'md-back');
+
+    document.querySelectorAll('.vt-text[data-md]').forEach(el => {
+        const src = document.getElementById(el.dataset.md);
+        if (src) el.innerHTML = marked.parse(src.textContent.trim());
+    });
+
+    // ----- 中文數字 → 阿拉伯 -----
+    const CN_DIGITS = { '零':0, '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9 };
+    function chineseToArabic(s) {
+        if (!s) return null;
+        if (s === '十') return 10;
+        if (s.length === 1) return CN_DIGITS[s] !== undefined ? CN_DIGITS[s] : null;
+        if (s.length === 2) {
+            if (s[0] === '十') return 10 + (CN_DIGITS[s[1]] || 0);
+            if (s[1] === '十') return (CN_DIGITS[s[0]] || 0) * 10;
+        }
+        if (s.length === 3 && s[1] === '十') {
+            return (CN_DIGITS[s[0]] || 0) * 10 + (CN_DIGITS[s[2]] || 0);
+        }
+        return null;
+    }
+
+    // ----- 為動態渲染的 H2 / H3 / H4 補 id；建立引用索引 -----
+    function slugify(text) {
+        return text.trim()
+            .replace(/\s+/g, '-')
+            .replace(/[（）()\[\]【】，,。.、:：;；]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    const main = document.querySelector('main');
+    const subMap = {}; // 'N::子段文字' → anchor id
+    const sectionTitles = {}; // N → H2 textContent（用於 hover 提示）
+
+    function assignIds() {
+        let currentN = null;
+
+        function walk(node) {
+            if (node.nodeType !== 1) return;
+            const tag = node.tagName;
+            if (tag === 'H2') {
+                const text = node.textContent.trim();
+                const m = text.match(/^([零一二三四五六七八九十]+)、/);
+                if (m) {
+                    const n = chineseToArabic(m[1]);
+                    if (n !== null) {
+                        // 若已有 id（hardcoded sec-19/20/21）就保留
+                        if (!node.id) node.id = 'sec-' + n;
+                        currentN = n;
+                        sectionTitles[n] = text;
+                    }
+                }
+            } else if (tag === 'H3' || tag === 'H4') {
+                const text = node.textContent.trim();
+                let anchorId;
+                const flowSection = node.closest('.flow-section');
+                if (flowSection && flowSection.id) {
+                    anchorId = flowSection.id;
+                } else {
+                    const slug = slugify(text) || 'h-' + Math.random().toString(36).slice(2, 8);
+                    anchorId = tag.toLowerCase() + '-' + slug;
+                    let finalId = anchorId;
+                    let i = 1;
+                    while (document.getElementById(finalId)) {
+                        finalId = anchorId + '-' + (++i);
+                    }
+                    node.id = finalId;
+                    anchorId = finalId;
+                }
+                if (currentN !== null) {
+                    subMap[currentN + '::' + text] = anchorId;
+                }
+                return; // 不向下遞迴 h3/h4 子節點
+            }
+            for (let c = node.firstChild; c; c = c.nextSibling) walk(c);
+        }
+        walk(main);
+    }
+    assignIds();
+
+    // 視覺隱藏 H2 章名數字前綴（保留 textContent 供錨點與名詞 hover 使用）
+    document.querySelectorAll('main h2').forEach(h2 => {
+        h2.innerHTML = h2.innerHTML.replace(
+            /^([零一二三四五六七八九十]+、)/,
+            '<span class="sec-num">$1</span>'
+        );
+    });
+
+    // 標記名詞列表區域（sec-3 H2 之後到下一個 H2 之前）的所有兄弟元素,wrap 名詞時跳過
+    (function markTermsArea() {
+        const h2 = document.getElementById('sec-3');
+        if (!h2) return;
+        let node = h2.nextElementSibling;
+        while (node && node.tagName !== 'H2') {
+            node.classList.add('terms-list-area');
+            node = node.nextElementSibling;
+        }
+    })();
+
+    // ----- 【...】 引用跳轉解析 -----
+    const REF_RE = /【([^【】]+?)】/g;
+
+    function resolveRef(content) {
+        const parts = content.split('｜');
+        const sectionPart = parts[0].trim();
+        const subParts = parts.slice(1).map(s => s.trim()).filter(Boolean);
+
+        const m = sectionPart.match(/^([零一二三四五六七八九十]+)、/);
+        if (!m) return null;
+        const n = chineseToArabic(m[1]);
+        if (n === null) return null;
+        const sectionId = 'sec-' + n;
+        if (!document.getElementById(sectionId)) return null;
+
+        // 多段子段：取末段做匹配；找不到時降級到 H2
+        for (let i = subParts.length - 1; i >= 0; i--) {
+            const sub = subParts[i];
+            const key = n + '::' + sub;
+            if (subMap[key]) return subMap[key];
+        }
+        return sectionId;
+    }
+
+    function shouldSkipForText(node) {
+        let p = node.parentNode;
+        while (p && p !== document.body) {
+            const tag = p.tagName;
+            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE') return true;
+            if (tag === 'A' && p.classList && p.classList.contains('ref')) return true;
+            if (p.classList && p.classList.contains('term')) return true;
+            p = p.parentNode;
+        }
+        return false;
+    }
+
+    function getTextNodes(root) {
+        const out = [];
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        let n;
+        while ((n = walker.nextNode())) {
+            if (n.nodeValue && n.nodeValue.trim()) out.push(n);
+        }
+        return out;
+    }
+
+    function resolveReferences(root) {
+        const textNodes = getTextNodes(root);
+        textNodes.forEach(node => {
+            if (shouldSkipForText(node)) return;
+            const text = node.nodeValue;
+            REF_RE.lastIndex = 0;
+            if (!REF_RE.test(text)) return;
+            REF_RE.lastIndex = 0;
+            const frag = document.createDocumentFragment();
+            let last = 0;
+            let m;
+            while ((m = REF_RE.exec(text))) {
+                if (m.index > last) {
+                    frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+                }
+                const refId = resolveRef(m[1]);
+                if (refId) {
+                    const a = document.createElement('a');
+                    a.className = 'ref';
+                    a.href = '#' + refId;
+                    a.textContent = m[0];
+                    frag.appendChild(a);
+                } else {
+                    frag.appendChild(document.createTextNode(m[0]));
+                }
+                last = m.index + m[0].length;
+            }
+            if (last < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(last)));
+            }
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
+
+    resolveReferences(main);
+
+    // ----- 名詞 hover tooltip -----
+    const terms = JSON.parse(document.getElementById('terms-data').textContent || '{}');
+    const sortedTerms = Object.keys(terms).sort((a, b) => b.length - a.length);
+
+    function shouldSkipForTerm(node) {
+        let p = node.parentNode;
+        while (p && p !== document.body) {
+            const tag = p.tagName;
+            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE') return true;
+            if (tag === 'A') return true;
+            if (tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4') return true;
+            if (p.classList && p.classList.contains('term')) return true;
+            if (p.classList && p.classList.contains('terms-list-area')) return true; // 名詞列表自身範圍
+            // 表格分隔列以 marked 渲染後不會出現（th/td 取代）；保險起見不額外處理
+            p = p.parentNode;
+        }
+        return false;
+    }
+
+    function wrapTermsInNode(node) {
+        if (shouldSkipForTerm(node)) return;
+        let cursor = node;
+        // 反覆找出最早出現的名詞 → 切割
+        while (cursor && cursor.nodeType === 3) {
+            const text = cursor.nodeValue;
+            if (!text) break;
+            let best = null;
+            for (const t of sortedTerms) {
+                const idx = text.indexOf(t);
+                if (idx === -1) continue;
+                if (!best || idx < best.idx || (idx === best.idx && t.length > best.term.length)) {
+                    best = { term: t, idx: idx };
+                }
+            }
+            if (!best) break;
+            const before = text.slice(0, best.idx);
+            const matched = text.slice(best.idx, best.idx + best.term.length);
+            const after = text.slice(best.idx + best.term.length);
+            const span = document.createElement('span');
+            span.className = 'term';
+            span.dataset.term = best.term;
+            span.textContent = matched;
+            cursor.nodeValue = before;
+            const afterNode = document.createTextNode(after);
+            const parent = cursor.parentNode;
+            parent.insertBefore(span, cursor.nextSibling);
+            parent.insertBefore(afterNode, span.nextSibling);
+            cursor = afterNode;
+        }
+    }
+
+    function wrapTerms(root) {
+        const nodes = getTextNodes(root);
+        nodes.forEach(wrapTermsInNode);
+    }
+
+    if (sortedTerms.length > 0) wrapTerms(main);
+
+    // ----- Tooltip 行為 -----
+    function cleanDesc(desc) {
+        return desc
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/`([^`]+?)`/g, '$1')
+            .replace(/\[\[(.+?)\]\]/g, '$1');
+    }
+
+    const tip = document.createElement('div');
+    tip.className = 'term-tip';
+    document.body.appendChild(tip);
+    let tipShown = false;
+
+    document.addEventListener('mouseover', (e) => {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('term')) {
+            const name = t.dataset.term;
+            const desc = terms[name];
+            if (!desc) return;
+            tip.innerHTML = '<strong></strong><span></span>';
+            tip.querySelector('strong').textContent = name;
+            tip.querySelector('span').textContent = cleanDesc(desc);
+            tip.style.display = 'block';
+            tipShown = true;
+        }
+    });
+    document.addEventListener('mouseout', (e) => {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('term')) {
+            tip.style.display = 'none';
+            tipShown = false;
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!tipShown) return;
+        const x = e.clientX + 14;
+        const y = e.clientY + 18;
+        const maxX = window.innerWidth - tip.offsetWidth - 12;
+        const maxY = window.innerHeight - tip.offsetHeight - 12;
+        tip.style.left = Math.min(x, maxX) + 'px';
+        tip.style.top = Math.min(y, maxY) + 'px';
+    });
+
+    // ----- Toggle 視覺化 ↔ 文字流程 -----
+    document.querySelectorAll('.flow-section').forEach(section => {
+        section.querySelectorAll('.vt-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                section.querySelectorAll('.vt-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+                section.querySelectorAll('.vt-view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== view));
+            });
+        });
+    });
+
+    // ----- 渲染 mermaid（在 DOM 後處理完成後） -----
+    mermaid.run({ querySelector: '.mermaid' });
+
+    // ----- IntersectionObserver 同步 aside .active 狀態 -----
+    const navLinks = document.querySelectorAll('aside a[data-target]');
+    function setActive(id) {
+        navLinks.forEach(a => a.classList.toggle('active', a.dataset.target === id));
+    }
+    function observeTargets() {
+        const targets = [];
+        navLinks.forEach(a => {
+            const el = document.getElementById(a.dataset.target);
+            if (el) targets.push(el);
+        });
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter(e => e.isIntersecting)
+                .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            if (visible.length > 0) {
+                setActive(visible[0].target.id);
+            }
+        }, {
+            rootMargin: '-20% 0px -65% 0px',
+            threshold: 0
+        });
+        targets.forEach(t => observer.observe(t));
+    }
+    setTimeout(observeTargets, 200);
+})();
+</script>
+
+</body>
+</html>

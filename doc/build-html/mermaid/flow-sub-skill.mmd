@@ -1,0 +1,48 @@
+flowchart TD
+    Start([啟動技能 效果列表, 技能群組編號]) --> A0["設置 沿用來源 = 空集合"]
+    A0 --> B1{"效果列表 > 0?"}
+    B1 -->|否| End([結束啟動技能])
+    B1 -->|是| A1["從效果列表彈出 1 個 → 該效果"]
+    A1 --> B2{"該效果.目標類型?"}
+
+    B2 -->|無目標| A2["本次 self 集合 = 空物件<br/>沿用來源 = 空集合"]
+
+    B2 -->|新選顧客 / 新選手牌| A4n["候選對象 filter:<br/>顧客類: 座位列表 排除 skillImmune 技能群組編號 > 0 者<br/>手牌類: 手牌 無額外 filter"]
+    A4n --> A5n["依【九、目標數量】退化規則<br/>不適用退化時: 暫停流程<br/>玩家選滿 目標數量 個對象"]
+    A5n --> A6n["本次 self 集合 = 選取結果<br/>沿用來源 = 本次 self 集合"]
+
+    B2 -->|隨機顧客 / 隨機手牌| A4r["候選對象 filter:<br/>顧客類: 座位列表 排除 skillImmune 技能群組編號 > 0 者<br/>手牌類: 手牌 無額外 filter"]
+    A4r --> A5r["依【九、目標數量】退化規則<br/>不適用退化時: 系統隨機選 目標數量 個對象"]
+    A5r --> A6r["本次 self 集合 = 選取結果<br/>沿用來源 = 本次 self 集合"]
+
+    B2 -->|沿用顧客 / 沿用手牌| A7["本次 self 集合 = 沿用來源<br/>依【八】沿用規則<br/>沿用來源不變"]
+
+    A2 --> B3{"foreach self in 本次 self 集合<br/>依 該效果.效果類型?"}
+    A6n --> B3
+    A6r --> B3
+    A7 --> B3
+
+    B3 -->|立即| B4{"觸發條件成立?"}
+    B4 -->|是| A8["執行 立即命令"]
+    A8 --> R1(( ))
+    B4 -->|否| R1
+
+    B3 -->|觸發| C1[/"套用 [堆疊處理]"/]
+    C1 --> R1
+
+    B3 -->|常駐| C2[/"套用 [堆疊處理]"/]
+    C2 --> B5{"實際增加層數 > 0?"}
+    B5 -->|是| A9["執行 啟動命令"]
+    A9 --> R1
+    B5 -->|否| R1
+
+    R1 --> B1
+
+    class Start,End terminal
+    class A0,A1,A2,A4n,A4r,A5n,A5r,A6n,A6r,A7,A8,A9 action
+    class B1,B2,B3,B4,B5 decision
+    class C1,C2 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

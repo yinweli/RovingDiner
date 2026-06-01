@@ -1,0 +1,22 @@
+flowchart TD
+    Start([顧客行動階段]) --> T1[/"觸發時機: **顧客開始**"/]
+    T1 --> B1{"行動佇列 <= 0<br/>or 下一階段 == '回合結束'?"}
+    B1 -->|是| T2[/"觸發時機: **顧客結束**"/]
+    T2 --> End([清除 下一階段<br/>進入回合結束階段])
+    B1 -->|否| A1["從行動佇列彈出 1 個 → 該行動<br/>設置 最後行動顧客 / 最後行動技能<br/>設置 回合行動次數 += 1"]
+    A1 --> B2{"行動類型 + 封印計數?"}
+    B2 -->|飽食 && 封印飽食技能 > 0| A2["跳過啟動<br/>(行動消費完畢)"]
+    B2 -->|耐心 && 封印耐心技能 > 0| A2
+    B2 -->|否則| A3["啟動技能: **顧客行動技能**"]
+    A2 --> T3[/"觸發時機: **顧客行動**"/]
+    A3 --> T3
+    T3 --> B1
+
+    class Start,End terminal
+    class A1,A2,A3 action
+    class B1,B2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

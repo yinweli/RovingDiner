@@ -1,0 +1,13 @@
+flowchart TD
+    Start([回合結束階段]) --> T1[/"觸發時機: **回合結束**"/]
+    T1 --> A0["回合結束設置:<br/>設置 座位列表 + 遊蕩列表 每位顧客.耐心值 -= 1<br/>if 出牌點數重置封印 鎖定計數 == 0:<br/>設置 出牌點數 = 0<br/>其他..."]
+    A0 --> A1["推進效果"]
+    A1 --> A2["執行結算"]
+    A2 --> End([進入回合開始階段])
+
+    class Start,End terminal
+    class A0,A1,A2 action
+    class T1 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

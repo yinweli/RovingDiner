@@ -1,0 +1,23 @@
+flowchart TD
+    Start([執行結算]) --> A0["設置 結算旗標 = true"]
+    A0 --> J1[/"套用 [終止判定]"/]
+    J1 --> A1["foreach 該顧客 in 所有顧客:<br/>foreach 門檻 in 飽食門檻列表 (由低到高):<br/>if 飽食值 >= 門檻值 && 門檻 未觸發:<br/>標記已觸發 + 加入行動佇列 (飽食)"]
+    A1 --> A2["foreach 該顧客 (飽食值 >= 飽食值離場線):<br/>設置 最後離場顧客 / 座位 / 回合離場人數 += 1<br/>觸發時機: **顧客離場** + **飽食離場**<br/>從容器移除該顧客<br/>觸發時機: **顧客離場後**<br/>清理效果(該顧客)<br/>設置 餐廳滿意值 += 該顧客.滿意值"]
+    A2 --> J2[/"套用 [終止判定]"/]
+    J2 --> A3["foreach 該顧客 in 所有顧客:<br/>foreach 門檻 in 耐心門檻列表 (由高到低):<br/>if 耐心值 <= 門檻值 && 門檻 未觸發:<br/>標記已觸發 + 加入行動佇列 (耐心)"]
+    A3 --> A4["foreach 該顧客 (耐心值 <= 0):<br/>設置 最後離場顧客 / 座位 / 回合離場人數 += 1<br/>觸發時機: **顧客離場** + **生氣離場**<br/>從容器移除該顧客<br/>觸發時機: **顧客離場後**<br/>清理效果(該顧客)<br/>以該顧客為 damageGuest, 餐廳士氣值 -= 該顧客.士氣值"]
+    A4 --> J3[/"套用 [終止判定]"/]
+    J3 --> B1{"手牌 > 手牌上限?"}
+    B1 -->|是| A5["暫停流程<br/>玩家手動棄牌至 手牌 <= 手牌上限"]
+    A5 --> A6["設置 結算旗標 = false"]
+    B1 -->|否| A6
+    A6 --> End([返回呼叫流程])
+
+    class Start,End terminal
+    class A0,A1,A2,A3,A4,A5,A6 action
+    class B1 decision
+    class J1,J2,J3 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

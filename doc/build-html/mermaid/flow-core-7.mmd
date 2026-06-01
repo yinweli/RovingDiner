@@ -1,0 +1,8 @@
+flowchart TD
+    Start([營業失敗階段]) --> T1[/"觸發時機: **營業失敗**"/]
+    T1 --> End([終止營業: 失敗])
+
+    class Start,End terminal
+    class T1 trigger
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26
