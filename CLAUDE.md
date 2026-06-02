@@ -9,16 +9,27 @@ This file provides guidance for AI CLIs (such as Claude Code or ChatGPT Codex) w
 - Implementation plans: Chinese descriptions with English technical terms
 - For canonical Chinese-English naming (events, attributes, commands, fields, identifiers), refer to the glossary in `doc/營業規格書.md` (section 二、英文詞彙對照).
 
-### Spec Citation Format (Go comments)
+### Spec Citation Format
 
-When a Go comment (`.go` files) cites a design spec under `doc/`, use this format:
+Two formats — pick by where the citation lives. Tell at a glance: **full-width `｜` and no 檔名 → a Markdown spec doc; spaced half-width `|` with 檔名 → Go code.**
 
-- Format: `【檔名 | 章節編號、章節名稱 | 小節】` — single space around each `|`; the third segment (`小節`) is optional.
-- `檔名`: one of `營業規格書` / `營業實作規格書` / `營業顯示規格書`. Do not also write the doc name as prose before the bracket (the `檔名` already names it).
-- `章節編號、章節名稱`: copied from the chapter's `##` heading. Numbering follows the source doc — Chinese numerals in `營業規格書` / `營業實作規格書` (e.g. `十八、表演資訊`), Arabic in `營業顯示規格書` (e.g. `3、事件流的消費：速率與步進`). The separator is always `、`, even when the heading uses `.`.
-- `小節` (optional): a number for a numbered subsection (`### 1.` → `1`), the title for a titled subsection (`### 觸發時機` → `觸發時機`), or a named entry inside a chapter's list/table (e.g. `phaseJump`).
+**In Markdown spec docs (`doc/*.md`):**
+
+- Format: `【章編號、章名｜節編號. 節名｜子節】` — levels separated by full-width `｜`; no spaces around `【` `】` (the full-width brackets carry their own spacing).
+- 節 mirrors the `### N.` heading: half-width `.` + space (e.g. `【十七、命令｜1. 屬性修改命令】`). A titled (un-numbered) subsection follows `｜` directly (e.g. `【二十、獨立流程｜觸發時機】`). A whole-chapter cite drops 節 (e.g. `【七、效果類型】`).
+- Omit 檔名 for an intra-doc cite; when pointing at another spec, name it in prose before the bracket (e.g. 詳見營業實作規格書【四、解耦的關鍵：邊界介面】).
+- Verb roles: `詳見【…】` (info pointer) / `依【…】` (follow the rule there) / `使用【…】` (use the command/syntax) / `引用【…】` (reuse the instance/definition). Do not use `見【…】`. When `【…】` is itself the subject/object and the syntax leaves no room, the verb prefix may be dropped.
+- Why full-width `｜`: a half-width `|` would break Markdown tables.
+
+**In Go code comments (`.go`):**
+
+- Format: `【檔名 | 章節編號、章節名稱 | 小節】` — segments separated by half-width `|` with one surrounding space; the third segment (`小節`) is optional.
+- `檔名` required: one of `營業規格書` / `營業實作規格書` / `營業顯示規格書`. Do not also write the doc name as prose before the bracket.
+- `章節編號、章節名稱`: copied from the chapter's `##` heading; separator always `、`. Numbering follows the source doc — Chinese numerals in `營業規格書` / `營業實作規格書`, Arabic in `營業顯示規格書`.
+- `小節` (optional): a number (`### 1.` → `1`), a title (`### 觸發時機` → `觸發時機`), or a named entry inside a list/table (e.g. `phaseJump`).
 - The 編號 is authoritative for locating; the 名稱 is for readability. If they drift, the 編號 wins.
 - Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、事件流的消費：速率與步進】`.
+- Why half-width `|` + 檔名: comments aren't inside Markdown tables (no clash), and code always cites across into the docs.
 
 ## Context Management
 
@@ -35,7 +46,14 @@ When a Go comment (`.go` files) cites a design spec under `doc/`, use this forma
 - At the END of a work session — or whenever a milestone / sub-task finishes — update `PROGRESS.md`: milestone status, any new carryover to-dos, and design decisions just settled with the user.
 - Keep it lean: record only what git and the specs don't already show. Rule details defer to `doc/`; code state defers to git. `PROGRESS.md` holds the deferred to-dos and the "why" decisions, so they survive context loss.
 
+## Workflow
+
+- For multi-step, repetitive, or cross-file tasks, prefer a Python script over a long chain of shell commands.
+- Reach for Python when the task involves: batch file operations; parsing or transforming structured data; or any loop / conditional / cross-file text processing.
+
 ## Code Style
+
+*Applies to hand-written Go code.*
 
 - In Go, `false` checks must be explicit. Negation-style checks are forbidden.
   - Example: `if x == false {}`
@@ -56,6 +74,21 @@ When a Go comment (`.go` files) cites a design spec under `doc/`, use this forma
 - Iterator naming:
   - Use `itor` for general iteration
   - Use `k, v` for map iteration
+
+## Spec Authoring & Review (doc/*.md)
+
+*Applies when authoring or reviewing the spec docs under `doc/` — parallel to Code Style above, which governs Go code.*
+
+- **Layer first**: mark the current discussion layer (architecture / flow / mechanism / detail); don't mix layers in one reply, and get the user's OK before drilling to the next layer.
+- **Defer edge cases**: when an edge case, exception, or conflict surfaces, note it as a bullet — don't expand a solution on the spot; batch them once the main architecture is stable.
+- **One issue per reply**: avoid "while we're at it…".
+- **Don't auto-fill**: don't proactively add examples, tables, or reserved-word lists unless asked, or unless the omission causes a real semantic ambiguity.
+- **Short by default**: a review reply defaults to ≤5 paragraphs; go longer only when the user asks or the issue is genuinely complex.
+- **Bullets over prose**: prefer bullets; split long sentences into separate lines.
+- **Propose, don't edit**: in the review phase, default to observations and suggestions only — don't Edit the docs unless the user explicitly says to land it.
+- **SSOT, don't restate**: write a rule's detail only in its SSOT section; elsewhere point with `詳見【…】` rather than repeating it (even when restating would be convenient).
+- **Lock vocabulary**: before editing, check 【三、名詞列表】 / 【二、英文詞彙對照】 and reuse existing terms; list any new term separately and confirm with the user first.
+- **Concise first**: omit non-essential edge cases / notes / defensive prose by default; write the main case plus the general rule rather than enumerating every case.
 
 ## Commit Message Convention
 
