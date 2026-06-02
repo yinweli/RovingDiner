@@ -8,7 +8,7 @@ import (
 // 對應營業實作規格書【四、解耦的關鍵：邊界介面】。
 //
 // 靜態表格不走介面：核心直接吃 Sheeter 雙語言生成的 *sheeter.Sheeter（資料 port 本身），
-// 以 reader.Get 查詢；衍生索引由核心預建（見 award.go）。
+// 以 reader.Get 查詢；衍生索引由核心預建（見 helper.go）。
 //
 // 核心完全同步、單執行緒、無 channel：需要玩家輸入時阻塞呼叫 Operator，
 // 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。

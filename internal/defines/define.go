@@ -4,11 +4,11 @@ package defines
 const NoneID InstanceID = 0
 
 const (
-	EventLifecycle     Event = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）
-	EventContainerMove              // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化
-	EventPropertyDelta              // sate / calm / score / 鎖定計數 變化
-	EventTrigger                    // 觸發時機到達、某效果觸發
-	EventPhase                      // phase 切換
+	EventInstance  Event = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）
+	EventContainer              // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化
+	EventProperty               // sate / calm / score / 鎖定計數 變化
+	EventTrigger                // 觸發時機到達、某效果觸發
+	EventPhase                  // phase 切換
 )
 
 // 階段；值採用規格書使用的中文字面值。
