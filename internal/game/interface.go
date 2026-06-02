@@ -2,25 +2,16 @@ package game
 
 import (
 	"github.com/yinweli/RovingDiner/internal/defines"
-	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// 這四個介面是核心對外的唯一邊界；TUI 與測試各自提供實作。
-// 對應營業實作規格書【四、解耦的關鍵：四個邊界介面】。
+// 這三個介面是核心對外的唯一行為邊界；TUI 與測試各自提供實作。
+// 對應營業實作規格書【四、解耦的關鍵：邊界介面】。
+//
+// 靜態表格不走介面：核心直接吃 Sheeter 雙語言生成的 *sheeter.Sheeter（資料 port 本身），
+// 以 reader.Get 查詢；衍生索引由核心預建（見 award.go）。
 //
 // 核心完全同步、單執行緒、無 channel：需要玩家輸入時阻塞呼叫 Operator，
 // 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。
-
-// Dater 唯讀靜態表格（包既有 sheet readers）。
-type Dater interface {
-	Card(id int32) *sheeter.Card
-	Guest(id int32) *sheeter.Guest
-	Skill(id int32) *sheeter.Skill
-	Effect(id int32) *sheeter.Effect
-	Seat(id int32) *sheeter.Seat
-	Setting(id string) *sheeter.Setting
-	Award(group int32) []*sheeter.Award // 依抽獎群組聚合（衍生索引在 features 預建）
-}
 
 // Rander 唯一亂數來源（單一 seeded PRNG）；決定性的基礎。
 type Rander interface {

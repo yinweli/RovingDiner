@@ -1,4 +1,4 @@
-package features
+package infra
 
 import "math/rand"
 
