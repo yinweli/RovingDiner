@@ -1,0 +1,18 @@
+flowchart TD
+    Start([推進效果]) --> A0["從效果佇列篩選:<br/>結束回合 > 0 && 結束回合 <= 當前回合<br/>→ 結束列表"]
+    A0 --> A1["結束列表 依「作用順序、效果編號」排序<br/>(作用順序大者優先;<br/>同作用順序時效果編號小者優先)"]
+    A1 --> B1{"結束列表 > 0?"}
+    B1 -->|否| End([返回呼叫流程])
+    B1 -->|是| A2["從結束列表取下一個 → 該效果"]
+    A2 --> C1[/"重複 該效果.堆疊層數 次:<br/>執行 該效果.結束命令"/]
+    C1 --> A3["從效果佇列移除 該效果"]
+    A3 --> B1
+
+    class Start,End terminal
+    class A0,A1,A2,A3 action
+    class B1 decision
+    class C1 cleanup
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

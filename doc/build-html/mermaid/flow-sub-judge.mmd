@@ -1,0 +1,15 @@
+flowchart TD
+    Start([終止判定]) --> B1{"回合 >= 回合上限<br/>or 餐廳士氣值 <= 0?"}
+    B1 -->|是| A1["設置 結算旗標 = false"]
+    A1 --> End1([進入營業失敗階段])
+    B1 -->|否| B2{"排隊佇列 <= 0<br/>and 座位列表 <= 0<br/>and 遊蕩列表 <= 0<br/>and 卡牌化列表 <= 0?"}
+    B2 -->|是| A2["設置 結算旗標 = false"]
+    A2 --> End2([進入營業成功階段])
+    B2 -->|否| End3([返回呼叫流程])
+
+    class Start,End1,End2,End3 terminal
+    class A1,A2 action
+    class B1,B2 decision
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

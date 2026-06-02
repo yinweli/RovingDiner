@@ -1,0 +1,22 @@
+flowchart TD
+    Start([回合開始階段]) --> A0["回合準備設置:<br/>設置 回合 += 1<br/>設置 所有「回合 X」事件型屬性 = 0"]
+    A0 --> T1[/"觸發時機: **回合準備**"/]
+    T1 --> A1["回合開始設置:<br/>設置 出牌點數 = max(出牌點數, 出牌上限)<br/>其他..."]
+    A1 --> T2[/"觸發時機: **回合開始**"/]
+    T2 --> B1{"剩餘座位 > 0<br/>and 排隊佇列 > 0?"}
+    B1 -->|是| A2["從排隊佇列彈出 1 位 → 該顧客<br/>加入座位列表<br/>設置 最後入座顧客 = 該顧客<br/>設置 回合入座人數 += 1"]
+    A2 --> T3[/"觸發時機: **顧客入座**"/]
+    T3 --> B1
+    B1 -->|否| B2{"下一階段?"}
+    B2 -->|'顧客行動'| E1([清除 下一階段<br/>進入顧客行動階段])
+    B2 -->|'回合結束'| E2([清除 下一階段<br/>進入回合結束階段])
+    B2 -->|default| E3([清除 下一階段<br/>進入玩家行動階段])
+
+    class Start,E1,E2,E3 terminal
+    class A0,A1,A2 action
+    class B1,B2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26
