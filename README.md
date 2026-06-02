@@ -1,5 +1,8 @@
 # RovingDiner（流浪食堂）
 
+![lint](https://github.com/yinweli/RovingDiner/actions/workflows/lint.yml/badge.svg)
+![test](https://github.com/yinweli/RovingDiner/actions/workflows/test.yml/badge.svg)
+
 《流浪食堂 RovingDiner》「營業」階段的回合制規則引擎，以 Go 撰寫。
 
 一次營業是一場可被結算的遊戲流程：玩家透過手牌與技能處理顧客，系統依照回合推進，過程中處理觸發時機、效果佇列與結算規則。
