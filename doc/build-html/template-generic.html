@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>流浪食堂 — <!-- INJECT:title --></title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- INJECT:style -->
+<style>
+/* 通用版（非 SSOT、無 mermaid）專屬覆寫 ——
+   規格書內的 mockup / 套件樹為 ASCII + CJK 混排，需「全形 = 2×半形」才不歪，
+   對齊【營業顯示規格書 | 4、渲染政策：ASCII + CJK only】。
+   故 pre 區改用 CJK 等寬（duospaced）字體；JetBrains Mono / Consolas 的 CJK 非 2× 會錯位。 */
+.doc pre,
+.doc pre code {
+    font-family: "Sarasa Mono TC", "Sarasa Fixed TC", "MS Gothic", "NSimSun",
+        "MingLiU", "Noto Sans Mono CJK TC", "JetBrains Mono", "Consolas", monospace;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside>
+    <h2>流浪食堂</h2>
+    <div class="subtitle">RovingDiner — <!-- INJECT:title --></div>
+    <nav id="toc"></nav>
+</aside>
+
+<main>
+
+<header class="doc-head">
+    <div class="eyebrow"><!-- INJECT:eyebrow --></div>
+    <h1>流浪食堂 — <!-- INJECT:title --></h1>
+    <p><!-- INJECT:lead --></p>
+</header>
+
+<section class="doc" id="content"></section>
+
+</main>
+</div>
+
+<!-- 原始 markdown（type=text/markdown 不會被當 HTML 解析，render 由 marked 於前端完成） -->
+<script type="text/markdown" id="md-src">
+<!-- INJECT:md -->
+</script>
+
+<script>
+(function () {
+    // ----- 1) 渲染 markdown -----
+    const src = document.getElementById('md-src').textContent.trim();
+    const content = document.getElementById('content');
+    content.innerHTML = marked.parse(src);
+
+    // ----- 2) 為 h2 / h3 補錨點 id -----
+    function slugify(text) {
+        return text.trim()
+            .replace(/\s+/g, '-')
+            .replace(/[（）()\[\]【】，,。.、:：;；／/]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+    const heads = Array.prototype.slice.call(content.querySelectorAll('h2, h3'));
+    const used = {};
+    heads.forEach(function (h) {
+        let id = slugify(h.textContent) || 'h';
+        let finalId = id, i = 1;
+        while (used[finalId] || document.getElementById(finalId)) {
+            finalId = id + '-' + (++i);
+        }
+        used[finalId] = 1;
+        h.id = finalId;
+    });
+
+    // ----- 3) 由標題生成左側目錄（沿用 .nav-group 樣式） -----
+    const toc = document.getElementById('toc');
+    const group = document.createElement('div');
+    group.className = 'nav-group';
+    const title = document.createElement('div');
+    title.className = 'nav-group-title';
+    title.textContent = '章節';
+    group.appendChild(title);
+    heads.forEach(function (h) {
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.setAttribute('data-target', h.id);
+        a.textContent = h.textContent.trim();
+        if (h.tagName === 'H3') {
+            a.className = 'sub';
+        } // if
+        group.appendChild(a);
+    });
+    toc.appendChild(group);
+
+    // ----- 4) scroll-spy：高亮當前章節 -----
+    const links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+    const byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('data-target')] = a; });
+
+    function onScroll() {
+        let current = null, bestY = -Infinity;
+        heads.forEach(function (h) {
+            const y = h.getBoundingClientRect().top;
+            if (y <= 120 && y > bestY) {
+                bestY = y;
+                current = h;
+            } // if
+        });
+        links.forEach(function (a) { a.classList.remove('active'); });
+        if (current && byId[current.id]) {
+            byId[current.id].classList.add('active');
+        } // if
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+</script>
+</body>
+</html>

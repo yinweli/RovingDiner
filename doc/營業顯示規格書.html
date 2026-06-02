@@ -1,4 +1,421 @@
-# 營業顯示規格書
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>流浪食堂 — 營業顯示規格書</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-alt: #f3efe6;
+    --border: #e2dccb;
+    --border-strong: #c9c0a8;
+    --text: #2b2a26;
+    --text-soft: #5c5849;
+    --accent: #b8602f;
+    --accent-soft: #f5e6d8;
+    --accent-2: #4a6c5a;
+    --accent-2-soft: #e2ecdf;
+    --code-bg: #2d2a24;
+    --code-text: #f5ecd9;
+    --code-inline-bg: #efe9d6;
+    --code-inline-text: #7c3f1d;
+    --table-header: #ede4ce;
+    --table-row-alt: #faf6ec;
+    --shadow: 0 1px 3px rgba(60,50,30,0.06), 0 4px 16px rgba(60,50,30,0.04);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+    margin: 0;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15.5px;
+}
+
+.app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+}
+
+aside {
+    width: 280px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 36px;
+}
+aside h2 {
+    margin: 4px 8px 2px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+aside .subtitle {
+    margin: 0 8px 18px;
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: 0.5px;
+}
+.nav-group { margin-top: 18px; }
+.nav-group-title {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    padding: 0 10px 6px;
+    margin: 0 0 6px;
+    border-bottom: 1px solid var(--border);
+}
+.nav-group a {
+    display: block;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    margin-bottom: 1px;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-group a:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.nav-group a.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+.nav-group a.sub {
+    font-size: 13px;
+    padding-left: 16px;
+}
+
+main {
+    max-width: 1180px;
+    padding: 48px 56px 120px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.doc-head {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--border-strong);
+}
+.doc-head .eyebrow {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.doc-head h1 {
+    margin: 0 0 12px;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+.doc-head p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 14px;
+    max-width: 680px;
+}
+
+.doc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 48px;
+    margin-bottom: 56px;
+    box-shadow: var(--shadow);
+}
+.doc > h1:first-child,
+.doc h1 {
+    color: var(--accent);
+    font-size: 28px;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent-soft);
+}
+.doc h2 {
+    border-left: 5px solid var(--accent);
+    padding-left: 14px;
+    font-size: 22px;
+    margin: 36px 0 18px;
+    scroll-margin-top: 24px;
+}
+.sec-num { display: none; }
+.doc h3 {
+    color: var(--accent-2);
+    font-size: 17px;
+    margin: 24px 0 12px;
+    scroll-margin-top: 24px;
+}
+.doc h4 {
+    display: inline-block;
+    background: var(--accent-2-soft);
+    color: var(--accent-2);
+    padding: 2px 12px;
+    border-radius: 4px;
+    font-size: 14.5px;
+    margin: 18px 0 10px;
+}
+
+.doc p { margin: 10px 0; }
+.doc ul, .doc ol { margin: 10px 0; padding-left: 24px; }
+.doc li { margin: 4px 0; }
+.doc strong { color: var(--text); }
+
+.doc hr {
+    border: none;
+    border-top: 1px dashed var(--border-strong);
+    margin: 28px 0;
+}
+
+.doc table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14.5px;
+    background: var(--surface);
+}
+.doc table th, .doc table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+.doc table th {
+    background: var(--table-header);
+    color: var(--text);
+    font-weight: 600;
+}
+.doc table tr:nth-child(even) td { background: var(--table-row-alt); }
+
+.doc blockquote {
+    margin: 18px 0;
+    padding: 12px 20px;
+    background: var(--surface-alt);
+    border-left: 4px solid var(--border-strong);
+    color: var(--text-soft);
+    border-radius: 0 8px 8px 0;
+}
+.doc blockquote p { margin: 4px 0; }
+
+.doc code {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.doc pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 14px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+.doc pre code {
+    background: transparent;
+    color: var(--code-text);
+    padding: 0;
+    font-size: inherit;
+}
+
+.flow-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px 24px;
+    margin: 18px 0 28px;
+    scroll-margin-top: 24px;
+}
+.flow-section h3 {
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent-2);
+}
+.vt-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.vt-btn {
+    background: var(--surface);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.vt-btn:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.vt-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.vt-view { margin-top: 4px; }
+.vt-view.hidden { display: none; }
+.vt-text { padding: 6px 4px; }
+.vt-text ul { padding-left: 22px; }
+.vt-text code {
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.mermaid-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+}
+.mermaid {
+    text-align: center;
+    font-family: inherit;
+}
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border-strong);
+}
+
+/* 名詞 hover tooltip */
+.term {
+    text-decoration: underline dotted var(--accent);
+    text-underline-offset: 3px;
+    cursor: help;
+    color: inherit;
+}
+.term:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+.term-tip {
+    position: fixed;
+    display: none;
+    max-width: 360px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12.8px;
+    line-height: 1.6;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+    z-index: 1000;
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+}
+.term-tip strong {
+    color: var(--code-text);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(245,236,217,0.18);
+    padding-bottom: 4px;
+}
+
+/* 【...】 引用跳轉 */
+a.ref {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent);
+    padding: 0 1px;
+}
+a.ref:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 32px 24px 80px; }
+    .doc { padding: 28px 22px; }
+}
+</style>
+<style>
+/* 通用版（非 SSOT、無 mermaid）專屬覆寫 ——
+   規格書內的 mockup / 套件樹為 ASCII + CJK 混排，需「全形 = 2×半形」才不歪，
+   對齊【營業顯示規格書 | 4、渲染政策：ASCII + CJK only】。
+   故 pre 區改用 CJK 等寬（duospaced）字體；JetBrains Mono / Consolas 的 CJK 非 2× 會錯位。 */
+.doc pre,
+.doc pre code {
+    font-family: "Sarasa Mono TC", "Sarasa Fixed TC", "MS Gothic", "NSimSun",
+        "MingLiU", "Noto Sans Mono CJK TC", "JetBrains Mono", "Consolas", monospace;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside>
+    <h2>流浪食堂</h2>
+    <div class="subtitle">RovingDiner — 營業顯示規格書</div>
+    <nav id="toc"></nav>
+</aside>
+
+<main>
+
+<header class="doc-head">
+    <div class="eyebrow">Roving Diner · Display Spec</div>
+    <h1>流浪食堂 — 營業顯示規格書</h1>
+    <p>TUI 顯示／操作層設計。左側目錄由章節標題自動生成、隨捲動高亮；版面 mockup 以 CJK 等寬字體呈現以保對齊。</p>
+</header>
+
+<section class="doc" id="content"></section>
+
+</main>
+</div>
+
+<!-- 原始 markdown（type=text/markdown 不會被當 HTML 解析，render 由 marked 於前端完成） -->
+<script type="text/markdown" id="md-src">
 
 > 本文件記錄「以 Go + 終端機介面（TUI）實作營業系統**顯示／操作層**」的設計決策，作為**實作時的依據**。
 > 主要讀者為負責實作的 AI；內容應可直接轉為實作規格。
@@ -735,3 +1152,78 @@ modal 態：
 
 1. **引擎骨架優先**：先依實作規格書 + SSOT 產出引擎骨架（事件流 + 命令解析 + 結算），不接 UI、用最小 harness 驗證流程順序 —— 這是「AI 能否實作 spec」最直接的測試。
 2. 接 Bubble Tea UI（依 §6 畫面規格、§7 互動規格）。
+
+</script>
+
+<script>
+(function () {
+    // ----- 1) 渲染 markdown -----
+    const src = document.getElementById('md-src').textContent.trim();
+    const content = document.getElementById('content');
+    content.innerHTML = marked.parse(src);
+
+    // ----- 2) 為 h2 / h3 補錨點 id -----
+    function slugify(text) {
+        return text.trim()
+            .replace(/\s+/g, '-')
+            .replace(/[（）()\[\]【】，,。.、:：;；／/]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+    const heads = Array.prototype.slice.call(content.querySelectorAll('h2, h3'));
+    const used = {};
+    heads.forEach(function (h) {
+        let id = slugify(h.textContent) || 'h';
+        let finalId = id, i = 1;
+        while (used[finalId] || document.getElementById(finalId)) {
+            finalId = id + '-' + (++i);
+        }
+        used[finalId] = 1;
+        h.id = finalId;
+    });
+
+    // ----- 3) 由標題生成左側目錄（沿用 .nav-group 樣式） -----
+    const toc = document.getElementById('toc');
+    const group = document.createElement('div');
+    group.className = 'nav-group';
+    const title = document.createElement('div');
+    title.className = 'nav-group-title';
+    title.textContent = '章節';
+    group.appendChild(title);
+    heads.forEach(function (h) {
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.setAttribute('data-target', h.id);
+        a.textContent = h.textContent.trim();
+        if (h.tagName === 'H3') {
+            a.className = 'sub';
+        } // if
+        group.appendChild(a);
+    });
+    toc.appendChild(group);
+
+    // ----- 4) scroll-spy：高亮當前章節 -----
+    const links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+    const byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('data-target')] = a; });
+
+    function onScroll() {
+        let current = null, bestY = -Infinity;
+        heads.forEach(function (h) {
+            const y = h.getBoundingClientRect().top;
+            if (y <= 120 && y > bestY) {
+                bestY = y;
+                current = h;
+            } // if
+        });
+        links.forEach(function (a) { a.classList.remove('active'); });
+        if (current && byId[current.id]) {
+            byId[current.id].classList.add('active');
+        } // if
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+</script>
+</body>
+</html>
