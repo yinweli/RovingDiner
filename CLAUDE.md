@@ -9,6 +9,17 @@ This file provides guidance for AI CLIs (such as Claude Code or ChatGPT Codex) w
 - Implementation plans: Chinese descriptions with English technical terms
 - For canonical Chinese-English naming (events, attributes, commands, fields, identifiers), refer to the glossary in `doc/營業規格書.md` (section 二、英文詞彙對照).
 
+### Spec Citation Format (Go comments)
+
+When a Go comment (`.go` files) cites a design spec under `doc/`, use this format:
+
+- Format: `【檔名 | 章節編號、章節名稱 | 小節】` — single space around each `|`; the third segment (`小節`) is optional.
+- `檔名`: one of `營業規格書` / `營業實作規格書` / `營業顯示規格書`. Do not also write the doc name as prose before the bracket (the `檔名` already names it).
+- `章節編號、章節名稱`: copied from the chapter's `##` heading. Numbering follows the source doc — Chinese numerals in `營業規格書` / `營業實作規格書` (e.g. `十八、表演資訊`), Arabic in `營業顯示規格書` (e.g. `3、事件流的消費：速率與步進`). The separator is always `、`, even when the heading uses `.`.
+- `小節` (optional): a number for a numbered subsection (`### 1.` → `1`), the title for a titled subsection (`### 觸發時機` → `觸發時機`), or a named entry inside a chapter's list/table (e.g. `phaseJump`).
+- The 編號 is authoritative for locating; the 名稱 is for readability. If they drift, the 編號 wins.
+- Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、事件流的消費：速率與步進】`.
+
 ## Context Management
 
 - Manage context usage proactively during long conversations or when working with large files.
