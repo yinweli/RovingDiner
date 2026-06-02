@@ -13,12 +13,12 @@ import (
 // Load 從指定目錄裝載全部 sheetdata，回傳 ready-to-use 的 *sheeter.Sheeter。
 // 這份由 Sheeter 雙語言生成的資料聚合即核心的靜態資料 port，核心直接使用；
 // 衍生索引（如抽獎依群組聚合）由核心自行預建，不在本層。
-func Load(dir string) (*sheeter.Sheeter, error) {
-	ld := newLoader(dir)
-	data := sheeter.NewSheeter(ld)
+func Load(dir string) (data *sheeter.Sheeter, err error) {
+	load := &loader{dir: dir}
+	data = sheeter.NewSheeter(load)
 	ok := data.FromData()
 
-	if err := ld.Err(); err != nil {
+	if err = load.Err(); err != nil {
 		return nil, err
 	} // if
 
@@ -27,11 +27,6 @@ func Load(dir string) (*sheeter.Sheeter, error) {
 	} // if
 
 	return data, nil
-}
-
-// newLoader 建立指向指定 sheetdata 目錄的裝載器。
-func newLoader(dir string) *loader {
-	return &loader{dir: dir}
 }
 
 // loader 從檔案系統讀取 sheetdata 的裝載器；實作 sheeter.Loader，僅供 Load 內部使用。
