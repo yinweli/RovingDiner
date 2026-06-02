@@ -8,16 +8,16 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-func TestSuiteAward(t *testing.T) {
-	suite.Run(t, new(SuiteAward))
+func TestSuiteHelper(t *testing.T) {
+	suite.Run(t, new(SuiteHelper))
 }
 
-// SuiteAward 驗證抽獎群組衍生索引的聚合與排序決定性。
-type SuiteAward struct {
+// SuiteHelper 驗證抽獎群組衍生索引的聚合與排序決定性。
+type SuiteHelper struct {
 	suite.Suite
 }
 
-func (this *SuiteAward) TestBuildAwardIndex() {
+func (this *SuiteHelper) TestBuildAwardIndex() {
 	data := &sheeter.Sheeter{}
 	data.Award.Data = map[int32]*sheeter.Award{
 		1: {ID: 3, Group: 10, CardID: 100, Weight: 1},
@@ -25,7 +25,6 @@ func (this *SuiteAward) TestBuildAwardIndex() {
 		3: {ID: 2, Group: 10, CardID: 102, Weight: 3},
 		4: {ID: 5, Group: 20, CardID: 200, Weight: 1},
 	}
-
 	award := BuildAwardIndex(data)
 
 	// 群組 10 依 ID 排序（不受 map 走訪順序影響）
@@ -43,6 +42,6 @@ func (this *SuiteAward) TestBuildAwardIndex() {
 	this.Nil(award[99])
 }
 
-func (this *SuiteAward) TestEmpty() {
+func (this *SuiteHelper) TestBuildAwardIndexEmpty() {
 	this.Empty(BuildAwardIndex(&sheeter.Sheeter{})) // 無資料回傳空索引
 }

@@ -29,6 +29,7 @@ go.work.sum
 
 # Editor/IDE
 .idea/
+.run/
 # .vscode/
 
 # Claude Code 個人本機設定

@@ -4,11 +4,11 @@ package defines
 const NoneID InstanceID = 0
 
 const (
-	EventLifecycle     Event = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）
-	EventContainerMove              // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化
-	EventPropertyDelta              // sate / calm / score / 鎖定計數 變化
-	EventTrigger                    // 觸發時機到達、某效果觸發
-	EventPhase                      // phase 切換
+	EventInstance  Event = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）
+	EventContainer              // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化
+	EventProperty               // sate / calm / score / 鎖定計數 變化
+	EventTrigger                // 觸發時機到達、某效果觸發
+	EventPhase                  // phase 切換
 )
 
 // 階段；值採用規格書使用的中文字面值。
@@ -24,7 +24,7 @@ const (
 )
 
 // PhaseJumpLegal phaseJump 命令允許設定的「下一階段」合法值集合（不含空字串）。
-// 對應規格書【二十五、操作命令清單｜phaseJump】。
+// 對應【營業規格書 | 二十五、操作命令清單 | phaseJump】。
 var PhaseJumpLegal = map[Phase]bool{
 	PhasePlayerAction: true,
 	PhaseGuestAction:  true,
@@ -93,7 +93,7 @@ const (
 	TaskCalm             // 耐心；查 封印耐心技能 閘門
 )
 
-// 命令對象；對應規格書【二十四、命令對象清單】。
+// 命令對象；對應【營業規格書 | 二十四、命令對象清單】。
 const (
 	SelectorNone Selector = "none" // 無命令對象
 
@@ -153,7 +153,7 @@ const (
 	SelectorExileRand Selector = "exileRand" // 隨機流放牌堆
 )
 
-// 全域屬性名稱；對應規格書【二十三、屬性清單】主表。
+// 全域屬性名稱；對應【營業規格書 | 二十三、屬性清單】主表。
 const (
 	PropertyCardifySize  Property = "cardifySize"  // 卡牌化列表當下大小
 	PropertyDamageGuest  Property = "damageGuest"  // 士氣受損顧客（顧客引用）
@@ -212,7 +212,7 @@ const (
 	PropertyWaitSize     Property = "waitSize"     // 排隊佇列當下大小
 )
 
-// dot-syntax 引用屬性名稱；對應規格書【二十三、屬性清單｜卡牌引用屬性 / 顧客引用屬性】。
+// dot-syntax 引用屬性名稱；對應【營業規格書 | 二十三、屬性清單 | 卡牌引用屬性 / 顧客引用屬性】。
 const (
 	// 卡牌引用屬性
 
@@ -259,7 +259,7 @@ const (
 	AttrScore       Attr = "score"       // 滿意值（顧客；寫鎖）
 )
 
-// 操作命令；對應規格書【二十五、操作命令清單】。
+// 操作命令；對應【營業規格書 | 二十五、操作命令清單】。
 const (
 	// 卡牌屬性 / 效果
 

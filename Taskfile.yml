@@ -16,6 +16,7 @@ tasks:
   doc:
     cmds:
       - python doc/build-html/build.py # 由營業規格書.md 輸出 doc/營業規格書.html
+      - python doc/build-html/build-generic.py # 由實作 / 顯示規格書.md 輸出對應 .html（無 mermaid）
 
   # 更新表格
   sheet:

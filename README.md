@@ -35,6 +35,12 @@
 | `營業實作規格書.md` | **專案架構與工程決策**：套件結構、核心引擎（事件流、PRNG、決定性）、邊界介面解耦、測試策略。 |
 | `營業顯示規格書.md` | **TUI 顯示／操作層**：Bubble Tea debug viewer、事件流消費、畫面佈局、互動與渲染政策。        |
 
+**網頁版（GitHub Pages）**：
+
+- [營業規格書](https://yinweli.github.io/RovingDiner/doc/營業規格書.html)
+- [營業實作規格書](https://yinweli.github.io/RovingDiner/doc/營業實作規格書.html)
+- [營業顯示規格書](https://yinweli.github.io/RovingDiner/doc/營業顯示規格書.html)
+
 文件層級：`營業規格書.md` 為規則 SSOT；`營業實作規格書.md` 定義引擎與架構（含事件流定義）；`營業顯示規格書.md` 僅描述顯示層如何消費引擎。實作文件若與規則文件衝突，以規則文件為準。
 
 ## 專案結構

@@ -5,10 +5,10 @@ import (
 )
 
 // 這三個介面是核心對外的唯一行為邊界；TUI 與測試各自提供實作。
-// 對應營業實作規格書【四、解耦的關鍵：邊界介面】。
+// 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面】。
 //
 // 靜態表格不走介面：核心直接吃 Sheeter 雙語言生成的 *sheeter.Sheeter（資料 port 本身），
-// 以 reader.Get 查詢；衍生索引由核心預建（見 award.go）。
+// 以 reader.Get 查詢；衍生索引由核心預建（見 helper.go）。
 //
 // 核心完全同步、單執行緒、無 channel：需要玩家輸入時阻塞呼叫 Operator，
 // 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。
@@ -35,7 +35,7 @@ type Presenter interface {
 
 // EventData 核心吐給前端的細粒度投影事件。
 // TODO(M5): 各類別的詳細欄位（目標 InstanceID、屬性前後值、表演資訊）於顯示層實作時補齊，
-// 依據營業顯示規格書 §3 / spec【十八】。
+// 依據【營業顯示規格書 | 3、事件流的消費：速率與步進】與【營業規格書 | 十八、表演資訊】。
 type EventData struct {
 	Event defines.Event
 }

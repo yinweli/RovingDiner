@@ -15,15 +15,6 @@ type SuiteRander struct {
 	suite.Suite
 }
 
-func (this *SuiteRander) TestDeterministic() {
-	a := NewRander(42)
-	b := NewRander(42)
-
-	for i := 0; i < 100; i++ {
-		this.Equal(a.Intn(1000), b.Intn(1000))
-	} // for
-}
-
 func (this *SuiteRander) TestIntn() {
 	rander := NewRander(1)
 	this.Equal(0, rander.Intn(0))  // n <= 0 回傳 0
@@ -35,6 +26,17 @@ func (this *SuiteRander) TestIntn() {
 		this.Less(v, 10)
 	} // for
 }
+
+func (this *SuiteRander) TestIntnDeterministic() {
+	a := NewRander(42)
+	b := NewRander(42)
+
+	for i := 0; i < 100; i++ {
+		this.Equal(a.Intn(1000), b.Intn(1000))
+	} // for
+}
+
+// TODO: Shuffle 也要有單元測試
 
 func (this *SuiteRander) TestWeighted() {
 	rander := NewRander(7)
