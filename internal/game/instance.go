@@ -3,7 +3,7 @@ package game
 import "github.com/yinweli/RovingDiner/internal/defines"
 
 // Game 營業實例；持有全域屬性與事件型狀態。
-// 對應規格書【五、實例結構｜營業（Game）實例】。
+// 對應【營業規格書 | 五、實例結構 | 營業（Game）實例】。
 type Game struct {
 	// 餐廳 / 出牌全域數值屬性
 	Morale       Value // 餐廳士氣值
@@ -55,7 +55,7 @@ type Game struct {
 	MorphNewID int32           // 變身後卡牌編號
 }
 
-// Guest 顧客實例；對應規格書【五、實例結構｜顧客（Guest）實例】。
+// Guest 顧客實例；對應【營業規格書 | 五、實例結構 | 顧客（Guest）實例】。
 type Guest struct {
 	InstanceID   defines.InstanceID // 實例唯一識別碼
 	GuestID      int32              // 引用對應顧客資料
@@ -75,7 +75,7 @@ type Guest struct {
 	Freeze       int32              // 凍結起始回合（卡牌化時記錄；解凍後重置 0）
 }
 
-// Card 卡牌實例；對應規格書【五、實例結構｜卡牌（Card）實例】。
+// Card 卡牌實例；對應【營業規格書 | 五、實例結構 | 卡牌（Card）實例】。
 type Card struct {
 	InstanceID  defines.InstanceID // 實例唯一識別碼
 	CardID      int32              // 引用對應卡牌資料
@@ -90,7 +90,7 @@ type Card struct {
 	Cardify     *Guest             // 卡牌化來源顧客（初值 nil）
 }
 
-// Effect 效果實例；對應規格書【五、實例結構｜效果（Effect）實例】。
+// Effect 效果實例；對應【營業規格書 | 五、實例結構 | 效果（Effect）實例】。
 type Effect struct {
 	InstanceID defines.InstanceID // 實例唯一識別碼
 	EffectID   int32              // 引用對應效果資料
@@ -99,7 +99,7 @@ type Effect struct {
 	Self       Self               // self 物件（空物件 / 顧客 / 卡牌）
 }
 
-// Action 行動實例；對應規格書【五、實例結構｜行動（Action）實例】。
+// Action 行動實例；對應【營業規格書 | 五、實例結構 | 行動（Action）實例】。
 type Action struct {
 	Guest    *Guest       // 顧客實例
 	TaskType defines.Task // 行動類型（飽食 / 耐心）
@@ -107,7 +107,7 @@ type Action struct {
 }
 
 // Value 數值實例；執行期可變屬性的統一容器。
-// 對應規格書【五、實例結構｜數值（Value）實例】。
+// 對應【營業規格書 | 五、實例結構 | 數值（Value）實例】。
 //
 // 所有可變屬性都以本型別表達：一般運算（= += -= *= /= %=）改 Value，
 // 鎖定 / 解鎖（@ #）改 Lock。Lock > 0 時一般運算對該屬性為 no-op。
@@ -122,7 +122,7 @@ func (this Value) Locked() bool {
 	return this.Lock > 0
 }
 
-// Self 效果建立時綁定的對象（卡牌兼顧客引用）；對應規格書【八、目標類型】。
+// Self 效果建立時綁定的對象（卡牌兼顧客引用）；對應【營業規格書 | 八、目標類型】。
 // 兩欄皆 nil 代表空物件（無目標）；至多一欄非 nil。
 type Self struct {
 	Card  *Card  // self 為卡牌時非 nil

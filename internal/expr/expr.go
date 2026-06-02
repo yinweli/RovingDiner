@@ -29,7 +29,7 @@ type Expr struct {
 	root node
 }
 
-// Eval 在給定 Resolver 下求值;ok=false 即【二十七〇8】評估失敗狀態(不拋錯),
+// Eval 在給定 Resolver 下求值;ok=false 即【營業規格書 | 二十七、運算式 | 8】評估失敗狀態(不拋錯),
 // 由呼叫方依場景定義後續行為(觸發條件 → 不成立、觸發次數 → 0、命令 → no-op)。
 func (this *Expr) Eval(resolver Resolver) (value Value, ok bool) {
 	return this.root.eval(resolver)

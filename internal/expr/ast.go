@@ -7,7 +7,7 @@ const (
 	builtinMin = "min" // 內建函式:取最小值
 )
 
-// node 是 AST 節點;eval 在給定 Resolver 下求值,ok=false 即【二十七〇8】評估失敗狀態,沿樹上傳。
+// node 是 AST 節點;eval 在給定 Resolver 下求值,ok=false 即【營業規格書 | 二十七、運算式 | 8】評估失敗狀態,沿樹上傳。
 type node interface {
 	eval(resolver Resolver) (value Value, ok bool)
 }
@@ -338,7 +338,7 @@ func evalArgs(resolver Resolver, arg []node) (result []Value, ok bool) {
 	return result, true
 }
 
-// evalBuiltin 計算內建函式 max / min(見【二十六】):至少 2 引數、全為數值,否則失敗。
+// evalBuiltin 計算內建函式 max / min(見【營業規格書 | 二十六、內建函式清單】):至少 2 引數、全為數值,否則失敗。
 func evalBuiltin(name string, arg []Value) (value Value, ok bool) {
 	if len(arg) < 2 {
 		return Value{}, false

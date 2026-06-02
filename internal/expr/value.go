@@ -49,7 +49,7 @@ func NewRef(id int64) Value {
 	return Value{kind: kindRef, ref: ref{id: id}}
 }
 
-// NewNone 建立空物件引用 Value;空物件只與空物件相等(見【二十七〇2】)。
+// NewNone 建立空物件引用 Value;空物件只與空物件相等(見【營業規格書 | 二十七、運算式 | 2】)。
 func NewNone() Value {
 	return Value{kind: kindRef, ref: ref{none: true}}
 }
@@ -103,7 +103,7 @@ func (this Value) RefID() int64 {
 	return 0
 }
 
-// AsBool 依【二十七〇6】省略比較符的布林判定:布林取自身、數值非 0 為真 / 0 為假、
+// AsBool 依【營業規格書 | 二十七、運算式 | 6】省略比較符的布林判定:布林取自身、數值非 0 為真 / 0 為假、
 // 其餘型別(字串 / 物件引用)評估失敗。供 NOT / AND / OR / 三元條件與呼叫方協調最終值使用。
 func AsBool(value Value) (result, ok bool) {
 	switch value.kind {
@@ -119,7 +119,7 @@ func AsBool(value Value) (result, ok bool) {
 }
 
 // Round 將小數四捨五入為整數,採 half-away-from-zero(2.5→3、-2.5→-3、2.4→2)。
-// expr 內部不四捨五入;此工具供呼叫方(屬性修改命令)寫回屬性時使用,見【十七〇1】運算順序。
+// expr 內部不四捨五入;此工具供呼叫方(屬性修改命令)寫回屬性時使用,見【營業規格書 | 十七、命令 | 1】運算順序。
 func Round(x float64) int32 {
 	return int32(math.Round(x))
 }

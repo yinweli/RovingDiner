@@ -3,7 +3,7 @@ package expr
 import "errors"
 
 // parser 對 token 序列做遞迴下降解析。優先級階梯由低到高:
-// 三元 → 邏輯或 → 邏輯且 → 否定 → 比較 → 加減 → 乘除 → 因子(對齊【二十七〇3】優先順序表)。
+// 三元 → 邏輯或 → 邏輯且 → 否定 → 比較 → 加減 → 乘除 → 因子(對齊【營業規格書 | 二十七、運算式 | 3】優先順序表)。
 type parser struct {
 	token []token
 	pos   int
@@ -223,7 +223,7 @@ func (this *parser) parseFactor() (result node, err error) {
 	return nil, errors.New("expr: 未預期的 token: " + tok.text)
 }
 
-// parseParen 解析括號:內為完整運算式(統一【二十七〇1】的「算術式 / 運算式」分組,由型別於求值決定)。
+// parseParen 解析括號:內為完整運算式(統一【營業規格書 | 二十七、運算式 | 1】的「算術式 / 運算式」分組,由型別於求值決定)。
 func (this *parser) parseParen() (result node, err error) {
 	this.next() // 吃 (
 
