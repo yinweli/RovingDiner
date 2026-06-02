@@ -31,9 +31,9 @@ This file provides guidance for AI CLIs (such as Claude Code or ChatGPT Codex) w
   - Example: `func Load(dir string) (data *sheeter.Sheeter, err error)`
   - Forbidden: `func Load(dir string) (*sheeter.Sheeter, error)`
 
-- Variable names must always be singular, even for slices, arrays, maps, and other collections.
-  - Example: `item := []Item{}`, `guest := []Guest{}`
-  - Forbidden: `items := []Item{}`, `guests := []Guest{}`
+- Names must always be singular — variables, struct fields, parameters, and named return values — even for slices, arrays, maps, and other collections.
+  - Example: `item := []Item{}`, `guest := []Guest{}`, `err []error`
+  - Forbidden: `items := []Item{}`, `guests := []Guest{}`, `errs []error`
 
 - Iterator naming:
   - Use `itor` for general iteration
