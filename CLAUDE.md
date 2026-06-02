@@ -17,6 +17,7 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 
 - Format: `【章編號、章名｜節編號. 節名｜子節】` — levels separated by full-width `｜`; no spaces around `【` `】` (the full-width brackets carry their own spacing).
 - 節 mirrors the `### N.` heading: half-width `.` + space (e.g. `【十七、命令｜1. 屬性修改命令】`). A titled (un-numbered) subsection follows `｜` directly (e.g. `【二十、獨立流程｜觸發時機】`). A whole-chapter cite drops 節 (e.g. `【七、效果類型】`).
+- A chapter range uses half-width `~` between two chapter numbers, names omitted: `【十~十六】` = chapters 10–16.
 - Omit 檔名 for an intra-doc cite; when pointing at another spec, name it in prose before the bracket (e.g. 詳見營業實作規格書【四、解耦的關鍵：邊界介面】).
 - Verb roles: `詳見【…】` (info pointer) / `依【…】` (follow the rule there) / `使用【…】` (use the command/syntax) / `引用【…】` (reuse the instance/definition). Do not use `見【…】`. When `【…】` is itself the subject/object and the syntax leaves no room, the verb prefix may be dropped.
 - Why full-width `｜`: a half-width `|` would break Markdown tables.
@@ -89,6 +90,7 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 - **SSOT, don't restate**: write a rule's detail only in its SSOT section; elsewhere point with `詳見【…】` rather than repeating it (even when restating would be convenient).
 - **Lock vocabulary**: before editing, check 【三、名詞列表】 / 【二、英文詞彙對照】 and reuse existing terms; list any new term separately and confirm with the user first.
 - **Concise first**: omit non-essential edge cases / notes / defensive prose by default; write the main case plus the general rule rather than enumerating every case.
+- **Rebuild after editing**: any change to a `doc/*.md` spec (all three) must be followed by `task lint` (normalize tables + markdownlint) **and** `task doc` (regenerate the HTML — `營業規格書.html` via `build.py`, `營業實作規格書.html` / `營業顯示規格書.html` via `build-generic.py`). Don't leave the `.html` stale. See Doc Pipeline.
 
 ## Commit Message Convention
 
@@ -124,12 +126,12 @@ Hierarchy: `營業規格書.md` is the SSOT for *rules*; `營業實作規格書.
 
 ## Repository Layout
 
-| Path         | Contents                                                                                                                                                                                                                                                                                                        |
-|:-------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `gamedata/`  | Source xlsx tables and the Sheeter build config/script (`sheeter.yaml`, `build.bat`)                                                                                                                                                                                                                            |
-| `sheet/`     | Sheeter-generated Go readers. Generated code — DO NOT EDIT by hand.                                                                                                                                                                                                                                            |
-| `sheetdata/` | Sheeter-generated JSON data. Generated — DO NOT EDIT by hand.                                                                                                                                                                                                                                                  |
-| `doc/`       | Design specs — see [Design Specs](#design-specs-doc). `營業規格書.md` (rules SSOT) · `營業實作規格書.md` (architecture & engine) · `營業顯示規格書.md` (TUI display layer). Build tooling under `doc/build-md/` + `doc/build-html/`; HTML output `doc/營業規格書.html` — see [Doc Pipeline](#doc-pipeline). |
+| Path         | Contents                                                                                                                                                                                                                                                                                                                                                                |
+|:-------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `gamedata/`  | Source xlsx tables and the Sheeter build config/script (`sheeter.yaml`, `build.bat`)                                                                                                                                                                                                                                                                                    |
+| `sheet/`     | Sheeter-generated Go readers. Generated code — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                    |
+| `sheetdata/` | Sheeter-generated JSON data. Generated — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                          |
+| `doc/`       | Design specs — see [Design Specs](#design-specs-doc). `營業規格書.md` (rules SSOT) · `營業實作規格書.md` (architecture & engine) · `營業顯示規格書.md` (TUI display layer). Build tooling under `doc/build-md/` + `doc/build-html/`; HTML output `doc/營業規格書.html` + `doc/營業實作規格書.html` + `doc/營業顯示規格書.html` — see [Doc Pipeline](#doc-pipeline). |
 
 ## Development / Build / Common Commands
 
@@ -149,7 +151,10 @@ task install    # Install dev tools (golangci-lint, sheeter, markdownlint, prett
 Doc work is split across two tasks. The tooling lives under `doc/` (Python 3, stdlib only):
 
 - **Linting + table normalization run in `task lint`** — `doc/build-md/normalize-md-tables.py` aligns Markdown table column widths for monospace CJK (East Asian Ambiguous chars counted as width 2), adjusting cell padding only, never content. It normalizes all `doc/*.md` plus `CLAUDE.md` and `README.md`, and runs before markdownlint `--fix` (which covers all `*.md`, root + `doc/`) so the checks see the final aligned tables. markdownlint does not touch cell padding, so for tables the two are order-independent regardless.
-- **HTML build runs in `task doc`**, via `doc/build-html/build.py` — it slices `doc/營業規格書.md` by section anchors and injects it plus `template.html` and the 14 `mermaid/*.mmd` flow diagrams into placeholders, writing `doc/營業規格書.html`. **SSOT-only**: only `營業規格書.md` has a template + mermaid set; the other two specs get no HTML. Normalization doesn't affect the HTML (the build slices by heading, so cell padding is irrelevant), so `task doc` need not lint or normalize first.
+- **HTML build runs in `task doc`**, two scripts:
+  - `build.py` — the SSOT build: slices `doc/營業規格書.md` by section anchors and injects it plus `template.html` and the 14 `mermaid/*.mmd` flow diagrams into placeholders, writing `doc/營業規格書.html`. The bespoke per-section template + mermaid set is **SSOT-only**.
+  - `build-generic.py` — a generic build (no mermaid) for the non-SSOT specs: renders `doc/營業實作規格書.md` and `doc/營業顯示規格書.md` to their `.html` via `template-generic.html`. It reuses `template.html`'s `<style>` (colors stay in sync, not duplicated), generates the left TOC + scroll-spy in client-side JS from the h2/h3 headings, and overrides the `pre` font to a CJK-duospaced stack so ASCII+CJK mockups / package trees stay aligned (per 顯示 §4). Add an entry to the `DOCS` list in the script to cover another doc.
+  - Normalization doesn't affect the HTML (the build slices/renders by heading, so cell padding is irrelevant), so `task doc` need not lint or normalize first.
 
 So after editing a spec: `task lint` keeps the `.md` tables aligned, `task doc` regenerates the HTML. When editing 【十九、核心流程】or【二十、獨立流程】in the SSOT, check whether the matching `doc/build-html/mermaid/flow-core-*.mmd` / `flow-sub-*.mmd` diagrams need updating before rebuilding. `build.py` matches sections by heading regex; renaming a spec heading (e.g. `## 二十二、觸發時機清單`) without updating the anchor in `build.py` will fail the build with a clear "找不到起始錨點" error — fix the anchor, don't work around it.
 
