@@ -27,6 +27,10 @@ This file provides guidance for AI CLIs (such as Claude Code or ChatGPT Codex) w
   - Example: `} // if`
 - Closing comments on functions or methods are forbidden.
 
+- When a function returns more than one value, every return value must be named (single-return functions need not be named). Applies to hand-written code; generated code under `sheet/` is exempt.
+  - Example: `func Load(dir string) (data *sheeter.Sheeter, err error)`
+  - Forbidden: `func Load(dir string) (*sheeter.Sheeter, error)`
+
 - Variable names must always be singular, even for slices, arrays, maps, and other collections.
   - Example: `item := []Item{}`, `guest := []Guest{}`
   - Forbidden: `items := []Item{}`, `guests := []Guest{}`
