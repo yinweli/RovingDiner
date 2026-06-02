@@ -1,16 +1,22 @@
 package infra
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuiteSheet(t *testing.T) {
 	suite.Run(t, new(SuiteSheet))
 }
 
-// SuiteSheet 驗證 sheetdata 載入管線：Loader → Sheeter 端到端串接。
+// SuiteSheet 驗證 sheet 載入：對外 Load 的端到端串接，與內部 loader 的讀取／錯誤累積／執行緒安全。
 type SuiteSheet struct {
 	suite.Suite
 }
@@ -37,6 +43,51 @@ func (this *SuiteSheet) TestLoad() {
 
 func (this *SuiteSheet) TestLoadMissing() {
 	data, err := Load(this.T().TempDir())
-	this.Require().Error(err) // 目錄無任何 json，Loader 累積錯誤
+	this.Require().Error(err) // 目錄無任何 json，loader 累積錯誤
 	this.Nil(data)
+}
+
+func (this *SuiteSheet) TestLoaderRead() {
+	dir := this.T().TempDir()
+	content := []byte(`{"hello":"world"}`)
+	this.Require().NoError(os.WriteFile(filepath.Join(dir, "award.json"), content, 0o600))
+
+	ld := newLoader(dir)
+	this.Equal(content, ld.Load(sheeter.NewFileName("award", ".json"))) // 讀回原內容
+	this.NoError(ld.Err())                                              // 成功不記錄錯誤
+}
+
+func (this *SuiteSheet) TestLoaderMissing() {
+	ld := newLoader(this.T().TempDir())
+	this.Nil(ld.Load(sheeter.NewFileName("nope", ".json"))) // 找不到回傳 nil
+	this.Error(ld.Err())                                    // 並記錄錯誤
+}
+
+func (this *SuiteSheet) TestLoaderErr() {
+	ld := newLoader(this.T().TempDir())
+	this.NoError(ld.Err()) // 無錯誤回傳 nil
+
+	ld.Error("first", errors.New("e1"))
+	ld.Error("second", errors.New("e2"))
+
+	err := ld.Err()
+	this.Require().Error(err)
+	this.Contains(err.Error(), "first")     // 回傳累積的第一個錯誤
+	this.NotContains(err.Error(), "second") // 後續錯誤不蓋過第一個
+}
+
+func (this *SuiteSheet) TestLoaderConcurrent() {
+	ld := newLoader(this.T().TempDir())
+
+	var wait sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			ld.Error("concurrent", errors.New("boom"))
+		}()
+	} // for
+	wait.Wait()
+
+	this.Error(ld.Err()) // 併發記錄後仍可安全取得錯誤（搭配 -race 驗證無資料競爭）
 }
