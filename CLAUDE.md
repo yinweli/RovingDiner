@@ -17,6 +17,13 @@ This file provides guidance for AI CLIs (such as Claude Code or ChatGPT Codex) w
 - Before complex multi-step tasks, briefly restate the relevant code style rules and project constraints.
 - If context becomes overloaded, warn the user and suggest starting a new conversation or consolidating the current state into a file.
 
+## Session Continuity
+
+- The repo root has `PROGRESS.md` — the cross-session handoff point. It records milestone status, carryover to-dos, and locked-in design decisions that are NOT visible from git history or the `doc/` specs.
+- At the START of a work session, read `PROGRESS.md` to pick up where the last session left off.
+- At the END of a work session — or whenever a milestone / sub-task finishes — update `PROGRESS.md`: milestone status, any new carryover to-dos, and design decisions just settled with the user.
+- Keep it lean: record only what git and the specs don't already show. Rule details defer to `doc/`; code state defers to git. `PROGRESS.md` holds the deferred to-dos and the "why" decisions, so they survive context loss.
+
 ## Code Style
 
 - In Go, `false` checks must be explicit. Negation-style checks are forbidden.
