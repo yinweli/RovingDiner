@@ -56,9 +56,13 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 
 *Applies to hand-written Go code.*
 
-- In Go, `false` checks must be explicit. Negation-style checks are forbidden.
-  - Example: `if x == false {}`
-  - Forbidden: `if !x {}`
+- In Go, boolean checks follow a fixed polarity by sign:
+  - True checks must be bare — never write `== true`.
+    - Example: `if x {}`
+    - Forbidden: `if x == true {}`
+  - False checks must be explicit `== false`. Negation-style checks are forbidden.
+    - Example: `if x == false {}`
+    - Forbidden: `if !x {}`
 
 - Closing comments are only allowed for control flow blocks: `if`, `for`, `switch`
   - Example: `} // if`
@@ -75,6 +79,32 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 - Iterator naming:
   - Use `itor` for general iteration
   - Use `k, v` for map iteration
+
+- Always wrap imports in a parenthesized block, even for a single import.
+  - Example:
+
+    ```go
+    import (
+        "fmt"
+    )
+    ```
+
+  - Forbidden: `import "fmt"`
+
+## Test Conventions
+
+*Applies to hand-written Go tests.*
+
+- A test's name must identify the **component** and the **function (or behavior)** it exercises — the name alone should tell you what is under test:
+  - `Test<Component><Function>` — exercises one function of a component.
+    - Example: `TestNodeFirst` = the `First` function of `Node`; `TestNodeEmpty` = the `Empty` function of `Node`.
+  - `Test<Component><Behavior>` — exercises a whole-component behavior that spans several of its functions.
+    - Example: `TestNodeFireInTheHole` = a `Node` behavior whose body may call `First` / `Empty` internally.
+  - `Test<Scenario>` — exercises an interaction across multiple components that no single component owns.
+    - Example: `TestCrossTypeCompare`.
+- `<Component>` is the type / unit under test in PascalCase; capitalize an unexported type (`callNode` → `TestCallNode…`).
+- **Order tests to mirror the source**: list test functions in the same order their target components / functions are declared in the file under test, so reading the test file top-to-bottom tracks the source top-to-bottom. (For a testify suite, this is the order of the `Test…` methods.)
+- One test file per source file (`ast.go` → `ast_test.go`); a test belongs in the file matching its primary component.
 
 ## Spec Authoring & Review (doc/*.md)
 
