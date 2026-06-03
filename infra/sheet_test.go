@@ -47,7 +47,7 @@ func (this *SuiteSheet) TestLoadMissing() {
 	this.Nil(data)
 }
 
-func (this *SuiteSheet) TestLoaderRead() {
+func (this *SuiteSheet) TestLoaderLoad() {
 	dir := this.T().TempDir()
 	content := []byte(`{"hello":"world"}`)
 	this.Require().NoError(os.WriteFile(filepath.Join(dir, "award.json"), content, 0o600))
@@ -57,7 +57,7 @@ func (this *SuiteSheet) TestLoaderRead() {
 	this.NoError(load.Err())                                              // 成功不記錄錯誤
 }
 
-func (this *SuiteSheet) TestLoaderMissing() {
+func (this *SuiteSheet) TestLoaderLoadMissing() {
 	load := &loader{dir: this.T().TempDir()}
 	this.Nil(load.Load(sheeter.NewFileName("nope", ".json"))) // 找不到回傳 nil
 	this.Error(load.Err())                                    // 並記錄錯誤

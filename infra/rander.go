@@ -1,6 +1,8 @@
 package infra
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 // NewRander 以指定種子建立亂數來源。
 func NewRander(seed int64) *Rander {

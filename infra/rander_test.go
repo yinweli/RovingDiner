@@ -15,7 +15,7 @@ type SuiteRander struct {
 	suite.Suite
 }
 
-func (this *SuiteRander) TestIntn() {
+func (this *SuiteRander) TestRanderIntn() {
 	rander := NewRander(1)
 	this.Equal(0, rander.Intn(0))  // n <= 0 回傳 0
 	this.Equal(0, rander.Intn(-5)) // n <= 0 回傳 0
@@ -27,7 +27,7 @@ func (this *SuiteRander) TestIntn() {
 	} // for
 }
 
-func (this *SuiteRander) TestIntnDeterministic() {
+func (this *SuiteRander) TestRanderIntnDeterministic() {
 	a := NewRander(42)
 	b := NewRander(42)
 
@@ -38,7 +38,7 @@ func (this *SuiteRander) TestIntnDeterministic() {
 
 // TODO: Shuffle 也要有單元測試
 
-func (this *SuiteRander) TestWeighted() {
+func (this *SuiteRander) TestRanderWeighted() {
 	rander := NewRander(7)
 
 	// 空 / 零權重回傳 -1（呼叫端據此判定 no-op）
