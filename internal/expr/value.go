@@ -1,16 +1,43 @@
 package expr
 
-import "math"
-
-// kind 標示 Value 當前承載的型別。
-type kind int8
-
-const (
-	kindNumber kind = iota // 數值(整數 / 小數,內部一律 float64)
-	kindString             // 字串
-	kindBool               // 布林
-	kindRef                // 物件引用(卡牌 / 顧客 / 空物件)
+import (
+	"math"
 )
+
+// NewNum 建立數值 Value。
+func NewNum(num float64) Value {
+	return Value{kind: valueNum, num: num}
+}
+
+// NewText 建立字串 Value。
+func NewText(text string) Value {
+	return Value{kind: valueText, text: text}
+}
+
+// NewBool 建立布林 Value。
+func NewBool(flag bool) Value {
+	return Value{kind: valueBool, flag: flag}
+}
+
+// NewRef 建立非空物件引用 Value(綁定實例編號)。
+func NewRef(id int64) Value {
+	return Value{kind: valueRef, ref: ref{id: id}}
+}
+
+// NewNone 建立空物件引用 Value;空物件只與空物件相等(見【營業規格書 | 二十七、運算式 | 2】)。
+func NewNone() Value {
+	return Value{kind: valueRef, ref: ref{none: true}}
+}
+
+// Value 是運算式的值;以標籤聯合承載數值 / 字串 / 布林 / 物件引用。
+// C# 移植時以 struct + enum tag 對應(不採 Go interface 慣用法)。
+type Value struct {
+	kind valueKind
+	num  float64
+	text string
+	flag bool
+	ref  ref
+}
 
 // ref 是 expr 對物件引用的極簡抽象;expr 只比較引用相等性,不認識遊戲實例。
 // game 端實作 Resolver 時把 defines.InstanceID 包成此型別(經 NewRef / NewNone)。
@@ -19,84 +46,49 @@ type ref struct {
 	none bool  // 是否為空物件
 }
 
-// Value 是運算式的值;以標籤聯合承載數值 / 字串 / 布林 / 物件引用。
-// C# 移植時以 struct + enum tag 對應(不採 Go interface 慣用法)。
-type Value struct {
-	kind    kind
-	number  float64
-	str     string
-	boolean bool
-	ref     ref
+// IsNum 回傳是否為數值。
+func (this Value) IsNum() bool {
+	return this.kind == valueNum
 }
 
-// NewNumber 建立數值 Value。
-func NewNumber(number float64) Value {
-	return Value{kind: kindNumber, number: number}
-}
-
-// NewString 建立字串 Value。
-func NewString(text string) Value {
-	return Value{kind: kindString, str: text}
-}
-
-// NewBool 建立布林 Value。
-func NewBool(boolean bool) Value {
-	return Value{kind: kindBool, boolean: boolean}
-}
-
-// NewRef 建立非空物件引用 Value(綁定實例編號)。
-func NewRef(id int64) Value {
-	return Value{kind: kindRef, ref: ref{id: id}}
-}
-
-// NewNone 建立空物件引用 Value;空物件只與空物件相等(見【營業規格書 | 二十七、運算式 | 2】)。
-func NewNone() Value {
-	return Value{kind: kindRef, ref: ref{none: true}}
-}
-
-// IsNumber 回傳是否為數值。
-func (this Value) IsNumber() bool {
-	return this.kind == kindNumber
-}
-
-// IsString 回傳是否為字串。
-func (this Value) IsString() bool {
-	return this.kind == kindString
+// IsText 回傳是否為字串。
+func (this Value) IsText() bool {
+	return this.kind == valueText
 }
 
 // IsBool 回傳是否為布林。
 func (this Value) IsBool() bool {
-	return this.kind == kindBool
+	return this.kind == valueBool
 }
 
 // IsRef 回傳是否為物件引用(含空物件)。
 func (this Value) IsRef() bool {
-	return this.kind == kindRef
+	return this.kind == valueRef
 }
 
 // IsNone 回傳是否為空物件引用。
 func (this Value) IsNone() bool {
-	return this.kind == kindRef && this.ref.none == true
+	return this.kind == valueRef && this.ref.none
 }
 
-// Number 取數值;非數值型別回傳 0。
-func (this Value) Number() float64 {
-	return this.number
+// Num 取數值;非數值型別回傳 0。
+func (this Value) Num() float64 {
+	return this.num
 }
 
-// Str 取字串;非字串型別回傳空字串。
-func (this Value) Str() string {
-	return this.str
+// Text 取字串;非字串型別回傳空字串。
+func (this Value) Text() string {
+	return this.text
 }
 
 // Bool 取布林;非布林型別回傳 false。
 func (this Value) Bool() bool {
-	return this.boolean
+	return this.flag
 }
 
 // RefID 取物件引用的實例編號;非引用 / 空物件回傳 0。
 func (this Value) RefID() int64 {
-	if this.kind == kindRef && this.ref.none == false {
+	if this.kind == valueRef && this.ref.none == false {
 		return this.ref.id
 	} // if
 
@@ -107,11 +99,13 @@ func (this Value) RefID() int64 {
 // 其餘型別(字串 / 物件引用)評估失敗。供 NOT / AND / OR / 三元條件與呼叫方協調最終值使用。
 func AsBool(value Value) (result, ok bool) {
 	switch value.kind {
-	case kindBool:
-		return value.boolean, true
-	case kindNumber:
-		return value.number != 0, true
-	case kindString, kindRef:
+	case valueBool:
+		return value.flag, true
+
+	case valueNum:
+		return value.num != 0, true
+
+	case valueText, valueRef:
 		return false, false
 	} // switch
 

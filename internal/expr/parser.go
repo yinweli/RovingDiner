@@ -1,7 +1,5 @@
 package expr
 
-import "errors"
-
 // parser 對 token 序列做遞迴下降解析。優先級階梯由低到高:
 // 三元 → 邏輯或 → 邏輯且 → 否定 → 比較 → 加減 → 乘除 → 因子(對齊【營業規格書 | 二十七、運算式 | 3】優先順序表)。
 type parser struct {
@@ -32,6 +30,7 @@ func (this *parser) next() token {
 // parseExpr 解析 <運算式>:邏輯式後可接三元 ? :(右結合)。
 func (this *parser) parseExpr() (result node, err error) {
 	cond, err := this.parseOr()
+
 	if err != nil {
 		return nil, err
 	} // if
@@ -41,42 +40,43 @@ func (this *parser) parseExpr() (result node, err error) {
 	} // if
 
 	this.next() // 吃 ?
-
 	yes, err := this.parseExpr()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	if this.peek().kind != tokenColon {
-		return nil, errors.New("expr: 三元運算式缺少 ':'")
+		return nil, newSyntaxError(this.peek().pos, "三元運算式缺少 ':'")
 	} // if
 
-	this.next() // 吃 :
-
+	this.next()                 // 吃 :
 	no, err := this.parseExpr() // 右結合:假值分支續解析整層運算式
+
 	if err != nil {
 		return nil, err
 	} // if
 
-	return &ternaryNode{cond: cond, yes: yes, no: no}, nil
+	return &nodeTernary{cond: cond, yes: yes, no: no}, nil
 }
 
 // parseOr 解析 <邏輯或>:邏輯且 {OR 邏輯且}(左結合)。
 func (this *parser) parseOr() (result node, err error) {
 	left, err := this.parseAnd()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	for this.peek().kind == tokenOr {
 		this.next()
-
 		right, errRight := this.parseAnd()
+
 		if errRight != nil {
 			return nil, errRight
 		} // if
 
-		left = &binaryNode{op: tokenOr, left: left, right: right}
+		left = &nodeBinary{op: tokenOr, left: left, right: right}
 	} // for
 
 	return left, nil
@@ -85,19 +85,20 @@ func (this *parser) parseOr() (result node, err error) {
 // parseAnd 解析 <邏輯且>:否定 {AND 否定}(左結合)。
 func (this *parser) parseAnd() (result node, err error) {
 	left, err := this.parseNot()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	for this.peek().kind == tokenAnd {
 		this.next()
-
 		right, errRight := this.parseNot()
+
 		if errRight != nil {
 			return nil, errRight
 		} // if
 
-		left = &binaryNode{op: tokenAnd, left: left, right: right}
+		left = &nodeBinary{op: tokenAnd, left: left, right: right}
 	} // for
 
 	return left, nil
@@ -107,13 +108,13 @@ func (this *parser) parseAnd() (result node, err error) {
 func (this *parser) parseNot() (result node, err error) {
 	if this.peek().kind == tokenNot {
 		this.next()
-
 		operand, errOperand := this.parseNot()
+
 		if errOperand != nil {
 			return nil, errOperand
 		} // if
 
-		return &unaryNode{op: tokenNot, operand: operand}, nil
+		return &nodeUnary{op: tokenNot, operand: operand}, nil
 	} // if
 
 	return this.parseCompare()
@@ -122,6 +123,7 @@ func (this *parser) parseNot() (result node, err error) {
 // parseCompare 解析 <比較>:算術式 [比較符 算術式];至多一個比較符(不支援 a < b < c 鏈式)。
 func (this *parser) parseCompare() (result node, err error) {
 	left, err := this.parseAdd()
+
 	if err != nil {
 		return nil, err
 	} // if
@@ -131,31 +133,32 @@ func (this *parser) parseCompare() (result node, err error) {
 	} // if
 
 	op := this.next().kind
-
 	right, err := this.parseAdd()
+
 	if err != nil {
 		return nil, err
 	} // if
 
-	return &binaryNode{op: op, left: left, right: right}, nil
+	return &nodeBinary{op: op, left: left, right: right}, nil
 }
 
 // parseAdd 解析 <算術式>:項 {(+ | -) 項}(左結合)。
 func (this *parser) parseAdd() (result node, err error) {
 	left, err := this.parseMul()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	for this.peek().kind == tokenPlus || this.peek().kind == tokenMinus {
 		op := this.next().kind
-
 		right, errRight := this.parseMul()
+
 		if errRight != nil {
 			return nil, errRight
 		} // if
 
-		left = &binaryNode{op: op, left: left, right: right}
+		left = &nodeBinary{op: op, left: left, right: right}
 	} // for
 
 	return left, nil
@@ -164,19 +167,20 @@ func (this *parser) parseAdd() (result node, err error) {
 // parseMul 解析 <項>:因子 {(* | / | %) 因子}(左結合)。
 func (this *parser) parseMul() (result node, err error) {
 	left, err := this.parseFactor()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	for this.peek().kind == tokenStar || this.peek().kind == tokenSlash || this.peek().kind == tokenPercent {
 		op := this.next().kind
-
 		right, errRight := this.parseFactor()
+
 		if errRight != nil {
 			return nil, errRight
 		} // if
 
-		left = &binaryNode{op: op, left: left, right: right}
+		left = &nodeBinary{op: op, left: left, right: right}
 	} // for
 
 	return left, nil
@@ -188,28 +192,28 @@ func (this *parser) parseFactor() (result node, err error) {
 
 	if tok.kind == tokenMinus {
 		this.next()
-
 		operand, errOperand := this.parseFactor()
+
 		if errOperand != nil {
 			return nil, errOperand
 		} // if
 
-		return &unaryNode{op: tokenMinus, operand: operand}, nil
+		return &nodeUnary{op: tokenMinus, operand: operand}, nil
 	} // if
 
-	if tok.kind == tokenNumber {
+	if tok.kind == tokenNum {
 		this.next()
-		return &literalNode{value: NewNumber(tok.number)}, nil
+		return &nodeLiteral{value: NewNum(tok.num)}, nil
 	} // if
 
-	if tok.kind == tokenString {
+	if tok.kind == tokenText {
 		this.next()
-		return &literalNode{value: NewString(tok.text)}, nil
+		return &nodeLiteral{value: NewText(tok.text)}, nil
 	} // if
 
 	if tok.kind == tokenBool {
 		this.next()
-		return &literalNode{value: NewBool(tok.boolean)}, nil
+		return &nodeLiteral{value: NewBool(tok.flag)}, nil
 	} // if
 
 	if tok.kind == tokenLParen {
@@ -220,20 +224,20 @@ func (this *parser) parseFactor() (result node, err error) {
 		return this.parseIdent()
 	} // if
 
-	return nil, errors.New("expr: 未預期的 token: " + tok.text)
+	return nil, newSyntaxError(tok.pos, "不該出現的符號："+tok.text)
 }
 
 // parseParen 解析括號:內為完整運算式(統一【營業規格書 | 二十七、運算式 | 1】的「算術式 / 運算式」分組,由型別於求值決定)。
 func (this *parser) parseParen() (result node, err error) {
 	this.next() // 吃 (
-
 	inner, err := this.parseExpr()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	if this.peek().kind != tokenRParen {
-		return nil, errors.New("expr: 括號未閉合")
+		return nil, newSyntaxError(this.peek().pos, "括號未閉合,缺少 ')'")
 	} // if
 
 	this.next() // 吃 )
@@ -246,18 +250,19 @@ func (this *parser) parseIdent() (result node, err error) {
 
 	if this.peek().kind == tokenLParen {
 		arg, errArg := this.parseArgs()
+
 		if errArg != nil {
 			return nil, errArg
 		} // if
 
-		return &callNode{name: name, arg: arg}, nil
+		return &nodeCall{name: name, arg: arg}, nil
 	} // if
 
 	if this.peek().kind == tokenDot {
 		return this.parseMember(name)
 	} // if
 
-	return &propertyNode{name: name}, nil
+	return &nodeProperty{name: name}, nil
 }
 
 // parseMember 解析 name.attr 或 name.attr(arg)。
@@ -265,21 +270,22 @@ func (this *parser) parseMember(base string) (result node, err error) {
 	this.next() // 吃 .
 
 	if this.peek().kind != tokenIdent {
-		return nil, errors.New("expr: '.' 後需要屬性名")
+		return nil, newSyntaxError(this.peek().pos, "'.' 後面需要屬性名稱")
 	} // if
 
 	member := this.next().text
 
 	if this.peek().kind == tokenLParen {
 		arg, errArg := this.parseArgs()
+
 		if errArg != nil {
 			return nil, errArg
 		} // if
 
-		return &memberNode{base: base, name: member, arg: arg, call: true}, nil
+		return &nodeMember{base: base, name: member, arg: arg, call: true}, nil
 	} // if
 
-	return &memberNode{base: base, name: member, call: false}, nil
+	return &nodeMember{base: base, name: member, call: false}, nil
 }
 
 // parseArgs 解析引數列 ( arg {, arg} );每個引數為 <算術式> | <字串>,不含比較 / 邏輯 / 三元。
@@ -294,6 +300,7 @@ func (this *parser) parseArgs() (result []node, err error) {
 
 	for {
 		arg, errArg := this.parseAdd()
+
 		if errArg != nil {
 			return nil, errArg
 		} // if
@@ -308,7 +315,7 @@ func (this *parser) parseArgs() (result []node, err error) {
 	} // for
 
 	if this.peek().kind != tokenRParen {
-		return nil, errors.New("expr: 引數列未閉合")
+		return nil, newSyntaxError(this.peek().pos, "引數列未閉合,缺少 ')'")
 	} // if
 
 	this.next() // 吃 )

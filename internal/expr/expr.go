@@ -1,24 +1,23 @@
 package expr
 
-import "errors"
-
 // Parse 把運算式原始字串編譯成可重複求值的 Expr;語法錯誤回傳 error。
 // 運算式為靜態資料(來自表格),建議於載入時 Parse 一次、之後對不同 Runtime 多次 Eval。
 func Parse(source string) (expr *Expr, err error) {
-	token, err := lex(source)
+	result, err := lex(source)
+
 	if err != nil {
 		return nil, err
 	} // if
 
-	parse := &parser{token: token}
-
+	parse := &parser{token: result}
 	root, err := parse.parseExpr()
+
 	if err != nil {
 		return nil, err
 	} // if
 
 	if parse.peek().kind != tokenEOF {
-		return nil, errors.New("expr: 多餘的 token: " + parse.peek().text)
+		return nil, newSyntaxError(parse.peek().pos, "多餘的符號："+parse.peek().text)
 	} // if
 
 	return &Expr{root: root}, nil

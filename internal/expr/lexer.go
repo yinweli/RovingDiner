@@ -1,7 +1,6 @@
 package expr
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 )
@@ -21,44 +20,57 @@ func lex(source string) (result []token, err error) {
 			i++ // 略過空白
 
 		case c >= '0' && c <= '9':
-			tok, width, errNumber := lexNumber(char, i)
+			tok, width, errNumber := lexNum(char, i)
+
 			if errNumber != nil {
 				return nil, errNumber
 			} // if
+
+			tok.pos = i
 			result = append(result, tok)
 			i += width
 
 		case c == '\'':
-			tok, width, errString := lexString(char, i)
+			tok, width, errString := lexText(char, i)
+
 			if errString != nil {
 				return nil, errString
 			} // if
+
+			tok.pos = i
 			result = append(result, tok)
 			i += width
 
 		case isIdentStart(c):
 			start := i
+
 			for i < size && isIdentPart(char[i]) {
 				i++
 			} // for
-			result = append(result, identToken(string(char[start:i])))
+
+			tok := identToken(string(char[start:i]))
+			tok.pos = start
+			result = append(result, tok)
 
 		default:
 			tok, width, errOperator := lexOperator(char, i)
+
 			if errOperator != nil {
 				return nil, errOperator
 			} // if
+
+			tok.pos = i
 			result = append(result, tok)
 			i += width
 		} // switch
 	} // for
 
-	result = append(result, token{kind: tokenEOF, text: "<eof>"})
+	result = append(result, token{kind: tokenEOF, text: "<eof>", pos: size})
 	return result, nil
 }
 
-// lexNumber 掃描整數 / 小數字面值;小數點後須緊接數字才視為小數部分。
-func lexNumber(char []rune, start int) (result token, width int, err error) {
+// lexNum 掃描整數 / 小數字面值;小數點後須緊接數字才視為小數部分。
+func lexNum(char []rune, start int) (result token, width int, err error) {
 	size := len(char)
 	i := start
 
@@ -75,17 +87,17 @@ func lexNumber(char []rune, start int) (result token, width int, err error) {
 	} // if
 
 	text := string(char[start:i])
-
 	number, errParse := strconv.ParseFloat(text, 64)
+
 	if errParse != nil {
-		return token{}, 0, errors.New("expr: 無效的數字: " + text)
+		return token{}, 0, newSyntaxError(start, "無效的數字："+text)
 	} // if
 
-	return token{kind: tokenNumber, text: text, number: number}, i - start, nil
+	return token{kind: tokenNum, text: text, num: number}, i - start, nil
 }
 
-// lexString 掃描單引號字串字面值;未遇結尾單引號則回傳錯誤。
-func lexString(char []rune, start int) (result token, width int, err error) {
+// lexText 掃描單引號字串字面值;未遇結尾單引號則回傳錯誤。
+func lexText(char []rune, start int) (result token, width int, err error) {
 	size := len(char)
 	i := start + 1 // 跳過開頭單引號
 
@@ -94,11 +106,11 @@ func lexString(char []rune, start int) (result token, width int, err error) {
 	} // for
 
 	if i >= size {
-		return token{}, 0, errors.New("expr: 字串未結束: " + string(char[start:]))
+		return token{}, 0, newSyntaxError(start, "字串未結束,缺少結尾單引號 '")
 	} // if
 
 	text := string(char[start+1 : i])
-	return token{kind: tokenString, text: text}, i - start + 1, nil // +1 涵蓋結尾單引號
+	return token{kind: tokenText, text: text}, i - start + 1, nil // +1 涵蓋結尾單引號
 }
 
 // lexOperator 掃描運算符 / 標點;處理 <= >= == != 等雙字元符號,單獨的 '=' 視為非法(賦值不屬於運算式)。
@@ -113,48 +125,67 @@ func lexOperator(char []rune, i int) (result token, width int, err error) {
 	switch c {
 	case '+':
 		return token{kind: tokenPlus, text: "+"}, 1, nil
+
 	case '-':
 		return token{kind: tokenMinus, text: "-"}, 1, nil
+
 	case '*':
 		return token{kind: tokenStar, text: "*"}, 1, nil
+
 	case '/':
 		return token{kind: tokenSlash, text: "/"}, 1, nil
+
 	case '%':
 		return token{kind: tokenPercent, text: "%"}, 1, nil
+
 	case '(':
 		return token{kind: tokenLParen, text: "("}, 1, nil
+
 	case ')':
 		return token{kind: tokenRParen, text: ")"}, 1, nil
+
 	case ',':
 		return token{kind: tokenComma, text: ","}, 1, nil
+
 	case '.':
 		return token{kind: tokenDot, text: "."}, 1, nil
+
 	case '?':
 		return token{kind: tokenQuestion, text: "?"}, 1, nil
+
 	case ':':
 		return token{kind: tokenColon, text: ":"}, 1, nil
+
 	case '<':
 		if next == '=' {
 			return token{kind: tokenLE, text: "<="}, 2, nil
 		} // if
+
 		return token{kind: tokenLT, text: "<"}, 1, nil
+
 	case '>':
 		if next == '=' {
 			return token{kind: tokenGE, text: ">="}, 2, nil
 		} // if
+
 		return token{kind: tokenGT, text: ">"}, 1, nil
+
 	case '=':
 		if next == '=' {
 			return token{kind: tokenEQ, text: "=="}, 2, nil
 		} // if
-		return token{}, 0, errors.New("expr: 未預期的字元 '='(賦值不屬於運算式)")
+
+		return token{}, 0, newSyntaxError(i, "不該出現的字元 '='(賦值不屬於運算式)")
+
 	case '!':
 		if next == '=' {
 			return token{kind: tokenNE, text: "!="}, 2, nil
 		} // if
+
 		return token{kind: tokenNot, text: "!"}, 1, nil
+
 	default:
-		return token{}, 0, errors.New("expr: 未預期的字元: " + string(c))
+		return token{}, 0, newSyntaxError(i, "不認得的字元："+string(c))
 	} // switch
 }
 
@@ -163,12 +194,16 @@ func identToken(text string) token {
 	switch strings.ToLower(text) {
 	case "and":
 		return token{kind: tokenAnd, text: text}
+
 	case "or":
 		return token{kind: tokenOr, text: text}
+
 	case "true":
-		return token{kind: tokenBool, text: text, boolean: true}
+		return token{kind: tokenBool, text: text, flag: true}
+
 	case "false":
-		return token{kind: tokenBool, text: text, boolean: false}
+		return token{kind: tokenBool, text: text, flag: false}
+
 	default:
 		return token{kind: tokenIdent, text: text}
 	} // switch
