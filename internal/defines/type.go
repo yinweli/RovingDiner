@@ -41,20 +41,20 @@ type Task int32
 // 刻意不命名為 target，以免與【營業規格書 | 八、目標類型】(TargetType) 撞名。
 type Selector string
 
-// Property 全域屬性名稱；對應【營業規格書 | 二十三、屬性清單】主表。
+// Attr 全域屬性名稱；對應【營業規格書 | 二十三、屬性清單】主表。
 //
 // 本表雙用途：作為【營業規格書 | 十一、觸發條件】的條件對象讀取來源，
 // 亦作為【營業規格書 | 十七、命令 | 屬性修改命令】的可寫屬性清單。
 // 名稱帶 (...) 的查詢函式（deckSize / drawTotal / tableCount …）此處僅登記其字根名稱，
 // 參數解析由 expr 引擎（M1）/ 屬性註冊表（M2）處理。
-type Property string
-
-// Attr dot-syntax 引用屬性名稱；對應【營業規格書 | 二十三、屬性清單 | 卡牌引用屬性 / 顧客引用屬性】。
-// 以 <引用>.<屬性> 形式存取（如 self.sate、drawLast.cardID、taskGuest.calm）。
 type Attr string
+
+// AttrRef dot-syntax 引用屬性名稱；對應【營業規格書 | 二十三、屬性清單 | 卡牌引用屬性 / 顧客引用屬性】。
+// 以 <引用>.<屬性> 形式存取（如 self.sate、drawLast.cardID、taskGuest.calm）。
+type AttrRef string
 
 // Command 操作命令的英文名稱；對應【營業規格書 | 二十五、操作命令清單】。
 //
 // 屬性修改命令（運算符語法 = += -= *= /= %= @ #）不在此清單，
-// 其可寫屬性見【營業規格書 | 二十三、屬性清單】與 Property。
+// 其可寫屬性見【營業規格書 | 二十三、屬性清單】與 Attr。
 type Command string
