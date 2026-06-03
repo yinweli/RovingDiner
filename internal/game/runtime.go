@@ -1,6 +1,8 @@
 package game
 
-import "github.com/yinweli/RovingDiner/internal/defines"
+import (
+	"github.com/yinweli/RovingDiner/internal/defines"
+)
 
 // NewRuntime 建立空白 Runtime；初始化 Game 與各容器（不載入任何遊戲資料）。
 // 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入。

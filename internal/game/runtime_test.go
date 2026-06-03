@@ -37,7 +37,7 @@ func (this *SuiteRuntime) TestNewRuntime() {
 	this.Empty(runtime.Action)
 }
 
-func (this *SuiteRuntime) TestNextID() {
+func (this *SuiteRuntime) TestRuntimeNextID() {
 	runtime := NewRuntime(0)
 	this.Equal(defines.InstanceID(1), runtime.NextID())
 	this.Equal(defines.InstanceID(2), runtime.NextID())
