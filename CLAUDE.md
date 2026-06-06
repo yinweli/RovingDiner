@@ -91,6 +91,8 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 
   - Forbidden: `import "fmt"`
 
+- Go source file names: a single word is all-lowercase (`type.go`, `runtime.go`, `selector.go`); a **compound name uses lowerCamelCase** (`commandAssign.go`, `commandOperate.go`), never all-lowercase-concatenated (`commandassign.go`) nor snake_case. Test files keep Go's `_test` suffix (`commandAssign.go` → `commandAssign_test.go`).
+
 ## Test Conventions
 
 *Applies to hand-written Go tests.*
