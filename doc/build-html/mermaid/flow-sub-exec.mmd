@@ -1,0 +1,16 @@
+flowchart TD
+    Start([執行命令 命令]) --> B1{"命令 含 ( )?"}
+    B1 -->|否 屬性修改命令| A1["依【十七、命令｜1. 屬性修改命令】處理<br/>(賦值符 / 算術式評估 /<br/>屬性鎖定 / 餐廳士氣值 -= 特例)"]
+    B1 -->|是 操作命令| A2["依【十七、命令｜2. 操作命令】處理<br/>(算術式參數 / 命令對象解析 /<br/>算術失敗 no-op)<br/>命令對象解析詳見【二十四】<br/>self / selfSame / selfNear 取效果建立時固定值"]
+    A1 --> B2{"結算旗標 == false?"}
+    A2 --> B2
+    B2 -->|是| A3["執行結算"]
+    A3 --> End([返回呼叫流程])
+    B2 -->|否| End
+
+    class Start,End terminal
+    class A1,A2,A3 action
+    class B1,B2 decision
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26

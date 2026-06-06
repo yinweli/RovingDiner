@@ -1,0 +1,48 @@
+flowchart TD
+    Start([玩家行動階段]) --> B0{"手牌 < 補牌張數上限<br/>&& (抽牌牌堆 + 棄牌牌堆) > 0?"}
+    B0 -->|是| B0a{"抽牌牌堆 <= 0?"}
+    B0a -->|是| A0a["棄牌牌堆隨機洗牌<br/>移至抽牌牌堆"]
+    A0a --> A0
+    B0a -->|否| A0["從抽牌牌堆抽 1 張加入手牌"]
+    A0 --> B0
+    B0 -->|否| T1[/"觸發時機: **玩家開始**"/]
+    T1 --> B1{"下一階段 ∈ {顧客行動, 回合結束}?"}
+    B1 -->|是| F0["視為 玩家結束 事件"]
+    F0 --> B2{"玩家事件?"}
+    B1 -->|否| B2
+
+    B2 -->|玩家出牌 該卡牌| BC1{"該卡牌.封印卡牌 鎖定計數 > 0?"}
+    BC1 -->|是| AC1["不執行出牌<br/>(卡牌封印)"]
+    AC1 --> B1
+    BC1 -->|否| BC2{"cardify != none<br/>&& 剩餘座位 == 0?"}
+    BC2 -->|是| AC2["不執行出牌<br/>(卡牌化卡無空位)"]
+    AC2 --> B1
+    BC2 -->|否| BC3{"出牌點數 >= 出牌費用?"}
+    BC3 -->|否| AC3["不執行出牌"]
+    AC3 --> B1
+    BC3 -->|是| AC4["設置 出牌點數 -= 出牌費用<br/>設置 最後出牌卡牌 = 該卡牌<br/>設置 回合出牌張數 += 1<br/>設置 額外次數 = random[下限, 上限]<br/>(下限 > 上限 \|\| 上限 < 0 時為 0)"]
+    AC4 --> AC5["重複 (1 + 額外次數) 次:<br/>啟動技能: **實例效果列表**"]
+    AC5 --> BC4{"該卡牌.cardify != none?"}
+    BC4 -->|是| AC6["執行 restore(該卡牌)<br/>(系統自動還原綁定顧客)"]
+    AC6 --> BC5
+    BC4 -->|否| BC5{"出牌後流放 鎖定計數 > 0?"}
+    BC5 -->|是| AC7["從手牌移除<br/>加入流放牌堆"]
+    BC5 -->|否| AC8["從手牌移除<br/>加入棄牌牌堆"]
+    AC7 --> T2[/"觸發時機: **玩家出牌**"/]
+    AC8 --> T2
+    T2 --> B1
+
+    B2 -->|玩家結束| T3[/"觸發時機: **玩家結束**"/]
+    T3 --> BE1["foreach 該卡牌 in 剩餘手牌:<br/>未出牌流放 > 0 → 移至流放牌堆<br/>否則 不棄卡牌 == 0 → 棄置至棄牌牌堆<br/>否則 → 留在手牌"]
+    BE1 --> BE2{"下一階段?"}
+    BE2 -->|'回合結束'| EE1([清除 下一階段<br/>進入回合結束階段])
+    BE2 -->|default| EE2([清除 下一階段<br/>進入顧客行動階段])
+
+    class Start,EE1,EE2 terminal
+    class A0,A0a,AC1,AC2,AC3,AC4,AC5,AC6,AC7,AC8,BE1,F0 action
+    class B0,B0a,B1,B2,BC1,BC2,BC3,BC4,BC5,BE2 decision
+    class T1,T2,T3 trigger
+    classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
+    classDef trigger fill:#f5e6d8,stroke:#b8602f,color:#2b2a26
+    classDef decision fill:#fff5db,stroke:#d4a72c,color:#2b2a26
+    classDef terminal fill:#f8d7da,stroke:#c0392b,color:#2b2a26
