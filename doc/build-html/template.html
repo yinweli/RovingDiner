@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>流浪食堂 — 營業規格書</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-alt: #f3efe6;
+    --border: #e2dccb;
+    --border-strong: #c9c0a8;
+    --text: #2b2a26;
+    --text-soft: #5c5849;
+    --accent: #b8602f;
+    --accent-soft: #f5e6d8;
+    --accent-2: #4a6c5a;
+    --accent-2-soft: #e2ecdf;
+    --code-bg: #2d2a24;
+    --code-text: #f5ecd9;
+    --code-inline-bg: #efe9d6;
+    --code-inline-text: #7c3f1d;
+    --table-header: #ede4ce;
+    --table-row-alt: #faf6ec;
+    --shadow: 0 1px 3px rgba(60,50,30,0.06), 0 4px 16px rgba(60,50,30,0.04);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+    margin: 0;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15.5px;
+}
+
+.app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+}
+
+aside {
+    width: 280px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 36px;
+}
+aside h2 {
+    margin: 4px 8px 2px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+aside .subtitle {
+    margin: 0 8px 18px;
+    font-size: 12px;
+    color: var(--text-soft);
+    letter-spacing: 0.5px;
+}
+.nav-group { margin-top: 18px; }
+.nav-group-title {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    padding: 0 10px 6px;
+    margin: 0 0 6px;
+    border-bottom: 1px solid var(--border);
+}
+.nav-group a {
+    display: block;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    margin-bottom: 1px;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-group a:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.nav-group a.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+.nav-group a.sub {
+    font-size: 13px;
+    padding-left: 16px;
+}
+
+main {
+    max-width: 1180px;
+    padding: 48px 56px 120px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.doc-head {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--border-strong);
+}
+.doc-head .eyebrow {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.doc-head h1 {
+    margin: 0 0 12px;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+.doc-head p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 14px;
+    max-width: 680px;
+}
+
+.doc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 48px;
+    margin-bottom: 56px;
+    box-shadow: var(--shadow);
+}
+.doc > h1:first-child,
+.doc h1 {
+    color: var(--accent);
+    font-size: 28px;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent-soft);
+}
+.doc h2 {
+    border-left: 5px solid var(--accent);
+    padding-left: 14px;
+    font-size: 22px;
+    margin: 36px 0 18px;
+    scroll-margin-top: 24px;
+}
+.sec-num { display: none; }
+.doc h3 {
+    color: var(--accent-2);
+    font-size: 17px;
+    margin: 24px 0 12px;
+    scroll-margin-top: 24px;
+}
+.doc h4 {
+    display: inline-block;
+    background: var(--accent-2-soft);
+    color: var(--accent-2);
+    padding: 2px 12px;
+    border-radius: 4px;
+    font-size: 14.5px;
+    margin: 18px 0 10px;
+}
+
+.doc p { margin: 10px 0; }
+.doc ul, .doc ol { margin: 10px 0; padding-left: 24px; }
+.doc li { margin: 4px 0; }
+.doc strong { color: var(--text); }
+
+.doc hr {
+    border: none;
+    border-top: 1px dashed var(--border-strong);
+    margin: 28px 0;
+}
+
+.doc table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14.5px;
+    background: var(--surface);
+}
+.doc table th, .doc table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+.doc table th {
+    background: var(--table-header);
+    color: var(--text);
+    font-weight: 600;
+}
+.doc table tr:nth-child(even) td { background: var(--table-row-alt); }
+
+.doc blockquote {
+    margin: 18px 0;
+    padding: 12px 20px;
+    background: var(--surface-alt);
+    border-left: 4px solid var(--border-strong);
+    color: var(--text-soft);
+    border-radius: 0 8px 8px 0;
+}
+.doc blockquote p { margin: 4px 0; }
+
+.doc code {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.doc pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 14px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+.doc pre code {
+    background: transparent;
+    color: var(--code-text);
+    padding: 0;
+    font-size: inherit;
+}
+
+.flow-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px 24px;
+    margin: 18px 0 28px;
+    scroll-margin-top: 24px;
+}
+.flow-section h3 {
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent-2);
+}
+.vt-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.vt-btn {
+    background: var(--surface);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.vt-btn:hover {
+    background: var(--surface-alt);
+    color: var(--text);
+}
+.vt-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.vt-view { margin-top: 4px; }
+.vt-view.hidden { display: none; }
+.vt-text { padding: 6px 4px; }
+.vt-text ul { padding-left: 22px; }
+.vt-text code {
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.mermaid-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+}
+.mermaid {
+    text-align: center;
+    font-family: inherit;
+}
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border-strong);
+}
+
+/* 名詞 hover tooltip */
+.term {
+    text-decoration: underline dotted var(--accent);
+    text-underline-offset: 3px;
+    cursor: help;
+    color: inherit;
+}
+.term:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+.term-tip {
+    position: fixed;
+    display: none;
+    max-width: 360px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12.8px;
+    line-height: 1.6;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+    z-index: 1000;
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+}
+.term-tip strong {
+    color: var(--code-text);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(245,236,217,0.18);
+    padding-bottom: 4px;
+}
+
+/* 【...】 引用跳轉 */
+a.ref {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent);
+    padding: 0 1px;
+}
+a.ref:hover {
+    background: var(--accent-soft);
+    border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 32px 24px 80px; }
+    .doc { padding: 28px 22px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside>
+    <h2>流浪食堂</h2>
+    <div class="subtitle">RovingDiner — 營業規格書</div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">共用定義</div>
+        <a href="#sec-1" data-target="sec-1">系統概述</a>
+        <a href="#sec-2" data-target="sec-2">英文詞彙對照</a>
+        <a href="#sec-3" data-target="sec-3">名詞列表</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">技能定義</div>
+        <a href="#sec-4" data-target="sec-4">表格結構</a>
+        <a href="#sec-5" data-target="sec-5">實例結構</a>
+        <a href="#sec-6" data-target="sec-6">容器結構</a>
+        <a href="#sec-7" data-target="sec-7">效果類型</a>
+        <a href="#sec-8" data-target="sec-8">目標類型</a>
+        <a href="#sec-9" data-target="sec-9">目標數量</a>
+        <a href="#sec-10" data-target="sec-10">觸發時機</a>
+        <a href="#sec-11" data-target="sec-11">觸發條件</a>
+        <a href="#sec-12" data-target="sec-12">觸發次數</a>
+        <a href="#sec-13" data-target="sec-13">觸發後行為</a>
+        <a href="#sec-14" data-target="sec-14">作用回合</a>
+        <a href="#sec-15" data-target="sec-15">作用順序</a>
+        <a href="#sec-16" data-target="sec-16">堆疊規則</a>
+        <a href="#sec-17" data-target="sec-17">命令</a>
+        <a href="#sec-18" data-target="sec-18">表演資訊</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 核心</div>
+        <a href="#flow-core-1" data-target="flow-core-1" class="sub">營業開始階段</a>
+        <a href="#flow-core-2" data-target="flow-core-2" class="sub">回合開始階段</a>
+        <a href="#flow-core-3" data-target="flow-core-3" class="sub">玩家行動階段</a>
+        <a href="#flow-core-4" data-target="flow-core-4" class="sub">顧客行動階段</a>
+        <a href="#flow-core-5" data-target="flow-core-5" class="sub">回合結束階段</a>
+        <a href="#flow-core-6" data-target="flow-core-6" class="sub">營業成功階段</a>
+        <a href="#flow-core-7" data-target="flow-core-7" class="sub">營業失敗階段</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 獨立</div>
+        <a href="#flow-sub-skill" data-target="flow-sub-skill" class="sub">啟動技能</a>
+        <a href="#flow-sub-trigger" data-target="flow-sub-trigger" class="sub">觸發時機</a>
+        <a href="#flow-sub-exec" data-target="flow-sub-exec" class="sub">執行命令</a>
+        <a href="#flow-sub-advance" data-target="flow-sub-advance" class="sub">推進效果</a>
+        <a href="#flow-sub-cleanup" data-target="flow-sub-cleanup" class="sub">清理效果</a>
+        <a href="#flow-sub-freeze" data-target="flow-sub-freeze" class="sub">凍結語意</a>
+        <a href="#flow-sub-settle" data-target="flow-sub-settle" class="sub">執行結算</a>
+        <a href="#flow-sub-judge" data-target="flow-sub-judge" class="sub">終止判定</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">營業流程 — 補充</div>
+        <a href="#sec-21" data-target="sec-21" class="sub">流程補充</a>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-group-title">附錄</div>
+        <a href="#sec-22" data-target="sec-22">觸發時機清單</a>
+        <a href="#sec-23" data-target="sec-23">屬性清單</a>
+        <a href="#sec-24" data-target="sec-24">命令對象清單</a>
+        <a href="#sec-25" data-target="sec-25">操作命令清單</a>
+        <a href="#sec-26" data-target="sec-26">內建函式清單</a>
+        <a href="#sec-27" data-target="sec-27">運算式</a>
+    </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+    <div class="eyebrow">Roving Diner · Design Spec</div>
+    <h1>流浪食堂 — 營業規格書</h1>
+    <p>單一 SSOT 規格書。流程方塊提供「文字 / 視覺化」雙檢視；專有名詞游標懸停可看解釋，文中【…】可點擊跳至對應章節。</p>
+</header>
+
+<section class="doc" id="front"></section>
+
+<section class="doc" id="flow">
+    <h2 id="sec-19">十九、核心流程</h2>
+
+    <div class="flow-section" id="flow-core-1">
+        <h3>1. 營業開始階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-1"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-1 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-2">
+        <h3>2. 回合開始階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-2"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-2 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-3">
+        <h3>3. 玩家行動階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-3"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-3 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-4">
+        <h3>4. 顧客行動階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-4"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-4 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-5">
+        <h3>5. 回合結束階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-5"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-5 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-6">
+        <h3>6. 營業成功階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-6"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-6 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-core-7">
+        <h3>7. 營業失敗階段</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-core-7"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-core-7 --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <h2 id="sec-20">二十、獨立流程</h2>
+
+    <div class="flow-section" id="flow-sub-skill">
+        <h3>啟動技能</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-skill"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-skill --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-trigger">
+        <h3>觸發時機</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-trigger"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-trigger --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-exec">
+        <h3>執行命令</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-exec"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-exec --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-advance">
+        <h3>推進效果</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-advance"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-advance --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-cleanup">
+        <h3>清理效果</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-cleanup"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-cleanup --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="plain-section" id="flow-sub-freeze">
+        <h3>凍結語意</h3>
+        <div id="flow-sub-freeze-body"></div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-settle">
+        <h3>執行結算</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-settle"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-settle --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-section" id="flow-sub-judge">
+        <h3>[終止判定]</h3>
+        <div class="vt-toolbar">
+            <button class="vt-btn" data-view="text">📄 文字流程</button>
+            <button class="vt-btn active" data-view="diagram">📊 視覺化流程圖</button>
+        </div>
+        <div class="vt-view vt-text hidden" data-view="text" data-md="md-flow-sub-judge"></div>
+        <div class="vt-view" data-view="diagram">
+            <div class="mermaid-wrap">
+                <div class="mermaid"><!-- INJECT:mermaid-flow-sub-judge --></div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#e2ecdf;border-color:#4a6c5a"></span>動作</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f5e6d8;border-color:#b8602f"></span>觸發時機</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ede4ce;border-color:#c9c0a8"></span>子流程呼叫</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#fff5db;border-color:#d4a72c"></span>判斷</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#f8d7da;border-color:#c0392b"></span>起 / 訖</span>
+            </div>
+        </div>
+    </div>
+
+
+    <h2 id="sec-21">二十一、流程補充</h2>
+    <div id="flow-extra-body"></div>
+</section>
+
+<section class="doc" id="back"></section>
+
+</main>
+</div>
+
+<!-- ============================================================ -->
+<!-- Markdown payloads                                              -->
+<!-- ============================================================ -->
+
+<script type="text/markdown" id="md-front">
+<!-- INJECT:md-front -->
+</script>
+
+<script type="text/markdown" id="md-flow-extra">
+<!-- INJECT:md-flow-extra -->
+</script>
+
+<script type="text/markdown" id="md-back">
+<!-- INJECT:md-back -->
+</script>
+
+<!-- ============ Flow text payloads ============ -->
+
+<script type="text/markdown" id="md-flow-core-1">
+<!-- INJECT:md-flow-core-1 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-2">
+<!-- INJECT:md-flow-core-2 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-3">
+<!-- INJECT:md-flow-core-3 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-4">
+<!-- INJECT:md-flow-core-4 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-5">
+<!-- INJECT:md-flow-core-5 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-6">
+<!-- INJECT:md-flow-core-6 -->
+</script>
+
+<script type="text/markdown" id="md-flow-core-7">
+<!-- INJECT:md-flow-core-7 -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-skill">
+<!-- INJECT:md-flow-sub-skill -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-trigger">
+<!-- INJECT:md-flow-sub-trigger -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-advance">
+<!-- INJECT:md-flow-sub-advance -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-cleanup">
+<!-- INJECT:md-flow-sub-cleanup -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-freeze">
+<!-- INJECT:md-flow-sub-freeze -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-exec">
+<!-- INJECT:md-flow-sub-exec -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-settle">
+<!-- INJECT:md-flow-sub-settle -->
+</script>
+
+<script type="text/markdown" id="md-flow-sub-judge">
+<!-- INJECT:md-flow-sub-judge -->
+</script>
+
+<!-- ============ Terms data ============ -->
+
+<script type="application/json" id="terms-data">
+<!-- INJECT:terms-json -->
+</script>
+
+<script>
+(function () {
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+
+    // ----- Markdown 渲染 -----
+    function renderMd(targetId, sourceId) {
+        const target = document.getElementById(targetId);
+        const source = document.getElementById(sourceId);
+        if (target && source) {
+            target.innerHTML = marked.parse(source.textContent.trim());
+        }
+    }
+    renderMd('front', 'md-front');
+    renderMd('flow-extra-body', 'md-flow-extra');
+    renderMd('flow-sub-freeze-body', 'md-flow-sub-freeze');
+    renderMd('back', 'md-back');
+
+    document.querySelectorAll('.vt-text[data-md]').forEach(el => {
+        const src = document.getElementById(el.dataset.md);
+        if (src) el.innerHTML = marked.parse(src.textContent.trim());
+    });
+
+    // ----- 中文數字 → 阿拉伯 -----
+    const CN_DIGITS = { '零':0, '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9 };
+    function chineseToArabic(s) {
+        if (!s) return null;
+        if (s === '十') return 10;
+        if (s.length === 1) return CN_DIGITS[s] !== undefined ? CN_DIGITS[s] : null;
+        if (s.length === 2) {
+            if (s[0] === '十') return 10 + (CN_DIGITS[s[1]] || 0);
+            if (s[1] === '十') return (CN_DIGITS[s[0]] || 0) * 10;
+        }
+        if (s.length === 3 && s[1] === '十') {
+            return (CN_DIGITS[s[0]] || 0) * 10 + (CN_DIGITS[s[2]] || 0);
+        }
+        return null;
+    }
+
+    // ----- 為動態渲染的 H2 / H3 / H4 補 id；建立引用索引 -----
+    function slugify(text) {
+        return text.trim()
+            .replace(/\s+/g, '-')
+            .replace(/[（）()\[\]【】，,。.、:：;；]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    const main = document.querySelector('main');
+    const subMap = {}; // 'N::子段文字' → anchor id
+    const sectionTitles = {}; // N → H2 textContent（用於 hover 提示）
+
+    function assignIds() {
+        let currentN = null;
+
+        function walk(node) {
+            if (node.nodeType !== 1) return;
+            const tag = node.tagName;
+            if (tag === 'H2') {
+                const text = node.textContent.trim();
+                const m = text.match(/^([零一二三四五六七八九十]+)、/);
+                if (m) {
+                    const n = chineseToArabic(m[1]);
+                    if (n !== null) {
+                        // 若已有 id（hardcoded sec-19/20/21）就保留
+                        if (!node.id) node.id = 'sec-' + n;
+                        currentN = n;
+                        sectionTitles[n] = text;
+                    }
+                }
+            } else if (tag === 'H3' || tag === 'H4') {
+                const text = node.textContent.trim();
+                let anchorId;
+                const flowSection = node.closest('.flow-section');
+                if (flowSection && flowSection.id) {
+                    anchorId = flowSection.id;
+                } else {
+                    const slug = slugify(text) || 'h-' + Math.random().toString(36).slice(2, 8);
+                    anchorId = tag.toLowerCase() + '-' + slug;
+                    let finalId = anchorId;
+                    let i = 1;
+                    while (document.getElementById(finalId)) {
+                        finalId = anchorId + '-' + (++i);
+                    }
+                    node.id = finalId;
+                    anchorId = finalId;
+                }
+                if (currentN !== null) {
+                    subMap[currentN + '::' + text] = anchorId;
+                }
+                return; // 不向下遞迴 h3/h4 子節點
+            }
+            for (let c = node.firstChild; c; c = c.nextSibling) walk(c);
+        }
+        walk(main);
+    }
+    assignIds();
+
+    // 視覺隱藏 H2 章名數字前綴（保留 textContent 供錨點與名詞 hover 使用）
+    document.querySelectorAll('main h2').forEach(h2 => {
+        h2.innerHTML = h2.innerHTML.replace(
+            /^([零一二三四五六七八九十]+、)/,
+            '<span class="sec-num">$1</span>'
+        );
+    });
+
+    // 標記名詞列表區域（sec-3 H2 之後到下一個 H2 之前）的所有兄弟元素,wrap 名詞時跳過
+    (function markTermsArea() {
+        const h2 = document.getElementById('sec-3');
+        if (!h2) return;
+        let node = h2.nextElementSibling;
+        while (node && node.tagName !== 'H2') {
+            node.classList.add('terms-list-area');
+            node = node.nextElementSibling;
+        }
+    })();
+
+    // ----- 【...】 引用跳轉解析 -----
+    const REF_RE = /【([^【】]+?)】/g;
+
+    function resolveRef(content) {
+        const parts = content.split('｜');
+        const sectionPart = parts[0].trim();
+        const subParts = parts.slice(1).map(s => s.trim()).filter(Boolean);
+
+        const m = sectionPart.match(/^([零一二三四五六七八九十]+)、/);
+        if (!m) return null;
+        const n = chineseToArabic(m[1]);
+        if (n === null) return null;
+        const sectionId = 'sec-' + n;
+        if (!document.getElementById(sectionId)) return null;
+
+        // 多段子段：取末段做匹配；找不到時降級到 H2
+        for (let i = subParts.length - 1; i >= 0; i--) {
+            const sub = subParts[i];
+            const key = n + '::' + sub;
+            if (subMap[key]) return subMap[key];
+        }
+        return sectionId;
+    }
+
+    function shouldSkipForText(node) {
+        let p = node.parentNode;
+        while (p && p !== document.body) {
+            const tag = p.tagName;
+            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE') return true;
+            if (tag === 'A' && p.classList && p.classList.contains('ref')) return true;
+            if (p.classList && p.classList.contains('term')) return true;
+            p = p.parentNode;
+        }
+        return false;
+    }
+
+    function getTextNodes(root) {
+        const out = [];
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        let n;
+        while ((n = walker.nextNode())) {
+            if (n.nodeValue && n.nodeValue.trim()) out.push(n);
+        }
+        return out;
+    }
+
+    function resolveReferences(root) {
+        const textNodes = getTextNodes(root);
+        textNodes.forEach(node => {
+            if (shouldSkipForText(node)) return;
+            const text = node.nodeValue;
+            REF_RE.lastIndex = 0;
+            if (!REF_RE.test(text)) return;
+            REF_RE.lastIndex = 0;
+            const frag = document.createDocumentFragment();
+            let last = 0;
+            let m;
+            while ((m = REF_RE.exec(text))) {
+                if (m.index > last) {
+                    frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+                }
+                const refId = resolveRef(m[1]);
+                if (refId) {
+                    const a = document.createElement('a');
+                    a.className = 'ref';
+                    a.href = '#' + refId;
+                    a.textContent = m[0];
+                    frag.appendChild(a);
+                } else {
+                    frag.appendChild(document.createTextNode(m[0]));
+                }
+                last = m.index + m[0].length;
+            }
+            if (last < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(last)));
+            }
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
+
+    resolveReferences(main);
+
+    // ----- 名詞 hover tooltip -----
+    const terms = JSON.parse(document.getElementById('terms-data').textContent || '{}');
+    const sortedTerms = Object.keys(terms).sort((a, b) => b.length - a.length);
+
+    function shouldSkipForTerm(node) {
+        let p = node.parentNode;
+        while (p && p !== document.body) {
+            const tag = p.tagName;
+            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE') return true;
+            if (tag === 'A') return true;
+            if (tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4') return true;
+            if (p.classList && p.classList.contains('term')) return true;
+            if (p.classList && p.classList.contains('terms-list-area')) return true; // 名詞列表自身範圍
+            // 表格分隔列以 marked 渲染後不會出現（th/td 取代）；保險起見不額外處理
+            p = p.parentNode;
+        }
+        return false;
+    }
+
+    function wrapTermsInNode(node) {
+        if (shouldSkipForTerm(node)) return;
+        let cursor = node;
+        // 反覆找出最早出現的名詞 → 切割
+        while (cursor && cursor.nodeType === 3) {
+            const text = cursor.nodeValue;
+            if (!text) break;
+            let best = null;
+            for (const t of sortedTerms) {
+                const idx = text.indexOf(t);
+                if (idx === -1) continue;
+                if (!best || idx < best.idx || (idx === best.idx && t.length > best.term.length)) {
+                    best = { term: t, idx: idx };
+                }
+            }
+            if (!best) break;
+            const before = text.slice(0, best.idx);
+            const matched = text.slice(best.idx, best.idx + best.term.length);
+            const after = text.slice(best.idx + best.term.length);
+            const span = document.createElement('span');
+            span.className = 'term';
+            span.dataset.term = best.term;
+            span.textContent = matched;
+            cursor.nodeValue = before;
+            const afterNode = document.createTextNode(after);
+            const parent = cursor.parentNode;
+            parent.insertBefore(span, cursor.nextSibling);
+            parent.insertBefore(afterNode, span.nextSibling);
+            cursor = afterNode;
+        }
+    }
+
+    function wrapTerms(root) {
+        const nodes = getTextNodes(root);
+        nodes.forEach(wrapTermsInNode);
+    }
+
+    if (sortedTerms.length > 0) wrapTerms(main);
+
+    // ----- Tooltip 行為 -----
+    function cleanDesc(desc) {
+        return desc
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/`([^`]+?)`/g, '$1')
+            .replace(/\[\[(.+?)\]\]/g, '$1');
+    }
+
+    const tip = document.createElement('div');
+    tip.className = 'term-tip';
+    document.body.appendChild(tip);
+    let tipShown = false;
+
+    document.addEventListener('mouseover', (e) => {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('term')) {
+            const name = t.dataset.term;
+            const desc = terms[name];
+            if (!desc) return;
+            tip.innerHTML = '<strong></strong><span></span>';
+            tip.querySelector('strong').textContent = name;
+            tip.querySelector('span').textContent = cleanDesc(desc);
+            tip.style.display = 'block';
+            tipShown = true;
+        }
+    });
+    document.addEventListener('mouseout', (e) => {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('term')) {
+            tip.style.display = 'none';
+            tipShown = false;
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!tipShown) return;
+        const x = e.clientX + 14;
+        const y = e.clientY + 18;
+        const maxX = window.innerWidth - tip.offsetWidth - 12;
+        const maxY = window.innerHeight - tip.offsetHeight - 12;
+        tip.style.left = Math.min(x, maxX) + 'px';
+        tip.style.top = Math.min(y, maxY) + 'px';
+    });
+
+    // ----- Toggle 視覺化 ↔ 文字流程 -----
+    document.querySelectorAll('.flow-section').forEach(section => {
+        section.querySelectorAll('.vt-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                section.querySelectorAll('.vt-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+                section.querySelectorAll('.vt-view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== view));
+            });
+        });
+    });
+
+    // ----- 渲染 mermaid（在 DOM 後處理完成後） -----
+    mermaid.run({ querySelector: '.mermaid' });
+
+    // ----- IntersectionObserver 同步 aside .active 狀態 -----
+    const navLinks = document.querySelectorAll('aside a[data-target]');
+    function setActive(id) {
+        navLinks.forEach(a => a.classList.toggle('active', a.dataset.target === id));
+    }
+    function observeTargets() {
+        const targets = [];
+        navLinks.forEach(a => {
+            const el = document.getElementById(a.dataset.target);
+            if (el) targets.push(el);
+        });
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter(e => e.isIntersecting)
+                .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            if (visible.length > 0) {
+                setActive(visible[0].target.id);
+            }
+        }, {
+            rootMargin: '-20% 0px -65% 0px',
+            threshold: 0
+        });
+        targets.forEach(t => observer.observe(t));
+    }
+    setTimeout(observeTargets, 200);
+})();
+</script>
+
+</body>
+</html>

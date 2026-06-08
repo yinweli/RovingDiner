@@ -7,8 +7,16 @@ tasks:
     cmds:
       - golangci-lint fmt # 執行 gofmt + goimports
       - golangci-lint run --color always
-      - npx markdownlint-cli --fix "*.md"
+      - python doc/build-md/normalize-md-tables.py # 正規化 doc 下所有 md 表格欄寬（CJK 對齊）
+      - python doc/build-md/normalize-md-tables.py CLAUDE.md README.md # 正規化根層 md 表格欄寬（CJK 對齊）
+      - npx markdownlint-cli --fix "*.md" "doc/*.md"
       - npx prettier --write --log-level warn --end-of-line lf '*.yml' '*.yaml' '**/*.yml' '**/*.yaml' || true
+
+  # 文件輸出 HTML
+  doc:
+    cmds:
+      - python doc/build-html/build.py # 由營業規格書.md 輸出 doc/營業規格書.html
+      - python doc/build-html/build-generic.py # 由實作 / 顯示規格書.md 輸出對應 .html（無 mermaid）
 
   # 更新表格
   sheet:
