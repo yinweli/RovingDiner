@@ -44,7 +44,7 @@ type Game struct {
 	DrawMax      Value // 補牌張數上限
 
 	// 階段 / 回合
-	NextPhase PhaseType // 下一階段（跳轉目標；系統於階段轉移時清為 PhaseTypeNone）
+	NextPhase PhaseKind // 下一階段（跳轉目標；系統於階段轉移時清為 PhaseNone）
 	Round     int32     // 當前回合數
 	RoundMax  int32     // 回合上限
 
@@ -121,7 +121,7 @@ type Guest struct {
 }
 
 // Effect 效果實例；對應【營業規格書 | 五、實例結構 | 效果（Effect）實例】。
-// 效果的靜態類型（立即 / 觸發 / 常駐）見靜態表格 Effect.Type 與 define.go 的 EffectType。
+// 效果的靜態類型（立即 / 觸發 / 常駐）見靜態表格 Effect.Type 與 define.go 的 EffectKind。
 type Effect struct {
 	InstanceID InstanceID // 實例唯一識別碼
 	EffectID   int32      // 引用對應效果資料
@@ -132,7 +132,7 @@ type Effect struct {
 
 // Action 行動實例；對應【營業規格書 | 五、實例結構 | 行動（Action）實例】。
 type Action struct {
-	Guest    *Guest   // 顧客實例
-	TaskType TaskType // 行動類型（飽食 / 耐心）
-	SkillID  int32    // 顧客行動階段彈出後啟動的技能編號
+	Guest   *Guest   // 顧客實例
+	Kind    TaskKind // 行動類型（飽食 / 耐心）
+	SkillID int32    // 顧客行動階段彈出後啟動的技能編號
 }

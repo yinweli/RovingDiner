@@ -28,7 +28,7 @@ func (this *SuiteRuntime) TestNewRuntime() {
 	this.NotNil(runtime.Game.ExileTotal)
 
 	// 初始階段為空、容器為空
-	this.Equal(PhaseTypeNone, runtime.Game.NextPhase)
+	this.Equal(PhaseNone, runtime.Game.NextPhase)
 	this.Empty(runtime.Hand)
 	this.Empty(runtime.Deck)
 	this.Empty(runtime.Effect)

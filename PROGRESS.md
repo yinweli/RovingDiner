@@ -53,7 +53,7 @@
 
 > 套件名對照:原 `expr`→`exprs`、`game`→`cores` + `games`、`defines`→`cores/define.go`。
 
-- **效果類型 enum 改名 `EffectType`**:`defines.Effect`(效果類型 enum)與效果實例 struct `Effect` 合進同包 `cores` 會撞名;enum 改名 `cores.EffectType`(常數 `EffectTypeImmed/Trigger/Persist`,與既有 `TargetType` 命名一致),效果實例維持 `cores.Effect`。
+- **cores enum 一律 `XxxKind` 命名(比照 `exprs.tokenKind`)**:六個列舉 `EventKind` / `PhaseKind` / `TriggerKind` / `EffectKind` / `TargetKind` / `TaskKind`;**常數去掉中間字**(如 `EventInstance` / `PhaseNone` / `EffectImmed` / `TargetNone` / `TaskSate`,非 `EventKindInstance`),**struct 列舉欄位用裸 `Kind`**(`EventData.Kind` / `Action.Kind`,比照 `token.kind`)。其中 `EffectKind` 以 `Kind` 後綴避開效果實例 struct `Effect` 撞名(效果實例維持 `cores.Effect`)。**刻意與規格 / 生成碼分離**:規格書 §二 詞彙表與 `sheeter.Effect` 欄位仍用 `Type`(如 `Effect.Type` / `Effect.TriggerType` int32 原始欄位),cores 解碼後的列舉用 `Kind` 區隔;註解引用生成碼欄位(`Effect.Type` / `Effect.TriggerType`)與規格術語(`(TargetType)`)時保留原 `Type` 名。
 - **`infra` 置於 `internal/`**:以實作規格書【二】為準,`internal/infra` 與 `internal/{exprs,cores,games}` 同層;原頂層 `infra/` + doc.go「非 internal」的舊決策作廢。`sheet`/`sheetdata`/`gamedata` 維持頂層(生成物)。
 - **衍生索引歸 `games`**:award 等載入時衍生索引(未來 Seat 鄰桌、Skill→Effect 展開)一律歸 `games`(遊戲表衍生＝遊戲知識),`cores` 不放衍生索引、維持純資料模型;檔名 `games/help.go`。
 - **exprs 注入機制**:builtin 由 `games` 注入、registry 掛 per-engine 實例,eval 時與 `Resolver` 一起帶入(eval-time env),零全域可變狀態;`exprs` 自身不內建函式、保持 game-agnostic。registry map vs 單一 `Env.Call` 委派、call-node 如何分流 builtin / 查詢函式,屬 exprs 接縫(M4)實作細節。
