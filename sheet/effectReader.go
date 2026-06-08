@@ -16,6 +16,7 @@ type Effect struct {
 	CommandTrigger string `json:"CommandTrigger"` // 觸發命令
 	Group int32 `json:"Group"` // 效果群組編號
 	ID int32 `json:"ID"` // 效果編號
+	Kind int32 `json:"Kind"` // 效果類型
 	Name string `json:"Name"` // 名稱
 	RunOrder int32 `json:"RunOrder"` // 作用順序
 	RunRound int32 `json:"RunRound"` // 作用回合
@@ -28,7 +29,6 @@ type Effect struct {
 	TriggerCond string `json:"TriggerCond"` // 觸發條件
 	TriggerCount string `json:"TriggerCount"` // 觸發次數
 	TriggerKind int32 `json:"TriggerKind"` // 觸發時機
-	Type int32 `json:"Type"` // 效果類型
 }
 
 // EffectReader Effect.xlsx#Effect
