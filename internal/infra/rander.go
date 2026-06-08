@@ -9,7 +9,7 @@ func NewRander(seed int64) *Rander {
 	return &Rander{rng: rand.New(rand.NewSource(seed))}
 }
 
-// Rander 單一 seeded PRNG，實作 games.Rander。
+// Rander 單一 seeded PRNG，實作 cores.Rander。
 // 同 seed 產生同序列，是回歸測試與 bug 重現的基礎；核心不得碰全域亂數。
 type Rander struct {
 	rng *rand.Rand

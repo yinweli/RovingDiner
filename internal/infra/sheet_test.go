@@ -22,7 +22,7 @@ type SuiteSheet struct {
 }
 
 func (this *SuiteSheet) TestLoad() {
-	data, err := Load("../sheetdata")
+	data, err := Load("../../sheetdata")
 	this.Require().NoError(err)
 	this.Require().NotNil(data)
 
