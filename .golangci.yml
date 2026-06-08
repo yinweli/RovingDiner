@@ -41,6 +41,8 @@ linters:
     - whitespace
     - wrapcheck
   settings:
+    exhaustive:
+      default-signifies-exhaustive: true # switch 帶 default 即視為窮舉（運算式 parser / evaluator 僅對相關 token 分派）
     dupl:
       threshold: 400
     dogsled:

@@ -10,6 +10,7 @@
 - **實作重做**:先前在舊結構 `internal/{defines,expr,game}` 下完成的實作(骨架／運算式／屬性＋命令)將於新(細切)里程碑下重建,舊進度與工作盤點作廢。下方「已敲定設計決策」是跨重構仍成立、重建時要沿用的決策(套件名已對齊現行三包結構)。舊實作僅存於 `yilin/m2`(tip `d499db6`),僅供型別形狀參考(`dev` 已 reset 到當前工作路線、不再是舊實作來源)——以新規格 + 規則 SSOT 為準,避開單一 `game` 包耦合、全小寫檔名、C# 痕跡。
 - **M0 已落地**:`internal/cores` 純資料模型骨架完成(define/type/instance/runtime + 測試),`internal/infra` 自頂層搬入 `internal/`、註解校正。建置 / vet / gofmt / golangci-lint / 測試全綠。
 - **M2 已落地**:`internal/exprs` 詞法層完成——`error.go`(`SyntaxError` Pos+Msg、建構式 `newError(pos, msg)`、`Error()`「第 N 字附近」)、`lexer.go`(`tokenKind` 列舉 + `token` 帶 `pos` + `lex` 掃描器:數字 / 單引號字串含 CJK / 識別子 / 雙字元運算符 / `AND`-`OR`-`true`-`false`-`none` 大小寫不敏特判,尾端 `tokenEOF`)。`token` / `tokenKind` 暫置 `lexer.go`(M3 parser 同包共用,不需搬)。`=` 單字元、未結束字串、未知字元皆吐帶位置中文錯誤。`ParseFloat` 錯誤分支為防禦性(掃描器只組合合法數字串、實際不可達)。建置 / vet / gofmt / golangci-lint / 測試全綠。M1 之 infra 不在 exprs 依賴鏈。
+- **M3 已落地**:`internal/exprs` 純語言層完成(零遊戲接縫、可獨立全測)——`value.go`(求值結果型別 `Value`:`valueKind` num / bool / text / none + 建構 `NewNum` / `NewBool` / `NewText` / `NewNone` + 取值 + `Truthy` §6 真假判定 + `Round` half-away-from-zero)、`node.go`(AST:`nodeLiteral` / `nodeUnary` / `nodeBinary` / `nodeTernary`,marker 介面 `node`)、`parser.go`(遞迴下降 `Parse(source) (*Expr, error)`;優先序 括號 > 乘除餘 > 加減 > 比較 > 否定 > AND > OR > 三元;三元右結合、其餘左結合;比較不串接)、`eval.go`(`(*Expr).Eval() (Value, ok)`、`evaluator` 走訪器、短路 AND / OR、三元惰性求值、算術 / 比較 / 邏輯)。建置 / vet / golangci-lint / 測試全綠。
 
 ## 里程碑進度
 
@@ -20,7 +21,7 @@
 | M0     | ✅   | cores 型別骨架                  |
 | M1     | ✅   | infra.Load（搬入 internal/）    |
 | M2     | ✅   | exprs lexer + SyntaxError       |
-| M3     | ⬜   | exprs 純語言(parser/AST/eval)  |
+| M3     | ✅   | exprs 純語言(parser/AST/eval)  |
 | M4     | ⬜   | exprs 接縫(Resolver + builtin) |
 | M5     | ⬜   | 命令解析(企劃驗證器地基)        |
 | M6     | ⬜   | 屬性讀取側(registry + Resolver) |
@@ -63,6 +64,10 @@
 - **exprs 數值用 float64**:中間值可為小數,`exprs` 內不四捨五入;捨入(half-away-from-zero)由呼叫方寫回屬性時以 `exprs.Round` 處理。
 - **`none` 作 exprs 字面值關鍵字**(非走 Resolver):與 `true` / `false` 並列,於 lexer `identToken` 特判、parser 出 `nodeLiteral{NewNone()}`。理由:空物件是值系統常數(永不失敗),該與 true / false 同層;`self` 走 Resolver 是「會失敗的綁定」,語意不同。`self != none` 守衛式因此可寫;與既有 eval 規則自動相容(`none == self` 走 ref 比較、`none + 1` 走非數值算術失敗)。
 - **語法錯誤型別 `exprs.SyntaxError`**(`error.go`):`Pos`(rune 索引,0 起算,供工具標位置)+ `Msg`(企劃白話,無內部前綴);`Error()` 顯示「第 N 字附近:Msg」(N = Pos+1)。`token` 帶 `pos`,lexer / parser 全部錯誤走 `newError(pos, msg)`。**命令解析器重用同型別**,使命令與運算式的錯誤格式對企劃一致。
+- **exprs 純語言 API 與失敗分層(M3)**:`Parse(source) (*Expr, error)` 載入時編譯一次、`(*Expr).Eval() (result Value, ok bool)` 執行期多次求值。**兩種失敗分層**:語法錯誤於 Parse 期回 `SyntaxError`、評估失敗於 Eval 期以 `ok == false` 表達且不拋錯(對齊【二十七、運算式｜7、8】)。求值結果型別 `exprs.Value`(num / bool / text / none;與屬性容器 `cores.Value` 為不同概念,同名不同包)。`Round`(half-away-from-zero)由呼叫方寫回屬性時使用,exprs 求值過程本身不捨入。
+- **exprs 規格未明處的求值語意(敲定;規格若補強再對齊)**:① 大小比較 `< > <= >=` 僅 num 對 num,字串 / 布林 / 空物件無順序 → 評估失敗;② 相等 `== !=` 僅同型別(num / text / bool / none)可比,跨型別 → 失敗,空物件只與空物件相等;③ §6「省略比較符」真假判定(布林取用、非 0 數值為真、0 為假、其餘失敗)集中於 `Value.Truthy`,邏輯運算元 / 三元條件 / 呼叫方頂層判定共用同一規則。
+- **M3→M4 接縫邊界**:操作數解析(識別子屬性 / 引用 / 查詢函式 / self)屬 M4(里程碑「操作數解析」),M3 parser 對 `tokenIdent` 直接吐「非法運算元」錯。`evaluator` 目前為空 struct,M4 加 `resolver` / `builtin` 欄位、遞迴 eval 方法簽章不動(走訪器收斂改動面);`parsePrimary` 對 `tokenIdent` 擴充出 nodeIdent / nodeCall / nodeRef;`none` 為 M3 唯一 ref-like 值,M4 加 `valueRef` 與「none vs 物件引用比實例編號」。
+- **lint 政策:`exhaustive` 帶 default 即窮舉**:`.golangci.yml` 新增 `exhaustive.default-signifies-exhaustive: true`——parser / evaluator 對 `tokenKind` 只 switch 相關子集 + `default`,不逐一列 25 個 token;M4+ 命令 verb / selector / cores 列舉 switch 沿用。(M2 lexer 是 switch rune / string 故未觸發,M3 首度 switch 列舉型別。)
 - **Resolver 是 `exprs` 與 `games` 的唯一接縫**,對齊【二十三、屬性清單】表結構:主表(全域屬性 / 查詢函式 / 物件引用)走 `Attr`、子表(卡牌 / 顧客引用屬性)走 `AttrRef`(識別碼立於 `cores/define`)。`Resolver` 由 `games` 實作。
 - **內建函式註冊表化**:以 `map[string]builtinFunc` 登記(max / min),新增函式只需註冊一筆,`nodeCall` 與 parser 不動;由 `games` 注入 `exprs`。對齊【二十六、內建函式清單】。
 - **核心邊界介面三個**(Operator / Presenter / Rander,定義於 `cores`),靜態資料直接以 `*sheeter.Sheeter` 注入;不設 per-table Dater 介面。衍生索引(如 Award 依群組聚合)移入核心預建。
