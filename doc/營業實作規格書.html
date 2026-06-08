@@ -461,8 +461,7 @@ RovingDiner/
 │  ├─ exprs/                運算式引擎：lexer → parser → AST → evaluator；game-agnostic、可單獨測
 │  │                        條件對象走 Resolver 介面、內建函式由 games 注入
 │  ├─ cores/                通用資料模型 substrate（不懂遊戲規則、不 import games），依關注點分檔：
-│  │   ├─ type.go           結構／介面定義（含 Operator／Presenter／Rander 三 port、EventData）；只有 type
-│  │   ├─ define.go         常數、列舉、type alias（觸發時機／命令／屬性／命令對象 名稱表）
+│  │   ├─ define.go         三 port（Operator／Presenter／Rander）、EventData、常數／列舉／type alias（觸發時機／命令／屬性／命令對象 名稱表）；只有宣告
 │  │   ├─ runtime.go        一場營業的聚合狀態（全域屬性 + 全部容器 + 結算旗標）
 │  │   └─ instance*.go      Game/Card/Guest/Effect/Action/Value 實例 + 容器 + Value 雙欄原語
 │  └─ games/                全部營業邏輯（單向 import cores／exprs、驅動引擎），依關注點分檔：
@@ -530,7 +529,7 @@ effect orchestration（觸發要跑命令）因此整包收在 `games`，不讓�
 
 ## 四、解耦的關鍵：邊界介面
 
-核心只認三個**行為**介面（`Operator`／`Presenter`／`Rander`，定義於 `cores/type.go`），TUI 與測試各自提供實作。**靜態表格不走介面**：
+核心只認三個**行為**介面（`Operator`／`Presenter`／`Rander`，定義於 `cores/define.go`），TUI 與測試各自提供實作。**靜態表格不走介面**：
 Sheeter 生成的 `*sheeter.Sheeter` 本身就是核心的靜態資料 port，
 核心直接以 `data.Card.Get(id)` 查詢；衍生索引（如抽獎依群組聚合）由核心預建（見 `help.go`）。
 
