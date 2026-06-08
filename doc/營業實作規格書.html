@@ -445,8 +445,8 @@ a.ref:hover {
 
 沿用 DiceBattle-server 的命名直覺（`this` receiver、`sheet` 既有；基礎設施層改名為 `infra`），
 但因為是純規則引擎、無 DB／網路，砍掉 `apis`／`querys`／`modules`，改以演算法子系統分包。
-核心採**模型 B**：`cores` 為通用資料模型 substrate（不懂遊戲規則、不 import `games`），`games` 為全部營業邏輯（單向 import `cores`／`exprs`）；
-「effect 觸發要跑命令」的回呼因此不會反向穿透 `cores`，避開循環 import，注入只發生在 `exprs` 邊界。
+核心採**引擎本體 + 對外介面**分層：`cores` 為營業引擎本體（資料模型 + 驅動引擎 + 命令語言行為，單向 import `exprs`），`games` 為對外介面層（`Parse`／`Validate`／`Run` 三個對外函式，單向 import `cores`／`exprs`）；
+依賴呈 `games → cores → exprs` 單一直線；命令語言行為對遊戲值的回呼經 `exprs.Resolver` 介面反轉（`cores` 實作、`exprs` 反向不依賴），全鏈無環。
 
 ```text
 RovingDiner/
@@ -459,61 +459,65 @@ RovingDiner/
 ├─ internal/
 │  ├─ infra/                sheet 載入（組裝 *sheeter.Sheeter）、PRNG 來源——Go-only 基礎設施
 │  ├─ exprs/                運算式引擎：lexer → parser → AST → evaluator；game-agnostic、可單獨測
-│  │                        條件對象走 Resolver 介面、內建函式由 games 注入
-│  ├─ cores/                通用資料模型 substrate（不懂遊戲規則、不 import games），依關注點分檔：
-│  │   ├─ define.go         三 port（Operator／Presenter／Rander）、EventData、常數／列舉／type alias（觸發時機／命令／屬性／命令對象 名稱表）；只有宣告
+│  │                        條件對象走 Resolver 介面、內建函式由 cores 注入
+│  ├─ cores/                營業引擎本體（單向 import exprs、不 import games），依關注點分檔：
+│  │   ├─ define.go         三 port（Operator／Presenter／Rander）、EventData、資料模型列舉（事件類別／階段／觸發時機／效果／目標／觸發後／堆疊／行動 類型）；只有宣告（命令／屬性／命令對象 名稱改歸命令詞彙表）
 │  │   ├─ runtime.go        一場營業的聚合狀態（全域屬性 + 全部容器 + 結算旗標）
-│  │   └─ instance*.go      Game/Card/Guest/Effect/Action/Value 實例 + 容器 + Value 雙欄原語
-│  └─ games/                全部營業邏輯（單向 import cores／exprs、驅動引擎），依關注點分檔：
-│      ├─ engine.go         驅動引擎 struct：持 *cores.Runtime + 三 port + *sheeter.Sheeter；command／selector／flow／effect 皆其 method
-│      ├─ help.go           載入時衍生索引（抽獎分組；未來 Seat 鄰桌／Skill→Effect），引擎初始化建一次快取
-│      ├─ builtin*.go       運算式引擎內建函式（注入 exprs）
-│      ├─ property*.go      屬性註冊表（實作 exprs.Resolver；把全域／引用屬性、查詢函式綁進去）
-│      ├─ command*.go       命令解譯（屬性修改 + 操作命令）
-│      ├─ selector*.go      命令對象解析（guestPick/deckTop/handAll…；含 N 邊界／退化／filter／deckTop auto-shuffle）
-│      ├─ effect*.go        效果佇列 orchestration：堆疊處理／觸發時機／推進／清理／免疫閘門
-│      └─ flow*.go          phase 狀態機 + 啟動技能（目標類型 self 綁定）+ 執行結算；入口 games.Run
+│  │   ├─ instance*.go      Game/Card/Guest/Effect/Action/Value 實例 + 容器 + Value 雙欄原語
+│  │   ├─ engine.go         驅動引擎 struct：持 Runtime + 三 port + *sheeter.Sheeter；委派實作 exprs.Resolver（讀全域詞彙表）；command／selector／flow／effect 皆其 method
+│  │   ├─ attr.go           全域屬性：詞彙表 tableAttr + 讀寫行為（含查詢函式；M6 起填入）；HasAttr 供 Validate 查名
+│  │   ├─ attrRef.go        卡牌／顧客引用屬性：詞彙表 tableAttrRef + 讀寫行為；HasAttrRef 供 Validate 查名
+│  │   ├─ command.go        操作命令：詞彙表 tableCommand + verb 執行行為；HasCommand 供 Validate 查名
+│  │   ├─ selector.go       命令對象：詞彙表 tableSelector + 解析行為（guestPick/deckTop/handAll…；含 N 邊界／退化／filter／deckTop auto-shuffle）；HasSelector 供 Validate 查名
+│  │   ├─ help.go           載入時衍生索引（抽獎分組；未來 Seat 鄰桌／Skill→Effect），引擎初始化建一次快取
+│  │   ├─ builtin*.go       運算式引擎內建函式（注入 exprs）
+│  │   ├─ effect*.go        效果佇列 orchestration：堆疊處理／觸發時機／推進／清理／免疫閘門
+│  │   └─ flow*.go          phase 狀態機 + 啟動技能（目標類型 self 綁定）+ 執行結算
+│  └─ games/                對外介面層（單向 import cores／exprs），依關注點分檔：
+│      ├─ parse.go          命令文法 parser + Command AST（純文法、名稱原始字串；對外入口 Parse）
+│      ├─ validate.go       命令 AST 名稱驗證：自由 Validate 逐名查 cores 詞彙表（HasCommand／HasSelector；M5 表空故一律未知、M6+ 生效）
+│      └─ run.go            營業執行對外入口 Run：建立 cores 驅動引擎並推進核心流程，逐單位 Emit 事件流
 ├─ sheet/ sheetdata/ gamedata/    （已存在，沿用既有 Sheeter pipeline）
 └─ testdata/                測試 fixture / scenario / golden（做法見第七節）
 ```
 
 - `cmd/` 保持瘦（只有 main + flag + 組裝）；應用本體放 `app/{tui,check}`，所以 `cmd` 不會肥。此分法對齊 DiceBattle-server（`cmd/` 瘦進入點、`app/` 應用本體）。
-- 命令（verb）與命令對象（作用對象解析）拆成 `command*.go` 與 `selector*.go` 兩個前綴：兩者執行時雖一起出現，但屬不同關注點。**命令對象刻意不叫 `target`**，以免與 營業規格書【八、目標類型】的「目標類型(TargetKind)」撞名。
-  - 命名定為 `selector`（非保留字，可同時當檔名前綴與識別碼 `Selector` / `selectorGuest`）。語意是「用篩／抽／查／切各種方式產出作用對象集合」，比 `filter` 廣（`filter` 已是 營業規格書【二十四、命令對象清單】命令對象內部「卡牌編號篩選」的子術語，且 `deckTop` 會 mutate，不符 filter 唯讀語意）。
+- 命令（verb）與命令對象（作用對象解析）分屬 cores 的 `command.go` 與 `selector.go`：兩者執行時雖一起出現，但屬不同關注點。**命令對象刻意不叫 `target`**，以免與 營業規格書【八、目標類型】的「目標類型(TargetKind)」撞名。
+  - 命名定為 `selector`（非保留字，可同時當檔名與識別碼 `Selector` / `selectorGuest`）。語意是「用篩／抽／查／切各種方式產出作用對象集合」，比 `filter` 廣（`filter` 已是 營業規格書【二十四、命令對象清單】命令對象內部「卡牌編號篩選」的子術語，且 `deckTop` 會 mutate，不符 filter 唯讀語意）。
 
-**為什麼拆 `cores` + `games`（模型 B）**：把營業核心分成 `cores`（純資料模型）+ `games`（全部邏輯），
-用 Go 的 acyclic import 在編譯期強制「資料層在下、邏輯層在上」的單向分層——`cores` **不 import `games`**，永遠不會反向依賴遊戲規則。
-effect orchestration（觸發要跑命令）因此整包收在 `games`，不讓回呼反向穿透 `cores`，分層始終無環。
-代價是 `games` 對 `cores` 狀態的存取集中在引擎 struct 的 method（單一、刻意的存取面，非散落 getter）；接受此代價換得分層清楚、`cores` 可獨立理解。
-`exprs` 維持獨立第三包，因為它是零遊戲依賴的運算式語言、可單獨測。兩包內部各以檔案分檔（`command*.go` 等）導覽。
+**為什麼這樣拆 `cores` + `games`（引擎本體 + 對外介面）**：`cores` 收齊營業引擎本體（資料模型 + 驅動引擎 + 命令語言行為 + 效果／流程 orchestration），
+`games` 只留三個對外函式（`Parse`／`Validate`／`Run`）。用 Go 的 acyclic import 把依賴壓成 `games → cores → exprs` 一條直線——
+讀 `games` 即知對外能做什麼、細節都在 `cores`；`cores` 不 import `games`、永不反向依賴對外層。
+命令語言行為（attr／command／…）下沉 `cores`、與 `engine` 同包，故行為直接吃 `*engine`、不需額外的狀態存取 port。
+`exprs` 維持獨立第三包，因為它是零遊戲依賴的運算式語言、可單獨測；其對遊戲值的回呼經 `exprs.Resolver` 介面反轉、由 `cores` 實作。
 
 **`exprs` 的解耦**：`exprs` 只懂語法與運算，遇到「條件對象」（`morale`、`self.calm`、`drawLast.cardID`、
 `tableCount('>=',2)`…）時呼叫一個 `Resolver` 介面取值，內建函式（`min`／`max`…）亦由外部注入。
-`games`（`property*.go`）實作 `Resolver`、`games`（`builtin*.go`）注入內建函式，把營業規格書【二十三、屬性清單】【二十六、內建函式清單】的綁定塞進去。
+`cores`（行為定義於 `attr.go`／`attrRef.go`、`engine` 委派）實作 `Resolver`、`cores`（`builtin*.go`）注入內建函式，把營業規格書【二十三、屬性清單】【二十六、內建函式清單】的綁定塞進去。
 這樣 `exprs` 零遊戲依賴，且能脫離遊戲跑語法／運算測試。
 
 ---
 
 ## 三、核心引擎的內部分層
 
-由內而外、依賴單向（package 歸屬：狀態列在 `cores/`、運算式列在 `exprs/`、屬性／命令／命令對象／效果／流程列均在 `games/`；effect 的推進／觸發／堆疊／清理 orchestration 即 `games/effect*.go`）：
+由內而外、依賴單向（package 歸屬：運算式列在 `exprs/`，其餘各層——狀態／驅動引擎／屬性／命令／命令對象／效果／流程——均在 `cores/`；對外的 `Parse`／`Validate`／`Run` 收於 `games/`，effect 的推進／觸發／堆疊／清理 orchestration 即 `cores/effect*.go`）：
 
-| 層       | 檔案                        | 職責                                                                                              | 對應 spec                                                     |
-|:---------|:----------------------------|:--------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
-| 狀態     | `instance*.go` `runtime.go` | Value/Game/Card/Guest/Effect/Action 實例與 10 個容器；`Value` 帶 `Value+Lock`（鎖定計數）統一語意 | 營業規格書【五、實例結構】【六、容器結構】                    |
-| 運算式   | `exprs/`                    | 完整運算式（算術+比較+邏輯+三元）、四捨五入 half-away-from-zero、評估失敗回傳狀態                 | 營業規格書【二十七、運算式】【二十六、內建函式清單】          |
-| 屬性     | `property*.go`              | 全域屬性／卡牌引用／顧客引用／查詢函式 的讀寫綁定；餐廳士氣值 `-=` 特例                           | 營業規格書【二十三、屬性清單】【十七、命令｜1. 屬性修改命令】 |
-| 命令     | `command*.go`               | 屬性修改命令 + ~60 個操作命令（verb）                                                             | 營業規格書【十七、命令】【二十五、操作命令清單】              |
-| 命令對象 | `selector*.go`              | ~35 個命令對象解析（作用對象集合；含 N 邊界／退化／filter／deckTop auto-shuffle）                 | 營業規格書【二十四、命令對象清單】                            |
-| 效果     | `effect*.go`                | 效果佇列、[堆疊處理]、觸發時機、推進效果、清理效果、免疫閘門                                      | 營業規格書【七、效果類型】【十~十六】【二十、獨立流程】       |
-| 流程     | `flow*.go`                  | 6 個 phase 狀態機 + 啟動技能 + 執行結算 + 終止判定 + 結算旗標重入防護                             | 營業規格書【十九、核心流程】【二十、獨立流程】                |
+| 層       | 檔案                        | 職責                                                                                                                   | 對應 spec                                                     |
+|:---------|:----------------------------|:-----------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
+| 狀態     | `instance*.go` `runtime.go` | Value/Game/Card/Guest/Effect/Action 實例與 10 個容器；`Value` 帶 `Value+Lock`（鎖定計數）統一語意                      | 營業規格書【五、實例結構】【六、容器結構】                    |
+| 運算式   | `exprs/`                    | 完整運算式（算術+比較+邏輯+三元）、四捨五入 half-away-from-zero、評估失敗回傳狀態                                      | 營業規格書【二十七、運算式】【二十六、內建函式清單】          |
+| 屬性     | `attr.go`／`attrRef.go`     | 全域屬性／卡牌引用／顧客引用／查詢函式 的讀寫行為（填入全域詞彙表）；餐廳士氣值 `-=` 特例                              | 營業規格書【二十三、屬性清單】【十七、命令｜1. 屬性修改命令】 |
+| 命令     | `command.go`                | 屬性修改 + ~60 操作命令 verb 執行行為（command.go）；命令文法 parser／名稱驗證屬 games 對外層（parse.go／validate.go） | 營業規格書【十七、命令】【二十五、操作命令清單】              |
+| 命令對象 | `selector.go`               | ~35 命令對象解析行為（作用對象集合；含 N 邊界／退化／filter／deckTop auto-shuffle）                                    | 營業規格書【二十四、命令對象清單】                            |
+| 效果     | `effect*.go`                | 效果佇列、[堆疊處理]、觸發時機、推進效果、清理效果、免疫閘門                                                           | 營業規格書【七、效果類型】【十~十六】【二十、獨立流程】       |
+| 流程     | `flow*.go`                  | 6 個 phase 狀態機 + 啟動技能 + 執行結算 + 終止判定 + 結算旗標重入防護                                                  | 營業規格書【十九、核心流程】【二十、獨立流程】                |
 
 三個易混的「解析對象」概念，分屬不同層、不同時機，務必分清：
 
 | 概念                  | 是什麼                                                   | 時機                    | 放哪                     |
 |:----------------------|:---------------------------------------------------------|:------------------------|:-------------------------|
-| 命令（verb）          | ~60 操作命令 + 屬性修改                                  | 執行命令時              | `command*.go`            |
-| **命令對象解析**      | `guestPick`／`deckTop`／`handAll`… 解析「這次作用到誰」 | 執行命令時（第 1 參數） | `selector*.go`           |
+| 命令（verb）          | ~60 操作命令 + 屬性修改                                  | 執行命令時              | `command.go`             |
+| **命令對象解析**      | `guestPick`／`deckTop`／`handAll`… 解析「這次作用到誰」 | 執行命令時（第 1 參數） | `selector.go`            |
 | 目標類型（self 綁定） | 新選／沿用／隨機 顧客／手牌                              | 效果建立時（啟動技能）  | `effect*.go`／`flow*.go` |
 
 會咬到設計的細節：
@@ -558,7 +562,7 @@ type Presenter interface {
 }
 ```
 
-**核心怎麼跑**：`games.Run(runtime, data, rander, operator, presenter)`（`data` 為 `*sheeter.Sheeter`；內部建立持有狀態的驅動引擎 struct），內部就是 營業規格書【十九、核心流程】【二十、獨立流程】的同步流程。
+**核心怎麼跑**：`games.Run(runtime, data, rander, operator, presenter)`（`data` 為 `*sheeter.Sheeter`；內部建立 cores 的驅動引擎 struct），內部就是 營業規格書【十九、核心流程】【二十、獨立流程】的同步流程。
 需要玩家輸入時 call `operator.PickXxx(...)` 並阻塞等回傳；每跑一個單位 call `presenter.Emit(...)`。
 **核心本身完全同步、單執行緒、無 channel。**
 
@@ -690,8 +694,8 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
 3. **M2 exprs lexer**：lexer + token（帶 pos）+ `exprs.SyntaxError`（「第 N 字附近」錯誤地基）。
 4. **M3 exprs 純語言**：parser + AST + evaluator——字面值（數字／bool／`none`）、算術、比較、邏輯（`NOT>AND>OR` + 短路）、三元；float64 + `Round`。零遊戲接縫、可獨立全測。
 5. **M4 exprs 接縫**：`Resolver` 介面（操作數解析）+ builtin 注入（per-engine、eval-time env）。
-6. **M5 命令解析**：parse-once `Command` AST（屬性修改＋操作命令文法、內嵌 `selector [...]`、內嵌 `*exprs.Expr`），錯誤走 `exprs.SyntaxError`。＝企劃驗證器地基（詳見【附錄：企劃驗證器】）。
-7. **M6 屬性讀取側**：`attrRead`／`attrRefRead` 註冊表 + `Resolver` 實作 + self 綁定。
+6. **M5 命令解析**：於 cores 的 `attr.go`／`attrRef.go`／`command.go`／`selector.go` 宣告空的全域詞彙表（`tableAttr` 等 4 張 map）+ `engine` 骨架；games 的 `parse.go` 純文法產出 parse-once `Command` AST（屬性修改＋操作命令、內嵌 `selector [...]`、內嵌 `*exprs.Expr`），名稱為原始字串、不驗成員；錯誤走 `exprs.SyntaxError`；對外入口 `Parse` + 自由 `Validate`（`validate.go`）就位（`Validate` 待 M6+ 詞條才生效）。＝企劃驗證器地基（詳見【附錄：企劃驗證器】）。
+7. **M6 屬性讀取側**：attr／attrRef 讀取行為填入全域 `tableAttr`／`tableAttrRef`（cores `attr.go`／`attrRef.go`）；`engine` 委派實作 `Resolver`；self 綁定。名稱合法性自此由自由 `Validate` 查詞彙表 keys（取代已刪的 cores 列舉／lookup）。
 8. **M7 屬性修改命令 執行**：八賦值符、`@`／`#` 改 Lock、`Lock>0` no-op、引用左值、衍生寫入、`morale -=` 特例。
 9. **M8 命令對象 selector**：各 `Selector` → 集合；容器來源／filter／N 規則；`*Pick`→Operator、`*Rand`→Rander、`deckTop` auto-shuffle。
 10. **M9 操作命令 執行**：命令本體（容器搬移＋屬性／事件更新），按三 seam 切（seam 為 no-op stub，留效果系統）。
@@ -722,9 +726,10 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
 ### 已敲定／已釐清
 
 - ✅ **測試資料**：三層全用 in-memory builder；共用工廠不共用實例；基建放 `testdata/`（builder／scriptOp／recordPresenter／assemble）。詳見第七節。
-- ✅ **核心分包粒度（模型 B）**：拆 **`cores`（純資料模型）+ `games`（全部營業邏輯）** 兩 package，各依關注點分檔；`exprs` 第三包獨立（零遊戲依賴、可單獨測）。`cores` 不懂規則、**不 import `games`**；`games` 單向 import `cores`／`exprs`，持驅動引擎並收齊 flow／command／selector／effect orchestration。價值＝用 Go 的 acyclic import 在編譯期強制「資料層在下、邏輯層在上」的單向分層，`cores` 永不反向依賴遊戲規則；effect orchestration 收在 `games`、回呼不穿透 `cores`，分層無環。代價＝跨界存取集中在引擎 struct 的 method（單一、刻意的存取面，非散落 getter）。注入只在 `exprs` 邊界（`Resolver` + 內建函式由 `games` 提供）。取代原「單一 `game` package」決策。
-- ✅ **衍生索引歸屬**：award 等載入時衍生索引（未來 Seat 鄰桌、Skill→Effect 展開）一律歸 `games`（遊戲表衍生＝遊戲知識）；`cores` 不放衍生索引、維持純資料模型。檔名 `games/help.go`。
-- ✅ **exprs 注入機制**：builtin 由 `games` 注入、registry 掛 per-engine 實例，eval 時與 `Resolver` 一起帶入（eval-time env），零全域可變狀態；`exprs` 自身不內建函式、保持 game-agnostic。registry map vs 單一 `Env.Call` 委派屬 M4 實作細節。
+- ✅ **核心分包粒度（引擎本體 + 對外介面）**：拆 **`cores`（營業引擎本體＝資料模型 + 驅動引擎 + 命令語言行為 + 效果／流程 orchestration）+ `games`（對外介面層＝`Parse`／`Validate`／`Run` 三函式）** 兩 package，各依關注點分檔；`exprs` 第三包獨立（零遊戲依賴、可單獨測）。依賴壓成 `games → cores → exprs` 一條直線：`cores` 單向 import `exprs`、**不 import `games`**；`games` 單向 import `cores`／`exprs`。價值＝讀 `games` 即知對外能做什麼、細節都在 `cores`，且用 Go 的 acyclic import 在編譯期鎖死方向、`cores` 永不反向依賴對外層；命令語言行為與 `engine` 同包故直接吃 `*engine`、免額外狀態存取 port。代價＝引擎本體（含行為）集中在 `cores`、`cores` 不再是純資料；換得 `games` 薄、對外面清楚。注入只在 `exprs` 邊界（`Resolver` + 內建函式由 `cores` 提供）。取代原「模型 B：cores 純資料 + games 全部邏輯」決策。
+- ✅ **衍生索引歸屬**：award 等載入時衍生索引（未來 Seat 鄰桌、Skill→Effect 展開）隨引擎本體歸 `cores`（引擎初始化時建一次快取）。檔名 `cores/help.go`。
+- ✅ **exprs 注入機制**：builtin 由 `cores` 注入；屬性詞彙綁定收在套件層全域詞彙表（常數；name→行為、runtime 經 `engine` 當參數帶入），`engine` 委派實作 `Resolver`、eval 時與其一起帶入（eval-time env）——全域表只裝純函式、零 run-state、建後唯讀,等同常數、不破壞決定性（『零全域可變狀態』針對 run-state、非常數查表）；`exprs` 自身不內建函式、保持 game-agnostic。registry map vs 單一 `Env.Call` 委派屬 M4 實作細節。
+- ✅ **命令語言詞彙單一定義點＝cores 套件層全域詞彙表**：attr／attrRef／selector／command 名稱在全域表的 map 字面值 key 寫一次（各 concern 檔 `attr.go`／`attrRef.go`／`selector.go`／`command.go` 自持詞彙表 `tableAttr` 等與行為，並各出一個 `HasXxx` 供 `games.Validate` 查名），詞彙與 `engine` 同包故行為直接吃 `*engine`。三層分離 parse（games 純文法 `Parse`）／validate（games 自由 `Validate` 查 cores 表 keys）／execute（cores `engine`＋行為）。**不設 `Lexicon` struct**：詞彙固定（一款遊戲）、不需可注入,全域常數表足矣,省掉 struct／建構／擁有權；代價是失去可替換詞彙（測試／變體),本專案用不到。
 - ✅ **package 命名複數**：`exprs`／`cores`／`games` 維持複數——避免 `expr`／`game`／`core` 遮蔽常見區域變數；為 package 名對單數鐵則（針對識別碼）的刻意例外。
 - ✅ **解耦模型**：**邊界介面 + 同步驅動**（非 step function）。需求已確認：營業中不存檔、不重播 → step function 的「暫停點可序列化」優勢用不到。
   - 直譯 營業規格書【十九、核心流程】【二十、獨立流程】巢狀流程；暫停＝阻塞呼叫 `Operator`；步進＝阻塞 `Presenter.Emit`；測試＝scripted `Operator`。
@@ -732,9 +737,9 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
   - 單一 seeded `Rander` 仍保留（供 golden 測試與重現 bug，與存檔／重播無關）。
 
 - ✅ **狀態歸屬**：引擎持有 instance／容器（純可序列化資料）+ **單向事件投影**；前端不持有規則狀態第二份拷貝。不採「前端實作佇列」。詳見第四節之二。（保留 `Container[T]` seam 為未來備案，預設 in-core，目前不啟用。）
-- ✅ **命令對象命名**：`selector`（檔名 `selector*.go`、識別碼 `Selector`／`selectorGuest`）。非保留字；語意比 `filter` 廣，且避開 `target`（目標類型）與 spec 既有「filter 規則」子術語的撞名。
+- ✅ **命令對象命名**：`selector`（檔名 `cores/selector.go`、識別碼 `Selector`／`selectorGuest`）。非保留字；語意比 `filter` 廣，且避開 `target`（目標類型）與 spec 既有「filter 規則」子術語的撞名。
 - ✅ **目錄結構**：`cmd/{tui,check}`（瘦進入點）+ `app/{tui,check}`（應用本體）+ `internal/{infra,exprs,cores,games}`（`infra` 為 Go-only 基礎設施，`exprs`／`cores`／`games` 為核心三包）。`cmd` 不會肥。
-- ✅ **命令 vs 命令對象分檔**：`command*.go`（verb）與 `selector*.go`（作用對象解析）拆開。
+- ✅ **命令 vs 命令對象分檔**：cores 的 `command.go`（verb）與 `selector.go`（作用對象解析）拆開。
 - ✅ **Award／Effect 資料**：已生成／已修正（見第八節）。
 - ✅ **企劃輔助工具＝運算式／命令驗證器**：單筆輸入 + Effect 表掃描共用同一引擎；6 欄位中 4 個命令欄位是命令文法、需命令解析器（M5）。**地基（共用帶位置錯誤型別）入 M5 驗收；工具本體為 M5 後置、非 gating 的支線**（可與效果系統 M10 起並行），不先出只驗運算式的半套。原「帶參數求值 + 運算過程」工具不做。詳見【附錄：企劃驗證器】。
 
@@ -751,10 +756,10 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
 
 **6 欄位分兩種文法，依欄位分派驗證**（這是整套的關鍵約束）：
 
-| 欄位                                            | 文法                                 | 驗證來源                              |
-|:------------------------------------------------|:-------------------------------------|:--------------------------------------|
-| 觸發條件 `TriggerCond`、觸發次數 `TriggerCount` | 運算式                               | `exprs.Parse`（已有）                 |
-| 立即／觸發／啟動／結束命令 `Command*`           | 命令（verb + 命令對象 + 內嵌運算式） | 命令解析器（M5，`games/command*.go`） |
+| 欄位                                            | 文法                                 | 驗證來源                           |
+|:------------------------------------------------|:-------------------------------------|:-----------------------------------|
+| 觸發條件 `TriggerCond`、觸發次數 `TriggerCount` | 運算式                               | `exprs.Parse`（已有）              |
+| 立即／觸發／啟動／結束命令 `Command*`           | 命令（verb + 命令對象 + 內嵌運算式） | 命令解析器（M5，`games/parse.go`） |
 
 **工程決策**：
 
@@ -763,7 +768,7 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
 - **放置**：文法／錯誤型別等能力在核心（`exprs`／`games`）；前端（CLI／REPL／掃描器）是 Go-only，掛 `cmd/` + `task`。
 - **不做帶參數求值 + 運算過程**：輸入 UX 難規劃，企劃用 營業規格書 + AI 可達等效，暫不納入。
 
-**錯誤地基（已完成）**：`exprs` 的 `token` 已帶位置欄位、lexer／parser 錯誤改吐「第 N 字附近」中文白話、去掉 `expr:` 內部前綴；並已立 `exprs.SyntaxError`（`Pos`＋`Msg`）作為 `exprs` 與未來命令解析器共用的帶位置錯誤型別。M5 命令解析器直接重用此型別。
+**錯誤地基（已完成）**：`exprs` 的 `token` 已帶位置欄位、lexer／parser 錯誤改吐「第 N 字附近」中文白話、去掉 `expr:` 內部前綴；並已立 `exprs.SyntaxError`（`Pos`＋`Msg`）作為 `exprs` 與未來命令解析器共用的帶位置錯誤型別。M5 命令解析器（`parse.go`）直接重用此型別；名稱合法性另由自由 `Validate` 查詞彙表 keys（M6 詞條到位後生效）。
 
 ---
 
