@@ -16,6 +16,7 @@ type Effect struct {
 	CommandTrigger string `json:"CommandTrigger"` // 觸發命令
 	Group int32 `json:"Group"` // 效果群組編號
 	ID int32 `json:"ID"` // 效果編號
+	Kind int32 `json:"Kind"` // 效果類型
 	Name string `json:"Name"` // 名稱
 	RunOrder int32 `json:"RunOrder"` // 作用順序
 	RunRound int32 `json:"RunRound"` // 作用回合
@@ -23,12 +24,11 @@ type Effect struct {
 	StackMax int32 `json:"StackMax"` // 堆疊上限
 	StackTime int32 `json:"StackTime"` // 堆疊時間
 	TargetCount int32 `json:"TargetCount"` // 目標數量
-	TargetType int32 `json:"TargetType"` // 目標類型
+	TargetKind int32 `json:"TargetKind"` // 目標類型
 	TriggerAfter int32 `json:"TriggerAfter"` // 觸發後行為
 	TriggerCond string `json:"TriggerCond"` // 觸發條件
 	TriggerCount string `json:"TriggerCount"` // 觸發次數
-	TriggerType int32 `json:"TriggerType"` // 觸發時機
-	Type int32 `json:"Type"` // 效果類型
+	TriggerKind int32 `json:"TriggerKind"` // 觸發時機
 }
 
 // EffectReader Effect.xlsx#Effect

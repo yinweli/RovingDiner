@@ -7,8 +7,9 @@
 ## 現況
 
 - **架構已定案、不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心三包:`cores`(純資料模型,不懂規則、不 import `games`)+ `games`(全部營業邏輯,單向 import `cores`/`exprs`,持驅動引擎 struct)+ `exprs`(零遊戲依賴的運算式語言,可單獨測;builtin 與 `Resolver` 由 `games` 注入)。`infra` 為 Go-only 基礎設施。
-- **實作重做**:先前在舊結構 `internal/{defines,expr,game}` 下完成的實作(骨架／運算式／屬性＋命令)將於新(細切)里程碑下重建,舊進度與工作盤點作廢。下方「已敲定設計決策」是跨重構仍成立、重建時要沿用的決策(套件名已對齊現行三包結構)。舊實作仍在 `yilin/m2`(tip `d499db6`)/`dev`,僅供型別形狀參考——以新規格 + 規則 SSOT 為準,避開單一 `game` 包耦合、全小寫檔名、C# 痕跡。
-- **M0 已落地**(本 session):`internal/cores` 純資料模型骨架完成(define/type/instance/runtime + 測試),`internal/infra` 自頂層搬入 `internal/`、註解校正。建置 / vet / gofmt / golangci-lint / 測試全綠。
+- **實作重做**:先前在舊結構 `internal/{defines,expr,game}` 下完成的實作(骨架／運算式／屬性＋命令)將於新(細切)里程碑下重建,舊進度與工作盤點作廢。下方「已敲定設計決策」是跨重構仍成立、重建時要沿用的決策(套件名已對齊現行三包結構)。舊實作僅存於 `yilin/m2`(tip `d499db6`),僅供型別形狀參考(`dev` 已 reset 到當前工作路線、不再是舊實作來源)——以新規格 + 規則 SSOT 為準,避開單一 `game` 包耦合、全小寫檔名、C# 痕跡。
+- **M0 已落地**:`internal/cores` 純資料模型骨架完成(define/type/instance/runtime + 測試),`internal/infra` 自頂層搬入 `internal/`、註解校正。建置 / vet / gofmt / golangci-lint / 測試全綠。
+- **M2 已落地**:`internal/exprs` 詞法層完成——`error.go`(`SyntaxError` Pos+Msg、建構式 `newError(pos, msg)`、`Error()`「第 N 字附近」)、`lexer.go`(`tokenKind` 列舉 + `token` 帶 `pos` + `lex` 掃描器:數字 / 單引號字串含 CJK / 識別子 / 雙字元運算符 / `AND`-`OR`-`true`-`false`-`none` 大小寫不敏特判,尾端 `tokenEOF`)。`token` / `tokenKind` 暫置 `lexer.go`(M3 parser 同包共用,不需搬)。`=` 單字元、未結束字串、未知字元皆吐帶位置中文錯誤。`ParseFloat` 錯誤分支為防禦性(掃描器只組合合法數字串、實際不可達)。建置 / vet / gofmt / golangci-lint / 測試全綠。M1 之 infra 不在 exprs 依賴鏈。
 
 ## 里程碑進度
 
@@ -18,7 +19,7 @@
 |:-------|:-----|:--------------------------------|
 | M0     | ✅   | cores 型別骨架                  |
 | M1     | ✅   | infra.Load（搬入 internal/）    |
-| M2     | ⬜   | exprs lexer + SyntaxError       |
+| M2     | ✅   | exprs lexer + SyntaxError       |
 | M3     | ⬜   | exprs 純語言(parser/AST/eval)  |
 | M4     | ⬜   | exprs 接縫(Resolver + builtin) |
 | M5     | ⬜   | 命令解析(企劃驗證器地基)        |
@@ -52,7 +53,7 @@
 
 > 套件名對照:原 `expr`→`exprs`、`game`→`cores` + `games`、`defines`→`cores/define.go`。
 
-- **效果類型 enum 改名 `EffectType`**:`defines.Effect`(效果類型 enum)與效果實例 struct `Effect` 合進同包 `cores` 會撞名;enum 改名 `cores.EffectType`(常數 `EffectTypeImmed/Trigger/Persist`,與既有 `TargetType` 命名一致),效果實例維持 `cores.Effect`。
+- **全面統一 `Kind` 命名(比照 `exprs.tokenKind`)— 三層皆已落地**:cores 六個列舉 `EventKind` / `PhaseKind` / `TriggerKind` / `EffectKind` / `TargetKind` / `TaskKind`;**常數去掉中間字**(如 `EventInstance` / `PhaseNone` / `EffectImmed` / `TargetNone` / `TaskSate`,非 `EventKindInstance`),**struct 列舉欄位用裸 `Kind`**(`EventData.Kind` / `Action.Kind`,比照 `token.kind`)。其中 `EffectKind` 以 `Kind` 後綴避開效果實例 struct `Effect` 撞名(效果實例維持 `cores.Effect`)。①**生成碼**:Effect 表(`gamedata/Effect.xlsx` row3)三個類型欄位 効果類型 / 目標類型 / 觸發類型 全改 `Kind` / `TargetKind` / `TriggerKind`,`sheeter.Effect` 同步(`Effect.Kind` 依字母序排在 `ID`/`Name` 間);`effect.json` 為空、不受影響。②**規格三書**:`營業規格書` §二 詞彙表 + §五、`營業實作規格書` prose、`營業顯示規格書` 欄位表全部 Type→Kind,已 `task lint` + `task doc` 重建 HTML。**唯一保留的 `Type`**:`營業顯示規格書` §「適用類型矩陣」泛指的 `Type`(實例適用類型概念、非欄位),刻意不動。
 - **`infra` 置於 `internal/`**:以實作規格書【二】為準,`internal/infra` 與 `internal/{exprs,cores,games}` 同層;原頂層 `infra/` + doc.go「非 internal」的舊決策作廢。`sheet`/`sheetdata`/`gamedata` 維持頂層(生成物)。
 - **衍生索引歸 `games`**:award 等載入時衍生索引(未來 Seat 鄰桌、Skill→Effect 展開)一律歸 `games`(遊戲表衍生＝遊戲知識),`cores` 不放衍生索引、維持純資料模型;檔名 `games/help.go`。
 - **exprs 注入機制**:builtin 由 `games` 注入、registry 掛 per-engine 實例,eval 時與 `Resolver` 一起帶入(eval-time env),零全域可變狀態;`exprs` 自身不內建函式、保持 game-agnostic。registry map vs 單一 `Env.Call` 委派、call-node 如何分流 builtin / 查詢函式,屬 exprs 接縫(M4)實作細節。
