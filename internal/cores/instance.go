@@ -121,7 +121,7 @@ type Guest struct {
 }
 
 // Effect 效果實例；對應【營業規格書 | 五、實例結構 | 效果（Effect）實例】。
-// 效果的靜態類型（立即 / 觸發 / 常駐）見靜態表格 Effect.Type 與 define.go 的 EffectKind。
+// 效果的靜態類型（立即 / 觸發 / 常駐）見靜態表格 Effect.Kind 與 define.go 的 EffectKind。
 type Effect struct {
 	InstanceID InstanceID // 實例唯一識別碼
 	EffectID   int32      // 引用對應效果資料
