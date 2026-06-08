@@ -478,7 +478,7 @@ RovingDiner/
 ```
 
 - `cmd/` 保持瘦（只有 main + flag + 組裝）；應用本體放 `app/{tui,check}`，所以 `cmd` 不會肥。此分法對齊 DiceBattle-server（`cmd/` 瘦進入點、`app/` 應用本體）。
-- 命令（verb）與命令對象（作用對象解析）拆成 `command*.go` 與 `selector*.go` 兩個前綴：兩者執行時雖一起出現，但屬不同關注點。**命令對象刻意不叫 `target`**，以免與 營業規格書【八、目標類型】的「目標類型(TargetType)」撞名。
+- 命令（verb）與命令對象（作用對象解析）拆成 `command*.go` 與 `selector*.go` 兩個前綴：兩者執行時雖一起出現，但屬不同關注點。**命令對象刻意不叫 `target`**，以免與 營業規格書【八、目標類型】的「目標類型(TargetKind)」撞名。
   - 命名定為 `selector`（非保留字，可同時當檔名前綴與識別碼 `Selector` / `selectorGuest`）。語意是「用篩／抽／查／切各種方式產出作用對象集合」，比 `filter` 廣（`filter` 已是 營業規格書【二十四、命令對象清單】命令對象內部「卡牌編號篩選」的子術語，且 `deckTop` 會 mutate，不符 filter 唯讀語意）。
 
 **為什麼拆 `cores` + `games`（模型 B）**：把營業核心分成 `cores`（純資料模型）+ `games`（全部邏輯），
