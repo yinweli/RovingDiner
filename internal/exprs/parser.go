@@ -238,10 +238,95 @@ func (this *parser) parsePrimary() (result node, err error) {
 		this.next() // 吃 )
 		return inner, nil
 
+	case tokenIdent:
+		return this.parseIdent(token)
+
 	case tokenEOF:
 		return nil, newError(token.pos, "運算式不完整,缺少運算元")
 
 	default:
 		return nil, newError(token.pos, "預期運算元(數值/字串/布林/none/括號),但看到:"+token.text)
 	} // switch
+}
+
+// parseIdent 解析識別子起頭的條件對象:name(屬性 / 物件引用)、name(args)(查詢 / 內建函式)、
+// name.attr 或 name.attr(args)(引用屬性 / 引用查詢函式)。對齊【營業規格書 | 二十七、運算式 | 5】。
+func (this *parser) parseIdent(ident token) (result node, err error) {
+	this.next() // 吃識別子
+	name := ident.text
+
+	switch this.peek().kind {
+	case tokenDot:
+		this.next() // 吃 .
+		attr := this.peek()
+
+		if attr.kind != tokenIdent {
+			return nil, newError(attr.pos, "'.' 後應接引用屬性名")
+		} // if
+
+		this.next() // 吃屬性名
+		arg, errArg := this.parseArgsOpt()
+
+		if errArg != nil {
+			return nil, errArg
+		} // if
+
+		return nodeRef{name: name, attr: attr.text, arg: arg}, nil
+
+	case tokenLParen:
+		arg, errArg := this.parseArgs()
+
+		if errArg != nil {
+			return nil, errArg
+		} // if
+
+		return nodeCall{name: name, arg: arg}, nil
+
+	default:
+		return nodeIdent{name: name}, nil
+	} // switch
+}
+
+// parseArgsOpt 在引用屬性名之後:遇 '(' 則解析參數列表(引用查詢函式),否則無參數(引用屬性)。
+func (this *parser) parseArgsOpt() (result []node, err error) {
+	if this.peek().kind == tokenLParen {
+		return this.parseArgs()
+	} // if
+
+	return nil, nil
+}
+
+// parseArgs 解析 '(' [<算術式> {, <算術式>}] ')';參數為算術式層級
+// (對齊【營業規格書 | 二十七、運算式 | 1】<參數列表> / <內建函式>)。
+func (this *parser) parseArgs() (result []node, err error) {
+	this.next() // 吃 (
+	result = []node{}
+
+	if this.peek().kind == tokenRParen {
+		this.next() // 吃 )
+		return result, nil
+	} // if
+
+	for {
+		arg, errArg := this.parseAdd()
+
+		if errArg != nil {
+			return nil, errArg
+		} // if
+
+		result = append(result, arg)
+
+		if this.peek().kind != tokenComma {
+			break
+		} // if
+
+		this.next() // 吃 ,
+	} // for
+
+	if this.peek().kind != tokenRParen {
+		return nil, newError(this.peek().pos, "函式參數未閉合,缺少 ')'")
+	} // if
+
+	this.next() // 吃 )
+	return result, nil
 }

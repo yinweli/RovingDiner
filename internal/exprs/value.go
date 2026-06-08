@@ -24,6 +24,11 @@ func NewNone() Value {
 	return Value{kind: valueNone}
 }
 
+// NewRef 建立物件引用值;ref 由 Resolver 提供,exprs 不解讀其內容,僅在比較時用 Ref.Same。
+func NewRef(ref Ref) Value {
+	return Value{kind: valueRef, ref: ref}
+}
+
 // Value 是運算式的求值結果(數值 / 布林 / 字串 / 空物件)。
 // 中間值一律以 float64 表達、過程不四捨五入;捨入由呼叫方以 Round 處理
 // (對齊【營業規格書 | 二十七、運算式】總則)。
@@ -32,6 +37,7 @@ type Value struct {
 	num  float64 // valueNum 的數值
 	flag bool    // valueBool 的值
 	text string  // valueText 的內容
+	ref  Ref     // valueRef 的物件引用
 }
 
 // IsNum 回傳是否為數值。
@@ -69,6 +75,22 @@ func (this Value) IsNone() bool {
 	return this.kind == valueNone
 }
 
+// IsRef 回傳是否為物件引用。
+func (this Value) IsRef() bool {
+	return this.kind == valueRef
+}
+
+// Ref 取物件引用(僅 IsRef 為真時有意義)。
+func (this Value) Ref() Ref {
+	return this.ref
+}
+
+// isObject 回傳是否為物件值(空物件 none 或物件引用);供相等比較歸類
+// (對齊【營業規格書 | 二十七、運算式 | 2】物件引用 / 空物件比較)。
+func (this Value) isObject() bool {
+	return this.kind == valueNone || this.kind == valueRef
+}
+
 // Truthy 依【營業規格書 | 二十七、運算式 | 6】把值轉成布林判定:
 // 布林直接取用、非 0 數值為真、0 為假;其餘型別(字串 / 空物件)評估失敗(ok == false)。
 // 邏輯運算元、三元條件與「省略比較符」的真假判定皆以此為準。
@@ -101,4 +123,5 @@ const (
 	valueBool                  // 布林
 	valueText                  // 字串
 	valueNone                  // 空物件(none;只與空物件相等)
+	valueRef                   // 物件引用(卡牌 / 顧客實例;比實例編號)
 )

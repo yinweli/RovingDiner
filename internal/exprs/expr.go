@@ -31,10 +31,11 @@ type Expr struct {
 }
 
 // Eval 對已解析的運算式求值;對齊【營業規格書 | 二十七、運算式】的求值語意。
+// env 帶入條件對象解析器 Resolver 與內建函式註冊表(由 games 提供);純語言運算式可傳 Env{}。
 // 評估失敗不拋錯,以 ok == false 表達(失敗條件詳見【營業規格書 | 二十七、運算式 | 7】;
 // 後續行為由呼叫方各自定義,詳見【營業規格書 | 二十七、運算式 | 8】)。
 // 中間值為 float64、過程不四捨五入(捨入由呼叫方以 Round 處理)。
-func (this *Expr) Eval() (result Value, ok bool) {
-	evaluator := &evaluator{}
+func (this *Expr) Eval(env Env) (result Value, ok bool) {
+	evaluator := &evaluator{env: env}
 	return evaluator.eval(this.root)
 }

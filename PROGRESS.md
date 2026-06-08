@@ -11,6 +11,7 @@
 - **M0 已落地**:`internal/cores` 純資料模型骨架完成(define/type/instance/runtime + 測試),`internal/infra` 自頂層搬入 `internal/`、註解校正。建置 / vet / gofmt / golangci-lint / 測試全綠。
 - **M2 已落地**:`internal/exprs` 詞法層完成——`error.go`(`SyntaxError` Pos+Msg、建構式 `newError(pos, msg)`、`Error()`「第 N 字附近」)、`lexer.go`(`tokenKind` 列舉 + `token` 帶 `pos` + `lex` 掃描器:數字 / 單引號字串含 CJK / 識別子 / 雙字元運算符 / `AND`-`OR`-`true`-`false`-`none` 大小寫不敏特判,尾端 `tokenEOF`)。`token` / `tokenKind` 暫置 `lexer.go`(M3 parser 同包共用,不需搬)。`=` 單字元、未結束字串、未知字元皆吐帶位置中文錯誤。`ParseFloat` 錯誤分支為防禦性(掃描器只組合合法數字串、實際不可達)。建置 / vet / gofmt / golangci-lint / 測試全綠。M1 之 infra 不在 exprs 依賴鏈。
 - **M3 已落地**:`internal/exprs` 純語言層完成(零遊戲接縫、可獨立全測)——`value.go`(求值結果型別 `Value`:`valueKind` num / bool / text / none + 建構 `NewNum` / `NewBool` / `NewText` / `NewNone` + 取值 + `Truthy` §6 真假判定 + `Round` half-away-from-zero)、`node.go`(AST:`nodeLiteral` / `nodeUnary` / `nodeBinary` / `nodeTernary`,marker 介面 `node`)、`parser.go`(遞迴下降 `Parse(source) (*Expr, error)`;優先序 括號 > 乘除餘 > 加減 > 比較 > 否定 > AND > OR > 三元;三元右結合、其餘左結合;比較不串接)、`eval.go`(`(*Expr).Eval() (Value, ok)`、`evaluator` 走訪器、短路 AND / OR、三元惰性求值、算術 / 比較 / 邏輯)。建置 / vet / golangci-lint / 測試全綠。
+- **M4 已落地**:`internal/exprs` 接縫層完成——`resolver.go`(`Resolver` 介面:主表 `Attr(name, arg)` / 子表 `AttrRef(ref, name, arg)`;`Ref` 介面 `Same`(比實例編號);`Builtin = func([]Value)(Value, bool)`;求值期環境 `Env{Resolver, Builtin}`)、`value.go` 新增 `valueRef` + `NewRef` / `IsRef` / `Ref` + 相等比較把 none / ref 歸為同一「物件」家族(`objectEqual`)、`node.go` 新增 `nodeIdent` / `nodeCall` / `nodeRef`、`parser.go` 的 `parsePrimary` 對 `tokenIdent` 擴充(屬性 / 物件引用 / 函式 / 引用屬性 / 引用查詢函式 + `parseArgs`)、`expr.go` 的 `Eval` 簽章改為 `Eval(env Env)`。內建函式分派優先於查詢函式;exprs 自身不內建任何函式(min / max 由 games 注入)。建置 / vet / golangci-lint / 測試全綠,覆蓋率 98%(其餘為防禦性死碼與 sealed marker)。
 
 ## 里程碑進度
 
@@ -22,7 +23,7 @@
 | M1     | ✅   | infra.Load（搬入 internal/）    |
 | M2     | ✅   | exprs lexer + SyntaxError       |
 | M3     | ✅   | exprs 純語言(parser/AST/eval)  |
-| M4     | ⬜   | exprs 接縫(Resolver + builtin) |
+| M4     | ✅   | exprs 接縫(Resolver + builtin) |
 | M5     | ⬜   | 命令解析(企劃驗證器地基)        |
 | M6     | ⬜   | 屬性讀取側(registry + Resolver) |
 | M7     | ⬜   | 屬性修改命令 執行               |
@@ -69,6 +70,7 @@
 - **M3→M4 接縫邊界**:操作數解析(識別子屬性 / 引用 / 查詢函式 / self)屬 M4(里程碑「操作數解析」),M3 parser 對 `tokenIdent` 直接吐「非法運算元」錯。`evaluator` 目前為空 struct,M4 加 `resolver` / `builtin` 欄位、遞迴 eval 方法簽章不動(走訪器收斂改動面);`parsePrimary` 對 `tokenIdent` 擴充出 nodeIdent / nodeCall / nodeRef;`none` 為 M3 唯一 ref-like 值,M4 加 `valueRef` 與「none vs 物件引用比實例編號」。
 - **lint 政策:`exhaustive` 帶 default 即窮舉**:`.golangci.yml` 新增 `exhaustive.default-signifies-exhaustive: true`——parser / evaluator 對 `tokenKind` 只 switch 相關子集 + `default`,不逐一列 25 個 token;M4+ 命令 verb / selector / cores 列舉 switch 沿用。(M2 lexer 是 switch rune / string 故未觸發,M3 首度 switch 列舉型別。)
 - **Resolver 是 `exprs` 與 `games` 的唯一接縫**,對齊【二十三、屬性清單】表結構:主表(全域屬性 / 查詢函式 / 物件引用)走 `Attr`、子表(卡牌 / 顧客引用屬性)走 `AttrRef`(識別碼立於 `cores/define`)。`Resolver` 由 `games` 實作。
+- **exprs 接縫實作定案(M4)**:`Resolver` 兩方法 `Attr(name string, arg []Value)`(主表:全域屬性 arg 空 / 查詢函式 arg 帶參 / 物件引用回 ref)、`AttrRef(ref Ref, name string, arg []Value)`(子表:引用屬性 arg 空 / 引用查詢函式 arg 帶參);`Ref` 介面僅 `Same(other Ref) bool`——exprs 不解讀引用內容、只在 `==` / `!=` 比實例編號;`Builtin = func([]Value)(Value, bool)`,以 `map[string]Builtin` 注入。求值期環境 `Env{Resolver, Builtin}` 由 `Eval(env)` 帶入、零全域可變狀態,`Env{}` 即純語言求值(遇條件對象 / 函式即失敗)。**函式分流**:`name(args)` 先查 builtin 註冊表、未命中才走 `Resolver.Attr`(查詢函式)——builtin 優先、同名 builtin 勝。**引用存取**:`name.attr` / `name.attr(args)` 先 `Attr(name)` 取主體,主體須為 ref(空物件 / 型別不符即失敗),再 `AttrRef`。**`self`** 走 `Attr("self")`:綁定顧客 / 卡牌回 ref、綁定空物件回 none、未綁定回失敗;守衛式 `self != none AND self.calm > 5` 因短路而成立。**參數**為算術式層級(`parseAdd`);`name()` 空參數結構上可解析,數量 / 型別由 builtin / resolver 於求值期判定(非 parser)。**比較**:`none` 字面值、解析所得空物件、物件引用同屬「物件」家族(`objectEqual`:空只等空、兩 ref 比 `Same`、一空一非空為不等)。
 - **內建函式註冊表化**:以 `map[string]builtinFunc` 登記(max / min),新增函式只需註冊一筆,`nodeCall` 與 parser 不動;由 `games` 注入 `exprs`。對齊【二十六、內建函式清單】。
 - **核心邊界介面三個**(Operator / Presenter / Rander,定義於 `cores`),靜態資料直接以 `*sheeter.Sheeter` 注入;不設 per-table Dater 介面。衍生索引(如 Award 依群組聚合)移入核心預建。
 - **命令執行統一走 `Command.Execute`**:屬性修改命令(`commandAssign`)與操作命令(`commandOperate`)同一介面方法,供流程階段一致分派。執行依賴聚合在 **`games` 驅動引擎 struct**(`rt` / `data` / `self` / `Operator` / `Rander`),命令對象解析(`resolveSelector`)與操作命令共用;屬性修改命令不需 Operator / Rander 但仍收引擎(忽略)。

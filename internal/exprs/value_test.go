@@ -46,6 +46,15 @@ func (this *SuiteValue) TestValueNone() {
 	this.False(value.IsText())
 }
 
+func (this *SuiteValue) TestValueRef() {
+	ref := stubRef{id: 7}
+	value := NewRef(ref)
+	this.True(value.IsRef())
+	this.Equal(Ref(ref), value.Ref())
+	this.False(value.IsNum())
+	this.False(value.IsNone())
+}
+
 func (this *SuiteValue) TestValueTruthy() {
 	result, ok := NewBool(true).Truthy()
 	this.True(ok)
@@ -68,6 +77,9 @@ func (this *SuiteValue) TestValueTruthy() {
 
 	_, ok = NewNone().Truthy()
 	this.False(ok) // 空物件無真假判定
+
+	_, ok = NewRef(stubRef{id: 1}).Truthy()
+	this.False(ok) // 物件引用無真假判定
 }
 
 func (this *SuiteValue) TestRound() {

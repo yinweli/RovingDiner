@@ -11,10 +11,40 @@ func TestSuiteParser(t *testing.T) {
 	suite.Run(t, new(SuiteParser))
 }
 
-// SuiteParser 驗證遞迴下降解析:字面值、一元負號、優先序 / 結合性、比較 / 邏輯 / 三元、
-// 括號分組,以及語法錯誤(含出錯位置)。樹形以 S-運算式字串比對。
+// SuiteParser 驗證遞迴下降解析:三元、邏輯、比較、加減 / 乘除、一元負號、字面值 / 括號 / 識別子 / 函式 / 引用,
+// 以及優先序 / 結合性與語法錯誤(含出錯位置)。測試順序對齊 parser.go 由外而內的遞迴下降宣告序;樹形以 S-運算式字串比對。
 type SuiteParser struct {
 	suite.Suite
+}
+
+func (this *SuiteParser) TestParseTernary() {
+	this.Equal("(?: true 1 2)", this.ast("true ? 1 : 2"))
+	this.Equal("(?: true 1 (?: false 2 3))", this.ast("true ? 1 : false ? 2 : 3")) // 右結合
+}
+
+func (this *SuiteParser) TestParseLogical() {
+	this.Equal("(or true (and false true))", this.ast("true OR false AND true")) // AND 緊於 OR
+	this.Equal("(and (not true) false)", this.ast("!true AND false"))            // NOT 緊於 AND
+	this.Equal("(not (not true))", this.ast("!!true"))
+}
+
+func (this *SuiteParser) TestParseComparison() {
+	this.Equal("(< (+ 1 2) 3)", this.ast("1 + 2 < 3")) // 算術緊於比較
+	this.Equal("(>= 2 2)", this.ast("2 >= 2"))
+}
+
+func (this *SuiteParser) TestParseAdditive() {
+	this.Equal("(- (- 1 2) 3)", this.ast("1 - 2 - 3")) // 左結合
+}
+
+func (this *SuiteParser) TestParseMultiplicative() {
+	this.Equal("(% (* 2 3) 4)", this.ast("2 * 3 % 4")) // 左結合
+}
+
+func (this *SuiteParser) TestParseUnaryMinus() {
+	this.Equal("(neg 3)", this.ast("-3"))
+	this.Equal("(neg (+ 2 3))", this.ast("-(2 + 3)"))
+	this.Equal("(neg (neg 3))", this.ast("- -3")) // 一元負號右結合
 }
 
 func (this *SuiteParser) TestParseLiteral() {
@@ -25,18 +55,29 @@ func (this *SuiteParser) TestParseLiteral() {
 	this.Equal("none", this.ast("none"))
 }
 
-func (this *SuiteParser) TestParseUnaryMinus() {
-	this.Equal("(neg 3)", this.ast("-3"))
-	this.Equal("(neg (+ 2 3))", this.ast("-(2 + 3)"))
-	this.Equal("(neg (neg 3))", this.ast("- -3")) // 一元負號右結合
+func (this *SuiteParser) TestParseGrouping() {
+	this.Equal("(* (+ 1 2) 3)", this.ast("(1 + 2) * 3"))
 }
 
-func (this *SuiteParser) TestParseMultiplicative() {
-	this.Equal("(% (* 2 3) 4)", this.ast("2 * 3 % 4")) // 左結合
+func (this *SuiteParser) TestParseIdent() {
+	this.Equal("morale", this.ast("morale")) // 全域屬性
+	this.Equal("self", this.ast("self"))     // 物件引用
+	this.Equal("(> (+ morale 5) 10)", this.ast("morale + 5 > 10"))
+	this.Equal("(!= self none)", this.ast("self != none"))
 }
 
-func (this *SuiteParser) TestParseAdditive() {
-	this.Equal("(- (- 1 2) 3)", this.ast("1 - 2 - 3")) // 左結合
+func (this *SuiteParser) TestParseCall() {
+	this.Equal("(call min 1 2)", this.ast("min(1, 2)"))
+	this.Equal("(call max 3 1 2)", this.ast("max(3, 1, 2)"))
+	this.Equal("(call tableCount '>=' 2)", this.ast("tableCount('>=', 2)"))  // 字串參數
+	this.Equal("(call max (call min 1 2) 3)", this.ast("max(min(1, 2), 3)")) // 巢狀函式
+	this.Equal("(call now)", this.ast("now()"))                              // 無參數
+}
+
+func (this *SuiteParser) TestParseRef() {
+	this.Equal("(ref self calm)", this.ast("self.calm"))
+	this.Equal("(ref drawLast cardID)", this.ast("drawLast.cardID"))
+	this.Equal("(ref self effectStack 101)", this.ast("self.effectStack(101)")) // 引用查詢函式
 }
 
 func (this *SuiteParser) TestParsePrecedence() {
@@ -44,43 +85,26 @@ func (this *SuiteParser) TestParsePrecedence() {
 	this.Equal("(+ (* 2 3) 1)", this.ast("2 * 3 + 1"))
 }
 
-func (this *SuiteParser) TestParseComparison() {
-	this.Equal("(< (+ 1 2) 3)", this.ast("1 + 2 < 3")) // 算術緊於比較
-	this.Equal("(>= 2 2)", this.ast("2 >= 2"))
-}
-
-func (this *SuiteParser) TestParseLogical() {
-	this.Equal("(or true (and false true))", this.ast("true OR false AND true")) // AND 緊於 OR
-	this.Equal("(and (not true) false)", this.ast("!true AND false"))            // NOT 緊於 AND
-	this.Equal("(not (not true))", this.ast("!!true"))
-}
-
-func (this *SuiteParser) TestParseTernary() {
-	this.Equal("(?: true 1 2)", this.ast("true ? 1 : 2"))
-	this.Equal("(?: true 1 (?: false 2 3))", this.ast("true ? 1 : false ? 2 : 3")) // 右結合
-}
-
-func (this *SuiteParser) TestParseGrouping() {
-	this.Equal("(* (+ 1 2) 3)", this.ast("(1 + 2) * 3"))
-}
-
 func (this *SuiteParser) TestParseError() {
 	source := []string{
-		"",           // 空輸入(EOF)
-		"* 3",        // 缺左運算元
-		"(1",         // 括號未閉合
-		"()",         // 括號內缺運算元
-		"1 +",        // 加法缺右運算元
-		"2 *",        // 乘法缺右運算元
-		"1 <",        // 比較缺右運算元
-		"true OR",    // OR 缺右運算元
-		"true AND",   // AND 缺右運算元
-		"!",          // 否定缺運算元
-		"-",          // 負號缺運算元
-		"true ? 1",   // 三元缺 :
-		"true ? : 2", // 三元真值分支缺運算元
-		"true ? 1 :", // 三元假值分支缺運算元
-		"morale > 5", // 條件對象屬 M4,M3 視為非法運算元
+		"",            // 空輸入(EOF)
+		"* 3",         // 缺左運算元
+		"(1",          // 括號未閉合
+		"()",          // 括號內缺運算元
+		"1 +",         // 加法缺右運算元
+		"2 *",         // 乘法缺右運算元
+		"1 <",         // 比較缺右運算元
+		"true OR",     // OR 缺右運算元
+		"true AND",    // AND 缺右運算元
+		"!",           // 否定缺運算元
+		"-",           // 負號缺運算元
+		"true ? 1",    // 三元缺 :
+		"true ? : 2",  // 三元真值分支缺運算元
+		"true ? 1 :",  // 三元假值分支缺運算元
+		"self.",       // '.' 後缺引用屬性名
+		"min(1",       // 函式參數未閉合
+		"tableCount(", // 函式參數列表缺運算元
+		"self.calm(",  // 引用查詢函式參數未閉合
 	}
 
 	for _, itor := range source {
@@ -126,9 +150,29 @@ func astString(n node) string {
 	case nodeTernary:
 		return "(?: " + astString(n.cond) + " " + astString(n.then) + " " + astString(n.els) + ")"
 
+	case nodeIdent:
+		return n.name
+
+	case nodeCall:
+		return "(call " + n.name + argString(n.arg) + ")"
+
+	case nodeRef:
+		return "(ref " + n.name + " " + n.attr + argString(n.arg) + ")"
+
 	default:
 		return "?"
 	} // switch
+}
+
+// argString 把參數節點列表渲染成空白前綴序列(無參數時為空字串)。
+func argString(arg []node) string {
+	result := ""
+
+	for _, itor := range arg {
+		result += " " + astString(itor)
+	} // for
+
+	return result
 }
 
 // literalString 把字面值轉成字串(字串值以單引號包夾、none 印 none)。

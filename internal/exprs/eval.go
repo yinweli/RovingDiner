@@ -4,8 +4,10 @@ import (
 	"math"
 )
 
-// evaluator 走訪 AST 求值;M3 無遊戲接縫,M4 起注入 Resolver 與內建函式。
+// evaluator 走訪 AST 求值;條件對象 / 函式經 env(Resolver + 內建函式註冊表)解析,
+// env 於 Eval 時帶入、無全域可變狀態。
 type evaluator struct {
+	env Env
 }
 
 // eval 依節點型別分派求值;回傳值與是否成功(ok == false 為評估失敗)。
@@ -22,6 +24,15 @@ func (this *evaluator) eval(n node) (result Value, ok bool) {
 
 	case nodeTernary:
 		return this.evalTernary(n)
+
+	case nodeIdent:
+		return this.evalIdent(n)
+
+	case nodeCall:
+		return this.evalCall(n)
+
+	case nodeRef:
+		return this.evalRef(n)
 
 	default:
 		return Value{}, false
@@ -151,6 +162,78 @@ func (this *evaluator) evalTernary(n nodeTernary) (result Value, ok bool) {
 	return this.eval(n.els)
 }
 
+// evalIdent 求值無括號條件對象(全域屬性 / 物件引用 / self),交由 Resolver.Attr 解析。
+func (this *evaluator) evalIdent(n nodeIdent) (result Value, ok bool) {
+	if this.env.Resolver == nil {
+		return Value{}, false
+	} // if
+
+	return this.env.Resolver.Attr(n.name, nil)
+}
+
+// evalCall 求值函式呼叫:先評估參數,再以名稱查內建函式註冊表;未命中則視為 Resolver 查詢函式。
+// 內建函式優先於查詢函式(對齊【營業規格書 | 二十六、內建函式清單】與【二十三、屬性清單】查詢函式之區隔)。
+func (this *evaluator) evalCall(n nodeCall) (result Value, ok bool) {
+	arg, okArg := this.evalArgs(n.arg)
+
+	if okArg == false {
+		return Value{}, false
+	} // if
+
+	if builtin, exist := this.env.Builtin[n.name]; exist {
+		return builtin(arg)
+	} // if
+
+	if this.env.Resolver == nil {
+		return Value{}, false
+	} // if
+
+	return this.env.Resolver.Attr(n.name, arg)
+}
+
+// evalRef 求值引用屬性 / 引用查詢函式:先以 Resolver.Attr 解析引用主體,主體須為物件引用
+// (空物件 / 型別不符 → 失敗,對齊【營業規格書 | 二十七、運算式 | 5】),再以 Resolver.AttrRef 取子屬性。
+func (this *evaluator) evalRef(n nodeRef) (result Value, ok bool) {
+	if this.env.Resolver == nil {
+		return Value{}, false
+	} // if
+
+	base, okBase := this.env.Resolver.Attr(n.name, nil)
+
+	if okBase == false {
+		return Value{}, false
+	} // if
+
+	if base.IsRef() == false {
+		return Value{}, false
+	} // if
+
+	arg, okArg := this.evalArgs(n.arg)
+
+	if okArg == false {
+		return Value{}, false
+	} // if
+
+	return this.env.Resolver.AttrRef(base.Ref(), n.attr, arg)
+}
+
+// evalArgs 逐一求值參數;任一參數評估失敗則整體失敗。
+func (this *evaluator) evalArgs(arg []node) (result []Value, ok bool) {
+	result = make([]Value, 0, len(arg))
+
+	for _, itor := range arg {
+		value, okValue := this.eval(itor)
+
+		if okValue == false {
+			return nil, false
+		} // if
+
+		result = append(result, value)
+	} // for
+
+	return result, true
+}
+
 // evalArith 求值算術運算;非數值運算元或 除 0 / 取餘 0 皆評估失敗
 // (對齊【營業規格書 | 二十七、運算式 | 7】)。
 func evalArith(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
@@ -246,10 +329,24 @@ func valueEqual(lhs, rhs Value) (result, ok bool) {
 	case lhs.IsBool() && rhs.IsBool():
 		return lhs.Bool() == rhs.Bool(), true
 
-	case lhs.IsNone() && rhs.IsNone():
-		return true, true
+	case lhs.isObject() && rhs.isObject():
+		return objectEqual(lhs, rhs), true
 
 	default:
 		return false, false
 	} // switch
+}
+
+// objectEqual 判定兩個物件值(空物件 / 物件引用)是否相等:空物件只與空物件相等、
+// 兩引用比實例編號、一空一非空為不等(對齊【營業規格書 | 二十七、運算式 | 2】)。
+func objectEqual(lhs, rhs Value) (result bool) {
+	if lhs.IsNone() && rhs.IsNone() {
+		return true
+	} // if
+
+	if lhs.IsRef() && rhs.IsRef() {
+		return lhs.Ref().Same(rhs.Ref())
+	} // if
+
+	return false // 一空一非空
 }

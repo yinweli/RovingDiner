@@ -10,8 +10,8 @@ func TestSuiteEval(t *testing.T) {
 	suite.Run(t, new(SuiteEval))
 }
 
-// SuiteEval 驗證求值語意:字面值、算術(含除 0 / 取餘 0)、大小 / 相等比較(含跨型別失敗)、
-// 邏輯短路、否定、三元惰性求值、優先序,以及評估失敗以 ok == false 表達。
+// SuiteEval 驗證求值語意:字面值、否定、邏輯短路、算術(含除 0 / 取餘 0)、大小 / 相等比較(含跨型別失敗)、
+// 三元惰性求值、優先序,以及評估失敗以 ok == false 表達。測試順序對齊 eval.go 的 dispatch(節點型別序)。
 type SuiteEval struct {
 	suite.Suite
 }
@@ -29,6 +29,38 @@ func (this *SuiteEval) TestEvalLiteral() {
 	value, ok = this.eval("none")
 	this.True(ok)
 	this.True(value.IsNone())
+}
+
+func (this *SuiteEval) TestEvalNot() {
+	this.False(this.boolean("!true"))
+	this.True(this.boolean("!false"))
+	this.True(this.boolean("!0"))  // 0 為假 → 否定為真
+	this.False(this.boolean("!5")) // 非 0 為真 → 否定為假
+	this.fail("!'a'")
+	this.fail("!none")
+}
+
+func (this *SuiteEval) TestEvalLogical() {
+	this.False(this.boolean("true AND false"))
+	this.True(this.boolean("true AND true"))
+	this.True(this.boolean("false OR true"))
+	this.True(this.boolean("1 AND 2")) // 非 0 皆為真
+	this.False(this.boolean("0 OR 0"))
+	this.True(this.boolean("5 OR 0"))
+}
+
+func (this *SuiteEval) TestEvalLogicalTruthyFail() {
+	this.fail("'a' AND true") // 左側無真假判定
+	this.fail("true AND 'a'") // 右側無真假判定,左真才評估右側
+	this.fail("none OR false")
+}
+
+func (this *SuiteEval) TestEvalLogicalShortCircuit() {
+	this.False(this.boolean("false AND (1 / 0)")) // AND 左假,右不評估,無除 0 失敗
+	this.True(this.boolean("true OR (1 / 0)"))    // OR 左真,右不評估
+	this.fail("true AND (1 / 0)")                 // 左真,右被評估 → 除 0 失敗
+	this.fail("false OR (1 / 0)")                 // 左假,右被評估 → 除 0 失敗
+	this.fail("(1 / 0) AND true")                 // 左運算元評估失敗 → 整體失敗
 }
 
 func (this *SuiteEval) TestEvalArith() {
@@ -83,38 +115,6 @@ func (this *SuiteEval) TestEvalEqualCrossType() {
 	this.fail("none == 1")
 }
 
-func (this *SuiteEval) TestEvalLogical() {
-	this.False(this.boolean("true AND false"))
-	this.True(this.boolean("true AND true"))
-	this.True(this.boolean("false OR true"))
-	this.True(this.boolean("1 AND 2")) // 非 0 皆為真
-	this.False(this.boolean("0 OR 0"))
-	this.True(this.boolean("5 OR 0"))
-}
-
-func (this *SuiteEval) TestEvalLogicalTruthyFail() {
-	this.fail("'a' AND true") // 左側無真假判定
-	this.fail("true AND 'a'") // 右側無真假判定,左真才評估右側
-	this.fail("none OR false")
-}
-
-func (this *SuiteEval) TestEvalLogicalShortCircuit() {
-	this.False(this.boolean("false AND (1 / 0)")) // AND 左假,右不評估,無除 0 失敗
-	this.True(this.boolean("true OR (1 / 0)"))    // OR 左真,右不評估
-	this.fail("true AND (1 / 0)")                 // 左真,右被評估 → 除 0 失敗
-	this.fail("false OR (1 / 0)")                 // 左假,右被評估 → 除 0 失敗
-	this.fail("(1 / 0) AND true")                 // 左運算元評估失敗 → 整體失敗
-}
-
-func (this *SuiteEval) TestEvalNot() {
-	this.False(this.boolean("!true"))
-	this.True(this.boolean("!false"))
-	this.True(this.boolean("!0"))  // 0 為假 → 否定為真
-	this.False(this.boolean("!5")) // 非 0 為真 → 否定為假
-	this.fail("!'a'")
-	this.fail("!none")
-}
-
 func (this *SuiteEval) TestEvalTernary() {
 	this.Equal(1.0, this.num("true ? 1 : 2"))
 	this.Equal(2.0, this.num("false ? 1 : 2"))
@@ -140,7 +140,7 @@ func (this *SuiteEval) TestEvalPrecedence() {
 func (this *SuiteEval) eval(source string) (result Value, ok bool) {
 	expr, err := Parse(source)
 	this.Require().NoError(err, source)
-	return expr.Eval()
+	return expr.Eval(Env{})
 }
 
 // num 求值 source 並斷言為成功的數值,回傳其數值。

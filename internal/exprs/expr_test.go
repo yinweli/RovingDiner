@@ -21,7 +21,7 @@ func (this *SuiteExpr) TestParse() {
 	this.Require().NoError(err)
 	this.Require().NotNil(expr)
 
-	value, ok := expr.Eval()
+	value, ok := expr.Eval(Env{})
 	this.True(ok)
 	this.Equal(7.0, value.Num())
 }
@@ -56,7 +56,7 @@ func (this *SuiteExpr) TestExprReuse() {
 	this.Require().NoError(err)
 
 	for range 3 {
-		value, ok := expr.Eval()
+		value, ok := expr.Eval(Env{})
 		this.True(ok)
 		this.Equal(20.0, value.Num())
 	} // for
