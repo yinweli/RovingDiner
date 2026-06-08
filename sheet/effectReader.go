@@ -23,11 +23,11 @@ type Effect struct {
 	StackMax int32 `json:"StackMax"` // 堆疊上限
 	StackTime int32 `json:"StackTime"` // 堆疊時間
 	TargetCount int32 `json:"TargetCount"` // 目標數量
-	TargetType int32 `json:"TargetType"` // 目標類型
+	TargetKind int32 `json:"TargetKind"` // 目標類型
 	TriggerAfter int32 `json:"TriggerAfter"` // 觸發後行為
 	TriggerCond string `json:"TriggerCond"` // 觸發條件
 	TriggerCount string `json:"TriggerCount"` // 觸發次數
-	TriggerType int32 `json:"TriggerType"` // 觸發時機
+	TriggerKind int32 `json:"TriggerKind"` // 觸發時機
 	Type int32 `json:"Type"` // 效果類型
 }
 
