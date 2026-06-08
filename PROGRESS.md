@@ -6,17 +6,18 @@
 
 ## 現況
 
-- **架構已改採模型 B,且不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心三包:`cores`(純資料模型,不懂規則、不 import `games`)+ `games`(全部營業邏輯,單向 import `cores`/`exprs`,持驅動引擎 struct)+ `exprs`(零遊戲依賴的運算式語言,可單獨測;builtin 與 `Resolver` 由 `games` 注入)。`infra` 為 Go-only 基礎設施。
-- **實作重做**:先前在舊結構 `internal/{defines,expr,game}` 下完成的實作(骨架／運算式／屬性＋命令)將於模型 B 與新(細切)里程碑下重建,舊進度與工作盤點作廢。下方「已敲定設計決策」是跨重構仍成立、重建時要沿用的決策(套件名已改寫為模型 B)。
+- **架構已定案、不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心三包:`cores`(純資料模型,不懂規則、不 import `games`)+ `games`(全部營業邏輯,單向 import `cores`/`exprs`,持驅動引擎 struct)+ `exprs`(零遊戲依賴的運算式語言,可單獨測;builtin 與 `Resolver` 由 `games` 注入)。`infra` 為 Go-only 基礎設施。
+- **實作重做**:先前在舊結構 `internal/{defines,expr,game}` 下完成的實作(骨架／運算式／屬性＋命令)將於新(細切)里程碑下重建,舊進度與工作盤點作廢。下方「已敲定設計決策」是跨重構仍成立、重建時要沿用的決策(套件名已對齊現行三包結構)。舊實作仍在 `yilin/m2`(tip `d499db6`)/`dev`,僅供型別形狀參考——以新規格 + 規則 SSOT 為準,避開單一 `game` 包耦合、全小寫檔名、C# 痕跡。
+- **M0 已落地**(本 session):`internal/cores` 純資料模型骨架完成(define/type/instance/runtime + 測試),`internal/infra` 自頂層搬入 `internal/`、註解校正。建置 / vet / gofmt / golangci-lint / 測試全綠。
 
 ## 里程碑進度
 
-對應 `doc/營業實作規格書.md`【九、里程碑】(細節以該處為準)。全部於模型 B 下、依新(細切)里程碑重做;M0–M9 firm、M10 起 provisional(到站再細修)。
+對應 `doc/營業實作規格書.md`【九、里程碑】(細節以該處為準)。全部依新(細切)里程碑重做;M0–M9 firm、M10 起 provisional(到站再細修)。
 
 | 里程碑 | 狀態 | 說明                            |
 |:-------|:-----|:--------------------------------|
-| M0     | ⬜   | cores 型別骨架                  |
-| M1     | ⬜   | infra.Load                      |
+| M0     | ✅   | cores 型別骨架                  |
+| M1     | ✅   | infra.Load（搬入 internal/）    |
 | M2     | ⬜   | exprs lexer + SyntaxError       |
 | M3     | ⬜   | exprs 純語言(parser/AST/eval)  |
 | M4     | ⬜   | exprs 接縫(Resolver + builtin) |
@@ -45,11 +46,14 @@
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0;其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
 - **§12 觸發次數限制由呼叫方套用**:`exprs` 只提供完整文法 Parse / Eval;【十二、觸發次數】「採算術式、結果 < 0 或評估失敗 → 視為 0、結果 = 0 → 不觸發」由呼叫方(觸發流程,M11)在 Eval 後套用,非 `exprs` 內建。
 - **企劃驗證器 = 命令解析(M5)後置支線**:詳見實作規格書【附錄:企劃驗證器】。地基(共用帶位置錯誤型別 `exprs.SyntaxError`)入 M5 驗收;工具本體 M5 後置、可與效果系統並行。
+- **[規格待補] §五 顧客實例漏列 `飽食值離場線 SateMax`**:§二十三 顧客引用屬性已把 `sateMax` 列為「寫鎖」(需 Value 儲存),但 §五 顧客實例表未列該欄。`cores.Guest` 已含 `SateMax Value`(被 §二十三 強制);請回頭在 §五 補上該列使兩處自洽。
 
 ## 已敲定的設計決策(勿重新爭論;重建時沿用)
 
-> 套件名已改寫為模型 B:原 `expr`→`exprs`、`game`→`cores` + `games`、`defines`→`cores/define.go`。
+> 套件名對照:原 `expr`→`exprs`、`game`→`cores` + `games`、`defines`→`cores/define.go`。
 
+- **效果類型 enum 改名 `EffectType`**:`defines.Effect`(效果類型 enum)與效果實例 struct `Effect` 合進同包 `cores` 會撞名;enum 改名 `cores.EffectType`(常數 `EffectTypeImmed/Trigger/Persist`,與既有 `TargetType` 命名一致),效果實例維持 `cores.Effect`。
+- **`infra` 置於 `internal/`**:以實作規格書【二】為準,`internal/infra` 與 `internal/{exprs,cores,games}` 同層;原頂層 `infra/` + doc.go「非 internal」的舊決策作廢。`sheet`/`sheetdata`/`gamedata` 維持頂層(生成物)。
 - **衍生索引歸 `games`**:award 等載入時衍生索引(未來 Seat 鄰桌、Skill→Effect 展開)一律歸 `games`(遊戲表衍生＝遊戲知識),`cores` 不放衍生索引、維持純資料模型;檔名 `games/help.go`。
 - **exprs 注入機制**:builtin 由 `games` 注入、registry 掛 per-engine 實例,eval 時與 `Resolver` 一起帶入(eval-time env),零全域可變狀態;`exprs` 自身不內建函式、保持 game-agnostic。registry map vs 單一 `Env.Call` 委派、call-node 如何分流 builtin / 查詢函式,屬 exprs 接縫(M4)實作細節。
 - **package 命名維持複數**:`exprs` / `cores` / `games`——避免 `expr` / `game` / `core` 遮蔽常見區域變數;為 package 名對單數鐵則(針對識別碼)的刻意例外。
