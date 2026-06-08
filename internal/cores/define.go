@@ -84,7 +84,7 @@ var PhaseJumpLegal = map[PhaseKind]bool{
 // TriggerKind 觸發時機；對應【營業規格書 | 二十二、觸發時機清單】。
 //
 // 觸發時機僅作為時間訊號、不攜帶資料。值採用規格書的英文名稱字面值。
-// 效果靜態表格 Effect.TriggerType 為 int32 編碼，其與本型別的對照於載入器建立。
+// 效果靜態表格 Effect.TriggerKind 為 int32 編碼，其與本型別的對照於載入器建立。
 type TriggerKind string
 
 const (
@@ -163,7 +163,7 @@ const (
 // Selector 命令對象的英文名稱；對應【營業規格書 | 二十四、命令對象清單】。
 //
 // 命令對象解析「這次命令作用到誰」，恆解析為集合（可能為空 / 多個）。
-// 刻意不命名為 target，以免與【營業規格書 | 八、目標類型】(TargetType) 撞名。
+// 刻意不命名為 target，以免與【營業規格書 | 八、目標類型】(TargetKind) 撞名。
 type Selector string
 
 const (
