@@ -47,7 +47,7 @@ func commandCardRun(eng *Engine, target []InstanceID, arg []exprs.Value) {
 			placeCard(eng, ContainerDrop, card) // 進棄牌牌堆（設 dropLast 等 + M11 cardDrop 觸發）
 		} // if
 
-		// TODO(M11)：fireTrigger(cardPlay)（玩家出牌觸發）
+		fireTrigger(eng, TriggerCardPlay) // 玩家出牌觸發
 	} // for
 }
 
@@ -111,7 +111,7 @@ func morph(eng *Engine, target []InstanceID, arg []exprs.Value, where ContainerK
 		game.MorphOldID = oldID
 		game.MorphNewID = newID
 		game.MorphCount++
-		// TODO(M11)：fireTrigger(cardMorph)（卡牌變身觸發）
+		fireTrigger(eng, TriggerCardMorph) // 卡牌變身觸發
 	} // for
 }
 
@@ -268,7 +268,7 @@ func commandGuestSeat(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	game := eng.runtime.Game
 	game.SeatLast = guest
 	game.SeatCount++
-	// TODO(M11)：fireTrigger(guestSeat)（顧客入座觸發）
+	fireTrigger(eng, TriggerGuestSeat) // 顧客入座觸發
 }
 
 // === 流程輔助 ===
@@ -279,10 +279,19 @@ func guestExitOne(eng *Engine, guest *Guest, where ContainerKind, giveScore, dro
 	game.ExitLast = guest // 1. 離場事件
 	game.ExitLastSeat = guest.SeatID
 	game.ExitCount++
-	// TODO(M11)：fireTrigger(exitAny);giveScore → fireTrigger(exitSate);dropMorale → fireTrigger(exitCalm)
+	fireTrigger(eng, TriggerExitAny) // 2. 顧客離場時機
+
+	if giveScore {
+		fireTrigger(eng, TriggerExitSate) // 3. 飽食離場時機（提供滿意值前）
+	} // if
+
+	if dropMorale {
+		fireTrigger(eng, TriggerExitCalm) // 4. 生氣離場時機（扣士氣前）
+	} // if
+
 	removeGuestContainer(eng, where, guest) // 5. 自所在容器移除
-	// TODO(M11)：fireTrigger(exitDone)
-	// TODO(M13)：cleanupEffect(Self{Guest: guest})（清理離場顧客殘留效果）
+	fireTrigger(eng, TriggerExitDone)       // 6. 顧客離場後時機
+	// TODO(M13)：cleanupEffect(Self{Guest: guest})（7. 清理離場顧客殘留效果）
 
 	if giveScore {
 		game.Score.Value += guest.Score.Value // 8. 給滿意值

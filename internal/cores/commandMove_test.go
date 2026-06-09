@@ -169,6 +169,32 @@ func (this *SuiteCommandMove) TestMoveDefaults() {
 	this.Empty(runtime.Exile)
 }
 
+func (this *SuiteCommandMove) TestPlaceCardTrigger() {
+	fired := map[TriggerKind]bool{}
+	record := func(timing TriggerKind) EffectCommand { return func(*Engine) { fired[timing] = true } }
+
+	runtime := NewRuntime(0)
+	runtime.Effect = []*Effect{
+		{InstanceID: 1, EffectID: 801, Stack: 1},
+		{InstanceID: 2, EffectID: 802, Stack: 1},
+		{InstanceID: 3, EffectID: 803, Stack: 1},
+	}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TriggerKind: TriggerCardDraw, Trigger: record(TriggerCardDraw)},
+		802: {Kind: EffectTrigger, TriggerKind: TriggerCardDrop, Trigger: record(TriggerCardDrop)},
+		803: {Kind: EffectTrigger, TriggerKind: TriggerCardExile, Trigger: record(TriggerCardExile)},
+	}
+
+	placeCard(eng, ContainerHand, &Card{InstanceID: 10, CardID: 101})  // 進手牌 → cardDraw
+	placeCard(eng, ContainerDrop, &Card{InstanceID: 11, CardID: 101})  // 進棄牌牌堆 → cardDrop
+	placeCard(eng, ContainerExile, &Card{InstanceID: 12, CardID: 101}) // 進流放牌堆 → cardExile
+
+	this.True(fired[TriggerCardDraw])
+	this.True(fired[TriggerCardDrop])
+	this.True(fired[TriggerCardExile])
+}
+
 // === 測試輔助(置尾) ===
 
 // engine 組裝測試引擎:注入 runtime、共用 buildSheet 靜態表、決定性 fake Operator / Rander。

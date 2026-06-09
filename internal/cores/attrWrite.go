@@ -159,7 +159,7 @@ func moraleDamage(eng *Engine, n float64, source *Guest) (changed bool) {
 			game.DamageValue = actual
 			game.DamageGuest = source
 			changed = true
-			// TODO(M11):觸發 士氣受損 時機(damage)— 效果系統 fireTrigger 建立後接回。
+			fireTrigger(eng, TriggerDamage) // 士氣受損時機
 		} // if
 	} // if
 

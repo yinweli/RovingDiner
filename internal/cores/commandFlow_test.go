@@ -315,6 +315,77 @@ func (this *SuiteCommandFlow) TestRemoveGuestContainer() {
 	this.Empty(runtime.Cardify)
 }
 
+func (this *SuiteCommandFlow) TestCardRunTrigger() {
+	fired := false
+	runtime := NewRuntime(0)
+	runtime.Hand = []*Card{{InstanceID: 10, CardID: 101}}
+	runtime.Effect = []*Effect{{InstanceID: 1, EffectID: 801, Stack: 1}}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Trigger: func(*Engine) { fired = true }},
+	}
+
+	commandCardRun(eng, []InstanceID{10}, this.flag(false, false)) // 不耗點、不進棄牌
+	this.True(fired)                                               // 玩家出牌觸發
+}
+
+func (this *SuiteCommandFlow) TestMorphTrigger() {
+	fired := false
+	runtime := NewRuntime(0)
+	runtime.Hand = []*Card{{InstanceID: 10, CardID: 102}}
+	runtime.Effect = []*Effect{{InstanceID: 1, EffectID: 801, Stack: 1}}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TriggerKind: TriggerCardMorph, Trigger: func(*Engine) { fired = true }},
+	}
+
+	morph(eng, []InstanceID{10}, []exprs.Value{exprs.NewNum(7)}, ContainerHand) // 抽獎群組 7 → 變身
+	this.True(fired)                                                            // 卡牌變身觸發
+}
+
+func (this *SuiteCommandFlow) TestGuestSeatTrigger() {
+	fired := false
+	runtime := NewRuntime(0)
+	runtime.Wait = []*Guest{{InstanceID: 11}}
+	runtime.Effect = []*Effect{{InstanceID: 1, EffectID: 801, Stack: 1}}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TriggerKind: TriggerGuestSeat, Trigger: func(*Engine) { fired = true }},
+	}
+
+	commandGuestSeat(eng, nil, nil)
+	this.True(fired) // 顧客入座觸發
+}
+
+func (this *SuiteCommandFlow) TestGuestExitTrigger() {
+	fired := []TriggerKind{}
+	record := func(timing TriggerKind) EffectCommand { return func(*Engine) { fired = append(fired, timing) } }
+
+	runtime := NewRuntime(0)
+	runtime.Game.Morale = Value{Value: 20}
+	guest := &Guest{InstanceID: 11, SeatID: 2, Score: Value{Value: 3}, Morale: Value{Value: 5}}
+	runtime.Seat[2] = guest
+	runtime.Effect = []*Effect{
+		{InstanceID: 1, EffectID: 801, Stack: 1},
+		{InstanceID: 2, EffectID: 802, Stack: 1},
+		{InstanceID: 3, EffectID: 803, Stack: 1},
+		{InstanceID: 4, EffectID: 804, Stack: 1},
+		{InstanceID: 5, EffectID: 805, Stack: 1},
+	}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TriggerKind: TriggerExitAny, Trigger: record(TriggerExitAny)},
+		802: {Kind: EffectTrigger, TriggerKind: TriggerExitSate, Trigger: record(TriggerExitSate)},
+		803: {Kind: EffectTrigger, TriggerKind: TriggerExitCalm, Trigger: record(TriggerExitCalm)},
+		804: {Kind: EffectTrigger, TriggerKind: TriggerExitDone, Trigger: record(TriggerExitDone)},
+		805: {Kind: EffectTrigger, TriggerKind: TriggerDamage, Trigger: record(TriggerDamage)},
+	}
+
+	guestExitOne(eng, guest, ContainerSeat, true, true) // 給滿意 + 扣士氣
+	// 依序:離場(2) → 飽食(3) → 生氣(4) → 離場後(6) → 士氣受損(9,扣士氣經 moraleDamage)
+	this.Equal([]TriggerKind{TriggerExitAny, TriggerExitSate, TriggerExitCalm, TriggerExitDone, TriggerDamage}, fired)
+}
+
 // === 測試輔助(置尾) ===
 
 func (this *SuiteCommandFlow) engine(runtime *Runtime) *Engine {

@@ -108,7 +108,7 @@ func placeCard(eng *Engine, dest ContainerKind, card *Card) {
 		game.DrawLast = card
 		game.DrawCount++
 		game.DrawTotal[cardGroup(eng, card)]++
-		// TODO(M11)：fireTrigger(cardDraw)（卡牌進手牌觸發；seam 連同呼叫於 M11 建）
+		fireTrigger(eng, TriggerCardDraw) // 卡牌進手牌觸發
 
 	case ContainerDeck:
 		runtime.Deck = prepend(runtime.Deck, card)
@@ -118,14 +118,14 @@ func placeCard(eng *Engine, dest ContainerKind, card *Card) {
 		game.DropLast = card
 		game.DropCount++
 		game.DropTotal[cardGroup(eng, card)]++
-		// TODO(M11)：fireTrigger(cardDrop)（卡牌進棄牌牌堆觸發）
+		fireTrigger(eng, TriggerCardDrop) // 卡牌進棄牌牌堆觸發
 
 	case ContainerExile:
 		runtime.Exile = prepend(runtime.Exile, card)
 		game.ExileLast = card
 		game.ExileCount++
 		game.ExileTotal[cardGroup(eng, card)]++
-		// TODO(M11)：fireTrigger(cardExile)（卡牌進流放牌堆觸發）
+		fireTrigger(eng, TriggerCardExile) // 卡牌進流放牌堆觸發
 
 	default:
 		// 不可達：placeCard 僅以四牌堆 dest 呼叫
