@@ -105,5 +105,5 @@ func (this *SuiteCommandGuest) TestLocateGuestContainers() {
 // === 測試輔助(置尾) ===
 
 func (this *SuiteCommandGuest) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }

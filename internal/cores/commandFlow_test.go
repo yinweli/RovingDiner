@@ -318,7 +318,7 @@ func (this *SuiteCommandFlow) TestRemoveGuestContainer() {
 // === 測試輔助(置尾) ===
 
 func (this *SuiteCommandFlow) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }
 
 // flag 把兩個布林包成參數列表(供帶兩個布林旗標的流程命令:cardRun 消耗點數 / 進棄牌堆、guestExit 給滿意 / 扣士氣)。

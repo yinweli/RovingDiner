@@ -136,7 +136,7 @@ func (this *SuiteSelector) TestSelectNearSame() {
 	this.Equal([]InstanceID{12}, this.must(this.engine(one, nil), "samePick", nil))
 
 	// Operator 回空(防禦):候選 > 1 但選不出 → 空集合(pickGuestOne 的 chosen 空分支)
-	emptyPick := NewEngine(runtime, nil, buildSheet(), fakeOperator{emptyPick: true}, fakeRander{})
+	emptyPick := NewEngine(runtime, nil, buildSheet(), fakeOperator{emptyPick: true}, fakeRander{}, nil)
 	this.Empty(this.must(emptyPick, "nearPick", nil))
 }
 
@@ -237,7 +237,7 @@ func (this *SuiteSelector) TestSelectDropTop() {
 
 // engine 組裝測試引擎:注入 runtime / self、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
 func (this *SuiteSelector) engine(runtime *Runtime, self *Self) *Engine {
-	return NewEngine(runtime, self, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, self, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }
 
 // must 派發命令對象並斷言名稱已登錄,回傳作用對象集合(聚焦於結果斷言)。

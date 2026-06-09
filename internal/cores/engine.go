@@ -19,18 +19,22 @@ type Engine struct {
 	data     *sheeter.Sheeter     // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
 	operator Operator             // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
 	rander   Rander               // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
-	award    map[int32]awardGroup // 抽獎衍生索引(群組 → 候選);NewEngine 建一次、唯讀,供 *Roll / *Morph 用
+	award    map[int32]awardData  // 抽獎衍生索引(群組 → 候選);NewEngine 經 prepareAward 內部建、唯讀,供 *Roll / *Morph 用
+	effect   map[int32]effectData // 預編譯效果索引(效果編號 → 編譯形);NewEngine 經 prepareEffect 內部建、唯讀,供效果流程查 Kind / 命令 / 條件
 }
 
-// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port。
-func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander) (engine *Engine) {
+// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port / 命令編譯器。
+// award 與 effect 皆於建構時自 data 整理(prepareAward / prepareEffect);effect 多吃 compile 原語(命令字串 → 閉包),
+// 因 cores 不能 import games 的命令解析,由 games 經 CompileCommand 注入(無命令資料時可傳 nil)。
+func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander, compile CompileCommand) (engine *Engine) {
 	return &Engine{
 		runtime:  runtime,
 		self:     self,
 		data:     data,
 		operator: operator,
 		rander:   rander,
-		award:    buildAward(data),
+		award:    prepareAward(data),
+		effect:   prepareEffect(data, compile),
 	}
 }
 

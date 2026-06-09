@@ -71,7 +71,7 @@ func (this *SuiteCommand) TestExecOperateNoop() {
 
 // engine 組裝測試引擎:注入 runtime、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
 func (this *SuiteCommand) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }
 
 // arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數);解析失敗即測試失敗。

@@ -186,5 +186,5 @@ func (this *SuiteCommandInstance) TestWaitAdd() {
 // === 測試輔助(置尾) ===
 
 func (this *SuiteCommandInstance) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }

@@ -100,7 +100,7 @@ var PhaseJumpLegal = map[PhaseKind]bool{
 // TriggerKind 觸發時機；對應【營業規格書 | 二十二、觸發時機清單】。
 //
 // 觸發時機僅作為時間訊號、不攜帶資料。值採用規格書的英文名稱字面值。
-// 效果靜態表格 Effect.TriggerKind 為 int32 編碼，其與本型別的對照於載入器建立。
+// 效果靜態表格 Effect.TriggerKind 為字串欄（同本型別底層），載入時直接轉型、無對照表。
 type TriggerKind string
 
 const (
@@ -127,6 +127,9 @@ const (
 	TriggerGameSucc   TriggerKind = "gameSucc"   // 營業成功；通關結算判定後
 	TriggerGameFail   TriggerKind = "gameFail"   // 營業失敗；失敗結算判定後
 )
+
+// EffectCommand 預編譯效果命令的執行器;games 的 compileCommand 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、cores 於效果流程呼叫。空命令欄為 nil。
+type EffectCommand func(eng *Engine)
 
 // EffectKind 效果類型；對應【營業規格書 | 七、效果類型】。
 // （效果實例型別見 instance.go 的 Effect；此 enum 表達其靜態類型，故以 Kind 為後綴避免撞名。）

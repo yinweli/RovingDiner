@@ -20,7 +20,7 @@ type SuiteExecute struct {
 func (this *SuiteExecute) TestExecuteAssign() {
 	runtime := cores.NewRuntime(0)
 	runtime.Game.Score.Value = 10
-	eng := cores.NewEngine(runtime, nil, nil, nil, nil)
+	eng := cores.NewEngine(runtime, nil, nil, nil, nil, nil)
 
 	command, err := Parse("score += 5") // Parse → execute → engine.ExecAssign
 	this.Require().NoError(err)
@@ -30,7 +30,7 @@ func (this *SuiteExecute) TestExecuteAssign() {
 
 func (this *SuiteExecute) TestExecuteOperate() {
 	runtime := cores.NewRuntime(0)
-	eng := cores.NewEngine(runtime, nil, nil, nil, nil)
+	eng := cores.NewEngine(runtime, nil, nil, nil, nil, nil)
 
 	command, err := Parse("phaseJump(none, '玩家行動')") // Parse → execute → engine.ExecOperate(端到端派發)
 	this.Require().NoError(err)

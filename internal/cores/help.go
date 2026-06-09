@@ -2,7 +2,6 @@ package cores
 
 import (
 	"math"
-	"sort"
 
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
@@ -399,40 +398,7 @@ func removeEffect(effect []*Effect, remove *Effect) (result []*Effect) {
 	return result
 }
 
-// 靜態資料載入:自 sheet 建衍生索引 / 把靜態欄轉為實例初值。供引擎初始化(award)與卡牌 / 顧客實例化共用。
-
-// awardGroup 抽獎群組的平行候選(cardID 與 weight 一一對應、同序);供 weighted random 直接餵 Rander.Weighted。
-type awardGroup struct {
-	cardID []int32
-	weight []int32
-}
-
-// buildAward 自 Award 表建「群組編號 → 候選」衍生索引;依 Award.ID 排序確保決定性,僅收 Weight > 0 者(全 0 權重群組自然為空 → roll no-op)。
-func buildAward(data *sheeter.Sheeter) map[int32]awardGroup {
-	result := map[int32]awardGroup{}
-
-	if data == nil {
-		return result
-	} // if
-
-	id := data.Award.Keys()
-	sort.Slice(id, func(i, j int) bool { return id[i] < id[j] })
-
-	for _, itor := range id {
-		award := data.Award.Get(itor)
-
-		if award.Weight <= 0 {
-			continue
-		} // if
-
-		group := result[award.Group]
-		group.cardID = append(group.cardID, award.CardID)
-		group.weight = append(group.weight, award.Weight)
-		result[award.Group] = group
-	} // for
-
-	return result
-}
+// 實例化欄位轉換:把卡牌 / 顧客的靜態欄轉為實例初值。供 instance.go 建構(newCard / newGuest)與 cardMorph 共用。
 
 // boolLock 把靜態 bool 旗標轉為鎖屬性初值:true → 鎖定計數 1、false → 0(Value 固定 0)。供新實例化卡牌 / 顧客載入鎖型欄位。
 func boolLock(on bool) Value {

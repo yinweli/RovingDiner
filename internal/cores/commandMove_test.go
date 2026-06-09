@@ -173,5 +173,5 @@ func (this *SuiteCommandMove) TestMoveDefaults() {
 
 // engine 組裝測試引擎:注入 runtime、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
 func (this *SuiteCommandMove) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }

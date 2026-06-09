@@ -10,7 +10,7 @@ func TestSuiteEffect(t *testing.T) {
 	suite.Run(t, new(SuiteEffect))
 }
 
-// SuiteEffect 驗證效果佇列操作原語（effect.go）:效果實例建構 / 入列 / 移除 / 作用順序排序。
+// SuiteEffect 驗證效果佇列操作原語（effect.go）:入列 / 移除 / 作用順序排序。
 type SuiteEffect struct {
 	suite.Suite
 }
@@ -60,5 +60,5 @@ func (this *SuiteEffect) TestEffectSort() {
 // === 測試輔助（置尾） ===
 
 func (this *SuiteEffect) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }

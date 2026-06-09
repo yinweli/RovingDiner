@@ -115,5 +115,5 @@ func (this *SuiteInstance) TestNewEffect() {
 // === 測試輔助（置尾） ===
 
 func (this *SuiteInstance) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{})
+	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }
