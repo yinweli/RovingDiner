@@ -198,7 +198,8 @@ func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 		{EffectID: 202, Stack: 1, Self: Self{Guest: guest}},
 		{EffectID: 201, Stack: 9, Self: Self{Card: card}}, // 不同 self
 	}
-	eng := &Engine{runtime: runtime, data: buildSheet()}
+	data := buildSheet()
+	eng := &Engine{runtime: runtime, data: data, effect: prepareEffect(data, nil)}
 	guestR := guestRef{guest: guest}
 	cardR := cardRef{card: card}
 

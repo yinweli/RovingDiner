@@ -200,24 +200,18 @@ type Effect struct {
 }
 
 // newEffect 依效果編號建構效果實例;結束回合依【營業規格書 | 十四、作用回合】（0 → 0 整場保留、N → 當前回合 + N − 1）；
-// 當前層數由呼叫端決定（堆疊規則【營業規格書 | 十六、堆疊規則】留 M12）；查無效果資料回 nil。
+// 當前層數由呼叫端決定（堆疊處理【營業規格書 | 十六、堆疊規則】M12）；查無編譯資料回 nil。
 func newEffect(eng *Engine, effectID int32, self Self, stack int32) *Effect {
-	meta := eng.data.Effect.Get(effectID)
+	meta, ok := eng.effect[effectID]
 
-	if meta == nil {
+	if ok == false {
 		return nil
-	} // if
-
-	expire := int32(0)
-
-	if meta.RunRound > 0 {
-		expire = eng.runtime.Game.Round + meta.RunRound - 1
 	} // if
 
 	return &Effect{
 		InstanceID: eng.runtime.NextID(),
 		EffectID:   effectID,
-		Expire:     expire,
+		Expire:     effectExpire(eng, meta.RunRound),
 		Stack:      stack,
 		Self:       self,
 	}

@@ -67,6 +67,20 @@ func (this *SuiteCommandFlow) TestCardRunNoop() {
 	commandCardRun(eng, []InstanceID{99}, nil) // 不存在 → no-op
 }
 
+func (this *SuiteCommandFlow) TestCardRunEffect() {
+	card := &Card{InstanceID: 10, CardID: 101, EffectID: []int32{801}}
+	runtime := NewRuntime(0)
+	runtime.Hand = []*Card{card}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		801: {Kind: EffectTrigger, TargetKind: TargetNone, Stack: 1},
+	}
+
+	commandCardRun(eng, []InstanceID{10}, this.flag(false, false)) // 不耗點、不進棄牌
+	this.Require().Len(runtime.Effect, 1)                          // 實例效果列表啟動 → 效果入佇列
+	this.Equal(int32(801), runtime.Effect[0].EffectID)
+}
+
 func (this *SuiteCommandFlow) TestMorph() {
 	runtime := NewRuntime(0)
 	card := &Card{InstanceID: runtime.NextID(), CardID: 102, Cost: Value{Value: 9}}

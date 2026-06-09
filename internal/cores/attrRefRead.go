@@ -490,9 +490,9 @@ func readRefEffectGroup(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 		if effectSelfIs(effect, ref) == false {
 			continue
 		} // if
-		meta := eng.data.Effect.Get(effect.EffectID)
+		meta, found := eng.effect[effect.EffectID]
 
-		if meta != nil && meta.Group == n {
+		if found && meta.Group == n {
 			count++
 		} // if
 	} // for

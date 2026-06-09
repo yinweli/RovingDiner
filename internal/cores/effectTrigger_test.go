@@ -32,8 +32,8 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 		{InstanceID: 5, EffectID: 999, Stack: 1}, // 查無編譯資料 → 略過
 	}
 	effect := map[int32]effectData{
-		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Trigger: record(402)},
-		403: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Trigger: record(403)},
+		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, RunOrder: 10, Trigger: record(402)},
+		403: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, RunOrder: 20, Trigger: record(403)},
 		401: {Kind: EffectTrigger, TriggerKind: TriggerCardDraw, Trigger: record(401)},
 		201: {Kind: EffectImmed, TriggerKind: TriggerCardPlay, Trigger: record(201)},
 	}

@@ -229,6 +229,13 @@ func (this *SuiteHelp) TestEffectSelfIs() {
 	this.False(effectSelfIs(cardEffect, fakeRef{})) // 既非卡牌也非顧客引用 → false
 }
 
+func (this *SuiteHelp) TestCardSkillGroup() {
+	eng := &Engine{data: buildSheet()}
+	this.Equal(int32(3), cardSkillGroup(eng, 103)) // 卡 103 → 技能 301 → 群組 3
+	this.Equal(int32(0), cardSkillGroup(eng, 101)) // 卡 101 無技能（SkillID 0）→ 0
+	this.Equal(int32(0), cardSkillGroup(eng, 999)) // 卡牌資料不存在 → 0
+}
+
 // === 測試輔助（置尾） ===
 
 // fakeRef 是既非卡牌也非顧客的第三方引用,用以驗證 effectSelfIs 對未知引用型別回 false。

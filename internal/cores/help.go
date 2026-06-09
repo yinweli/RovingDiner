@@ -419,3 +419,20 @@ func skillEffect(eng *Engine, skillID int32) []int32 {
 
 	return append([]int32(nil), skill.EffectID...)
 }
+
+// cardSkillGroup 取卡牌的技能群組編號（卡牌資料.SkillID → Skill.Group）;卡牌 / 技能資料不存在回 0。供 cardRun 啟動效果列表時 skillImmune 排除免疫顧客。
+func cardSkillGroup(eng *Engine, cardID int32) int32 {
+	card := eng.data.Card.Get(cardID)
+
+	if card == nil {
+		return 0
+	} // if
+
+	skill := eng.data.Skill.Get(card.SkillID)
+
+	if skill == nil {
+		return 0
+	} // if
+
+	return skill.Group
+}

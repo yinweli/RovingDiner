@@ -44,16 +44,26 @@ func prepareAward(data *sheeter.Sheeter) map[int32]awardData {
 	return result
 }
 
-// effectData 效果靜態資料的預編譯形（【營業實作規格書 | 三、套件結構】effect 命令解耦）;cores.prepareEffect 一趟產出、NewEngine 內部建、cores 唯讀消費。
-// M11 僅含觸發時機流程所需欄;立即 / 啟動 / 堆疊上限 / 堆疊時間 / 目標 於 M12 擴入。
+// effectData 效果靜態資料的預編譯形（【營業實作規格書 | 三、套件結構】effect 命令解耦）;cores.prepareEffect 一趟產出、NewEngine 內部建、cores 唯讀消費，為 runtime 對效果靜態欄的唯一視圖。
+// 堆疊上限 / 堆疊時間 / 目標 / 立即·啟動命令 隨 M12.1–M12.3 各自讀者擴入。
 type effectData struct {
 	Kind         EffectKind    // 效果類型（篩選 觸發）
 	TriggerKind  TriggerKind   // 觸發時機（篩選 時機）
 	TriggerAfter TriggerAfter  // 觸發後行為（保留 / 移除）
+	Group        int32         // 效果群組編號（effectGroup 查詢 / 免疫閘門）
+	RunRound     int32         // 作用回合（結束回合計算）
+	RunOrder     int32         // 作用順序（佇列排序）
+	Stack        int32         // 堆疊層數（每次堆疊增量;0 / 1 → 1）
+	StackMax     int32         // 堆疊上限（0 = 無上限）
+	StackTime    StackTime     // 堆疊時間（不變 / 刷新）
+	TargetKind   TargetKind    // 目標類型（self 選取方式）
+	TargetCount  int32         // 目標數量（新選 / 隨機 須選數量）
 	Cond         *exprs.Expr   // 觸發條件（空 → nil，視為恆成立）
 	Count        *exprs.Expr   // 觸發次數（空 → nil，視為 1）
-	Trigger      EffectCommand // 觸發命令
-	End          EffectCommand // 結束命令
+	Immed        EffectCommand // 立即命令（立即類型）
+	Trigger      EffectCommand // 觸發命令（觸發類型）
+	Start        EffectCommand // 啟動命令（常駐類型）
+	End          EffectCommand // 結束命令（觸發 / 常駐）
 }
 
 // prepareEffect 自 Effect 表建「效果編號 → 編譯形」衍生索引(對應【營業實作規格書 | 三、套件結構】effect 命令解耦):
@@ -85,6 +95,18 @@ func prepareEffect(data *sheeter.Sheeter, compile CompileCommand) map[int32]effe
 			continue
 		} // if
 
+		immed, ok := compileCommand(compile, meta.CommandImmed)
+
+		if ok == false {
+			continue
+		} // if
+
+		start, ok := compileCommand(compile, meta.CommandStart)
+
+		if ok == false {
+			continue
+		} // if
+
 		cond, ok := compileExpr(meta.TriggerCond)
 
 		if ok == false {
@@ -105,13 +127,31 @@ func prepareEffect(data *sheeter.Sheeter, compile CompileCommand) map[int32]effe
 			continue // 觸發後行為編碼越界 → 跳過
 		} // if
 
+		if meta.StackTime < int32(StackTimeStay) || meta.StackTime > int32(StackTimeRefresh) {
+			continue // 堆疊時間編碼越界 → 跳過
+		} // if
+
+		if meta.TargetKind < int32(TargetNone) || meta.TargetKind > int32(TargetCardRand) {
+			continue // 目標類型編碼越界 → 跳過
+		} // if
+
 		result[itor] = effectData{
 			Kind:         EffectKind(meta.Kind),
 			TriggerKind:  TriggerKind(meta.TriggerKind),
 			TriggerAfter: TriggerAfter(meta.TriggerAfter),
+			Group:        meta.Group,
+			RunRound:     meta.RunRound,
+			RunOrder:     meta.RunOrder,
+			Stack:        meta.Stack,
+			StackMax:     meta.StackMax,
+			StackTime:    StackTime(meta.StackTime),
+			TargetKind:   TargetKind(meta.TargetKind),
+			TargetCount:  meta.TargetCount,
 			Cond:         cond,
 			Count:        count,
+			Immed:        immed,
 			Trigger:      trigger,
+			Start:        start,
 			End:          end,
 		}
 	} // for

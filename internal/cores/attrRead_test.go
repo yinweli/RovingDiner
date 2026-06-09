@@ -279,7 +279,7 @@ func buildSheet() *sheeter.Sheeter {
 		403: {ID: 403, Group: 6, RunOrder: 20, RunRound: 1}, // M10：RunOrder 20 最大 → 排序最先
 	}
 	data.Skill.Data = map[int32]*sheeter.Skill{
-		301: {ID: 301, EffectID: []int32{401, 402}}, // 卡 103 的技能效果列表
+		301: {ID: 301, Group: 3, EffectID: []int32{401, 402}}, // 卡 103 的技能（群組 3）效果列表
 	}
 	data.Award.Data = map[int32]*sheeter.Award{
 		1: {ID: 1, Group: 7, CardID: 101, Weight: 3}, // 群組 7：候選 101(w3) / 102(w1)

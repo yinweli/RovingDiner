@@ -7,10 +7,10 @@ import (
 )
 
 // 處理流程命令（【營業規格書 | 二十五、操作命令清單】各「處理流程」）：cardRun / *Morph / cardify / restore / guest*。
-// 命令本體（容器搬移 + 屬性 / 事件更新）於 M9 完成；觸發（fireTrigger）、啟動效果列表（runEffectList）、清理效果（cleanupEffect）
-// 三 seam 於效果系統里程碑（M11–M13）連同呼叫一併建，本階段以 // TODO 標其插入點（空 stub 無語句、無法覆蓋，故不先建）。
+// 命令本體於 M9 完成；觸發（fireTrigger，M11）與啟動效果列表（runEffectList，M12）已接呼叫;
+// 清理效果（cleanupEffect）留 M13,插入點以 // TODO(M13) 標（空 stub 無語句、無法覆蓋，故不先建）。
 
-// commandCardRun 強制發動卡牌（cardRun 處理流程）：消耗點數、設出牌事件、（M11）啟動實例效果列表、進棄牌堆、（M11）觸發 cardPlay。
+// commandCardRun 強制發動卡牌（cardRun 處理流程）：消耗點數、設出牌事件、啟動實例效果列表、進棄牌堆、觸發 cardPlay。
 // 卡牌可位於 手牌 / 抽牌 / 棄牌；流放牌堆視為位置不符 → 該項 no-op。參數：消耗點數（bool）、進棄牌堆（bool）。
 func commandCardRun(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	useEnergy := argBool(arg)
@@ -39,8 +39,8 @@ func commandCardRun(eng *Engine, target []InstanceID, arg []exprs.Value) {
 
 		game.PlayLast = card
 		game.PlayCount++
-		game.PlayTotal[cardGroup(eng, card)]++ // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
-		// TODO(M11/M12)：runEffectList(card.EffectID, Self{Card: card})（啟動實例效果列表 + 堆疊）
+		game.PlayTotal[cardGroup(eng, card)]++                              // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
+		runEffectList(eng, card.EffectID, cardSkillGroup(eng, card.CardID)) // 啟動實例效果列表（§二十五 step4 出牌前）
 
 		if toDrop && where != ContainerDrop {
 			removeCard(eng, where, card)

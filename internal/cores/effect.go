@@ -28,13 +28,22 @@ func effectSort(eng *Engine, effect []*Effect) {
 	})
 }
 
-// effectOrder 取效果的作用順序（【營業規格書 | 十五、作用順序】）;查無效果資料回 0（防禦;正常實例由 newEffect 保證資料存在）。
+// effectOrder 取效果的作用順序（【營業規格書 | 十五、作用順序】）;查無編譯資料回 0（防禦;正常實例其 effectData 必存在）。
 func effectOrder(eng *Engine, effect *Effect) int32 {
-	meta := eng.data.Effect.Get(effect.EffectID)
+	meta, ok := eng.effect[effect.EffectID]
 
-	if meta == nil {
+	if ok == false {
 		return 0
 	} // if
 
 	return meta.RunOrder
+}
+
+// effectExpire 依作用回合算結束回合（【營業規格書 | 十四、作用回合】:0 → 0 整場保留、N → 當前回合 + N − 1）。供 newEffect 建立與 effectStack 刷新共用。
+func effectExpire(eng *Engine, runRound int32) int32 {
+	if runRound <= 0 {
+		return 0
+	} // if
+
+	return eng.runtime.Game.Round + runRound - 1
 }

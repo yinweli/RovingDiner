@@ -564,7 +564,7 @@ func randTake(eng *Engine, candidate []InstanceID, n int32) (result []InstanceID
 }
 
 // randSubset 經 Rander 洗牌自候選隨機取 k 個,輸出依候選原序(穩定),不更動候選切片。
-func randSubset(eng *Engine, candidate []InstanceID, k int) (result []InstanceID) {
+func randSubset[T any](eng *Engine, candidate []T, k int) (result []T) {
 	index := make([]int, len(candidate))
 
 	for itor := range index {
@@ -576,7 +576,7 @@ func randSubset(eng *Engine, candidate []InstanceID, k int) (result []InstanceID
 	pick := index[:k]
 	sort.Ints(pick)
 
-	result = make([]InstanceID, 0, k)
+	result = make([]T, 0, k)
 
 	for _, itor := range pick {
 		result = append(result, candidate[itor])
