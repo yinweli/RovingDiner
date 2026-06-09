@@ -42,9 +42,12 @@ func commandCardRun(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		game.PlayTotal[cardGroup(eng, card)]++                              // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
 		runEffectList(eng, card.EffectID, cardSkillGroup(eng, card.CardID)) // 啟動實例效果列表（§二十五 step4 出牌前）
 
-		if toDrop && where != ContainerDrop {
-			removeCard(eng, where, card)
-			placeCard(eng, ContainerDrop, card) // 進棄牌牌堆（設 dropLast 等 + M11 cardDrop 觸發）
+		// 效果命令可能在出牌途中搬動本卡（甚至移出四牌堆），故進棄牌堆前重新定位當前容器,不沿用上方 where。
+		if toDrop {
+			if _, now, found := eng.locateCard(itor); found && now != ContainerDrop {
+				removeCard(eng, now, card)
+				placeCard(eng, ContainerDrop, card) // 進棄牌牌堆（設 dropLast 等 + M11 cardDrop 觸發）
+			} // if
 		} // if
 
 		fireTrigger(eng, TriggerCardPlay) // 玩家出牌觸發

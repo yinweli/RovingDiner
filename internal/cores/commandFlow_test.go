@@ -81,6 +81,23 @@ func (this *SuiteCommandFlow) TestCardRunEffect() {
 	this.Equal(int32(801), runtime.Effect[0].EffectID)
 }
 
+func (this *SuiteCommandFlow) TestCardRunEffectMove() {
+	card := &Card{InstanceID: 10, CardID: 101, EffectID: []int32{802}}
+	runtime := NewRuntime(0)
+	runtime.Hand = []*Card{card}
+	eng := this.engine(runtime)
+	eng.effect = map[int32]effectData{
+		802: {Kind: EffectImmed, TargetKind: TargetNone, Immed: func(e *Engine) {
+			removeCard(e, ContainerHand, card)
+			placeCard(e, ContainerExile, card) // 立即命令在出牌途中把本卡移至流放牌堆
+		}},
+	}
+
+	commandCardRun(eng, []InstanceID{10}, this.flag(false, true)) // 不耗點、進棄牌堆
+	this.Empty(runtime.Exile)                                     // 進棄牌堆前重新定位 → 自當前容器(流放)移出、不殘留
+	this.Equal([]*Card{card}, runtime.Drop)                       // 僅進棄牌堆一次、不重複
+}
+
 func (this *SuiteCommandFlow) TestMorph() {
 	runtime := NewRuntime(0)
 	card := &Card{InstanceID: runtime.NextID(), CardID: 102, Cost: Value{Value: 9}}
