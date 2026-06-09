@@ -6,26 +6,19 @@ flowchart TD
     B1 -->|是| A2["從觸發列表彈出 1 個 → 該效果"]
     A2 --> B2{"該效果.觸發條件 成立?"}
     B2 -->|否| B1
-    B2 -->|是| A5["本次 self 集合 = 該效果.self 集合<br/>(啟動技能時已決定)"]
-
-    A5 --> A6["設置 該效果中止 = false"]
-    A6 --> B4{"foreach self in 本次 self 集合<br/>還有 self?"}
-    B4 -->|有| A7["M = 評估 self.觸發次數"]
-    A7 --> B5{"M <= 0?"}
-    B5 -->|是| A8["設置 該效果中止 = true<br/>break"]
-    A8 --> B6
+    B2 -->|是| A5["self = 該效果.self<br/>(啟動技能時已固定;每筆效果單一 self)"]
+    A5 --> A6["M = 評估 self.觸發次數"]
+    A6 --> B5{"M <= 0?"}
+    B5 -->|是 該效果中止| B1
     B5 -->|否| A9["重複 (該效果.堆疊層數 × M) 次:<br/>執行 該效果.觸發命令"]
-    A9 --> B4
-    B4 -->|無剩| B6{"該效果中止?"}
-    B6 -->|是| B1
-    B6 -->|否| B7{"該效果.觸發後行為 == 移除?"}
+    A9 --> B7{"該效果.觸發後行為 == 移除?"}
     B7 -->|是| C1[/"重複 該效果.堆疊層數 次:<br/>執行 該效果.結束命令<br/>從效果佇列移除 該效果"/]
     C1 --> B1
     B7 -->|否| B1
 
     class Start,End terminal
-    class A0,A1,A2,A5,A6,A7,A8,A9 action
-    class B1,B2,B4,B5,B6,B7 decision
+    class A0,A1,A2,A5,A6,A9 action
+    class B1,B2,B5,B7 decision
     class C1 cleanup
     classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
     classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
