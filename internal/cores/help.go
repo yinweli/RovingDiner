@@ -398,7 +398,7 @@ func removeEffect(effect []*Effect, remove *Effect) (result []*Effect) {
 	return result
 }
 
-// 實例化欄位轉換:把卡牌 / 顧客的靜態欄轉為實例初值。供 instance.go 建構(newCard / newGuest)與 cardMorph 共用。
+// 實例化欄位轉換:把卡牌 / 顧客的靜態旗標轉為實例鎖屬性初值。供 instance.go 建構(newCard / newGuest)載入鎖型欄位。
 
 // boolLock 把靜態 bool 旗標轉為鎖屬性初值:true → 鎖定計數 1、false → 0(Value 固定 0)。供新實例化卡牌 / 顧客載入鎖型欄位。
 func boolLock(on bool) Value {
@@ -408,6 +408,8 @@ func boolLock(on bool) Value {
 
 	return Value{}
 }
+
+// 技能靜態查詢:自卡牌經 SkillID 取技能靜態欄位(效果編號列表 / 技能群組編號)。供 newCard 載入實例效果列表、cardMorph 重設、與效果列表啟動的 skillImmune 排除共用。
 
 // skillEffect 取技能的效果編號列表複本(新卡實例效果列表來源 = Card.SkillID → Skill.EffectID);技能不存在回 nil。複製以免共享靜態表切片。供 newCard 載入卡牌實例效果列表、cardMorph 變身後重設效果共用。
 func skillEffect(eng *Engine, skillID int32) []int32 {

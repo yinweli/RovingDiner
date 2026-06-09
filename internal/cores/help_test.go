@@ -12,7 +12,7 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的無狀態輔助:參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬。
+// SuiteHelp 驗證 help.go 的無狀態輔助:參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬 / 技能靜態查詢。
 type SuiteHelp struct {
 	suite.Suite
 }
