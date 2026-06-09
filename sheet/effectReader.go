@@ -28,7 +28,7 @@ type Effect struct {
 	TriggerAfter int32 `json:"TriggerAfter"` // 觸發後行為
 	TriggerCond string `json:"TriggerCond"` // 觸發條件
 	TriggerCount string `json:"TriggerCount"` // 觸發次數
-	TriggerKind int32 `json:"TriggerKind"` // 觸發時機
+	TriggerKind string `json:"TriggerKind"` // 觸發時機
 }
 
 // EffectReader Effect.xlsx#Effect
