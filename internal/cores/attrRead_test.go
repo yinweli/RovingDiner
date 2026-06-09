@@ -285,7 +285,7 @@ func buildSheet() *sheeter.Sheeter {
 		4: {ID: 4, Group: 9, CardID: 999, Weight: 1}, // 群組 9：抽中編號 999 無卡牌資料 → 跳過該張
 	}
 	data.Guest.Data = map[int32]*sheeter.Guest{
-		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateSeal: true},
+		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 12, SateSeal: true},
 	}
 	return data
 }

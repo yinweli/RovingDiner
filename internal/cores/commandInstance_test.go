@@ -142,9 +142,11 @@ func (this *SuiteCommandInstance) TestGuestSpawn() {
 	this.Require().Len(runtime.Roam, 1)
 	guest := runtime.Roam[0]
 	this.Equal(int32(501), guest.GuestID)
-	this.Equal(int32(5), guest.Morale.Value)  // 卡牌資料初始值
-	this.Equal(int32(1), guest.Sate.Lock)     // 自動鎖 +1
-	this.Equal(int32(1), guest.CalmSeal.Lock) // sheet false → 0,自動鎖 +1
+	this.Equal(int32(5), guest.Morale.Value)   // 顧客資料初始值
+	this.Equal(int32(12), guest.SateMax.Value) // 飽食值離場線取自顧客資料
+	this.Equal(int32(0), guest.Sate.Value)     // 飽食值初值 0
+	this.Equal(int32(1), guest.Sate.Lock)      // 自動鎖 +1
+	this.Equal(int32(1), guest.CalmSeal.Lock)  // sheet false → 0,自動鎖 +1
 
 	commandGuestSpawn(eng, nil, nums(501, 2)) // 座位 2(buildSheet 存在且空)→ 入座
 	this.Require().NotNil(runtime.Seat[2])

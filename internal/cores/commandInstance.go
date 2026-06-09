@@ -312,8 +312,8 @@ func skillEffect(eng *Engine, skillID int32) []int32 {
 	return append([]int32(nil), skill.EffectID...)
 }
 
-// newGuest 依顧客編號實例化新顧客(載顧客資料初始值;封印 bool → 鎖定計數、Hit / Immune 初始化空表);資料不存在回 nil。
-// TODO(資料待釐清)：Sate 初值與 SateMax（Guest 表 SateMax 為 bool、實例需 Value 離場線數值），暫留零值；見 PROGRESS。
+// newGuest 依顧客編號實例化新顧客(載顧客資料初始值:Score / ScoreMax / Morale / MoraleMax / Calm / SateMax 數值、封印 bool → 鎖定計數);
+// Sate 初值 0(顧客資料無此欄、隨服務累積至飽食值離場線);Hit / Immune 初始化空表。資料不存在回 nil。
 func newGuest(eng *Engine, guestID int32) *Guest {
 	meta := eng.data.Guest.Get(guestID)
 
@@ -329,6 +329,7 @@ func newGuest(eng *Engine, guestID int32) *Guest {
 		Morale:       Value{Value: meta.Morale},
 		MoraleMax:    Value{Value: meta.MoraleMax},
 		Calm:         Value{Value: meta.Calm},
+		SateMax:      Value{Value: meta.SateMax},
 		SateSeal:     boolLock(meta.SateSeal),
 		CalmSeal:     boolLock(meta.CalmSeal),
 		SateHit:      map[int32]bool{},
