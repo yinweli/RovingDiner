@@ -3,6 +3,7 @@ package games
 import (
 	"strings"
 
+	"github.com/yinweli/RovingDiner/internal/cores"
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
@@ -83,7 +84,7 @@ func (this *commandParser) parseAssign(base string, baseStart int) (result Comma
 
 	command.op = op
 
-	if op == assignLock || op == assignUnlock {
+	if op == cores.AssignLock || op == cores.AssignUnlock {
 		return command, nil // @ / # 不帶算術式
 	} // if
 
@@ -280,52 +281,52 @@ func (this *commandParser) scanArg(start int) (end int) {
 }
 
 // readAssignOp 讀取賦值符(= += -= *= /= %= @ #);成功時推進 pos。
-func (this *commandParser) readAssignOp() (op assignKind, ok bool) {
+func (this *commandParser) readAssignOp() (op cores.AssignKind, ok bool) {
 	switch this.peek() {
 	case '=':
 		this.pos++
-		return assignSet, true
+		return cores.AssignSet, true
 
 	case '@':
 		this.pos++
-		return assignLock, true
+		return cores.AssignLock, true
 
 	case '#':
 		this.pos++
-		return assignUnlock, true
+		return cores.AssignUnlock, true
 
 	case '+':
 		if this.peekNext() == '=' {
 			this.pos += 2
-			return assignAdd, true
+			return cores.AssignAdd, true
 		} // if
 
 	case '-':
 		if this.peekNext() == '=' {
 			this.pos += 2
-			return assignSub, true
+			return cores.AssignSub, true
 		} // if
 
 	case '*':
 		if this.peekNext() == '=' {
 			this.pos += 2
-			return assignMul, true
+			return cores.AssignMul, true
 		} // if
 
 	case '/':
 		if this.peekNext() == '=' {
 			this.pos += 2
-			return assignDiv, true
+			return cores.AssignDiv, true
 		} // if
 
 	case '%':
 		if this.peekNext() == '=' {
 			this.pos += 2
-			return assignMod, true
+			return cores.AssignMod, true
 		} // if
 	} // switch
 
-	return assignSet, false
+	return cores.AssignSet, false
 }
 
 // readIdent 讀取識別子(ASCII 英文字母 / 數字 / 底線,首字非數字);成功回傳文字與起始 rune 索引。
@@ -385,13 +386,13 @@ func (this *commandParser) errorAt(pos int, msg string) error {
 
 // commandAssign 屬性修改命令:<左值> <賦值符> [<算術式>](【營業規格書 | 十七、命令 | 1】)。
 type commandAssign struct {
-	base       string      // 左值基底:全域屬性,或引用左值的引用基底(self / drawLast …)
-	basePos    int         // base 於來源的 rune 位置(供 Validate 報位置)
-	refAttr    string      // 引用屬性名;非引用左值時為空字串
-	refAttrPos int         // refAttr 於來源的 rune 位置
-	isRef      bool        // 左值為 <基底>.<引用屬性> 形式時為真
-	op         assignKind  // 賦值符
-	value      *exprs.Expr // 右值算術式;鎖定 / 解鎖(@ #)時為 nil
+	base       string           // 左值基底:全域屬性,或引用左值的引用基底(self / drawLast …)
+	basePos    int              // base 於來源的 rune 位置(供 Validate 報位置)
+	refAttr    string           // 引用屬性名;非引用左值時為空字串
+	refAttrPos int              // refAttr 於來源的 rune 位置
+	isRef      bool             // 左值為 <基底>.<引用屬性> 形式時為真
+	op         cores.AssignKind // 賦值符(下沉 cores、命令執行據此分派)
+	value      *exprs.Expr      // 右值算術式;鎖定 / 解鎖(@ #)時為 nil
 }
 
 // isCommand 標記 commandAssign 為 Command 封閉介面成員。
@@ -441,17 +442,3 @@ func isIdentStart(c rune) bool {
 func isIdentPart(c rune) bool {
 	return isIdentStart(c) || (c >= '0' && c <= '9')
 }
-
-// assignKind 屬性修改命令的賦值符種類(對應【營業規格書 | 十七、命令 | 1】賦值符)。
-type assignKind int
-
-const (
-	assignSet    assignKind = iota // =
-	assignAdd                      // +=
-	assignSub                      // -=
-	assignMul                      // *=
-	assignDiv                      // /=
-	assignMod                      // %=
-	assignLock                     // @ 鎖定(不帶算術式)
-	assignUnlock                   // # 解鎖(不帶算術式)
-)

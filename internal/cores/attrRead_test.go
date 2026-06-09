@@ -45,7 +45,7 @@ func (this *SuiteAttrRead) TestAttrReadValue() {
 	runtime.Game.MorphOldID = 100
 	runtime.Game.MorphNewID = 200
 	runtime.Game.NextPhase = PhasePlayerAction
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(25), this.num(eng, "morale"))
 	this.Equal(float64(50), this.num(eng, "moraleMax"))
@@ -86,7 +86,7 @@ func (this *SuiteAttrRead) TestAttrReadContainer() {
 	runtime.Seat[1] = &Guest{}
 	runtime.Cardify = []*Guest{{}}
 	runtime.Action = []*Action{{}}
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(1), this.num(eng, "seatSize"))
 	this.Equal(float64(1), this.num(eng, "waitSize"))
@@ -100,7 +100,7 @@ func (this *SuiteAttrRead) TestAttrReadRoundLeft() {
 	runtime := NewRuntime(0)
 	runtime.Game.Round = 8
 	runtime.Game.RoundMax = 10
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 	this.Equal(float64(2), this.num(eng, "roundLeft"))
 
 	runtime.Game.Round = 12 // 超過上限 → 夾 0
@@ -119,7 +119,7 @@ func (this *SuiteAttrRead) TestAttrReadObject() {
 	runtime.Game.ExitLast = guest
 	runtime.Game.TaskGuest = guest
 	runtime.Game.DamageGuest = guest
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 
 	for _, name := range []string{"drawLast", "dropLast", "exileLast", "morphLast"} {
 		value, ok := eng.Attr(name, nil)
@@ -138,7 +138,7 @@ func (this *SuiteAttrRead) TestAttrReadObject() {
 }
 
 func (this *SuiteAttrRead) TestAttrReadSelf() {
-	eng := &engine{runtime: NewRuntime(0)}
+	eng := &Engine{runtime: NewRuntime(0)}
 
 	_, ok := eng.Attr("self", nil) // 未綁定 → 失敗
 	this.False(ok)
@@ -167,7 +167,7 @@ func (this *SuiteAttrRead) TestAttrReadLock() {
 	runtime.Game.EnergyKeep = Value{Lock: 8}
 	runtime.Game.HandMax = Value{Lock: 9}
 	runtime.Game.DrawMax = Value{Lock: 10}
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(1), this.num(eng, "moraleLock"))
 	this.Equal(float64(2), this.num(eng, "moraleMaxLock"))
@@ -185,7 +185,7 @@ func (this *SuiteAttrRead) TestAttrReadStatic() {
 	runtime := NewRuntime(0)
 	runtime.Seat[1] = &Guest{}
 	runtime.Seat[2] = &Guest{}
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 
 	this.Equal(float64(1), this.num(eng, "seatLeft"))  // 3 座位 - 占用 2
 	this.Equal(float64(2), this.num(eng, "tableSize")) // 桌 1、2
@@ -201,7 +201,7 @@ func (this *SuiteAttrRead) TestAttrReadTableCount() {
 	runtime := NewRuntime(0)
 	runtime.Seat[1] = &Guest{}
 	runtime.Seat[2] = &Guest{} // 桌1 = 2 人;桌2 = 0 人
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 
 	this.Equal(float64(1), this.num(eng, "tableCount", exprs.NewText(">="), exprs.NewNum(2)))
 	this.Equal(float64(1), this.num(eng, "tableCount", exprs.NewText("=="), exprs.NewNum(0)))
@@ -228,7 +228,7 @@ func (this *SuiteAttrRead) TestAttrReadGroupQuery() {
 	runtime.Game.DropTotal = map[int32]int32{1: 1}
 	runtime.Game.PlayTotal = map[int32]int32{2: 2}
 	runtime.Game.ExileTotal = map[int32]int32{1: 4}
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 
 	this.Equal(float64(2), this.num(eng, "handSize", exprs.NewNum(1))) // 群組 1 = 卡 101 兩張
 	this.Equal(float64(1), this.num(eng, "handSize", exprs.NewNum(2))) // 群組 2 = 卡 102 一張
@@ -250,7 +250,7 @@ func (this *SuiteAttrRead) TestAttrReadGroupQuery() {
 }
 
 // num 取全域屬性求值結果的數字;斷言命中且為數值。
-func (this *SuiteAttrRead) num(eng *engine, name string, arg ...exprs.Value) float64 {
+func (this *SuiteAttrRead) num(eng *Engine, name string, arg ...exprs.Value) float64 {
 	value, ok := eng.Attr(name, arg)
 	this.Require().True(ok)
 	this.Require().True(value.IsNum())

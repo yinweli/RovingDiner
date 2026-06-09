@@ -1,6 +1,8 @@
 package cores
 
 import (
+	"math"
+
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
@@ -135,7 +137,7 @@ func inContainer(card *Card, container []*Card) bool {
 }
 
 // occupiedAmong 計座位編號列表中當下有顧客占用的座位數。供 sameSize / nearSize 使用。
-func occupiedAmong(eng *engine, seatID []int32) (count int32) {
+func occupiedAmong(eng *Engine, seatID []int32) (count int32) {
 	for _, itor := range seatID {
 		if eng.runtime.Seat[itor] != nil {
 			count++
@@ -155,4 +157,116 @@ func effectSelfIs(effect *Effect, ref exprs.Ref) bool {
 	} // switch
 
 	return false
+}
+
+// 屬性寫入輔助:依賦值符與存取等級(寫 / 寫鎖 / 鎖)變更屬性。供 attrWrite.go / attrRefWrite.go 的寫側詞條共用。
+// 對應【營業規格書 | 十七、命令 | 1】賦值符語意與【二十三、屬性清單】存取欄。
+
+// applyOp 依帶值賦值符對舊值套用算術,回未捨入 / 未夾的新值;除 0 / 取餘 0 → ok=false(對齊 exprs 算術失敗);
+// @ # 非帶值賦值落入 default → ok=false。中間值為 float64、過程不捨入(捨入由呼叫方以 exprs.Round 處理)。
+func applyOp(op AssignKind, old, n float64) (result float64, ok bool) {
+	switch op {
+	case AssignSet:
+		return n, true
+
+	case AssignAdd:
+		return old + n, true
+
+	case AssignSub:
+		return old - n, true
+
+	case AssignMul:
+		return old * n, true
+
+	case AssignDiv:
+		if n == 0 {
+			return 0, false
+		} // if
+
+		return old / n, true
+
+	case AssignMod:
+		if n == 0 {
+			return 0, false
+		} // if
+
+		return math.Mod(old, n), true
+
+	default:
+		return 0, false
+	} // switch
+}
+
+// applyLock 套用鎖定 / 解鎖(@ 計數 +1、# 計數 -1 且夾 >= 0,對 0 計數的 # 為 no-op);
+// 非鎖定符回 handled=false,交呼叫方處理帶值賦值。
+func applyLock(target *Value, op AssignKind) (changed, handled bool) {
+	switch op {
+	case AssignLock:
+		target.Lock++
+		return true, true
+
+	case AssignUnlock:
+		if target.Lock > 0 {
+			target.Lock--
+			return true, true
+		} // if
+
+		return false, true
+
+	default:
+		return false, false
+	} // switch
+}
+
+// writeValue 寫鎖屬性的寫入:先試鎖定 / 解鎖;帶值賦值於鎖定計數 > 0 時 no-op,否則套算術 → 捨入 → 夾(clamp 為 nil 不夾)→ 寫回。
+func writeValue(target *Value, op AssignKind, n float64, clamp func(value int32) int32) (changed bool) {
+	if locked, handled := applyLock(target, op); handled {
+		return locked
+	} // if
+
+	if target.Locked() {
+		return false // 鎖定計數 > 0 → 帶值賦值 no-op
+	} // if
+
+	result, ok := applyOp(op, float64(target.Value), n)
+
+	if ok == false {
+		return false
+	} // if
+
+	value := exprs.Round(result)
+
+	if clamp != nil {
+		value = clamp(value)
+	} // if
+
+	target.Value = value
+	return true
+}
+
+// writeLockOnly 鎖屬性(純計數封印,Value 固定 0)的寫入:僅鎖定 / 解鎖;帶值賦值不適用故 no-op(可寫性由 Validate 先擋)。
+func writeLockOnly(target *Value, op AssignKind) (changed bool) {
+	locked, _ := applyLock(target, op)
+	return locked
+}
+
+// writeInt 寫屬性(無鎖定計數的整數欄位,如 round / roundMax)的寫入:僅帶值賦值;@ # 經 applyOp default → no-op。
+func writeInt(target *int32, op AssignKind, n float64) (changed bool) {
+	result, ok := applyOp(op, float64(*target), n)
+
+	if ok == false {
+		return false
+	} // if
+
+	*target = exprs.Round(result)
+	return true
+}
+
+// clampLow0 夾下限 0;供 護盾 / 格擋 等規格明寫「下限夾 0」的屬性使用(其餘屬性不臆測 clamp)。
+func clampLow0(value int32) int32 {
+	if value < 0 {
+		return 0
+	} // if
+
+	return value
 }

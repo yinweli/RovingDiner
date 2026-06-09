@@ -29,7 +29,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 	runtime := NewRuntime(0)
 	runtime.Hand = []*Card{card}
 	runtime.Deck = []*Card{{InstanceID: 2}}
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 	ref := cardRef{card: card}
 
 	this.Equal(float64(101), this.num(eng, ref, "cardID"))
@@ -66,7 +66,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 func (this *SuiteAttrRefRead) TestAttrRefReadCardCardify() {
 	guest := &Guest{InstanceID: 7}
 	card := &Card{InstanceID: 1, Cardify: guest}
-	eng := &engine{runtime: NewRuntime(0)}
+	eng := &Engine{runtime: NewRuntime(0)}
 
 	value, ok := eng.AttrRef(cardRef{card: card}, "cardify", nil)
 	this.True(ok)
@@ -83,7 +83,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardLock() {
 		PlayExile:   Value{Lock: 9},
 		UnplayExile: Value{Lock: 10},
 	}
-	eng := &engine{runtime: NewRuntime(0)}
+	eng := &Engine{runtime: NewRuntime(0)}
 	ref := cardRef{card: card}
 
 	this.Equal(float64(3), this.num(eng, ref, "costLock"))
@@ -120,7 +120,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 	runtime.Seat[1] = guest
 	runtime.Seat[2] = &Guest{InstanceID: 2}
 	runtime.Seat[3] = &Guest{InstanceID: 3}
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 	ref := guestRef{guest: guest}
 
 	this.Equal(float64(5), this.num(eng, ref, "guestID"))
@@ -163,7 +163,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestLock() {
 		SateSeal:  Value{Lock: 18},
 		CalmSeal:  Value{Lock: 19},
 	}
-	eng := &engine{runtime: NewRuntime(0)}
+	eng := &Engine{runtime: NewRuntime(0)}
 	ref := guestRef{guest: guest}
 
 	this.Equal(float64(11), this.num(eng, ref, "calmLock"))
@@ -182,7 +182,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestLock() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestNoSeat() {
 	guest := &Guest{InstanceID: 1, SeatID: 0} // 遊蕩 / 卡牌化
-	eng := &engine{runtime: NewRuntime(0), data: buildSheet()}
+	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
 	ref := guestRef{guest: guest}
 
 	this.Equal(float64(0), this.num(eng, ref, "sameSize"))
@@ -198,7 +198,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 		{EffectID: 202, Stack: 1, Self: Self{Guest: guest}},
 		{EffectID: 201, Stack: 9, Self: Self{Card: card}}, // 不同 self
 	}
-	eng := &engine{runtime: runtime, data: buildSheet()}
+	eng := &Engine{runtime: runtime, data: buildSheet()}
 	guestR := guestRef{guest: guest}
 	cardR := cardRef{card: card}
 
@@ -215,7 +215,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
-	eng := &engine{runtime: NewRuntime(0), data: buildSheet()}
+	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
 	wrong := guestRef{guest: &Guest{}} // 以顧客引用問卡牌屬性,全應失敗
 
 	for _, name := range []string{
@@ -229,7 +229,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestTypeMismatch() {
-	eng := &engine{runtime: NewRuntime(0), data: buildSheet()}
+	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
 	wrong := cardRef{card: &Card{}} // 以卡牌引用問顧客屬性,全應失敗
 
 	for _, name := range []string{
@@ -243,7 +243,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestTypeMismatch() {
 }
 
 // num 取引用屬性求值結果的數字;斷言命中且為數值。
-func (this *SuiteAttrRefRead) num(eng *engine, ref exprs.Ref, name string, arg ...exprs.Value) float64 {
+func (this *SuiteAttrRefRead) num(eng *Engine, ref exprs.Ref, name string, arg ...exprs.Value) float64 {
 	value, ok := eng.AttrRef(ref, name, arg)
 	this.Require().True(ok)
 	this.Require().True(value.IsNum())
@@ -251,7 +251,7 @@ func (this *SuiteAttrRefRead) num(eng *engine, ref exprs.Ref, name string, arg .
 }
 
 // flag 取引用屬性求值結果的布林;斷言命中且為布林。
-func (this *SuiteAttrRefRead) flag(eng *engine, ref exprs.Ref, name string) bool {
+func (this *SuiteAttrRefRead) flag(eng *Engine, ref exprs.Ref, name string) bool {
 	value, ok := eng.AttrRef(ref, name, nil)
 	this.Require().True(ok)
 	this.Require().True(value.IsBool())

@@ -159,3 +159,21 @@ const (
 	TaskSate TaskKind = iota // 飽食；查 封印飽食技能 閘門
 	TaskCalm                 // 耐心；查 封印耐心技能 閘門
 )
+
+// AssignKind 屬性修改命令的賦值符種類；對應【營業規格書 | 十七、命令 | 1】。
+//
+// 由 games 的命令解析器（parse.go）產出、cores 的屬性修改執行（attrWrite.go）據此分派；
+// 賦值符是 cores 分派的語意，故型別下沉 cores 作單一來源。
+// AssignLock（@）/ AssignUnlock（#）不帶算術式，其餘必帶。
+type AssignKind int
+
+const (
+	AssignSet    AssignKind = iota // =
+	AssignAdd                      // +=
+	AssignSub                      // -=
+	AssignMul                      // *=
+	AssignDiv                      // /=
+	AssignMod                      // %=
+	AssignLock                     // @ 鎖定（不帶算術式）
+	AssignUnlock                   // # 解鎖（不帶算術式）
+)

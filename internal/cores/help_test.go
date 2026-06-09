@@ -144,7 +144,7 @@ func (this *SuiteHelp) TestOccupiedAmong() {
 	runtime := NewRuntime(0)
 	runtime.Seat[1] = &Guest{}
 	runtime.Seat[3] = &Guest{}
-	eng := &engine{runtime: runtime}
+	eng := &Engine{runtime: runtime}
 
 	this.Equal(int32(2), occupiedAmong(eng, []int32{1, 2, 3})) // 座 1、3 占用,座 2 空
 	this.Equal(int32(0), occupiedAmong(eng, []int32{2, 4}))    // 皆空

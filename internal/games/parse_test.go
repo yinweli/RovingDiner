@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/yinweli/RovingDiner/internal/cores"
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
@@ -50,7 +51,7 @@ func (this *SuiteParse) TestParseAssignExpr() {
 	// 右值算術式委由 exprs 解析;求值確認運算子與優先序被正確擷取
 	command := this.assign("morale = 1 + 2 * 3")
 	this.Equal("morale", command.base)
-	this.Equal(assignSet, command.op)
+	this.Equal(cores.AssignSet, command.op)
 	this.False(command.isRef)
 
 	value, ok := command.value.Eval(exprs.Env{})
@@ -217,30 +218,30 @@ func selectorString(selector selectorArg) string {
 }
 
 // assignTag 把賦值符轉成顯示用標記。
-func assignTag(op assignKind) string {
+func assignTag(op cores.AssignKind) string {
 	switch op {
-	case assignSet:
+	case cores.AssignSet:
 		return "set"
 
-	case assignAdd:
+	case cores.AssignAdd:
 		return "add"
 
-	case assignSub:
+	case cores.AssignSub:
 		return "sub"
 
-	case assignMul:
+	case cores.AssignMul:
 		return "mul"
 
-	case assignDiv:
+	case cores.AssignDiv:
 		return "div"
 
-	case assignMod:
+	case cores.AssignMod:
 		return "mod"
 
-	case assignLock:
+	case cores.AssignLock:
 		return "lock"
 
-	case assignUnlock:
+	case cores.AssignUnlock:
 		return "unlock"
 
 	default:
