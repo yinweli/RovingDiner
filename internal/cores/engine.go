@@ -7,24 +7,29 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格。
-func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter) (engine *Engine) {
+// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port。
+func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander) (engine *Engine) {
 	return &Engine{
-		runtime: runtime,
-		self:    self,
-		data:    data,
+		runtime:  runtime,
+		self:     self,
+		data:     data,
+		operator: operator,
+		rander:   rander,
 	}
 }
 
 // Engine 驅動引擎本體;持有一場營業的執行期狀態,並委派實作 exprs.Resolver。
 // 對應【營業實作規格書 | 二、套件結構】engine.go。M6 補入屬性讀取所需的最小狀態(runtime / self / data);
-// 三 port(Operator / Presenter / Rander)等其餘欄位於後續里程碑按需補。
-// 結構欄位保持私有:games 僅透過匯出方法(Attr / AttrRef / ExecAssign)操作引擎,經 NewEngine 建立。
+// M8 補入命令對象解析所需的 operator(*Pick 暫停玩家選)/ rander(*Rand 隨機、deckTop auto-shuffle);
+// 餘下的 Presenter 於後續里程碑按需補。
+// 結構欄位保持私有:games 僅透過匯出方法(Attr / AttrRef / ExecAssign / Run)操作引擎,經 NewEngine 建立。
 // 內建函式註冊表為套件層全域 builtin(同 attrRead 等詞彙表),非 per-instance 狀態,故不入欄位。
 type Engine struct {
-	runtime *Runtime         // 一場營業的聚合狀態(全域屬性 + 全部容器)
-	self    *Self            // 當前求值脈絡的 self 綁定;nil 代表 self 未固定
-	data    *sheeter.Sheeter // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
+	runtime  *Runtime         // 一場營業的聚合狀態(全域屬性 + 全部容器)
+	self     *Self            // 當前求值脈絡的 self 綁定;nil 代表 self 未固定
+	data     *sheeter.Sheeter // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
+	operator Operator         // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
+	rander   Rander           // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
 }
 
 // Attr 委派全域屬性詞彙表,以自身為 context 求值。
@@ -97,6 +102,20 @@ func (this *Engine) ExecAssign(base, refAttr string, isRef bool, op AssignKind, 
 	} // if
 
 	return write(this, op, n)
+}
+
+// selectObject 解析命令對象為作用對象集合(【營業規格書 | 二十四、命令對象清單】);ok=false 代表命令對象名稱未登錄。
+// arg 為 [...] 內參數的已求值結果(求值由呼叫端 M9 ExecOperate 負責);selector 自身不碰 exprs。
+// 回身分集 []InstanceID(非具型別實例):M9 verb 自行 locate 取實例 + 查容器位置(位置不符 no-op 本就要查),
+// 使本表保持同構、與 Self / effect 的 InstanceID 身分模型一致。
+func (this *Engine) selectObject(name string, arg []exprs.Value) (result []InstanceID, ok bool) {
+	resolve, known := selector[name]
+
+	if known == false {
+		return nil, false
+	} // if
+
+	return resolve(this, arg), true
 }
 
 // env 組裝求值期環境:以自身為條件對象 Resolver、帶入套件層全域內建函式註冊表 builtin。

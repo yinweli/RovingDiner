@@ -36,6 +36,22 @@ func (this *SuiteHelp) TestOneInt() {
 	this.False(ok)
 }
 
+func (this *SuiteHelp) TestTwoInt() {
+	a, b, ok := twoInt([]exprs.Value{exprs.NewNum(2), exprs.NewNum(5)})
+	this.True(ok)
+	this.Equal(int32(2), a)
+	this.Equal(int32(5), b)
+
+	_, _, ok = twoInt([]exprs.Value{exprs.NewNum(1)}) // 數量不符(1 個)
+	this.False(ok)
+
+	_, _, ok = twoInt([]exprs.Value{exprs.NewText("x"), exprs.NewNum(1)}) // 第一參型別不符
+	this.False(ok)
+
+	_, _, ok = twoInt([]exprs.Value{exprs.NewNum(1), exprs.NewText("x")}) // 第二參型別不符
+	this.False(ok)
+}
+
 func (this *SuiteHelp) TestGroupSize() {
 	data := buildSheet()
 	card := []*Card{{CardID: 101}, {CardID: 101}, {CardID: 102}}

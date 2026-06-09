@@ -22,6 +22,19 @@ func oneInt(arg []exprs.Value) (num int32, ok bool) {
 	return int32(arg[0].Num()), true
 }
 
+// twoInt 取兩個整數參數;數量 / 型別不符回 ok=false。供雙參數命令對象(handPick / deckRand…的 N、卡牌編號)共用參數校驗。
+func twoInt(arg []exprs.Value) (a, b int32, ok bool) {
+	if len(arg) != 2 {
+		return 0, 0, false
+	} // if
+
+	if arg[0].IsNum() == false || arg[1].IsNum() == false {
+		return 0, 0, false
+	} // if
+
+	return int32(arg[0].Num()), int32(arg[1].Num()), true
+}
+
 // groupSize 求容器中卡牌群組編號 == N 的張數(N == 0 回容器全量);包裝 oneInt + countByGroup。
 func groupSize(card []*Card, data *sheeter.Sheeter, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)

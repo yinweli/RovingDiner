@@ -20,7 +20,7 @@ type SuiteExecute struct {
 func (this *SuiteExecute) TestExecuteAssign() {
 	runtime := cores.NewRuntime(0)
 	runtime.Game.Score.Value = 10
-	eng := cores.NewEngine(runtime, nil, nil)
+	eng := cores.NewEngine(runtime, nil, nil, nil, nil)
 
 	command, err := Parse("score += 5") // Parse → execute → engine.ExecAssign
 	this.Require().NoError(err)
@@ -29,7 +29,7 @@ func (this *SuiteExecute) TestExecuteAssign() {
 }
 
 func (this *SuiteExecute) TestExecuteOperate() {
-	eng := cores.NewEngine(cores.NewRuntime(0), nil, nil)
+	eng := cores.NewEngine(cores.NewRuntime(0), nil, nil, nil, nil)
 
 	command, err := Parse("deckToHand(none)") // 操作命令於 M9 前為 no-op,此處只驗派發不 panic
 	this.Require().NoError(err)
