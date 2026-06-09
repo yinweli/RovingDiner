@@ -4,6 +4,17 @@ import (
 	"math"
 )
 
+// Value 是運算式的求值結果(數值 / 布林 / 字串 / 空物件)。
+// 中間值一律以 float64 表達、過程不四捨五入;捨入由呼叫方以 Round 處理
+// (對齊【營業規格書 | 二十七、運算式】總則)。
+type Value struct {
+	kind valueKind
+	num  float64 // valueNum 的數值
+	flag bool    // valueBool 的值
+	text string  // valueText 的內容
+	ref  Ref     // valueRef 的物件引用
+}
+
 // NewNum 建立數值。
 func NewNum(num float64) Value {
 	return Value{kind: valueNum, num: num}
@@ -27,17 +38,6 @@ func NewNone() Value {
 // NewRef 建立物件引用值;ref 由 Resolver 提供,exprs 不解讀其內容,僅在比較時用 Ref.Same。
 func NewRef(ref Ref) Value {
 	return Value{kind: valueRef, ref: ref}
-}
-
-// Value 是運算式的求值結果(數值 / 布林 / 字串 / 空物件)。
-// 中間值一律以 float64 表達、過程不四捨五入;捨入由呼叫方以 Round 處理
-// (對齊【營業規格書 | 二十七、運算式】總則)。
-type Value struct {
-	kind valueKind
-	num  float64 // valueNum 的數值
-	flag bool    // valueBool 的值
-	text string  // valueText 的內容
-	ref  Ref     // valueRef 的物件引用
 }
 
 // IsNum 回傳是否為數值。

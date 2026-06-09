@@ -15,11 +15,6 @@ type SuiteSyntaxError struct {
 	suite.Suite
 }
 
-func (this *SuiteSyntaxError) TestSyntaxErrorError() {
-	err := &SyntaxError{Pos: 4, Msg: "括號未閉合,缺少 ')'"}
-	this.Equal("第 5 字附近：括號未閉合,缺少 ')'", err.Error()) // Pos 4(0 起算)→ 顯示第 5 字
-}
-
 func (this *SuiteSyntaxError) TestNewError() {
 	err := newError(0, "測試訊息")
 	this.Require().Error(err)
@@ -29,4 +24,9 @@ func (this *SuiteSyntaxError) TestNewError() {
 	this.Equal(0, syntaxError.Pos)
 	this.Equal("測試訊息", syntaxError.Msg)
 	this.Equal("第 1 字附近：測試訊息", err.Error())
+}
+
+func (this *SuiteSyntaxError) TestSyntaxErrorError() {
+	err := &SyntaxError{Pos: 4, Msg: "括號未閉合,缺少 ')'"}
+	this.Equal("第 5 字附近：括號未閉合,缺少 ')'", err.Error()) // Pos 4(0 起算)→ 顯示第 5 字
 }

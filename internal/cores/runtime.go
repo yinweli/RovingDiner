@@ -1,20 +1,5 @@
 package cores
 
-// NewRuntime 建立空白 Runtime；初始化 Game 與各容器（不載入任何遊戲資料）。
-// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入。
-func NewRuntime(seed int64) *Runtime {
-	return &Runtime{
-		Game: &Game{
-			DrawTotal:  map[int32]int32{},
-			DropTotal:  map[int32]int32{},
-			PlayTotal:  map[int32]int32{},
-			ExileTotal: map[int32]int32{},
-		},
-		Seat: map[int32]*Guest{},
-		Seed: seed,
-	}
-}
-
 // Runtime 一場營業的聚合狀態：全域屬性（Game 實例）+ 全部容器 + 結算旗標。
 // 對應【營業規格書 | 五、實例結構】【營業規格書 | 六、容器結構】。
 //
@@ -46,6 +31,21 @@ type Runtime struct {
 	Seed        int64      // 本場 PRNG 種子（執行期狀態，供顯示 / 重現）
 	PrefixSkill []int32    // 前置技能列表（營業開始時逐一啟動）
 	lastID      InstanceID // 實例編號產生器游標
+}
+
+// NewRuntime 建立空白 Runtime；初始化 Game 與各容器（不載入任何遊戲資料）。
+// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入。
+func NewRuntime(seed int64) *Runtime {
+	return &Runtime{
+		Game: &Game{
+			DrawTotal:  map[int32]int32{},
+			DropTotal:  map[int32]int32{},
+			PlayTotal:  map[int32]int32{},
+			ExileTotal: map[int32]int32{},
+		},
+		Seat: map[int32]*Guest{},
+		Seed: seed,
+	}
 }
 
 // NextID 配發下一個唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。

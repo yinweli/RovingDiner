@@ -7,18 +7,6 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port。
-func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander) (engine *Engine) {
-	return &Engine{
-		runtime:  runtime,
-		self:     self,
-		data:     data,
-		operator: operator,
-		rander:   rander,
-		award:    buildAward(data),
-	}
-}
-
 // Engine 驅動引擎本體;持有一場營業的執行期狀態,並委派實作 exprs.Resolver。
 // 對應【營業實作規格書 | 二、套件結構】engine.go。M6 補入屬性讀取所需的最小狀態(runtime / self / data);
 // M8 補入命令對象解析所需的 operator(*Pick 暫停玩家選)/ rander(*Rand 隨機、deckTop auto-shuffle);
@@ -32,6 +20,18 @@ type Engine struct {
 	operator Operator             // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
 	rander   Rander               // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
 	award    map[int32]awardGroup // 抽獎衍生索引(群組 → 候選);NewEngine 建一次、唯讀,供 *Roll / *Morph 用
+}
+
+// NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port。
+func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander) (engine *Engine) {
+	return &Engine{
+		runtime:  runtime,
+		self:     self,
+		data:     data,
+		operator: operator,
+		rander:   rander,
+		award:    buildAward(data),
+	}
 }
 
 // Attr 委派全域屬性詞彙表,以自身為 context 求值。

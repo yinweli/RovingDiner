@@ -113,6 +113,10 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Example (in `commandMove.go`): `func placeCard(eng *Engine, dest ContainerKind, card *Card)`
   - Forbidden (in `commandMove.go`): `func (this *Engine) placeCard(dest ContainerKind, card *Card)`
 
+- Within a file, order a type's declarations **struct → constructor (`New*` / `new*`) → methods** — read the shape first, then how it's built, then its behaviour. Free-function constructors that take `eng` count as the constructor here (e.g. `newCard` sits right after `type Card struct`). Test files mirror this order (constructor test before method tests), per Test Conventions below.
+  - Example: `type Engine struct {…}` then `func NewEngine(…)` then `func (this *Engine) Attr(…)`.
+  - Forbidden: `func NewEngine(…)` declared above `type Engine struct {…}`.
+
 ## Test Conventions
 
 *Applies to hand-written Go tests.*
