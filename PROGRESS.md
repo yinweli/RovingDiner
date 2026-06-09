@@ -19,34 +19,35 @@
 - **M7 已落地(屬性修改命令 執行,走法 X)**:分兩步——①**純結構搬移**:`cores.engine`→`cores.Engine`(匯出、欄位仍私有、加 `NewEngine`;檔名 `engine.go` 不變);`games` 的 `assignKind` 下沉 `cores.AssignKind`(置 `define.go`,`parse.go` 的 `readAssignOp` 直接產出)。②**寫側**:`attrWrite.go`(全域 `attrWrite` 表 13 條 + `HasAttrWrite` + `write*` 具名函式 + `morale -=` 特例 `moraleDamage` + `roundLeft` 衍生寫入 + `damageSource`)、`attrRefWrite.go`(引用 `attrRefWrite` 表 16 條 + `HasAttrRefWrite` + `writeRef*`,卡牌 7 / 顧客 9)、`help.go` 補寫入 helper(`applyOp` 算術 + `applyLock` @/# + `writeValue` 寫鎖 / `writeLockOnly` 鎖 / `writeInt` 寫 + `clampLow0`)、`builtin.go`(`min` / `max` 為**套件層全域 map**、同 `attrRead`;具名 `builtinMin` / `builtinMax` + 共用參數校驗 `numArg`、折疊用 `slices.Min` / `Max`)、`engine` 加 `env()` + **`ExecAssign(base, refAttr, isRef, op, value)`** 派發(求值 RHS→引用解析→查寫表→寫回;`builtin` 非 engine 欄位,`env()` 引全域);`games` 的 `Validate` 補 `commandAssign` 可寫性查核(全域 `HasAttrWrite` / 引用 `HasAttrRefWrite`、唯讀如 `nextPhase` / `cardID` 報錯)、新增 `execute.go` 薄派發(走法 X:games 型別 switch → `eng.ExecAssign`,端到端測)。**寫側無 Lock 後綴路由**(`@` / `#` 即表達鎖定變更,左值名即屬性名)。建置 / vet / golangci-lint(0 issues)/ 測試全綠,cores **100%**、games 新增全覆蓋(其餘缺口為 sealed marker / 操作命令表 M9 前不可達)。三項拍板沿用:讀寫分檔、`@`/`#` 改 Lock、clamp 僅護盾 / 格擋。
 - **M8 已落地(命令對象 selector 解析)**:`cores` 把 M5 的空 `selector.go` 填為 **35 條命令對象**——全域詞彙表 `selector`(名稱→`selectorFunc`)+ 35 個具名 `select*`(none / self 系 4、事件單例 9、座位群 guestAll·Pick·Rand·Wait、鄰桌同桌 near·same × Pick·Rand、卡牌容器 hand·deck·drop·exile × All·Pick·Rand + deckTop / dropTop)+ 共用 helper(`containerAll`/`Pick`/`Rand`、`filterCardID`、`cardIDs`/`guestIDs`、`cardOne`/`guestOne`、泛型 `top`、`seatGuest`/`seatOccupant`、`nearOf`/`sameOf`、`pickCard`/`pickGuest`/`pickGuestOne`/`randGuestOne`、`randTake`/`randSubset`、`shuffleCard`);`help.go` 補 `twoInt`。**engine 補兩 port** `operator Operator` / `rander Rander`(`NewEngine` 加參、更新全部呼叫點;`Presenter` 留 M17)+ 內部 `selectObject(name, arg) (result []InstanceID, ok bool)` 派發(ok=名稱已登錄;唯一呼叫者 M9 `ExecOperate`,cores 白箱直測、不匯出;`HasSelector` 仍匯出供 Validate)。**三拍板依議定值實作**:回身分集 `[]InstanceID`、`[...]` 參數由呼叫端先求值(selector 收 `[]exprs.Value`)、Pick/Rand 候選先按穩定鍵(座位編號 / 容器索引)排序再交 port。`deckTop` 為唯一 mutate(deck<N 且 drop 非空 → 洗棄牌 `append` 至牌堆尾端再取前 N);**牌堆頂端 = slice 前端(index 0、最新進入者)**(§六/§三)。`.golangci.yml` goconst 排除擴及 `selector.go`(鍵即命令對象名 SSOT)。建置 / vet / golangci-lint(0 issues)/ 測試全綠,cores **100%**。doc §二 四個 `table*` 同步為 `attrRead`/`attrRefRead`/`command`/`selector`(獨立 Doc 提交)。
 - **M9 已落地(操作命令執行,5 子切 M9.0–M9.4)**:`games/execute.go` 的 `commandOperate` 接 `engine.ExecOperate(verb, selectorName, selectorParam, arg)`(求值命令對象參數 → `selectObject` → 求值其餘參數 → 查 `command` 表 → 對身分集 fan-out;任一 eval 失敗 / 名稱未登錄 → 整動作 no-op)。**M9.0** 骨架 + bootstrap(`phaseJump` / `deckShuffle`)、`commandFunc` 去 `err`、`evalAll`。**M9.1** 12 容器搬移(`*To*` + `moveCards` / `removeCard` / `placeCard` / `cardGroup`、`ContainerKind` enum、`locateCard`、`*Last/Count/Total` 事件、洗牌參數)。**M9.2** 卡牌屬性(`cardCost*` 重用 `writeValue` 寫鎖、`cardEffect*`)+ 免疫 / 行動(`effectImmune±` / `skillImmune±` varargs、`taskAdd`)、`locateGuest`、`ContainerKind` 補顧客容器、位置參數 helper 改「讀 `arg[0]`、第 k 個傳 `arg[k:]`」(`argBool` / `argInt` / `argNum`)。**M9.3** 實例化 18 verb(`*Add` / `*Copy` / `*Clone` / `*Roll` / `guestSpawn` / `waitAdd`;`newCard`(Card → 實例 + `Skill.EffectID`、bool 欄 → 鎖)/ `newGuest` / `copyCard` / `rollCard`;award 衍生索引 `buildAward`,Engine `award` 欄、`NewEngine` 建一次)。**M9.4** 處理流程(`cardRun` / `*Morph` / `cardify` / `restore` / `guestExit` / `guestReturn` / `guestRoam` / `guestSeat`;`randomEmptySeat` / `removeGuestContainer` / `guestExitOne`;`moraleDamage` 重構收 `source *Guest`,guestExit 以離場顧客為來源)。**三 seam(`fireTrigger` / `runEffectList` / `cleanupEffect`)不建空 stub**——命令本體於插入點留 `// TODO(M11–M13)`,seam 連同呼叫留各效果里程碑。`effectClear` / `effectDel` / `effectRun`、`guestPart` / `guestSkin` 不在 M9。`.golangci.yml` goconst 排除擴及 `command*.go`。建置 / vet / golangci-lint(0 issues)/ 測試全綠,cores **100%**、games **99.5%**。判斷 / 旗標見接續待辦:`cardCost` 尊重鎖定、`guestExit` step8 滿意值直加(流程內部、不經鎖)、`cardRun` step4 補 `PlayTotal`、`guestReturn` / `guestSeat` 入座取隨機空位、`newGuest` 的 `SateMax`(gamedata 改 int 後已接、`Sate` 初值 0)。
+- **M10 已落地(效果佇列操作原語)**:效果實例模型 + `Runtime.Effect` 佇列 M0 已備,M10 只補佇列操作——新建 `effect.go`:`newEffect`(效果編號 → 實例;結束回合依【十四】作用回合 0→0 整場 / N→當前回合 + N − 1;當前層數由呼叫端決定[堆疊【十六】留 M12];查無資料 nil)、`effectPush`(順序無關 append)、`effectRemove`(依實例編號移除)、`effectSort`(【十五】就地排序:作用順序大者優先、同序效果編號小者優先;觸發 / 推進 / 清理共用)+ `effectOrder`(查無資料防禦回 0);`help.go` 補純 slice helper `removeEffect`(鏡射 `removeFrom` / `removeGuest`);`buildSheet` 補 Effect 401 / 402 / 403(RunOrder / RunRound)。**模型 / enum 不動**(`Effect` 實例、`EffectKind`[含 `EffectPersist` 常駐]、`TriggerAfter` / `StackTime` / 21 個 `TriggerKind` 等 M0 已全)。非空 stub、白箱直測達 cores **100%**(不需等 M11–M13 呼叫端)。**不在 M10**:條件評估 / Kind 篩選 / 跑命令(M11)、[堆疊處理](M12)、推進 / 清理 foreach(M13)。
 
 ## 里程碑進度
 
 對應 `doc/營業實作規格書.md`【九、里程碑】(細節以該處為準)。全部依新(細切)里程碑重做;M0–M9 firm、M10 起 provisional(到站再細修)。
 
-| 里程碑 | 狀態 | 說明                            |
-|:-------|:-----|:--------------------------------|
-| M0     | ✅   | cores 型別骨架                  |
-| M1     | ✅   | infra.Load（搬入 internal/）    |
-| M2     | ✅   | exprs lexer + SyntaxError       |
-| M3     | ✅   | exprs 純語言(parser/AST/eval)  |
-| M4     | ✅   | exprs 接縫(Resolver + builtin) |
-| M5     | ✅   | 命令解析(企劃驗證器地基)        |
-| M6     | ✅   | 屬性讀取側(registry + Resolver) |
-| M7     | ✅   | 屬性修改命令 執行               |
-| M8     | ✅   | 命令對象 selector               |
-| M9     | ✅   | 操作命令 執行(三 seam 切)      |
-| M10    | ⬜   | 效果實例 + 佇列 *(prov)*        |
-| M11    | ⬜   | 觸發派發 fireTrigger *(prov)*   |
-| M12    | ⬜   | 堆疊處理 + 啟動效果列表 *(prov)* |
+| 里程碑 | 狀態 | 說明                                     |
+|:-------|:-----|:-----------------------------------------|
+| M0     | ✅   | cores 型別骨架                           |
+| M1     | ✅   | infra.Load（搬入 internal/）             |
+| M2     | ✅   | exprs lexer + SyntaxError                |
+| M3     | ✅   | exprs 純語言(parser/AST/eval)            |
+| M4     | ✅   | exprs 接縫(Resolver + builtin)           |
+| M5     | ✅   | 命令解析(企劃驗證器地基)                 |
+| M6     | ✅   | 屬性讀取側(registry + Resolver)          |
+| M7     | ✅   | 屬性修改命令 執行                        |
+| M8     | ✅   | 命令對象 selector                        |
+| M9     | ✅   | 操作命令 執行(三 seam 切)                |
+| M10    | ✅   | 效果實例 + 佇列（資料 + push/pop）       |
+| M11    | ⬜   | 觸發派發 fireTrigger *(prov)*            |
+| M12    | ⬜   | 堆疊處理 + 啟動效果列表 *(prov)*         |
 | M13    | ⬜   | 推進／清理／免疫 + 接回延後命令 *(prov)* |
-| M14    | ⬜   | phase 狀態機 *(prov)*           |
-| M15    | ⬜   | 啟動技能 *(prov)*               |
-| M16    | ⬜   | 執行結算 → 跑通第一局 *(prov)*  |
-| M17    | ⬜   | Presenter 顯示 *(prov)*         |
-| M18    | ⬜   | Operator + adapter *(prov)*     |
-| M19    | ⬜   | 速率(快/慢/步進) *(prov)*      |
-| M20    | ⬜   | conformance golden *(prov)*     |
+| M14    | ⬜   | phase 狀態機 *(prov)*                    |
+| M15    | ⬜   | 啟動技能 *(prov)*                        |
+| M16    | ⬜   | 執行結算 → 跑通第一局 *(prov)*          |
+| M17    | ⬜   | Presenter 顯示 *(prov)*                  |
+| M18    | ⬜   | Operator + adapter *(prov)*              |
+| M19    | ⬜   | 速率(快/慢/步進) *(prov)*                |
+| M20    | ⬜   | conformance golden *(prov)*              |
 
 ## 接續待辦
 
@@ -56,6 +57,8 @@
 - **[Validate 後補] 引用左值的引用基底合法性**:M7 的 `Validate` 對引用左值只查屬性可寫性(`HasAttrRefWrite(refAttr)`),未查引用基底本身是否為合法物件引用(主表類別 = 卡牌 / 顧客 / 卡牌兼顧客引用)——故 `morale.cost = 1` 這類「以非引用作基底」於 Validate 漏過(執行期安全:`ExecAssign` 解析基底非 ref → no-op)。`cores` 目前無「某名稱是否為物件引用」的匯出述詞;企劃驗證器要完整時補一個(如 `HasObjectRef`)。
 - **§12 觸發次數限制由呼叫方套用**:`exprs` 只提供完整文法 Parse / Eval;【十二、觸發次數】「採算術式、結果 < 0 或評估失敗 → 視為 0、結果 = 0 → 不觸發」由呼叫方(觸發流程,M11)在 Eval 後套用,非 `exprs` 內建。
 - **企劃驗證器工具本體 = M5 後置支線**:命令解析地基已隨 M5 落地(`games` 的 `parse.go` 重用 `exprs.SyntaxError`、吐帶位置中文錯誤;名稱合法性由自由 `Validate` 查詞彙表 keys、M6+ 詞條到位後生效);工具本體(CLI＋Effect 表掃描器＋`task`／CI)依賴 M5、可與效果系統並行,尚未做。詳見實作規格書【附錄:企劃驗證器】。
+- **[M11 開工前敲] 效果命令解耦**:Effect 表的 `CommandImmed` / `CommandStart` / `CommandTrigger` / `CommandEnd` 為命令字串、需 `games.Parse` 成 AST 才能執行,但 `cores` 不能 import `games`。最可能:`games` 在 `NewEngine` 前預解析全表、把 `map[effectID]→已解析命令` 像 `buildAward` 那樣注入 Engine,M11 `fireTrigger` 查表取已解析命令、走既有 `ExecAssign` / `ExecOperate` 分派。M10 未碰(只建佇列資料結構)。
+- **[M11 開工前敲] Effect 靜態欄 int32 → cores enum 解碼索引**:Effect 表的 `Kind` / `TriggerKind` / `TargetKind` / `TriggerAfter` / `StackTime` 為 int32 編碼(§define 註解「對照於載入器建立」),M11 篩選(效果類型 = 觸發 && 觸發時機 = 時機)需此對照;載入時建一次(歸屬待定:infra 或 cores 衍生索引)。M10 未用(`effectSort` 只讀 `RunOrder` / `EffectID` 直接欄)。
 
 ## 已敲定的設計決策(勿重新爭論;重建時沿用)
 
@@ -88,6 +91,7 @@
 - **每一詞條 = 一個具名頂層函式**(非 map 內嵌匿名閉包):讀側每屬性各為獨立 `read*`(全域)/ `readRef*`(引用)函式、map 僅作「名稱 → 行為」索引,目的是讓每條屬性可單獨單元測試;`unparam` 因函式以值存入 map(簽章固定)不報未用參數。M7 寫側比照:`write*` / `writeRef*` 具名函式 + map 索引。
 - **`Engine` 方法只留 engine.go、概念檔一律「吃 `eng *Engine` 的自由函式」**:engine.go 持 `Engine` struct 與其方法——Resolver 介面(`Attr` / `AttrRef`)、對外 API(`ExecAssign` / `ExecOperate`)、核心派發(`selectObject` / `evalAll` / `locateCard` / `locateGuest` / `env`),共 9 個。所有概念檔(attr / selector / command*…)的引擎相關行為(詞條 + 共用 helper)一律寫成 `func foo(eng *Engine, …)` 自由函式(與詞彙表詞條 `read*` / `write*` / `select*` / `command*` 同形,後者本就須自由函式才能存 map)。理由:統一、概念檔零方法、engine.go 只剩真·引擎介面、helper 可單測。**(M8/M9 一度把 selector / command 的共用 helper 寫成 `(this *Engine)` 方法,已校正回此慣例:30 個方法 → 自由函式。)**
 - **檔案內聚切線 = ref 橋接 vs 讀取計算**:`ref.go` 持實例↔ref **雙向橋接**全套(`cardRef` / `guestRef` 型別 + `Same` 等值 + 編碼 `cardValue` / `guestValue` / `selfValue` + 解碼 `asCard` / `asGuest`),即 cardRef 型別的完整公開面收於一處;`help.go` 持「用橋算出讀取結果」的無狀態插件,分三類:查詢輔助(`oneInt` / `groupSize` / `groupTotal` / `countByGroup` / `totalByGroup` / `compareOp`)、引用鎖定計數取值(`cardLock` / `guestLock`,呼叫 `asCard` / `asGuest` + picker)、掃描與歸屬(`inContainer` / `occupiedAmong` / `effectSelfIs`)。判準:純型別編 / 解碼歸 `ref.go`;產生讀取值(`NewNum` / 掃描 / 述詞)歸 `help.go`。
+- **實例建立函式集中 `instance.go`(型別 + 建構配對)**:`newCard` / `copyCard` / `newGuest` / `newEffect` 四個建立函式與其型別定義同檔(`instance.go`,緊接各 struct,比照既有 `Value`+`Locked` / `Self`+`IsNone` 配對);測試對映 `instance_test.go`(`SuiteInstance` 補 `TestNewCard` / `TestCopyCard` / `TestNewGuest` / `TestNewEffect`,順序鏡射來源)。連帶:`skillEffect`(原 `commandInstance.go`)隨 `newCard` 移出,因 `newCard`(`instance.go`)與 `cardMorph`(`commandFlow.go`)共用、且與 `boolLock` 同為「實例載入 helper」,故移 `help.go` 與 `boolLock` 同置;`effect.go` 只留佇列 ops(`effectPush` / `effectRemove` / `effectSort` / `effectOrder`)。代價:`instance.go` 因建立函式吃 `eng`(查 sheet / `NextID`)而不再是純資料 struct——同 package 無 import cycle,取「型別 + 建構同檔」內聚優先於「狀態層純資料」;建立函式仍是吃 `eng` 的自由函式(不破【`Engine` 方法只留 engine.go】慣例)。`Game`(內嵌 `NewRuntime`)/ `Action`(內嵌 `taskAdd`)/ `Value` / `Self` 無具名建立函式,維持現狀。
 - **命令 AST 架構**:比照 `exprs.Parse` 出 parse-once 編譯型 `Command`(靜態載入時 parse 一次、多次執行);純文法入口 `Parse(source) (Command, error)`,涵蓋兩種命令 + 內嵌 selector `[...]` + 內嵌 `*exprs.Expr` 參數,錯誤走 `exprs.SyntaxError`。命令**非遞迴**:depth-1 tagged 結構(`commandAssign` / `commandOperate`),非樹(每個參數本身才是 `*exprs.Expr` tree)。AST 為純資料(名稱為原始字串 + 位置 + `*exprs.Expr`,不含 runtime),執行時 `games` 對 AST 型別 `switch`、`cores` engine 經全域詞彙表 map 分派(詳見上方『命令執行』『M7 接線拍板』兩條)。parser(`parse.go`)放 `games`、純文法不驗成員;命令詞彙(動詞 / 命令對象 / 屬性名)由 `cores` 套件層**全域詞彙表**持有,名稱合法性由 `games` 的自由 `Validate` 查 `cores` 表。
 - **操作命令／效果系統 執行界線按 seam 切**(非按命令整族 stub):真正接縫是三 seam(`fireTrigger` / 啟動效果列表 [堆疊處理] / 清理效果),皆屬效果系統;effect orchestration 整包在 `cores`。操作命令階段(M9)把三 seam 定為穩定簽章,所有命令本體在 M9 寫完並可測(容器搬移 + 屬性 / 事件更新 + N 規則 / filter / deckTop auto-shuffle / 型別位置不符 no-op),只剩 核心即效果佇列的命令(`effectClear` / `effectDel` / `effectRun`,及 `cardRun` / `*Morph` / `cardify` / `restore` 的「啟動 / 清理效果」步)留效果系統階段。
 - **命令解析定案(M5,全域詞彙表重做)**:純文法入口 `Parse(source) (Command, error)`(已匯出);名稱合法性由自由函式 `Validate(Command) error` 查全域詞彙表 keys。`Command` 封閉介面、實作 `commandAssign` / `commandOperate`(depth-1 tagged、非樹;內嵌參數為 `*exprs.Expr`);**名稱以原始字串擷取(含位置 `basePos` / `refAttrPos` / `verbPos` / `selectorPos` 供 Validate 報位置)、parser 不驗成員**;執行於 M7 / M9 補。**兩類命令以語法區分**:首個識別子後接 `(` → 操作命令、否則屬性修改;左值引用 vs 全域以有無 `.<屬性>` 區分。**賦值符** `assignKind`(set/add/sub/mul/div/mod/lock/unlock);`@` / `#` 不帶右值。**內嵌算術式**深度掃描(`()` `[]` 計深度、單引號字串內標點不計,使字串參數與巢狀函式逗號不被誤判)定界後委由 `exprs.Parse`,`offsetError` 回算位置。**名稱合法性移出 parser**、改由自由 `Validate` 查**套件層全域詞彙表** keys(取代已刪的 cores 列舉 + `lookup.go`);三層分離 parse(純)/ validate(查 keys)/ execute(engine+行為)。**不設 Lexicon struct**:詞彙固定、不需可注入,全域常數表足矣,省掉 struct / 建構 / 擁有權。**M5 全域詞彙表為空骨架**:`tableAttr` / `tableAttrRef`(engine 委派 `Resolver` 用)/ `tableSelector` / `tableCommand`(`Validate` 用)四張 map(`cores` 的 `attr.go` / `attrRef.go` / `command.go` / `selector.go` 各持其一),詞條於 M6(讀)/ M7(寫)/ M8(selector)/ M9(command)以 concern 檔 map 字面值填入;寫側留 M7。**Validate M5 邊界**:只驗 verb / 命令對象存在(空表故 M5 一律未知、M6+ 生效);屬性可寫性留 M7、`[N]` / 參數數量留 M8 / M9——故 `self = 5`、`tableCount = 1`、裸 `guestPick`、空 `deckTop[]` 於 M5 皆「結構合法、語意檢查後置」。

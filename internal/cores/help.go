@@ -8,7 +8,7 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// 全域屬性查詢輔助:解析查詢函式參數、分組計數、比較運算。供 attrRead.go 的查詢函式型屬性共用。
+// 參數取值:自 []exprs.Value 取出型別化參數(嚴格數量 / 首參寬鬆 / 集合)。供查詢函式、命令對象、操作命令位置參數共用。
 
 // oneInt 取單一整數參數;數量 / 型別不符回 ok=false。供單參數查詢函式(handSize / tableGuest / effectImmune…)共用。
 func oneInt(arg []exprs.Value) (num int32, ok bool) {
@@ -35,6 +35,51 @@ func twoInt(arg []exprs.Value) (a, b int32, ok bool) {
 
 	return int32(arg[0].Num()), int32(arg[1].Num()), true
 }
+
+// argInt 取首個參數為整數;缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。供操作命令位置參數取值共用。
+func argInt(arg []exprs.Value) (n int32, ok bool) {
+	if len(arg) == 0 || arg[0].IsNum() == false {
+		return 0, false
+	} // if
+
+	return int32(arg[0].Num()), true
+}
+
+// argNum 取首個參數為浮點(供倍率等可帶小數者);缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。
+func argNum(arg []exprs.Value) (n float64, ok bool) {
+	if len(arg) == 0 || arg[0].IsNum() == false {
+		return 0, false
+	} // if
+
+	return arg[0].Num(), true
+}
+
+// argBool 取首個參數為布林;缺漏 / 非布林回 false。需讀第 k 個參數時呼叫端傳 arg[k:]。供帶「洗牌」等布林旗標的操作命令共用。
+func argBool(arg []exprs.Value) bool {
+	return len(arg) > 0 && arg[0].IsBool() && arg[0].Bool()
+}
+
+// intList 把運算式值列表轉為整數列表(略過非數值);供 varargs 整數參數(附加效果編號)取值。
+func intList(arg []exprs.Value) (result []int32) {
+	for _, itor := range arg {
+		if itor.IsNum() {
+			result = append(result, int32(itor.Num()))
+		} // if
+	} // for
+
+	return result
+}
+
+// argTail 安全取參數列表自 from 起的尾切片;from 越界回 nil(避免 arg[from:] 越界 panic)。供讀「第 k 個之後」的位置 / varargs 參數。
+func argTail(arg []exprs.Value, from int) []exprs.Value {
+	if from >= len(arg) {
+		return nil
+	} // if
+
+	return arg[from:]
+}
+
+// 分組計數與比較:卡牌分組計數、累積多重集合查詢、比較運算符。供 attrRead.go 查詢函式型屬性共用。
 
 // groupSize 求容器中卡牌群組編號 == N 的張數(N == 0 回容器全量);包裝 oneInt + countByGroup。
 func groupSize(card []*Card, data *sheeter.Sheeter, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -173,7 +218,7 @@ func effectSelfIs(effect *Effect, ref exprs.Ref) bool {
 	return false
 }
 
-// 屬性寫入輔助:依賦值符與存取等級(寫 / 寫鎖 / 鎖)變更屬性。供 attrWrite.go / attrRefWrite.go 的寫側詞條共用。
+// 屬性寫入:依賦值符與存取等級(寫 / 寫鎖 / 鎖)變更屬性。供 attrWrite.go / attrRefWrite.go 的寫側詞條共用。
 // 對應【營業規格書 | 十七、命令 | 1】賦值符語意與【二十三、屬性清單】存取欄。
 
 // applyOp 依帶值賦值符對舊值套用算術,回未捨入 / 未夾的新值;除 0 / 取餘 0 → ok=false(對齊 exprs 算術失敗);
@@ -285,7 +330,14 @@ func clampLow0(value int32) int32 {
 	return value
 }
 
-// 容器操作輔助:卡牌定位 / 牌堆增刪 / 布林參數取值。供 M9 操作命令的搬移與實例化共用。
+// lockDec 對鎖屬性的鎖定計數 - 1(夾 ≥ 0);供解鎖(guestReturn 入列自動鎖回退、restore 不棄回退)共用。
+func lockDec(value *Value) {
+	if value.Lock > 0 {
+		value.Lock--
+	} // if
+}
+
+// 切片增刪查:實例切片的定位 / 前端加入 / 移除(以實例編號比對),回新切片不影響原序。供操作命令的容器搬移與實例化共用。
 
 // findCard 自卡牌切片以實例編號找出卡牌;未命中回 nil。供 locateCard 逐牌堆掃描。
 func findCard(card []*Card, id InstanceID) *Card {
@@ -336,37 +388,18 @@ func removeGuest(guest []*Guest, remove *Guest) (result []*Guest) {
 	return result
 }
 
-// lockDec 對鎖屬性的鎖定計數 - 1(夾 ≥ 0);供解鎖(guestReturn 入列自動鎖回退、restore 不棄回退)共用。
-func lockDec(value *Value) {
-	if value.Lock > 0 {
-		value.Lock--
-	} // if
+// removeEffect 自效果切片移除指定效果（以實例編號比對），回新切片;其餘元素保持原序。供效果佇列的觸發後移除 / 推進 / 清理共用。
+func removeEffect(effect []*Effect, remove *Effect) (result []*Effect) {
+	for _, itor := range effect {
+		if itor.InstanceID != remove.InstanceID {
+			result = append(result, itor)
+		} // if
+	} // for
+
+	return result
 }
 
-// argBool 取首個參數為布林;缺漏 / 非布林回 false。需讀第 k 個參數時呼叫端傳 arg[k:]。供帶「洗牌」等布林旗標的操作命令共用。
-func argBool(arg []exprs.Value) bool {
-	return len(arg) > 0 && arg[0].IsBool() && arg[0].Bool()
-}
-
-// argInt 取首個參數為整數;缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。供操作命令位置參數取值共用。
-func argInt(arg []exprs.Value) (n int32, ok bool) {
-	if len(arg) == 0 || arg[0].IsNum() == false {
-		return 0, false
-	} // if
-
-	return int32(arg[0].Num()), true
-}
-
-// argNum 取首個參數為浮點(供倍率等可帶小數者);缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。
-func argNum(arg []exprs.Value) (n float64, ok bool) {
-	if len(arg) == 0 || arg[0].IsNum() == false {
-		return 0, false
-	} // if
-
-	return arg[0].Num(), true
-}
-
-// 實例化輔助:award 衍生索引 / bool→鎖 / varargs 整數列表 / 安全尾切片。供 M9.3 *Add / *Copy / *Clone / *Roll 共用。
+// 靜態資料載入:自 sheet 建衍生索引 / 把靜態欄轉為實例初值。供引擎初始化(award)與卡牌 / 顧客實例化共用。
 
 // awardGroup 抽獎群組的平行候選(cardID 與 weight 一一對應、同序);供 weighted random 直接餵 Rander.Weighted。
 type awardGroup struct {
@@ -410,22 +443,13 @@ func boolLock(on bool) Value {
 	return Value{}
 }
 
-// intList 把運算式值列表轉為整數列表(略過非數值);供 varargs 整數參數(附加效果編號)取值。
-func intList(arg []exprs.Value) (result []int32) {
-	for _, itor := range arg {
-		if itor.IsNum() {
-			result = append(result, int32(itor.Num()))
-		} // if
-	} // for
+// skillEffect 取技能的效果編號列表複本(新卡實例效果列表來源 = Card.SkillID → Skill.EffectID);技能不存在回 nil。複製以免共享靜態表切片。供 newCard 載入卡牌實例效果列表、cardMorph 變身後重設效果共用。
+func skillEffect(eng *Engine, skillID int32) []int32 {
+	skill := eng.data.Skill.Get(skillID)
 
-	return result
-}
-
-// argTail 安全取參數列表自 from 起的尾切片;from 越界回 nil(避免 arg[from:] 越界 panic)。供讀「第 k 個之後」的位置 / varargs 參數。
-func argTail(arg []exprs.Value, from int) []exprs.Value {
-	if from >= len(arg) {
+	if skill == nil {
 		return nil
 	} // if
 
-	return arg[from:]
+	return append([]int32(nil), skill.EffectID...)
 }

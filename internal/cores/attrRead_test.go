@@ -274,6 +274,9 @@ func buildSheet() *sheeter.Sheeter {
 	}
 	data.Effect.Data = map[int32]*sheeter.Effect{
 		201: {ID: 201, Group: 5},
+		401: {ID: 401, Group: 5, RunOrder: 10, RunRound: 2}, // M10：RunRound>0 → Expire = 建立回合 + 1；RunOrder 10
+		402: {ID: 402, Group: 5, RunOrder: 10, RunRound: 0}, // M10：RunRound 0 → Expire 0；與 401 同序、EffectID 402 > 401
+		403: {ID: 403, Group: 6, RunOrder: 20, RunRound: 1}, // M10：RunOrder 20 最大 → 排序最先
 	}
 	data.Skill.Data = map[int32]*sheeter.Skill{
 		301: {ID: 301, EffectID: []int32{401, 402}}, // 卡 103 的技能效果列表

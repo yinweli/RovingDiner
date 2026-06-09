@@ -96,6 +96,48 @@ type Card struct {
 	Cardify     *Guest     // 卡牌化來源顧客（初值 nil）
 }
 
+// newCard 依卡牌編號實例化新卡（載卡牌資料初始值；bool 欄 → 鎖定計數、SkillID → Skill.EffectID）；資料不存在回 nil。
+func newCard(eng *Engine, cardID int32) *Card {
+	meta := eng.data.Card.Get(cardID)
+
+	if meta == nil {
+		return nil
+	} // if
+
+	return &Card{
+		InstanceID:  eng.runtime.NextID(),
+		CardID:      cardID,
+		Cost:        Value{Value: meta.Cost},
+		ExtraRunMin: Value{Value: meta.ExtraRunMin},
+		ExtraRunMax: Value{Value: meta.ExtraRunMax},
+		Keep:        boolLock(meta.Keep),
+		Seal:        boolLock(meta.Seal),
+		PlayExile:   boolLock(meta.PlayExile),
+		UnplayExile: boolLock(meta.UnplayExile),
+		EffectID:    skillEffect(eng, meta.SkillID),
+	}
+}
+
+// copyCard 複製卡牌：淺複製依 source.cardID 載入卡牌資料初始值、深複製複製 source 當前狀態（效果列表深複製）；卡牌化來源皆 none、實例編號重生。
+func copyCard(eng *Engine, source *Card, deep bool) *Card {
+	if deep == false {
+		return newCard(eng, source.CardID)
+	} // if
+
+	return &Card{
+		InstanceID:  eng.runtime.NextID(),
+		CardID:      source.CardID,
+		Cost:        source.Cost,
+		ExtraRunMin: source.ExtraRunMin,
+		ExtraRunMax: source.ExtraRunMax,
+		Keep:        source.Keep,
+		Seal:        source.Seal,
+		PlayExile:   source.PlayExile,
+		UnplayExile: source.UnplayExile,
+		EffectID:    append([]int32(nil), source.EffectID...),
+	}
+}
+
 // Guest 顧客實例；對應【營業規格書 | 五、實例結構 | 顧客（Guest）實例】。
 //
 // SateMax（飽食值離場線）為【營業規格書 | 二十三、屬性清單 | 顧客引用屬性】登記的
@@ -120,6 +162,33 @@ type Guest struct {
 	Freeze       int32           // 凍結起始回合（卡牌化時記錄；解凍後重置 0）
 }
 
+// newGuest 依顧客編號實例化新顧客（載顧客資料初始值：Score / ScoreMax / Morale / MoraleMax / Calm / SateMax 數值、封印 bool → 鎖定計數）；
+// Sate 初值 0（顧客資料無此欄、隨服務累積至飽食值離場線）；Hit / Immune 初始化空表。資料不存在回 nil。
+func newGuest(eng *Engine, guestID int32) *Guest {
+	meta := eng.data.Guest.Get(guestID)
+
+	if meta == nil {
+		return nil
+	} // if
+
+	return &Guest{
+		InstanceID:   eng.runtime.NextID(),
+		GuestID:      guestID,
+		Score:        Value{Value: meta.Score},
+		ScoreMax:     Value{Value: meta.ScoreMax},
+		Morale:       Value{Value: meta.Morale},
+		MoraleMax:    Value{Value: meta.MoraleMax},
+		Calm:         Value{Value: meta.Calm},
+		SateMax:      Value{Value: meta.SateMax},
+		SateSeal:     boolLock(meta.SateSeal),
+		CalmSeal:     boolLock(meta.CalmSeal),
+		SateHit:      map[int32]bool{},
+		CalmHit:      map[int32]bool{},
+		EffectImmune: map[int32]int32{},
+		SkillImmune:  map[int32]int32{},
+	}
+}
+
 // Effect 效果實例；對應【營業規格書 | 五、實例結構 | 效果（Effect）實例】。
 // 效果的靜態類型（立即 / 觸發 / 常駐）見靜態表格 Effect.Kind 與 define.go 的 EffectKind。
 type Effect struct {
@@ -128,6 +197,30 @@ type Effect struct {
 	Expire     int32      // 結束回合（作用回合 = 0 時為 0，代表整場保留）
 	Stack      int32      // 當前堆疊層數
 	Self       Self       // self 物件（空物件 / 顧客 / 卡牌）
+}
+
+// newEffect 依效果編號建構效果實例;結束回合依【營業規格書 | 十四、作用回合】（0 → 0 整場保留、N → 當前回合 + N − 1）；
+// 當前層數由呼叫端決定（堆疊規則【營業規格書 | 十六、堆疊規則】留 M12）；查無效果資料回 nil。
+func newEffect(eng *Engine, effectID int32, self Self, stack int32) *Effect {
+	meta := eng.data.Effect.Get(effectID)
+
+	if meta == nil {
+		return nil
+	} // if
+
+	expire := int32(0)
+
+	if meta.RunRound > 0 {
+		expire = eng.runtime.Game.Round + meta.RunRound - 1
+	} // if
+
+	return &Effect{
+		InstanceID: eng.runtime.NextID(),
+		EffectID:   effectID,
+		Expire:     expire,
+		Stack:      stack,
+		Self:       self,
+	}
 }
 
 // Action 行動實例；對應【營業規格書 | 五、實例結構 | 行動（Action）實例】。

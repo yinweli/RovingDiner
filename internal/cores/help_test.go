@@ -12,7 +12,7 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的無狀態讀取輔助:參數解析 / 分組計數 / 比較運算 / 引用鎖定取值 / 容器掃描 / 歸屬判定。
+// SuiteHelp 驗證 help.go 的無狀態輔助:參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬。
 type SuiteHelp struct {
 	suite.Suite
 }
@@ -50,6 +50,51 @@ func (this *SuiteHelp) TestTwoInt() {
 
 	_, _, ok = twoInt([]exprs.Value{exprs.NewNum(1), exprs.NewText("x")}) // 第二參型別不符
 	this.False(ok)
+}
+
+func (this *SuiteHelp) TestArgInt() {
+	n, ok := argInt([]exprs.Value{exprs.NewNum(3.9)}) // 浮點截斷
+	this.True(ok)
+	this.Equal(int32(3), n)
+
+	_, ok = argInt(nil) // 缺漏
+	this.False(ok)
+
+	_, ok = argInt([]exprs.Value{exprs.NewText("x")}) // 非數值
+	this.False(ok)
+}
+
+func (this *SuiteHelp) TestArgNum() {
+	n, ok := argNum([]exprs.Value{exprs.NewNum(2.5)})
+	this.True(ok)
+	this.Equal(float64(2.5), n)
+
+	_, ok = argNum(nil) // 缺漏
+	this.False(ok)
+
+	_, ok = argNum([]exprs.Value{exprs.NewBool(true)}) // 非數值
+	this.False(ok)
+}
+
+func (this *SuiteHelp) TestArgBool() {
+	this.True(argBool([]exprs.Value{exprs.NewBool(true)}))
+	this.False(argBool([]exprs.Value{exprs.NewBool(false)}))
+	this.False(argBool(nil))                            // 缺漏
+	this.False(argBool([]exprs.Value{exprs.NewNum(1)})) // 非布林
+	// 讀第 k 個參數由呼叫端傳 arg[k:]:此處讀 index 1(M9.3 copy/clone 的洗牌位於 index 1)
+	this.True(argBool([]exprs.Value{exprs.NewNum(1), exprs.NewBool(true)}[1:]))
+}
+
+func (this *SuiteHelp) TestIntList() {
+	this.Equal([]int32{1, 2}, intList([]exprs.Value{exprs.NewNum(1), exprs.NewText("x"), exprs.NewNum(2)})) // 略過非數值
+	this.Nil(intList(nil))
+}
+
+func (this *SuiteHelp) TestArgTail() {
+	full := []exprs.Value{exprs.NewNum(1), exprs.NewNum(2)}
+	this.Len(argTail(full, 1), 1) // 自 index 1
+	this.Nil(argTail(full, 2))    // from == len → nil
+	this.Nil(argTail(full, 5))    // from > len → nil
 }
 
 func (this *SuiteHelp) TestGroupSize() {
@@ -184,50 +229,7 @@ func (this *SuiteHelp) TestEffectSelfIs() {
 	this.False(effectSelfIs(cardEffect, fakeRef{})) // 既非卡牌也非顧客引用 → false
 }
 
-func (this *SuiteHelp) TestArgBool() {
-	this.True(argBool([]exprs.Value{exprs.NewBool(true)}))
-	this.False(argBool([]exprs.Value{exprs.NewBool(false)}))
-	this.False(argBool(nil))                            // 缺漏
-	this.False(argBool([]exprs.Value{exprs.NewNum(1)})) // 非布林
-	// 讀第 k 個參數由呼叫端傳 arg[k:]:此處讀 index 1(M9.3 copy/clone 的洗牌位於 index 1)
-	this.True(argBool([]exprs.Value{exprs.NewNum(1), exprs.NewBool(true)}[1:]))
-}
-
-func (this *SuiteHelp) TestArgInt() {
-	n, ok := argInt([]exprs.Value{exprs.NewNum(3.9)}) // 浮點截斷
-	this.True(ok)
-	this.Equal(int32(3), n)
-
-	_, ok = argInt(nil) // 缺漏
-	this.False(ok)
-
-	_, ok = argInt([]exprs.Value{exprs.NewText("x")}) // 非數值
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestArgNum() {
-	n, ok := argNum([]exprs.Value{exprs.NewNum(2.5)})
-	this.True(ok)
-	this.Equal(float64(2.5), n)
-
-	_, ok = argNum(nil) // 缺漏
-	this.False(ok)
-
-	_, ok = argNum([]exprs.Value{exprs.NewBool(true)}) // 非數值
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestIntList() {
-	this.Equal([]int32{1, 2}, intList([]exprs.Value{exprs.NewNum(1), exprs.NewText("x"), exprs.NewNum(2)})) // 略過非數值
-	this.Nil(intList(nil))
-}
-
-func (this *SuiteHelp) TestArgTail() {
-	full := []exprs.Value{exprs.NewNum(1), exprs.NewNum(2)}
-	this.Len(argTail(full, 1), 1) // 自 index 1
-	this.Nil(argTail(full, 2))    // from == len → nil
-	this.Nil(argTail(full, 5))    // from > len → nil
-}
+// === 測試輔助（置尾） ===
 
 // fakeRef 是既非卡牌也非顧客的第三方引用,用以驗證 effectSelfIs 對未知引用型別回 false。
 type fakeRef struct{}
