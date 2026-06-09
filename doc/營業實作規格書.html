@@ -464,10 +464,9 @@ RovingDiner/
 │  │   ├─ define.go         三 port（Operator／Presenter／Rander）、EventData、資料模型列舉（事件類別／階段／觸發時機／效果／目標／觸發後／堆疊／行動 類型）；只有宣告（命令／屬性／命令對象 名稱改歸命令詞彙表）
 │  │   ├─ runtime.go        一場營業的聚合狀態（全域屬性 + 全部容器 + 結算旗標）
 │  │   ├─ instance*.go      Game/Card/Guest/Effect/Action/Value 實例 + 容器 + Value 雙欄原語
-│  │   ├─ engine.go         驅動引擎 struct：持 Runtime + 三 port + *sheeter.Sheeter；委派實作 exprs.Resolver（讀全域詞彙表）；command／selector／flow／effect 皆其 method
-│  │   ├─ attr.go           全域屬性：詞彙表 attrRead + 讀寫行為（含查詢函式；M6 起填入）；HasAttr 供 Validate 查名
-│  │   ├─ attrRef.go        卡牌／顧客引用屬性：詞彙表 attrRefRead + 讀寫行為；HasAttrRef 供 Validate 查名
-│  │   ├─ command.go        操作命令：詞彙表 command + verb 執行行為；HasCommand 供 Validate 查名
+│  │   ├─ engine.go         驅動引擎 struct：持 Runtime + 三 port + *sheeter.Sheeter；委派實作 exprs.Resolver；只留引擎方法（Resolver／ExecAssign／ExecOperate／selectObject／locate*／evalAll），attr／command／selector／flow／effect 行為為各概念檔吃 eng 的自由函式
+│  │   ├─ attr*.go          全域／引用屬性讀寫：attrRead（+attrLockRead）／attrWrite／attrRefRead（+attrRefLockRead）／attrRefWrite 詞彙表 + 行為（含查詢函式）；HasAttrWrite／HasAttrRefWrite 供 Validate 查名
+│  │   ├─ command*.go       操作命令：command 詞彙表（command.go）+ verb 執行行為依類別分檔（commandMove／Card／Guest／Instance／Flow.go）；HasCommand 供 Validate 查名
 │  │   ├─ selector.go       命令對象：詞彙表 selector + 解析行為（guestPick/deckTop/handAll…；含 N 邊界／退化／filter／deckTop auto-shuffle）；HasSelector 供 Validate 查名
 │  │   ├─ help.go           載入時衍生索引（抽獎分組；未來 Seat 鄰桌／Skill→Effect），引擎初始化建一次快取
 │  │   ├─ builtin*.go       運算式引擎內建函式（注入 exprs）
@@ -493,7 +492,7 @@ RovingDiner/
 
 **`exprs` 的解耦**：`exprs` 只懂語法與運算，遇到「條件對象」（`morale`、`self.calm`、`drawLast.cardID`、
 `tableCount('>=',2)`…）時呼叫一個 `Resolver` 介面取值，內建函式（`min`／`max`…）亦由外部注入。
-`cores`（行為定義於 `attr.go`／`attrRef.go`、`engine` 委派）實作 `Resolver`、`cores`（`builtin*.go`）注入內建函式，把營業規格書【二十三、屬性清單】【二十六、內建函式清單】的綁定塞進去。
+`cores`（行為定義於 `attr*.go` 讀寫分檔的自由函式、`engine` 委派）實作 `Resolver`、`cores`（`builtin*.go`）注入內建函式，把營業規格書【二十三、屬性清單】【二十六、內建函式清單】的綁定塞進去。
 這樣 `exprs` 零遊戲依賴，且能脫離遊戲跑語法／運算測試。
 
 ---
@@ -502,15 +501,15 @@ RovingDiner/
 
 由內而外、依賴單向（package 歸屬：運算式列在 `exprs/`，其餘各層——狀態／驅動引擎／屬性／命令／命令對象／效果／流程——均在 `cores/`；對外的 `Parse`／`Validate`／`Run` 收於 `games/`，effect 的推進／觸發／堆疊／清理 orchestration 即 `cores/effect*.go`）：
 
-| 層       | 檔案                        | 職責                                                                                                                   | 對應 spec                                                     |
-|:---------|:----------------------------|:-----------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
-| 狀態     | `instance*.go` `runtime.go` | Value/Game/Card/Guest/Effect/Action 實例與 10 個容器；`Value` 帶 `Value+Lock`（鎖定計數）統一語意                      | 營業規格書【五、實例結構】【六、容器結構】                    |
-| 運算式   | `exprs/`                    | 完整運算式（算術+比較+邏輯+三元）、四捨五入 half-away-from-zero、評估失敗回傳狀態                                      | 營業規格書【二十七、運算式】【二十六、內建函式清單】          |
-| 屬性     | `attr.go`／`attrRef.go`     | 全域屬性／卡牌引用／顧客引用／查詢函式 的讀寫行為（填入全域詞彙表）；餐廳士氣值 `-=` 特例                              | 營業規格書【二十三、屬性清單】【十七、命令｜1. 屬性修改命令】 |
-| 命令     | `command.go`                | 屬性修改 + ~60 操作命令 verb 執行行為（command.go）；命令文法 parser／名稱驗證屬 games 對外層（parse.go／validate.go） | 營業規格書【十七、命令】【二十五、操作命令清單】              |
-| 命令對象 | `selector.go`               | ~35 命令對象解析行為（作用對象集合；含 N 邊界／退化／filter／deckTop auto-shuffle）                                    | 營業規格書【二十四、命令對象清單】                            |
-| 效果     | `effect*.go`                | 效果佇列、[堆疊處理]、觸發時機、推進效果、清理效果、免疫閘門                                                           | 營業規格書【七、效果類型】【十~十六】【二十、獨立流程】       |
-| 流程     | `flow*.go`                  | 6 個 phase 狀態機 + 啟動技能 + 執行結算 + 終止判定 + 結算旗標重入防護                                                  | 營業規格書【十九、核心流程】【二十、獨立流程】                |
+| 層       | 檔案                        | 職責                                                                                                                                                                     | 對應 spec                                                     |
+|:---------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
+| 狀態     | `instance*.go` `runtime.go` | Value/Game/Card/Guest/Effect/Action 實例與 10 個容器；`Value` 帶 `Value+Lock`（鎖定計數）統一語意                                                                        | 營業規格書【五、實例結構】【六、容器結構】                    |
+| 運算式   | `exprs/`                    | 完整運算式（算術+比較+邏輯+三元）、四捨五入 half-away-from-zero、評估失敗回傳狀態                                                                                        | 營業規格書【二十七、運算式】【二十六、內建函式清單】          |
+| 屬性     | `attr*.go`                  | 全域屬性／卡牌引用／顧客引用／查詢函式 的讀寫行為（attrRead／attrWrite／attrRefRead／attrRefWrite，填入全域詞彙表）；餐廳士氣值 `-=` 特例                                | 營業規格書【二十三、屬性清單】【十七、命令｜1. 屬性修改命令】 |
+| 命令     | `command*.go`               | 屬性修改 + ~60 操作命令 verb 執行行為（command 詞彙表 + commandMove／Card／Guest／Instance／Flow.go）；命令文法 parser／名稱驗證屬 games 對外層（parse.go／validate.go） | 營業規格書【十七、命令】【二十五、操作命令清單】              |
+| 命令對象 | `selector.go`               | ~35 命令對象解析行為（作用對象集合；含 N 邊界／退化／filter／deckTop auto-shuffle）                                                                                      | 營業規格書【二十四、命令對象清單】                            |
+| 效果     | `effect*.go`                | 效果佇列、[堆疊處理]、觸發時機、推進效果、清理效果、免疫閘門                                                                                                             | 營業規格書【七、效果類型】【十~十六】【二十、獨立流程】       |
+| 流程     | `flow*.go`                  | 6 個 phase 狀態機 + 啟動技能 + 執行結算 + 終止判定 + 結算旗標重入防護                                                                                                    | 營業規格書【十九、核心流程】【二十、獨立流程】                |
 
 三個易混的「解析對象」概念，分屬不同層、不同時機，務必分清：
 
