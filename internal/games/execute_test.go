@@ -29,9 +29,11 @@ func (this *SuiteExecute) TestExecuteAssign() {
 }
 
 func (this *SuiteExecute) TestExecuteOperate() {
-	eng := cores.NewEngine(cores.NewRuntime(0), nil, nil, nil, nil)
+	runtime := cores.NewRuntime(0)
+	eng := cores.NewEngine(runtime, nil, nil, nil, nil)
 
-	command, err := Parse("deckToHand(none)") // 操作命令於 M9 前為 no-op,此處只驗派發不 panic
+	command, err := Parse("phaseJump(none, '玩家行動')") // Parse → execute → engine.ExecOperate(端到端派發)
 	this.Require().NoError(err)
 	execute(eng, command)
+	this.Equal(cores.PhasePlayerAction, runtime.Game.NextPhase)
 }

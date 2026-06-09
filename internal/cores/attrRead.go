@@ -347,8 +347,10 @@ func readSeatLeft(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) 
 // readTableSize 讀桌次總數(座位表中相異 TableID 數)。
 func readTableSize(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
 	table := map[int32]bool{}
+
 	for _, seatID := range eng.data.Seat.Keys() {
 		meta := eng.data.Seat.Get(seatID)
+
 		if meta != nil {
 			table[meta.TableID] = true
 		} // if
@@ -361,15 +363,19 @@ func readTableSize(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool)
 // readTableGuest 讀桌次 N 的入座顧客數(N == 0 不命中任何桌次)。
 func readTableGuest(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
+
 	if n == 0 { // N == 0 不命中任何桌次
 		return exprs.NewNum(0), true
 	} // if
 	count := int32(0)
+
 	for seatID := range eng.runtime.Seat {
 		meta := eng.data.Seat.Get(seatID)
+
 		if meta != nil && meta.TableID == n {
 			count++
 		} // if
@@ -382,6 +388,7 @@ func readTableCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool
 	if len(arg) != 2 {
 		return exprs.Value{}, false
 	} // if
+
 	if arg[0].IsText() == false || arg[1].IsNum() == false {
 		return exprs.Value{}, false
 	} // if
@@ -389,26 +396,33 @@ func readTableCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool
 	k := int32(arg[1].Num())
 
 	table := map[int32]bool{} // 列舉全部桌次(含 0 人桌)
+
 	for _, seatID := range eng.data.Seat.Keys() {
 		meta := eng.data.Seat.Get(seatID)
+
 		if meta != nil {
 			table[meta.TableID] = true
 		} // if
 	} // for
 	occupied := map[int32]int32{} // 每桌占用人數
+
 	for seatID := range eng.runtime.Seat {
 		meta := eng.data.Seat.Get(seatID)
+
 		if meta != nil {
 			occupied[meta.TableID]++
 		} // if
 	} // for
 
 	count := int32(0)
+
 	for tableID := range table {
 		match, valid := compareOp(op, occupied[tableID], k)
+
 		if valid == false {
 			return exprs.Value{}, false
 		} // if
+
 		if match {
 			count++
 		} // if

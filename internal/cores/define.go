@@ -45,6 +45,22 @@ type InstanceID int64
 // NoneID 空實例編號；表示尚未配發或不存在的實例。
 const NoneID InstanceID = 0
 
+// ContainerKind 容器種類；供 locate 回報實例所在容器、操作命令做「位置不符該項 no-op」判定。
+// 對應【營業規格書 | 六、容器結構】：卡牌四牌堆 + 顧客四容器。顯示層 EventContainer 投影（M17）亦復用本型別。
+type ContainerKind int
+
+const (
+	ContainerNone    ContainerKind = iota // 不在任何容器（未找到）
+	ContainerHand                         // 手牌
+	ContainerDeck                         // 抽牌牌堆
+	ContainerDrop                         // 棄牌牌堆
+	ContainerExile                        // 流放牌堆
+	ContainerWait                         // 排隊佇列
+	ContainerSeat                         // 座位列表
+	ContainerRoam                         // 遊蕩列表
+	ContainerCardify                      // 卡牌化列表
+)
+
 // EventKind 投影事件類別；對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類。
 type EventKind int
 

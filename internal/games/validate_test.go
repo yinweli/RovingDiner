@@ -17,10 +17,12 @@ type SuiteValidate struct {
 }
 
 func (this *SuiteValidate) TestValidateOperate() {
-	// 操作命令:空詞彙表 → 未知命令(命令名稱先於命令對象被檢出)
-	operate, err := Parse("handAdd(none, 10031, 1)")
-	this.Require().NoError(err)
-	this.Error(Validate(operate))
+	// 已登錄命令 + 合法命令對象 → 通過(M9 詞條到位後生效)
+	this.NoError(Validate(this.parse("handAdd(none, 10031, 1)")))
+	// 未登錄命令 → 報錯
+	this.Error(Validate(this.parse("noSuchCommand(none)")))
+	// 未登錄命令對象 → 報錯
+	this.Error(Validate(this.parse("handAdd(noSuchSelector)")))
 }
 
 func (this *SuiteValidate) TestValidateAssign() {

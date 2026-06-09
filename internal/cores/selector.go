@@ -95,7 +95,7 @@ func selectSelfNear(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 		return nil
 	} // if
 
-	return guestIDs(eng.nearOf(eng.self.Guest))
+	return guestIDs(nearOf(eng, eng.self.Guest))
 }
 
 // selectSelfSame 取 self 的同桌顧客(含自身);self 非顧客時為空集合。
@@ -104,7 +104,7 @@ func selectSelfSame(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 		return nil
 	} // if
 
-	return guestIDs(eng.sameOf(eng.self.Guest))
+	return guestIDs(sameOf(eng, eng.self.Guest))
 }
 
 // === 事件單例 ===
@@ -169,7 +169,7 @@ func selectGuestPick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 		return nil
 	} // if
 
-	return eng.pickGuest(seatGuest(eng), n)
+	return pickGuest(eng, seatGuest(eng), n)
 }
 
 // selectGuestRand 系統從在座顧客隨機選最多 N 位。
@@ -180,7 +180,7 @@ func selectGuestRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 		return nil
 	} // if
 
-	return eng.randTake(guestIDs(seatGuest(eng)), n)
+	return randTake(eng, guestIDs(seatGuest(eng)), n)
 }
 
 // selectGuestWait 取排隊佇列前 N 位(先進先出,前端為隊首)。
@@ -198,46 +198,46 @@ func selectGuestWait(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 
 // selectNearPick 暫停流程,玩家選 1 在座顧客,再取其鄰桌(不含自身與同桌)。
 func selectNearPick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	anchor := eng.pickGuestOne(seatGuest(eng))
+	anchor := pickGuestOne(eng, seatGuest(eng))
 
 	if anchor == nil {
 		return nil
 	} // if
 
-	return guestIDs(eng.nearOf(anchor))
+	return guestIDs(nearOf(eng, anchor))
 }
 
 // selectNearRand 系統隨機選 1 在座顧客,再取其鄰桌(不含自身與同桌)。
 func selectNearRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	anchor := eng.randGuestOne(seatGuest(eng))
+	anchor := randGuestOne(eng, seatGuest(eng))
 
 	if anchor == nil {
 		return nil
 	} // if
 
-	return guestIDs(eng.nearOf(anchor))
+	return guestIDs(nearOf(eng, anchor))
 }
 
 // selectSamePick 暫停流程,玩家選 1 在座顧客,再取其同桌(含自身)。
 func selectSamePick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	anchor := eng.pickGuestOne(seatGuest(eng))
+	anchor := pickGuestOne(eng, seatGuest(eng))
 
 	if anchor == nil {
 		return nil
 	} // if
 
-	return guestIDs(eng.sameOf(anchor))
+	return guestIDs(sameOf(eng, anchor))
 }
 
 // selectSameRand 系統隨機選 1 在座顧客,再取其同桌(含自身)。
 func selectSameRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	anchor := eng.randGuestOne(seatGuest(eng))
+	anchor := randGuestOne(eng, seatGuest(eng))
 
 	if anchor == nil {
 		return nil
 	} // if
 
-	return guestIDs(eng.sameOf(anchor))
+	return guestIDs(sameOf(eng, anchor))
 }
 
 // === 卡牌容器:手牌 / 抽牌 / 棄牌 / 流放 ===
@@ -249,12 +249,12 @@ func selectHandAll(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 
 // selectHandPick 暫停流程,玩家從手牌(依編號 filter 後)挑最多 N 張。
 func selectHandPick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerPick(eng.runtime.Hand, arg)
+	return containerPick(eng, eng.runtime.Hand, arg)
 }
 
 // selectHandRand 系統從手牌(依編號 filter 後)隨機選最多 N 張。
 func selectHandRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerRand(eng.runtime.Hand, arg)
+	return containerRand(eng, eng.runtime.Hand, arg)
 }
 
 // selectDeckAll 取抽牌牌堆;filter 規則同 handAll。
@@ -264,12 +264,12 @@ func selectDeckAll(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 
 // selectDeckPick 暫停流程,玩家從抽牌牌堆(依編號 filter 後)挑最多 N 張。
 func selectDeckPick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerPick(eng.runtime.Deck, arg)
+	return containerPick(eng, eng.runtime.Deck, arg)
 }
 
 // selectDeckRand 系統從抽牌牌堆(依編號 filter 後)隨機選最多 N 張。
 func selectDeckRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerRand(eng.runtime.Deck, arg)
+	return containerRand(eng, eng.runtime.Deck, arg)
 }
 
 // selectDeckTop 取抽牌牌堆頂端(前端)N 張;不足時依【二十四｜deckTop auto-shuffle 規則】洗棄牌補回。
@@ -284,7 +284,7 @@ func selectDeckTop(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 	runtime := eng.runtime
 
 	if int(n) > len(runtime.Deck) && len(runtime.Drop) > 0 {
-		eng.shuffleCard(runtime.Drop)
+		shuffleCard(eng, runtime.Drop)
 		runtime.Deck = append(runtime.Deck, runtime.Drop...) // 洗後棄牌置底端(尾端)、保留原牌堆於頂端
 		runtime.Drop = nil
 	} // if
@@ -299,12 +299,12 @@ func selectDropAll(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 
 // selectDropPick 暫停流程,玩家從棄牌牌堆(依編號 filter 後)挑最多 N 張。
 func selectDropPick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerPick(eng.runtime.Drop, arg)
+	return containerPick(eng, eng.runtime.Drop, arg)
 }
 
 // selectDropRand 系統從棄牌牌堆(依編號 filter 後)隨機選最多 N 張。
 func selectDropRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerRand(eng.runtime.Drop, arg)
+	return containerRand(eng, eng.runtime.Drop, arg)
 }
 
 // selectDropTop 取棄牌牌堆頂端(前端)N 張;不足時取全部(不洗牌)。
@@ -325,12 +325,12 @@ func selectExileAll(eng *Engine, arg []exprs.Value) (result []InstanceID) {
 
 // selectExilePick 暫停流程,玩家從流放牌堆(依編號 filter 後)挑最多 N 張。
 func selectExilePick(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerPick(eng.runtime.Exile, arg)
+	return containerPick(eng, eng.runtime.Exile, arg)
 }
 
 // selectExileRand 系統從流放牌堆(依編號 filter 後)隨機選最多 N 張。
 func selectExileRand(eng *Engine, arg []exprs.Value) (result []InstanceID) {
-	return eng.containerRand(eng.runtime.Exile, arg)
+	return containerRand(eng, eng.runtime.Exile, arg)
 }
 
 // === 命令對象解析輔助 ===
@@ -347,25 +347,25 @@ func containerAll(card []*Card, arg []exprs.Value) (result []InstanceID) {
 }
 
 // containerPick 暫停流程,玩家從卡牌容器(依編號 filter 後)挑最多 N 張(arg 為 N、卡牌編號)。
-func (this *Engine) containerPick(card []*Card, arg []exprs.Value) (result []InstanceID) {
+func containerPick(eng *Engine, card []*Card, arg []exprs.Value) (result []InstanceID) {
 	n, cardID, ok := twoInt(arg)
 
 	if ok == false {
 		return nil
 	} // if
 
-	return this.pickCard(filterCardID(card, cardID), n)
+	return pickCard(eng, filterCardID(card, cardID), n)
 }
 
 // containerRand 系統從卡牌容器(依編號 filter 後)隨機選最多 N 張(arg 為 N、卡牌編號)。
-func (this *Engine) containerRand(card []*Card, arg []exprs.Value) (result []InstanceID) {
+func containerRand(eng *Engine, card []*Card, arg []exprs.Value) (result []InstanceID) {
 	n, cardID, ok := twoInt(arg)
 
 	if ok == false {
 		return nil
 	} // if
 
-	return this.randTake(cardIDs(filterCardID(card, cardID)), n)
+	return randTake(eng, cardIDs(filterCardID(card, cardID)), n)
 }
 
 // filterCardID 依卡牌編號篩選卡牌容器:cardID == 0 視為任意(回原容器)、cardID == X 篩出 CardID == X 者。
@@ -464,29 +464,29 @@ func seatOccupant(eng *Engine, seatID []int32) (result []*Guest) {
 }
 
 // nearOf 取顧客鄰桌的占用顧客;非入座(座位不存在)回空集合。
-func (this *Engine) nearOf(guest *Guest) (result []*Guest) {
-	meta := this.data.Seat.Get(guest.SeatID)
+func nearOf(eng *Engine, guest *Guest) (result []*Guest) {
+	meta := eng.data.Seat.Get(guest.SeatID)
 
 	if meta == nil {
 		return nil
 	} // if
 
-	return seatOccupant(this, meta.NearSeatID)
+	return seatOccupant(eng, meta.NearSeatID)
 }
 
 // sameOf 取顧客同桌的占用顧客;非入座(座位不存在)回空集合。
-func (this *Engine) sameOf(guest *Guest) (result []*Guest) {
-	meta := this.data.Seat.Get(guest.SeatID)
+func sameOf(eng *Engine, guest *Guest) (result []*Guest) {
+	meta := eng.data.Seat.Get(guest.SeatID)
 
 	if meta == nil {
 		return nil
 	} // if
 
-	return seatOccupant(this, meta.SameSeatID)
+	return seatOccupant(eng, meta.SameSeatID)
 }
 
 // pickCard 套用 Pick 的 N 規則於卡牌候選:N <= 0 空集合;候選 <= N 退化取全部(不彈介面);否則委由 Operator 暫停玩家挑 N 張。
-func (this *Engine) pickCard(card []*Card, n int32) (result []InstanceID) {
+func pickCard(eng *Engine, card []*Card, n int32) (result []InstanceID) {
 	if n <= 0 { // N = 0 空集合;N < 0 對 Pick 視為空集合
 		return nil
 	} // if
@@ -495,11 +495,11 @@ func (this *Engine) pickCard(card []*Card, n int32) (result []InstanceID) {
 		return cardIDs(card)
 	} // if
 
-	return cardIDs(this.operator.PickCard(card, int(n)))
+	return cardIDs(eng.operator.PickCard(card, int(n)))
 }
 
 // pickGuest 套用 Pick 的 N 規則於顧客候選;規則同 pickCard。
-func (this *Engine) pickGuest(guest []*Guest, n int32) (result []InstanceID) {
+func pickGuest(eng *Engine, guest []*Guest, n int32) (result []InstanceID) {
 	if n <= 0 {
 		return nil
 	} // if
@@ -508,11 +508,11 @@ func (this *Engine) pickGuest(guest []*Guest, n int32) (result []InstanceID) {
 		return guestIDs(guest)
 	} // if
 
-	return guestIDs(this.operator.PickGuest(guest, int(n)))
+	return guestIDs(eng.operator.PickGuest(guest, int(n)))
 }
 
 // pickGuestOne 取單一錨點顧客(near / samePick 用):空候選回 nil、單一候選退化直取(不彈介面)、否則 Operator 挑 1。
-func (this *Engine) pickGuestOne(guest []*Guest) (result *Guest) {
+func pickGuestOne(eng *Engine, guest []*Guest) (result *Guest) {
 	if len(guest) == 0 {
 		return nil
 	} // if
@@ -521,7 +521,7 @@ func (this *Engine) pickGuestOne(guest []*Guest) (result *Guest) {
 		return guest[0]
 	} // if
 
-	chosen := this.operator.PickGuest(guest, 1)
+	chosen := eng.operator.PickGuest(guest, 1)
 
 	if len(chosen) == 0 {
 		return nil
@@ -531,17 +531,17 @@ func (this *Engine) pickGuestOne(guest []*Guest) (result *Guest) {
 }
 
 // randGuestOne 取單一錨點顧客(near / sameRand 用):空候選回 nil、否則 Rander 隨機挑 1。
-func (this *Engine) randGuestOne(guest []*Guest) (result *Guest) {
+func randGuestOne(eng *Engine, guest []*Guest) (result *Guest) {
 	if len(guest) == 0 {
 		return nil
 	} // if
 
-	return guest[this.rander.Intn(len(guest))]
+	return guest[eng.rander.Intn(len(guest))]
 }
 
 // randTake 套用 Rand 的 N 規則於身分集候選:
 // N = 0 空集合;N > 0 取 N(候選 <= N 退化取全部);N < 0 隨機保留 abs(N)、其餘取出(候選 <= abs(N) → 空集合)。
-func (this *Engine) randTake(candidate []InstanceID, n int32) (result []InstanceID) {
+func randTake(eng *Engine, candidate []InstanceID, n int32) (result []InstanceID) {
 	if n == 0 {
 		return nil
 	} // if
@@ -551,7 +551,7 @@ func (this *Engine) randTake(candidate []InstanceID, n int32) (result []Instance
 			return candidate
 		} // if
 
-		return this.randSubset(candidate, int(n))
+		return randSubset(eng, candidate, int(n))
 	} // if
 
 	keep := int(-n)
@@ -560,18 +560,18 @@ func (this *Engine) randTake(candidate []InstanceID, n int32) (result []Instance
 		return nil
 	} // if
 
-	return this.randSubset(candidate, len(candidate)-keep)
+	return randSubset(eng, candidate, len(candidate)-keep)
 }
 
 // randSubset 經 Rander 洗牌自候選隨機取 k 個,輸出依候選原序(穩定),不更動候選切片。
-func (this *Engine) randSubset(candidate []InstanceID, k int) (result []InstanceID) {
+func randSubset(eng *Engine, candidate []InstanceID, k int) (result []InstanceID) {
 	index := make([]int, len(candidate))
 
 	for itor := range index {
 		index[itor] = itor
 	} // for
 
-	this.rander.Shuffle(len(index), func(i, j int) { index[i], index[j] = index[j], index[i] })
+	eng.rander.Shuffle(len(index), func(i, j int) { index[i], index[j] = index[j], index[i] })
 
 	pick := index[:k]
 	sort.Ints(pick)
@@ -586,6 +586,6 @@ func (this *Engine) randSubset(candidate []InstanceID, k int) (result []Instance
 }
 
 // shuffleCard 經 Rander 就地洗牌卡牌切片(供 deckTop auto-shuffle 用)。
-func (this *Engine) shuffleCard(card []*Card) {
-	this.rander.Shuffle(len(card), func(i, j int) { card[i], card[j] = card[j], card[i] })
+func shuffleCard(eng *Engine, card []*Card) {
+	eng.rander.Shuffle(len(card), func(i, j int) { card[i], card[j] = card[j], card[i] })
 }

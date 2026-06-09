@@ -39,9 +39,10 @@ func HasAttrWrite(name string) bool {
 // === 餐廳 / 出牌全域數值屬性 ===
 
 // writeMorale 寫餐廳士氣值;-= 走士氣受損特例(格擋 → 護盾 → morale),其餘為一般寫鎖運算。
+// 屬性修改命令路徑的受損來源取 self 顧客(damageSource);guestExit 等流程改傳離場顧客為來源,直接呼叫 moraleDamage。
 func writeMorale(eng *Engine, op AssignKind, n float64) (changed bool) {
 	if op == AssignSub {
-		return moraleDamage(eng, n)
+		return moraleDamage(eng, n, damageSource(eng.self))
 	} // if
 
 	return writeValue(&eng.runtime.Game.Morale, op, n, nil)
@@ -127,10 +128,10 @@ func writeRoundLeft(eng *Engine, op AssignKind, n float64) (changed bool) {
 // === 餐廳士氣值 -= 特例 ===
 
 // moraleDamage 餐廳士氣值 -= 特例(【十七、命令 | 1】特例):依 格擋 → 護盾 → morale 順序消耗扣減值 N;
-// 實際扣減 > 0 時設置 damageValue / damageGuest(來源取 self 顧客、非顧客則空物件),並標記士氣受損時機。
+// 實際扣減 > 0 時設置 damageValue / damageGuest(來源 source 由呼叫端決定:命令路徑取 self 顧客、guestExit 取離場顧客),並標記士氣受損時機。
 // morale 鎖定時格擋 / 護盾仍消耗、morale 不動、無實際扣減(對齊目前解讀)。
 // N 先四捨五入為整數扣減值,使格擋 / 護盾 / morale 的整數消耗自洽(小數扣減值的捨入時點待規格確認)。
-func moraleDamage(eng *Engine, n float64) (changed bool) {
+func moraleDamage(eng *Engine, n float64, source *Guest) (changed bool) {
 	game := eng.runtime.Game
 	damage := exprs.Round(n)
 
@@ -156,7 +157,7 @@ func moraleDamage(eng *Engine, n float64) (changed bool) {
 
 		if actual > 0 {
 			game.DamageValue = actual
-			game.DamageGuest = damageSource(eng.self)
+			game.DamageGuest = source
 			changed = true
 			// TODO(M11):觸發 士氣受損 時機(damage)— 效果系統 fireTrigger 建立後接回。
 		} // if

@@ -68,6 +68,22 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Example: `} // if`
 - Closing comments on functions or methods are forbidden.
 
+- A control-flow block (`if` / `for` / `switch`) must be preceded by a blank line when it follows another statement — never cuddle it against the previous line. (No blank line when it is the first statement in its block, i.e. directly after the opening `{`.)
+  - Example:
+
+    ```go
+    card, ok := asCard(ref)
+
+    if ok == false {
+    ```
+
+  - Forbidden:
+
+    ```go
+    card, ok := asCard(ref)
+    if ok == false {
+    ```
+
 - When a function returns more than one value, every return value must be named (single-return functions need not be named). Applies to hand-written code; generated code under `sheet/` is exempt.
   - Example: `func Load(dir string) (data *sheeter.Sheeter, err error)`
   - Forbidden: `func Load(dir string) (*sheeter.Sheeter, error)`
@@ -92,6 +108,10 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Forbidden: `import "fmt"`
 
 - Go source file names: a single word is all-lowercase (`type.go`, `runtime.go`, `selector.go`); a **compound name uses lowerCamelCase** (`commandAssign.go`, `commandOperate.go`), never all-lowercase-concatenated (`commandassign.go`) nor snake_case. Test files keep Go's `_test` suffix (`commandAssign.go` → `commandAssign_test.go`).
+
+- A type's methods live only in that type's own file; concern files express engine-context behaviour as free functions taking the engine as first parameter. Concretely: `Engine`'s methods (the Resolver interface `Attr` / `AttrRef`, the public API `ExecAssign` / `ExecOperate`, core dispatch `selectObject` / `evalAll` / `locateCard` / `locateGuest` / `env`) stay in `engine.go`; every concern file (`attr*.go`, `selector.go`, `command*.go`, …) writes its behaviour and shared helpers as `func foo(eng *Engine, …)`, never `func (this *Engine) foo(…)`. This matches the registry entries (`read*` / `write*` / `select*` / `command*`), which must be free functions to be stored in maps.
+  - Example (in `commandMove.go`): `func placeCard(eng *Engine, dest ContainerKind, card *Card)`
+  - Forbidden (in `commandMove.go`): `func (this *Engine) placeCard(dest ContainerKind, card *Card)`
 
 ## Test Conventions
 

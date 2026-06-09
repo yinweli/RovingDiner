@@ -2,6 +2,7 @@ package cores
 
 import (
 	"math"
+	"sort"
 
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
@@ -282,4 +283,149 @@ func clampLow0(value int32) int32 {
 	} // if
 
 	return value
+}
+
+// 容器操作輔助:卡牌定位 / 牌堆增刪 / 布林參數取值。供 M9 操作命令的搬移與實例化共用。
+
+// findCard 自卡牌切片以實例編號找出卡牌;未命中回 nil。供 locateCard 逐牌堆掃描。
+func findCard(card []*Card, id InstanceID) *Card {
+	for _, itor := range card {
+		if itor.InstanceID == id {
+			return itor
+		} // if
+	} // for
+
+	return nil
+}
+
+// findGuest 自顧客切片以實例編號找出顧客;未命中回 nil。供 locateGuest 掃描排隊 / 遊蕩 / 卡牌化列表。
+func findGuest(guest []*Guest, id InstanceID) *Guest {
+	for _, itor := range guest {
+		if itor.InstanceID == id {
+			return itor
+		} // if
+	} // for
+
+	return nil
+}
+
+// prepend 把卡牌加入切片前端(頂端);對齊牌堆「新進入者置頂」(M8 約定:前端為頂)。
+func prepend(card []*Card, add *Card) []*Card {
+	return append([]*Card{add}, card...)
+}
+
+// removeFrom 自卡牌切片移除指定卡牌(以實例編號比對),回新切片;其餘元素保持原序。
+func removeFrom(card []*Card, remove *Card) (result []*Card) {
+	for _, itor := range card {
+		if itor.InstanceID != remove.InstanceID {
+			result = append(result, itor)
+		} // if
+	} // for
+
+	return result
+}
+
+// removeGuest 自顧客切片移除指定顧客(以實例編號比對),回新切片;其餘元素保持原序。供遊蕩 / 排隊 / 卡牌化列表移除共用。
+func removeGuest(guest []*Guest, remove *Guest) (result []*Guest) {
+	for _, itor := range guest {
+		if itor.InstanceID != remove.InstanceID {
+			result = append(result, itor)
+		} // if
+	} // for
+
+	return result
+}
+
+// lockDec 對鎖屬性的鎖定計數 - 1(夾 ≥ 0);供解鎖(guestReturn 入列自動鎖回退、restore 不棄回退)共用。
+func lockDec(value *Value) {
+	if value.Lock > 0 {
+		value.Lock--
+	} // if
+}
+
+// argBool 取首個參數為布林;缺漏 / 非布林回 false。需讀第 k 個參數時呼叫端傳 arg[k:]。供帶「洗牌」等布林旗標的操作命令共用。
+func argBool(arg []exprs.Value) bool {
+	return len(arg) > 0 && arg[0].IsBool() && arg[0].Bool()
+}
+
+// argInt 取首個參數為整數;缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。供操作命令位置參數取值共用。
+func argInt(arg []exprs.Value) (n int32, ok bool) {
+	if len(arg) == 0 || arg[0].IsNum() == false {
+		return 0, false
+	} // if
+
+	return int32(arg[0].Num()), true
+}
+
+// argNum 取首個參數為浮點(供倍率等可帶小數者);缺漏 / 非數值回 ok=false。需讀第 k 個參數時呼叫端傳 arg[k:]。
+func argNum(arg []exprs.Value) (n float64, ok bool) {
+	if len(arg) == 0 || arg[0].IsNum() == false {
+		return 0, false
+	} // if
+
+	return arg[0].Num(), true
+}
+
+// 實例化輔助:award 衍生索引 / bool→鎖 / varargs 整數列表 / 安全尾切片。供 M9.3 *Add / *Copy / *Clone / *Roll 共用。
+
+// awardGroup 抽獎群組的平行候選(cardID 與 weight 一一對應、同序);供 weighted random 直接餵 Rander.Weighted。
+type awardGroup struct {
+	cardID []int32
+	weight []int32
+}
+
+// buildAward 自 Award 表建「群組編號 → 候選」衍生索引;依 Award.ID 排序確保決定性,僅收 Weight > 0 者(全 0 權重群組自然為空 → roll no-op)。
+func buildAward(data *sheeter.Sheeter) map[int32]awardGroup {
+	result := map[int32]awardGroup{}
+
+	if data == nil {
+		return result
+	} // if
+
+	id := data.Award.Keys()
+	sort.Slice(id, func(i, j int) bool { return id[i] < id[j] })
+
+	for _, itor := range id {
+		award := data.Award.Get(itor)
+
+		if award.Weight <= 0 {
+			continue
+		} // if
+
+		group := result[award.Group]
+		group.cardID = append(group.cardID, award.CardID)
+		group.weight = append(group.weight, award.Weight)
+		result[award.Group] = group
+	} // for
+
+	return result
+}
+
+// boolLock 把靜態 bool 旗標轉為鎖屬性初值:true → 鎖定計數 1、false → 0(Value 固定 0)。供新實例化卡牌 / 顧客載入鎖型欄位。
+func boolLock(on bool) Value {
+	if on {
+		return Value{Lock: 1}
+	} // if
+
+	return Value{}
+}
+
+// intList 把運算式值列表轉為整數列表(略過非數值);供 varargs 整數參數(附加效果編號)取值。
+func intList(arg []exprs.Value) (result []int32) {
+	for _, itor := range arg {
+		if itor.IsNum() {
+			result = append(result, int32(itor.Num()))
+		} // if
+	} // for
+
+	return result
+}
+
+// argTail 安全取參數列表自 from 起的尾切片;from 越界回 nil(避免 arg[from:] 越界 panic)。供讀「第 k 個之後」的位置 / varargs 參數。
+func argTail(arg []exprs.Value, from int) []exprs.Value {
+	if from >= len(arg) {
+		return nil
+	} // if
+
+	return arg[from:]
 }

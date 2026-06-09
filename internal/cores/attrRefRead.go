@@ -84,6 +84,7 @@ var attrRefLockRead = map[string]attrRefReadFunc{
 // readRefCardID 讀卡牌的卡牌編號。
 func readRefCardID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -93,6 +94,7 @@ func readRefCardID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefCost 讀卡牌的費用值。
 func readRefCost(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -102,6 +104,7 @@ func readRefCost(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 // readRefExtraRunMin 讀卡牌的額外執行次數下限值。
 func readRefExtraRunMin(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -111,6 +114,7 @@ func readRefExtraRunMin(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 // readRefExtraRunMax 讀卡牌的額外執行次數上限值。
 func readRefExtraRunMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -120,6 +124,7 @@ func readRefExtraRunMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 // readRefCardSeal 讀卡牌的封印值(恆 0,僅供鎖定承載)。
 func readRefCardSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -129,6 +134,7 @@ func readRefCardSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefKeep 讀卡牌的保留值(恆 0,僅供鎖定承載)。
 func readRefKeep(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -138,6 +144,7 @@ func readRefKeep(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 // readRefPlayExile 讀卡牌的出牌流放值(恆 0,僅供鎖定承載)。
 func readRefPlayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -147,6 +154,7 @@ func readRefPlayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exp
 // readRefUnplayExile 讀卡牌的未出牌流放值(恆 0,僅供鎖定承載)。
 func readRefUnplayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -156,6 +164,7 @@ func readRefUnplayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 // readRefCardify 讀卡牌所卡牌化的顧客引用(無則 none)。
 func readRefCardify(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -165,10 +174,12 @@ func readRefCardify(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefCardGroup 讀卡牌的群組編號(自靜態表;資料不存在回失敗)。
 func readRefCardGroup(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	meta := eng.data.Card.Get(card.CardID)
+
 	if meta == nil {
 		return exprs.Value{}, false
 	} // if
@@ -178,17 +189,21 @@ func readRefCardGroup(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exp
 // readRefCardEffect 讀卡牌效果列表中效果編號 == N 的個數(N == 0 不命中)。
 func readRefCardEffect(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
+
 	if n == 0 { // N == 0 不命中
 		return exprs.NewNum(0), true
 	} // if
 	count := int32(0)
+
 	for _, id := range card.EffectID {
 		if id == n {
 			count++
@@ -200,6 +215,7 @@ func readRefCardEffect(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result ex
 // readRefInHand 回報卡牌是否在手牌。
 func readRefInHand(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -209,6 +225,7 @@ func readRefInHand(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefInDeck 回報卡牌是否在抽牌牌堆。
 func readRefInDeck(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -218,6 +235,7 @@ func readRefInDeck(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefInDrop 回報卡牌是否在棄牌牌堆。
 func readRefInDrop(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -227,6 +245,7 @@ func readRefInDrop(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefInExile 回報卡牌是否在流放牌堆。
 func readRefInExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := asCard(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -238,6 +257,7 @@ func readRefInExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefCalm 讀顧客的耐心值。
 func readRefCalm(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -247,6 +267,7 @@ func readRefCalm(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 // readRefSate 讀顧客的飽食值。
 func readRefSate(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -256,6 +277,7 @@ func readRefSate(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 // readRefSateMax 讀顧客的飽食上限。
 func readRefSateMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -265,6 +287,7 @@ func readRefSateMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefMorale 讀顧客的士氣值。
 func readRefMorale(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -274,6 +297,7 @@ func readRefMorale(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefMoraleMax 讀顧客的士氣上限。
 func readRefMoraleMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -283,6 +307,7 @@ func readRefMoraleMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exp
 // readRefScore 讀顧客的分數值。
 func readRefScore(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -292,6 +317,7 @@ func readRefScore(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.V
 // readRefScoreMax 讀顧客的分數上限。
 func readRefScoreMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -301,6 +327,7 @@ func readRefScoreMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefSateSeal 讀顧客的封印飽食值(恆 0,僅供鎖定承載)。
 func readRefSateSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -310,6 +337,7 @@ func readRefSateSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefCalmSeal 讀顧客的封印耐心值(恆 0,僅供鎖定承載)。
 func readRefCalmSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -319,6 +347,7 @@ func readRefCalmSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefSeatID 讀顧客的座位編號。
 func readRefSeatID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -328,6 +357,7 @@ func readRefSeatID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefGuestID 讀顧客的顧客編號。
 func readRefGuestID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -337,6 +367,7 @@ func readRefGuestID(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefFreeze 讀顧客的凍結回合數。
 func readRefFreeze(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -346,6 +377,7 @@ func readRefFreeze(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 // readRefCalmHit 讀顧客的耐心閾值命中數。
 func readRefCalmHit(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -355,6 +387,7 @@ func readRefCalmHit(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefSateHit 讀顧客的飽食閾值命中數。
 func readRefSateHit(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
@@ -364,10 +397,12 @@ func readRefSateHit(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 // readRefEffectImmune 讀顧客對效果 N 的免疫計數。
 func readRefEffectImmune(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
@@ -377,10 +412,12 @@ func readRefEffectImmune(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result 
 // readRefSkillImmune 讀顧客對技能 N 的免疫計數。
 func readRefSkillImmune(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
@@ -390,10 +427,12 @@ func readRefSkillImmune(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 // readRefSameSize 讀顧客同桌占用座位數(非入座回 0;含自身語意依座位表)。
 func readRefSameSize(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	meta := eng.data.Seat.Get(guest.SeatID)
+
 	if meta == nil { // 非入座(SeatID=0 / 座位不存在)→ 0
 		return exprs.NewNum(0), true
 	} // if
@@ -403,10 +442,12 @@ func readRefSameSize(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefNearSize 讀顧客鄰桌占用座位數(非入座回 0)。
 func readRefNearSize(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := asGuest(ref)
+
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
 	meta := eng.data.Seat.Get(guest.SeatID)
+
 	if meta == nil {
 		return exprs.NewNum(0), true
 	} // if
@@ -418,10 +459,12 @@ func readRefNearSize(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 // readRefEffectStack 讀效果佇列中 self == ref 且效果編號 == N 的層數加總。
 func readRefEffectStack(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
 	stack := int32(0)
+
 	for _, effect := range eng.runtime.Effect {
 		if effect.EffectID == n && effectSelfIs(effect, ref) {
 			stack += effect.Stack
@@ -433,18 +476,22 @@ func readRefEffectStack(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 // readRefEffectGroup 讀效果佇列中 self == ref 且效果群組 == N 的項目數(不加層;N == 0 不命中)。
 func readRefEffectGroup(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
+
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
+
 	if n == 0 { // N == 0 不命中
 		return exprs.NewNum(0), true
 	} // if
 	count := int32(0)
+
 	for _, effect := range eng.runtime.Effect {
 		if effectSelfIs(effect, ref) == false {
 			continue
 		} // if
 		meta := eng.data.Effect.Get(effect.EffectID)
+
 		if meta != nil && meta.Group == n {
 			count++
 		} // if

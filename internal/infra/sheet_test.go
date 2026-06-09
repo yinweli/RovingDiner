@@ -80,6 +80,7 @@ func (this *SuiteSheet) TestLoaderConcurrent() {
 	load := &loader{dir: this.T().TempDir()}
 
 	var wait sync.WaitGroup
+
 	for i := 0; i < 50; i++ {
 		wait.Add(1)
 		go func() {

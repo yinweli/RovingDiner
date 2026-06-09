@@ -126,6 +126,7 @@ func (this *SuiteAttrRead) TestAttrReadObject() {
 		this.True(ok)
 		this.True(value.Ref().Same(cardRef{card: card}), name)
 	} // for
+
 	for _, name := range []string{"seatLast", "exitLast", "taskGuest", "damageGuest"} {
 		value, ok := eng.Attr(name, nil)
 		this.True(ok)
@@ -269,9 +270,22 @@ func buildSheet() *sheeter.Sheeter {
 	data.Card.Data = map[int32]*sheeter.Card{
 		101: {ID: 101, Group: 1},
 		102: {ID: 102, Group: 2},
+		103: {ID: 103, Group: 1, Cost: 2, Keep: true, Seal: true, SkillID: 301}, // M9.3 newCard 用（bool 欄 → 鎖、SkillID → 效果列表）
 	}
 	data.Effect.Data = map[int32]*sheeter.Effect{
 		201: {ID: 201, Group: 5},
+	}
+	data.Skill.Data = map[int32]*sheeter.Skill{
+		301: {ID: 301, EffectID: []int32{401, 402}}, // 卡 103 的技能效果列表
+	}
+	data.Award.Data = map[int32]*sheeter.Award{
+		1: {ID: 1, Group: 7, CardID: 101, Weight: 3}, // 群組 7：候選 101(w3) / 102(w1)
+		2: {ID: 2, Group: 7, CardID: 102, Weight: 1},
+		3: {ID: 3, Group: 8, CardID: 101, Weight: 0}, // 群組 8：權重 0 → roll no-op
+		4: {ID: 4, Group: 9, CardID: 999, Weight: 1}, // 群組 9：抽中編號 999 無卡牌資料 → 跳過該張
+	}
+	data.Guest.Data = map[int32]*sheeter.Guest{
+		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateSeal: true},
 	}
 	return data
 }

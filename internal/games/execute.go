@@ -13,6 +13,6 @@ func execute(eng *cores.Engine, command Command) {
 		eng.ExecAssign(c.base, c.refAttr, c.isRef, c.op, c.value)
 
 	case commandOperate:
-		// TODO(M9):操作命令執行(命令對象 selector 解析 + verb 分派)。
+		eng.ExecOperate(c.verb, c.selector.selector, c.selector.param, c.arg)
 	} // switch
 }
