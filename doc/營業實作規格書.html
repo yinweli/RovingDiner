@@ -435,7 +435,7 @@ a.ref:hover {
 四條鐵則：
 
 1. **核心零 I/O、零框架依賴**：營業核心（`cores`／`rules`／`games`）不 import Bubble Tea、不碰終端機、不開 goroutine、不碰全域時間/亂數。只依賴介面。
-2. **決定性**：同 `seed` + 同玩家輸入 = 同一局。所有隨機來源（洗牌、隨機顧客／手牌、額外發動次數區間、抽獎）共用單一注入的 `Rander`（seeded PRNG），是回歸測試與 bug 重現的基礎（顯示層如何顯示 seed 見顯示規格書 §3.1）。
+2. **決定性**：同 `seed` + 同關卡 + 同玩家輸入 = 同一局。所有隨機來源（洗牌、隨機顧客／手牌、額外發動次數區間、抽獎）共用單一注入的 `Rander`（seeded PRNG），是回歸測試與 bug 重現的基礎（顯示層如何顯示 seed 見顯示規格書 §3.1）。
 3. **yield-per-unit 事件流**：核心每跑「一個單位」（一個命令／一次觸發／一次 phase 切換／一個玩家動作）就吐一個事件。快速／慢速／步進只是同一條事件流的不同消費速率（消費端設計見顯示規格書 §3）。
 4. **單一真相 + 單向投影**：引擎是唯一真相，持有全部 instance 與容器（純可序列化資料、零顯示依賴）；前端（TUI）是純投影，靠事件流 + `InstanceID` 對照表更新畫面，**不持有規則狀態的第二份拷貝**。詳見第四節之二。
 
@@ -582,7 +582,7 @@ type Presenter interface {
 }
 ```
 
-**核心怎麼跑**：`games.Run`（M16）內部以 `cores.NewGame(seed, data, operator, rander)` 建營業實例（`data` 為 `cores.NewData(sheet, compiler)` 聚合）、`rules.Register` 裝備詞彙後，驅動 rules 的 `runPhase` 推進 營業規格書【十九、核心流程】【二十、獨立流程】的同步流程。
+**核心怎麼跑**：`games.Run`（M16）內部以 `cores.NewGame(seed, stageID, data, operator, rander)` 建營業實例（seed 與關卡編號同為本場身分；`data` 為 `cores.NewData(sheet, compiler)` 聚合）、`rules.Register` 裝備詞彙後，驅動 rules 的 `runPhase` 推進 營業規格書【十九、核心流程】【二十、獨立流程】的同步流程；開局盤面由 `phaseGameStart` 依關卡編號自關卡表格建置。
 需要玩家輸入時 call `operator.PickXxx(...)` 並阻塞等回傳；每跑一個單位 call `presenter.Emit(...)`。
 **核心本身完全同步、單執行緒、無 channel。**
 
@@ -690,7 +690,7 @@ Bubble Tea 的 Elm loop。步進＝`Presenter.Emit` 在 channel 上阻塞，等�
 - `BuildData()`：包裝成 `cores.Data`（無命令編譯；自訂編譯效果以 `Data.SetEffect` 注入）。
 - `FakeOperator`／`FakeRander`：決定性替身（Pick 取候選前綴、`Intn` 固定、`Shuffle` 恆等、`Weighted` 取首位）。
 
-L3 基建（scripted `Operator` 輸入佇列、`recordPresenter()` 事件流錄製、`assemble(...)` 初始盤面組裝）隨 M15＋／M17 到站再補。
+L3 基建（scripted `Operator` 輸入佇列、`recordPresenter()` 事件流錄製）隨 M16／M17 到站再補；初始盤面組裝已由關卡表格 + `StageID` 取代（M15）。
 L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapshot（per-test 選項，非必備基建）。
 單一 seeded `Rander` 確保 L3 決定性、assertion 穩定。
 
@@ -727,7 +727,7 @@ M0–M12 已完成（進度見 `PROGRESS.md`）。完成後的整備重構（實
 13. **M12 堆疊處理 + 啟動效果列表** *(provisional)*。
 14. **M13 推進／清理／免疫閘門** *(provisional)*：＋接回 M9 延後的操作命令（實例化／處理流程／效果佇列三類）。
 15. **M14 phase 狀態機** *(provisional)*：6 phase + 玩家行動主迴圈。
-16. **M15 初始組裝** *(provisional)*：infra 把外部資料組裝成初始牌堆（沿用 M8 頂端約定）／排隊佇列／前置技能列表。（原「啟動技能」內容已隨 M12 落地、呼叫點隨 M14。）
+16. **M15 初始組裝（關卡表格）**：關卡（Stage）表格（八欄,開局五容器 + 前置技能）+ `NewGame` 身分參數 `stageID` + `phaseGameStart` 開局建置（沿用 M8 頂端約定）。（原「啟動技能」內容已隨 M12 落地、呼叫點隨 M14。）
 17. **M16 執行結算** *(provisional)*：結算旗標重入防護 + 終止判定 + `games.Run` 驅動迴圈 → 跑通第一局（scripted Operator，無 TUI）。
 18. **M17 Presenter 顯示** *(provisional)*：`Presenter` → 事件日誌 + 盤面渲染。
 19. **M18 Operator + adapter** *(provisional)*：鍵盤輸入 + 背景 goroutine／channel 橋接。
