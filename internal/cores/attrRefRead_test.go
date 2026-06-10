@@ -21,9 +21,9 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 	card := &Card{
 		InstanceID:  1,
 		CardID:      101,
-		Cost:        Value{Value: 2},
-		ExtraRunMin: Value{Value: 1},
-		ExtraRunMax: Value{Value: 5},
+		Cost:        NewValue(2, 0),
+		ExtraRunMin: NewValue(1, 0),
+		ExtraRunMax: NewValue(5, 0),
 		EffectID:    []int32{201, 201, 202},
 	}
 	runtime := NewRuntime(0)
@@ -75,13 +75,13 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardCardify() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardLock() {
 	card := &Card{
-		Cost:        Value{Lock: 3},
-		ExtraRunMin: Value{Lock: 4},
-		ExtraRunMax: Value{Lock: 6},
-		Seal:        Value{Lock: 7},
-		Keep:        Value{Lock: 8},
-		PlayExile:   Value{Lock: 9},
-		UnplayExile: Value{Lock: 10},
+		Cost:        NewValue(0, 3),
+		ExtraRunMin: NewValue(0, 4),
+		ExtraRunMax: NewValue(0, 6),
+		Seal:        NewValue(0, 7),
+		Keep:        NewValue(0, 8),
+		PlayExile:   NewValue(0, 9),
+		UnplayExile: NewValue(0, 10),
 	}
 	eng := &Engine{runtime: NewRuntime(0)}
 	ref := cardRef{card: card}
@@ -104,13 +104,13 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 		GuestID:      5,
 		SeatID:       1,
 		Freeze:       3,
-		Calm:         Value{Value: 8},
-		Sate:         Value{Value: 4},
-		SateMax:      Value{Value: 20},
-		Morale:       Value{Value: 6},
-		MoraleMax:    Value{Value: 15},
-		Score:        Value{Value: 9},
-		ScoreMax:     Value{Value: 30},
+		Calm:         NewValue(8, 0),
+		Sate:         NewValue(4, 0),
+		SateMax:      NewValue(20, 0),
+		Morale:       NewValue(6, 0),
+		MoraleMax:    NewValue(15, 0),
+		Score:        NewValue(9, 0),
+		ScoreMax:     NewValue(30, 0),
 		SateHit:      map[int32]bool{10: true, 20: true},
 		CalmHit:      map[int32]bool{5: true},
 		EffectImmune: map[int32]int32{7: 2},
@@ -153,15 +153,15 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestLock() {
 	guest := &Guest{
-		Calm:      Value{Lock: 11},
-		Sate:      Value{Lock: 12},
-		SateMax:   Value{Lock: 13},
-		Morale:    Value{Lock: 14},
-		MoraleMax: Value{Lock: 15},
-		Score:     Value{Lock: 16},
-		ScoreMax:  Value{Lock: 17},
-		SateSeal:  Value{Lock: 18},
-		CalmSeal:  Value{Lock: 19},
+		Calm:      NewValue(0, 11),
+		Sate:      NewValue(0, 12),
+		SateMax:   NewValue(0, 13),
+		Morale:    NewValue(0, 14),
+		MoraleMax: NewValue(0, 15),
+		Score:     NewValue(0, 16),
+		ScoreMax:  NewValue(0, 17),
+		SateSeal:  NewValue(0, 18),
+		CalmSeal:  NewValue(0, 19),
 	}
 	eng := &Engine{runtime: NewRuntime(0)}
 	ref := guestRef{guest: guest}

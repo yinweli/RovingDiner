@@ -19,38 +19,38 @@ type SuiteCommandCard struct {
 
 func (this *SuiteCommandCard) TestCardCost() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: 1, Cost: Value{Value: 3}}
+	card := &Card{InstanceID: 1, Cost: NewValue(3, 0)}
 	runtime.Hand = []*Card{card}
 	eng := this.engine(runtime)
 
 	commandCardCostAdd(eng, []InstanceID{1}, nums(2)) // 3 + 2
-	this.Equal(int32(5), card.Cost.Value)
+	this.Equal(int32(5), card.Cost.GetValue())
 
-	card.Cost.Value = 3
+	card.Cost = NewValue(3, 0)
 	commandCardCostMul(eng, []InstanceID{1}, []exprs.Value{exprs.NewNum(1.5)}) // 3 * 1.5 = 4.5 → 5(捨入)
-	this.Equal(int32(5), card.Cost.Value)
+	this.Equal(int32(5), card.Cost.GetValue())
 
 	commandCardCostSet(eng, []InstanceID{1}, nums(7)) // = 7
-	this.Equal(int32(7), card.Cost.Value)
+	this.Equal(int32(7), card.Cost.GetValue())
 
 	commandCardCostSet(eng, []InstanceID{1}, nums(-5)) // 夾下限 0
-	this.Equal(int32(0), card.Cost.Value)
+	this.Equal(int32(0), card.Cost.GetValue())
 }
 
 func (this *SuiteCommandCard) TestCardCostNoop() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: 1, Cost: Value{Value: 3, Lock: 1}} // 鎖定
+	card := &Card{InstanceID: 1, Cost: NewValue(3, 1)} // 鎖定
 	runtime.Hand = []*Card{card}
 	eng := this.engine(runtime)
 
 	commandCardCostAdd(eng, []InstanceID{1}, nums(2)) // 鎖定 → no-op
-	this.Equal(int32(3), card.Cost.Value)
+	this.Equal(int32(3), card.Cost.GetValue())
 
 	commandCardCostAdd(eng, []InstanceID{1}, nil) // N 缺漏 → 整動作 no-op
-	this.Equal(int32(3), card.Cost.Value)
+	this.Equal(int32(3), card.Cost.GetValue())
 
 	commandCardCostAdd(eng, []InstanceID{99}, nums(2)) // 非卡牌實例 → 該項 no-op
-	this.Equal(int32(3), card.Cost.Value)
+	this.Equal(int32(3), card.Cost.GetValue())
 }
 
 func (this *SuiteCommandCard) TestCardEffect() {

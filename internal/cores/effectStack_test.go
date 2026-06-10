@@ -18,7 +18,7 @@ type SuiteEffectStack struct {
 func (this *SuiteEffectStack) TestEffectStack() {
 	guest := &Guest{InstanceID: 11, EffectImmune: map[int32]int32{}}
 	runtime := NewRuntime(0)
-	runtime.Game.Round = 5
+	runtime.Game.Round = NewValue(5, 0)
 	eng := this.engine(runtime, map[int32]effectData{
 		801: {Stack: 2, StackMax: 3, RunRound: 2}, // 增量 2、上限 3、作用回合 2
 		802: {Stack: 0, StackMax: 0, RunRound: 0}, // 0 → 1、無上限、整場
@@ -67,24 +67,24 @@ func (this *SuiteEffectStack) TestEffectStackTime() {
 
 	// 刷新:再疊時重算結束回合
 	refresh := NewRuntime(0)
-	refresh.Game.Round = 5
+	refresh.Game.Round = NewValue(5, 0)
 	engRefresh := this.engine(refresh, map[int32]effectData{
 		801: {StackTime: StackTimeRefresh, RunRound: 3},
 	})
 	effectStack(engRefresh, Self{Guest: guest}, 801, 0) // 建立、Expire = 5 + 3 − 1 = 7
 	this.Equal(int32(7), refresh.Effect[0].Expire)
-	refresh.Game.Round = 8
+	refresh.Game.Round = NewValue(8, 0)
 	effectStack(engRefresh, Self{Guest: guest}, 801, 0) // 刷新、Expire = 8 + 3 − 1 = 10
 	this.Equal(int32(10), refresh.Effect[0].Expire)
 
 	// 不變:再疊時維持原結束回合
 	stay := NewRuntime(0)
-	stay.Game.Round = 5
+	stay.Game.Round = NewValue(5, 0)
 	engStay := this.engine(stay, map[int32]effectData{
 		801: {StackTime: StackTimeStay, RunRound: 3},
 	})
 	effectStack(engStay, Self{Guest: guest}, 801, 0) // Expire = 7
-	stay.Game.Round = 8
+	stay.Game.Round = NewValue(8, 0)
 	effectStack(engStay, Self{Guest: guest}, 801, 0) // 不變、Expire 維持 7
 	this.Equal(int32(7), stay.Effect[0].Expire)
 }

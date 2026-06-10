@@ -45,5 +45,5 @@ func effectExpire(eng *Engine, runRound int32) int32 {
 		return 0
 	} // if
 
-	return eng.runtime.Game.Round + runRound - 1
+	return eng.runtime.Game.Round.GetValue() + runRound - 1
 }

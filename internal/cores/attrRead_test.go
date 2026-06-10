@@ -20,17 +20,17 @@ type SuiteAttrRead struct {
 
 func (this *SuiteAttrRead) TestAttrReadValue() {
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = Value{Value: 25}
-	runtime.Game.MoraleMax = Value{Value: 50}
-	runtime.Game.MoraleShield = Value{Value: 9}
-	runtime.Game.MoraleBlock = Value{Value: 8}
-	runtime.Game.Score = Value{Value: 7}
-	runtime.Game.Energy = Value{Value: 3}
-	runtime.Game.EnergyMax = Value{Value: 6}
-	runtime.Game.HandMax = Value{Value: 10}
-	runtime.Game.DrawMax = Value{Value: 5}
-	runtime.Game.Round = 4
-	runtime.Game.RoundMax = 12
+	runtime.Game.Morale = NewValue(25, 0)
+	runtime.Game.MoraleMax = NewValue(50, 0)
+	runtime.Game.MoraleShield = NewValue(9, 0)
+	runtime.Game.MoraleBlock = NewValue(8, 0)
+	runtime.Game.Score = NewValue(7, 0)
+	runtime.Game.Energy = NewValue(3, 0)
+	runtime.Game.EnergyMax = NewValue(6, 0)
+	runtime.Game.HandMax = NewValue(10, 0)
+	runtime.Game.DrawMax = NewValue(5, 0)
+	runtime.Game.Round = NewValue(4, 0)
+	runtime.Game.RoundMax = NewValue(12, 0)
 	runtime.Game.DamageValue = 6
 	runtime.Game.SeatCount = 2
 	runtime.Game.ExitLastSeat = 3
@@ -98,12 +98,12 @@ func (this *SuiteAttrRead) TestAttrReadContainer() {
 
 func (this *SuiteAttrRead) TestAttrReadRoundLeft() {
 	runtime := NewRuntime(0)
-	runtime.Game.Round = 8
-	runtime.Game.RoundMax = 10
+	runtime.Game.Round = NewValue(8, 0)
+	runtime.Game.RoundMax = NewValue(10, 0)
 	eng := &Engine{runtime: runtime}
 	this.Equal(float64(2), this.num(eng, "roundLeft"))
 
-	runtime.Game.Round = 12 // 超過上限 → 夾 0
+	runtime.Game.Round = NewValue(12, 0) // 超過上限 → 夾 0
 	this.Equal(float64(0), this.num(eng, "roundLeft"))
 }
 
@@ -158,16 +158,16 @@ func (this *SuiteAttrRead) TestAttrReadSelf() {
 
 func (this *SuiteAttrRead) TestAttrReadLock() {
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = Value{Lock: 1}
-	runtime.Game.MoraleMax = Value{Lock: 2}
-	runtime.Game.MoraleShield = Value{Lock: 3}
-	runtime.Game.MoraleBlock = Value{Lock: 4}
-	runtime.Game.Score = Value{Lock: 5}
-	runtime.Game.Energy = Value{Value: 3, Lock: 6}
-	runtime.Game.EnergyMax = Value{Lock: 7}
-	runtime.Game.EnergyKeep = Value{Lock: 8}
-	runtime.Game.HandMax = Value{Lock: 9}
-	runtime.Game.DrawMax = Value{Lock: 10}
+	runtime.Game.Morale = NewValue(0, 1)
+	runtime.Game.MoraleMax = NewValue(0, 2)
+	runtime.Game.MoraleShield = NewValue(0, 3)
+	runtime.Game.MoraleBlock = NewValue(0, 4)
+	runtime.Game.Score = NewValue(0, 5)
+	runtime.Game.Energy = NewValue(3, 6)
+	runtime.Game.EnergyMax = NewValue(0, 7)
+	runtime.Game.EnergyKeep = NewValue(0, 8)
+	runtime.Game.HandMax = NewValue(0, 9)
+	runtime.Game.DrawMax = NewValue(0, 10)
 	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(1), this.num(eng, "moraleLock"))

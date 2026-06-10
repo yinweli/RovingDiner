@@ -169,8 +169,8 @@ func (this *SuiteHelp) TestCompareOp() {
 }
 
 func (this *SuiteHelp) TestCardLock() {
-	card := &Card{Cost: Value{Lock: 4}}
-	pick := func(c *Card) int32 { return c.Cost.Lock }
+	card := &Card{Cost: NewValue(0, 4)}
+	pick := func(c *Card) int32 { return c.Cost.GetLock() }
 
 	result, ok := cardLock(cardRef{card: card}, pick)
 	this.True(ok)
@@ -181,8 +181,8 @@ func (this *SuiteHelp) TestCardLock() {
 }
 
 func (this *SuiteHelp) TestGuestLock() {
-	guest := &Guest{Calm: Value{Lock: 7}}
-	pick := func(g *Guest) int32 { return g.Calm.Lock }
+	guest := &Guest{Calm: NewValue(0, 7)}
+	pick := func(g *Guest) int32 { return g.Calm.GetLock() }
 
 	result, ok := guestLock(guestRef{guest: guest}, pick)
 	this.True(ok)

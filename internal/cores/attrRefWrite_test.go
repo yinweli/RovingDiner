@@ -21,22 +21,22 @@ func (this *SuiteAttrRefWrite) TestAttrRefWriteCard() {
 	ref := cardRef{card: card}
 
 	this.True(writeRefCost(eng, ref, AssignSet, 4)) // 寫鎖:帶值
-	this.Equal(int32(4), card.Cost.Value)
+	this.Equal(int32(4), card.Cost.GetValue())
 	this.True(writeRefExtraRunMin(eng, ref, AssignAdd, 2))
-	this.Equal(int32(2), card.ExtraRunMin.Value)
+	this.Equal(int32(2), card.ExtraRunMin.GetValue())
 	this.True(writeRefExtraRunMax(eng, ref, AssignSet, 9))
-	this.Equal(int32(9), card.ExtraRunMax.Value)
+	this.Equal(int32(9), card.ExtraRunMax.GetValue())
 
 	this.True(writeRefCardSeal(eng, ref, AssignLock, 0)) // 純鎖:@
-	this.Equal(int32(1), card.Seal.Lock)
+	this.Equal(int32(1), card.Seal.GetLock())
 	this.False(writeRefCardSeal(eng, ref, AssignSet, 5)) // 純鎖:帶值賦值 no-op
-	this.Equal(int32(0), card.Seal.Value)
+	this.Equal(int32(0), card.Seal.GetValue())
 	this.True(writeRefKeep(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.Keep.Lock)
+	this.Equal(int32(1), card.Keep.GetLock())
 	this.True(writeRefPlayExile(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.PlayExile.Lock)
+	this.Equal(int32(1), card.PlayExile.GetLock())
 	this.True(writeRefUnplayExile(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.UnplayExile.Lock)
+	this.Equal(int32(1), card.UnplayExile.GetLock())
 }
 
 func (this *SuiteAttrRefWrite) TestAttrRefWriteGuest() {
@@ -45,26 +45,26 @@ func (this *SuiteAttrRefWrite) TestAttrRefWriteGuest() {
 	ref := guestRef{guest: guest}
 
 	this.True(writeRefCalm(eng, ref, AssignSet, 8))
-	this.Equal(int32(8), guest.Calm.Value)
+	this.Equal(int32(8), guest.Calm.GetValue())
 	this.True(writeRefSate(eng, ref, AssignSet, 5))
-	this.Equal(int32(5), guest.Sate.Value)
+	this.Equal(int32(5), guest.Sate.GetValue())
 	this.True(writeRefSateMax(eng, ref, AssignSet, 20))
-	this.Equal(int32(20), guest.SateMax.Value)
+	this.Equal(int32(20), guest.SateMax.GetValue())
 	this.True(writeRefMorale(eng, ref, AssignSet, 6)) // 引用 morale 走一般運算(無餐廳特例)
-	this.Equal(int32(6), guest.Morale.Value)
+	this.Equal(int32(6), guest.Morale.GetValue())
 	this.True(writeRefMorale(eng, ref, AssignSub, 2)) // 引用 -= 為一般減
-	this.Equal(int32(4), guest.Morale.Value)
+	this.Equal(int32(4), guest.Morale.GetValue())
 	this.True(writeRefMoraleMax(eng, ref, AssignSet, 15))
-	this.Equal(int32(15), guest.MoraleMax.Value)
+	this.Equal(int32(15), guest.MoraleMax.GetValue())
 	this.True(writeRefScore(eng, ref, AssignSet, 9))
-	this.Equal(int32(9), guest.Score.Value)
+	this.Equal(int32(9), guest.Score.GetValue())
 	this.True(writeRefScoreMax(eng, ref, AssignSet, 30))
-	this.Equal(int32(30), guest.ScoreMax.Value)
+	this.Equal(int32(30), guest.ScoreMax.GetValue())
 
 	this.True(writeRefSateSeal(eng, ref, AssignLock, 0)) // 純鎖
-	this.Equal(int32(1), guest.SateSeal.Lock)
+	this.Equal(int32(1), guest.SateSeal.GetLock())
 	this.True(writeRefCalmSeal(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), guest.CalmSeal.Lock)
+	this.Equal(int32(1), guest.CalmSeal.GetLock())
 }
 
 func (this *SuiteAttrRefWrite) TestAttrRefWriteTypeMismatch() {

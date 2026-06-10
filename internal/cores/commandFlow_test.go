@@ -19,13 +19,13 @@ type SuiteCommandFlow struct {
 
 func (this *SuiteCommandFlow) TestCardRun() {
 	runtime := NewRuntime(0)
-	runtime.Game.Energy = Value{Value: 5}
-	card := &Card{InstanceID: 1, CardID: 103, Cost: Value{Value: 2}}
+	runtime.Game.Energy = NewValue(5, 0)
+	card := &Card{InstanceID: 1, CardID: 103, Cost: NewValue(2, 0)}
 	runtime.Hand = []*Card{card}
 	eng := this.engine(runtime)
 
 	commandCardRun(eng, []InstanceID{1}, this.flag(true, true)) // 消耗點數、進棄牌堆
-	this.Equal(int32(3), runtime.Game.Energy.Value)             // 5 - 2
+	this.Equal(int32(3), runtime.Game.Energy.GetValue())        // 5 - 2
 	this.Equal(card, runtime.Game.PlayLast)
 	this.Equal(int32(1), runtime.Game.PlayCount)
 	this.Equal(int32(1), runtime.Game.PlayTotal[1]) // 卡 103 群組 1
@@ -35,19 +35,19 @@ func (this *SuiteCommandFlow) TestCardRun() {
 
 func (this *SuiteCommandFlow) TestCardRunNoop() {
 	runtime := NewRuntime(0)
-	runtime.Game.Energy = Value{Value: 5}
+	runtime.Game.Energy = NewValue(5, 0)
 	eng := this.engine(runtime)
 
-	sealed := &Card{InstanceID: 1, Seal: Value{Lock: 1}}
+	sealed := &Card{InstanceID: 1, Seal: NewValue(0, 1)}
 	runtime.Hand = []*Card{sealed}
 	commandCardRun(eng, []InstanceID{1}, this.flag(true, false)) // 封印 → no-op
 	this.Len(runtime.Hand, 1)
-	this.Equal(int32(5), runtime.Game.Energy.Value)
+	this.Equal(int32(5), runtime.Game.Energy.GetValue())
 
-	poor := &Card{InstanceID: 2, Cost: Value{Value: 9}}
+	poor := &Card{InstanceID: 2, Cost: NewValue(9, 0)}
 	runtime.Hand = []*Card{poor}
 	commandCardRun(eng, []InstanceID{2}, this.flag(true, false)) // 點數不足 → no-op
-	this.Equal(int32(5), runtime.Game.Energy.Value)
+	this.Equal(int32(5), runtime.Game.Energy.GetValue())
 
 	noEnergy := &Card{InstanceID: 3, CardID: 103}
 	runtime.Hand = []*Card{noEnergy}
@@ -65,6 +65,18 @@ func (this *SuiteCommandFlow) TestCardRunNoop() {
 	this.Len(runtime.Exile, 1)
 
 	commandCardRun(eng, []InstanceID{99}, nil) // 不存在 → no-op
+}
+
+func (this *SuiteCommandFlow) TestCardRunEnergyLock() {
+	runtime := NewRuntime(0)
+	runtime.Game.Energy = NewValue(5, 1) // 點數鎖定
+	card := &Card{InstanceID: 1, CardID: 103, Cost: NewValue(2, 0)}
+	runtime.Hand = []*Card{card}
+	eng := this.engine(runtime)
+
+	commandCardRun(eng, []InstanceID{1}, this.flag(true, true)) // 鎖定 → 照出牌、耗能不扣
+	this.Equal(int32(5), runtime.Game.Energy.GetValue())
+	this.Equal([]*Card{card}, runtime.Drop)
 }
 
 func (this *SuiteCommandFlow) TestCardRunEffect() {
@@ -100,7 +112,7 @@ func (this *SuiteCommandFlow) TestCardRunEffectMove() {
 
 func (this *SuiteCommandFlow) TestMorph() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: runtime.NextID(), CardID: 102, Cost: Value{Value: 9}}
+	card := &Card{InstanceID: runtime.NextID(), CardID: 102, Cost: NewValue(9, 0)}
 	id := card.InstanceID
 	runtime.Hand = []*Card{card}
 	eng := this.engine(runtime)
@@ -108,7 +120,7 @@ func (this *SuiteCommandFlow) TestMorph() {
 	commandHandMorph(eng, []InstanceID{id}, nums(7)) // 群組 7 → 抽中卡 101
 	this.Equal(int32(101), card.CardID)              // cardID 換成抽中值
 	this.NotEqual(id, card.InstanceID)               // 重分配實例編號
-	this.Equal(int32(0), card.Cost.Value)            // 載卡 101 資料(無 Cost → 0)
+	this.Equal(int32(0), card.Cost.GetValue())       // 載卡 101 資料(無 Cost → 0)
 	this.Equal(int32(102), runtime.Game.MorphOldID)
 	this.Equal(int32(101), runtime.Game.MorphNewID)
 	this.Equal(card, runtime.Game.MorphLast)
@@ -140,7 +152,7 @@ func (this *SuiteCommandFlow) TestMorphNoop() {
 
 func (this *SuiteCommandFlow) TestCardify() {
 	runtime := NewRuntime(0)
-	runtime.Game.Round = 7
+	runtime.Game.Round = NewValue(7, 0)
 	guest := &Guest{InstanceID: 11, SeatID: 2}
 	runtime.Seat[2] = guest
 	eng := this.engine(runtime)
@@ -153,8 +165,8 @@ func (this *SuiteCommandFlow) TestCardify() {
 	this.Require().Len(runtime.Hand, 1)
 	card := runtime.Hand[0]
 	this.Equal(int32(101), card.CardID)
-	this.Equal(guest, card.Cardify)      // 5. 綁來源
-	this.Equal(int32(1), card.Keep.Lock) // 6. 不棄 + 1
+	this.Equal(guest, card.Cardify)           // 5. 綁來源
+	this.Equal(int32(1), card.Keep.GetLock()) // 6. 不棄 + 1
 
 	runtime.Roam = []*Guest{{InstanceID: 12}}
 	commandCardify(eng, []InstanceID{12}, nums(101)) // 不在座位列表 → no-op
@@ -168,9 +180,9 @@ func (this *SuiteCommandFlow) TestCardify() {
 
 func (this *SuiteCommandFlow) TestRestore() {
 	runtime := NewRuntime(0)
-	runtime.Game.Round = 10
+	runtime.Game.Round = NewValue(10, 0)
 	guest := &Guest{InstanceID: 11, Freeze: 4}
-	card := &Card{InstanceID: 1, CardID: 101, Cardify: guest, Keep: Value{Lock: 1}}
+	card := &Card{InstanceID: 1, CardID: 101, Cardify: guest, Keep: NewValue(0, 1)}
 	runtime.Hand = []*Card{card}
 	runtime.Cardify = []*Guest{guest}
 	runtime.Effect = []*Effect{{Self: Self{Guest: guest}, Expire: 5}}
@@ -183,7 +195,7 @@ func (this *SuiteCommandFlow) TestRestore() {
 	this.Equal(int32(11), runtime.Effect[0].Expire) // 4. 5 + (10 - 4)
 	this.Equal(int32(0), guest.Freeze)              // 5. 解凍
 	this.Nil(card.Cardify)                          // 6. 解綁
-	this.Equal(int32(0), card.Keep.Lock)            // 7. 不棄 - 1
+	this.Equal(int32(0), card.Keep.GetLock())       // 7. 不棄 - 1
 }
 
 func (this *SuiteCommandFlow) TestRestoreNoop() {
@@ -198,7 +210,7 @@ func (this *SuiteCommandFlow) TestRestoreNoop() {
 
 	full := NewRuntime(0)
 	guest := &Guest{InstanceID: 11}
-	card := &Card{InstanceID: 1, CardID: 101, Cardify: guest, Keep: Value{Lock: 1}}
+	card := &Card{InstanceID: 1, CardID: 101, Cardify: guest, Keep: NewValue(0, 1)}
 	full.Hand = []*Card{card}
 	full.Cardify = []*Guest{guest}
 	full.Seat[1], full.Seat[2], full.Seat[3] = &Guest{}, &Guest{}, &Guest{} // 座位全占用
@@ -211,9 +223,9 @@ func (this *SuiteCommandFlow) TestRestoreNoop() {
 
 func (this *SuiteCommandFlow) TestGuestExit() {
 	runtime := NewRuntime(0)
-	runtime.Game.Score = Value{Value: 10}
-	runtime.Game.Morale = Value{Value: 20}
-	guest := &Guest{InstanceID: 11, SeatID: 2, Score: Value{Value: 3}, Morale: Value{Value: 5}}
+	runtime.Game.Score = NewValue(10, 0)
+	runtime.Game.Morale = NewValue(20, 0)
+	guest := &Guest{InstanceID: 11, SeatID: 2, Score: NewValue(3, 0), Morale: NewValue(5, 0)}
 	runtime.Seat[2] = guest
 	eng := this.engine(runtime)
 
@@ -221,32 +233,45 @@ func (this *SuiteCommandFlow) TestGuestExit() {
 	this.Equal(guest, runtime.Game.ExitLast)
 	this.Equal(int32(2), runtime.Game.ExitLastSeat)
 	this.Equal(int32(1), runtime.Game.ExitCount)
-	this.Nil(runtime.Seat[2])                        // 自座位移除
-	this.Equal(int32(13), runtime.Game.Score.Value)  // 10 + 3
-	this.Equal(int32(15), runtime.Game.Morale.Value) // 20 - 5(無格擋 / 護盾)
-	this.Equal(guest, runtime.Game.DamageGuest)      // morale 特例來源 = 離場顧客
+	this.Nil(runtime.Seat[2])                             // 自座位移除
+	this.Equal(int32(13), runtime.Game.Score.GetValue())  // 10 + 3
+	this.Equal(int32(15), runtime.Game.Morale.GetValue()) // 20 - 5(無格擋 / 護盾)
+	this.Equal(guest, runtime.Game.DamageGuest)           // morale 特例來源 = 離場顧客
 	this.Equal(int32(5), runtime.Game.DamageValue)
 }
 
 func (this *SuiteCommandFlow) TestGuestExitNoScoreMorale() {
 	runtime := NewRuntime(0)
-	runtime.Game.Score = Value{Value: 10}
-	runtime.Game.Morale = Value{Value: 20}
-	guest := &Guest{InstanceID: 11, SeatID: 2, Score: Value{Value: 3}, Morale: Value{Value: 5}}
+	runtime.Game.Score = NewValue(10, 0)
+	runtime.Game.Morale = NewValue(20, 0)
+	guest := &Guest{InstanceID: 11, SeatID: 2, Score: NewValue(3, 0), Morale: NewValue(5, 0)}
 	runtime.Seat[2] = guest
 	eng := this.engine(runtime)
 
 	commandGuestExit(eng, []InstanceID{11}, this.flag(false, false)) // 不給滿意、不扣士氣
-	this.Equal(int32(10), runtime.Game.Score.Value)
-	this.Equal(int32(20), runtime.Game.Morale.Value)
+	this.Equal(int32(10), runtime.Game.Score.GetValue())
+	this.Equal(int32(20), runtime.Game.Morale.GetValue())
 	this.Nil(runtime.Seat[2]) // 仍移除
 
 	commandGuestExit(eng, []InstanceID{99}, nil) // 非顧客實例 → no-op
 }
 
+func (this *SuiteCommandFlow) TestGuestExitScoreLock() {
+	runtime := NewRuntime(0)
+	runtime.Game.Score = NewValue(10, 1) // 滿意值鎖定
+	runtime.Game.Morale = NewValue(20, 0)
+	guest := &Guest{InstanceID: 11, SeatID: 2, Score: NewValue(3, 0), Morale: NewValue(5, 0)}
+	runtime.Seat[2] = guest
+	eng := this.engine(runtime)
+
+	commandGuestExit(eng, []InstanceID{11}, this.flag(true, true)) // 鎖定 → 照離場、滿意值不給
+	this.Equal(int32(10), runtime.Game.Score.GetValue())
+	this.Nil(runtime.Seat[2])
+}
+
 func (this *SuiteCommandFlow) TestGuestReturn() {
 	runtime := NewRuntime(0)
-	guest := &Guest{InstanceID: 11, Sate: Value{Lock: 1}, SateSeal: Value{Lock: 1}, CalmSeal: Value{Lock: 1}}
+	guest := &Guest{InstanceID: 11, Sate: NewValue(0, 1), SateSeal: NewValue(0, 1), CalmSeal: NewValue(0, 1)}
 	runtime.Roam = []*Guest{guest}
 	eng := this.engine(runtime) // 座位全空 → seat 1
 
@@ -254,15 +279,15 @@ func (this *SuiteCommandFlow) TestGuestReturn() {
 	this.Empty(runtime.Roam)
 	this.Equal(guest, runtime.Seat[1])
 	this.Equal(int32(1), guest.SeatID)
-	this.Equal(int32(0), guest.Sate.Lock) // 解入列自動鎖
-	this.Equal(int32(0), guest.SateSeal.Lock)
-	this.Equal(int32(0), guest.CalmSeal.Lock)
+	this.Equal(int32(0), guest.Sate.GetLock()) // 解入列自動鎖
+	this.Equal(int32(0), guest.SateSeal.GetLock())
+	this.Equal(int32(0), guest.CalmSeal.GetLock())
 }
 
 func (this *SuiteCommandFlow) TestGuestReturnNoop() {
 	full := NewRuntime(0)
-	full.Game.Morale = Value{Value: 20}
-	guest := &Guest{InstanceID: 11, Morale: Value{Value: 5}}
+	full.Game.Morale = NewValue(20, 0)
+	guest := &Guest{InstanceID: 11, Morale: NewValue(5, 0)}
 	full.Roam = []*Guest{guest}
 	full.Seat[1], full.Seat[2], full.Seat[3] = &Guest{}, &Guest{}, &Guest{} // 全占用
 	engFull := this.engine(full)
@@ -270,7 +295,7 @@ func (this *SuiteCommandFlow) TestGuestReturnNoop() {
 	commandGuestReturn(engFull, []InstanceID{11}, nil) // 剩餘座位 = 0 → 走 guestExit(false, true)
 	this.Empty(full.Roam)
 	this.Equal(int32(1), full.Game.ExitCount)
-	this.Equal(int32(15), full.Game.Morale.Value) // 扣士氣 20 - 5
+	this.Equal(int32(15), full.Game.Morale.GetValue()) // 扣士氣 20 - 5
 
 	seated := NewRuntime(0)
 	seated.Seat[1] = &Guest{InstanceID: 11, SeatID: 1}
@@ -289,9 +314,9 @@ func (this *SuiteCommandFlow) TestGuestRoam() {
 	this.Nil(runtime.Seat[2])
 	this.Require().Len(runtime.Roam, 1)
 	this.Equal(int32(0), guest.SeatID)
-	this.Equal(int32(1), guest.Sate.Lock) // 自動鎖
-	this.Equal(int32(1), guest.SateSeal.Lock)
-	this.Equal(int32(1), guest.CalmSeal.Lock)
+	this.Equal(int32(1), guest.Sate.GetLock()) // 自動鎖
+	this.Equal(int32(1), guest.SateSeal.GetLock())
+	this.Equal(int32(1), guest.CalmSeal.GetLock())
 
 	commandGuestRoam(eng, []InstanceID{11}, nil) // 已在遊蕩(非座位)→ no-op
 	this.Len(runtime.Roam, 1)
@@ -393,8 +418,8 @@ func (this *SuiteCommandFlow) TestGuestExitTrigger() {
 	record := func(timing TriggerKind) EffectCommand { return func(*Engine) { fired = append(fired, timing) } }
 
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = Value{Value: 20}
-	guest := &Guest{InstanceID: 11, SeatID: 2, Score: Value{Value: 3}, Morale: Value{Value: 5}}
+	runtime.Game.Morale = NewValue(20, 0)
+	guest := &Guest{InstanceID: 11, SeatID: 2, Score: NewValue(3, 0), Morale: NewValue(5, 0)}
 	runtime.Seat[2] = guest
 	runtime.Effect = []*Effect{
 		{InstanceID: 1, EffectID: 801, Stack: 1},

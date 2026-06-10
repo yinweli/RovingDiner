@@ -111,9 +111,9 @@ func commandGuestSpawn(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // if
 
 	if seatID == 0 {
-		guest.Sate.Lock++
-		guest.SateSeal.Lock++
-		guest.CalmSeal.Lock++
+		guest.Sate.Lock()
+		guest.SateSeal.Lock()
+		guest.CalmSeal.Lock()
 		eng.runtime.Roam = append(eng.runtime.Roam, guest)
 		return
 	} // if

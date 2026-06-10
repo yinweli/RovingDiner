@@ -1,21 +1,5 @@
 package cores
 
-// Value 數值實例；執行期可變屬性的統一容器。
-// 對應【營業規格書 | 五、實例結構 | 數值（Value）實例】。
-//
-// 所有可變屬性都以本型別表達：一般運算（= += -= *= /= %=）改 Value，
-// 鎖定 / 解鎖（@ #）改 Lock。Lock > 0 時一般運算對該屬性為 no-op。
-// 純計數型屬性（如 封印卡牌 / 出牌點數保留）Value 固定為 0，狀態全表達於 Lock。
-type Value struct {
-	Value int32 // 屬性當前數值（整數）
-	Lock  int32 // 屬性鎖定狀態計數；由 @ / # 控制；> 0 時一般運算為 no-op
-}
-
-// Locked 回傳屬性是否處於鎖定狀態（鎖定計數 > 0）。
-func (this Value) Locked() bool {
-	return this.Lock > 0
-}
-
 // Self 效果建立時綁定的對象（卡牌兼顧客引用）；對應【營業規格書 | 八、目標類型】。
 // 兩欄皆 nil 代表空物件（無目標）；至多一欄非 nil。
 type Self struct {
@@ -45,8 +29,8 @@ type Game struct {
 
 	// 階段 / 回合
 	NextPhase PhaseKind // 下一階段（跳轉目標；系統於階段轉移時清為 PhaseNone）
-	Round     int32     // 當前回合數
-	RoundMax  int32     // 回合上限
+	Round     Value     // 當前回合數（寫屬性；無鎖定語意、鎖定計數恆 0）
+	RoundMax  Value     // 回合上限（寫屬性；無鎖定語意、鎖定計數恆 0）
 
 	// 士氣受損事件
 	DamageValue int32  // 士氣受損值（最近一次實際扣減值）
@@ -107,13 +91,13 @@ func newCard(eng *Engine, cardID int32) *Card {
 	return &Card{
 		InstanceID:  eng.runtime.NextID(),
 		CardID:      cardID,
-		Cost:        Value{Value: meta.Cost},
-		ExtraRunMin: Value{Value: meta.ExtraRunMin},
-		ExtraRunMax: Value{Value: meta.ExtraRunMax},
-		Keep:        boolLock(meta.Keep),
-		Seal:        boolLock(meta.Seal),
-		PlayExile:   boolLock(meta.PlayExile),
-		UnplayExile: boolLock(meta.UnplayExile),
+		Cost:        NewValue(meta.Cost, 0),
+		ExtraRunMin: NewValue(meta.ExtraRunMin, 0),
+		ExtraRunMax: NewValue(meta.ExtraRunMax, 0),
+		Keep:        NewValuel(meta.Keep),
+		Seal:        NewValuel(meta.Seal),
+		PlayExile:   NewValuel(meta.PlayExile),
+		UnplayExile: NewValuel(meta.UnplayExile),
 		EffectID:    skillEffect(eng, meta.SkillID),
 	}
 }
@@ -174,14 +158,14 @@ func newGuest(eng *Engine, guestID int32) *Guest {
 	return &Guest{
 		InstanceID:   eng.runtime.NextID(),
 		GuestID:      guestID,
-		Score:        Value{Value: meta.Score},
-		ScoreMax:     Value{Value: meta.ScoreMax},
-		Morale:       Value{Value: meta.Morale},
-		MoraleMax:    Value{Value: meta.MoraleMax},
-		Calm:         Value{Value: meta.Calm},
-		SateMax:      Value{Value: meta.SateMax},
-		SateSeal:     boolLock(meta.SateSeal),
-		CalmSeal:     boolLock(meta.CalmSeal),
+		Score:        NewValue(meta.Score, 0),
+		ScoreMax:     NewValue(meta.ScoreMax, 0),
+		Morale:       NewValue(meta.Morale, 0),
+		MoraleMax:    NewValue(meta.MoraleMax, 0),
+		Calm:         NewValue(meta.Calm, 0),
+		SateMax:      NewValue(meta.SateMax, 0),
+		SateSeal:     NewValuel(meta.SateSeal),
+		CalmSeal:     NewValuel(meta.CalmSeal),
 		SateHit:      map[int32]bool{},
 		CalmHit:      map[int32]bool{},
 		EffectImmune: map[int32]int32{},

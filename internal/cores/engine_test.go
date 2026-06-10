@@ -20,7 +20,7 @@ type SuiteEngine struct {
 
 func (this *SuiteEngine) TestEngineAttr() {
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = Value{Value: 30, Lock: 2}
+	runtime.Game.Morale = NewValue(30, 2)
 	eng := &Engine{runtime: runtime}
 
 	// 值表命中
@@ -44,7 +44,7 @@ func (this *SuiteEngine) TestEngineAttr() {
 
 func (this *SuiteEngine) TestEngineAttrRef() {
 	eng := &Engine{runtime: NewRuntime(0)}
-	ref := guestRef{guest: &Guest{Calm: Value{Value: 5, Lock: 1}}}
+	ref := guestRef{guest: &Guest{Calm: NewValue(5, 1)}}
 
 	// 值表命中
 	value, ok := eng.AttrRef(ref, "calm", nil)
@@ -63,16 +63,16 @@ func (this *SuiteEngine) TestEngineAttrRef() {
 
 func (this *SuiteEngine) TestEngineExecAssignGlobal() {
 	runtime := NewRuntime(0)
-	runtime.Game.Score.Value = 10
+	runtime.Game.Score = NewValue(10, 0)
 	eng := NewEngine(runtime, nil, nil, nil, nil, nil)
 
 	// 全域帶值賦值;RHS 經 exprs 求值(含內建函式 min,驗證 builtin 注入)
 	this.True(eng.ExecAssign("score", "", false, AssignAdd, this.expr("min(5, 8)")))
-	this.Equal(int32(15), runtime.Game.Score.Value)
+	this.Equal(int32(15), runtime.Game.Score.GetValue())
 
 	// @ 鎖定(不帶右值,value 為 nil、不求值)
 	this.True(eng.ExecAssign("score", "", false, AssignLock, nil))
-	this.Equal(int32(1), runtime.Game.Score.Lock)
+	this.Equal(int32(1), runtime.Game.Score.GetLock())
 
 	// 未知全域屬性 → no-op
 	this.False(eng.ExecAssign("nope", "", false, AssignSet, this.expr("1")))
@@ -92,7 +92,7 @@ func (this *SuiteEngine) TestEngineExecAssignRef() {
 
 	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3)
 	this.True(eng.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
-	this.Equal(int32(3), card.Cost.Value)
+	this.Equal(int32(3), card.Cost.GetValue())
 
 	// 引用屬性型別不符(卡牌引用寫顧客屬性 calm)→ no-op
 	this.False(eng.ExecAssign("drawLast", "calm", true, AssignSet, this.expr("3")))

@@ -35,7 +35,8 @@ func cardCost(eng *Engine, target []InstanceID, op AssignKind, arg []exprs.Value
 			continue // 非卡牌實例 → 該項 no-op
 		} // if
 
-		writeValue(&card.Cost, op, n, clampLow0)
+		card.Cost.Apply(op, n)
+		card.Cost.Clamp(0)
 	} // for
 }
 

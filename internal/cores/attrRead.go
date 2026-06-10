@@ -109,52 +109,52 @@ var attrLockRead = map[string]attrReadFunc{
 
 // readMorale 讀餐廳士氣值。
 func readMorale(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Morale.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Morale.GetValue())), true
 }
 
 // readMoraleMax 讀餐廳士氣上限。
 func readMoraleMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.GetValue())), true
 }
 
 // readMoraleShield 讀餐廳士氣護盾。
 func readMoraleShield(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.GetValue())), true
 }
 
 // readMoraleBlock 讀餐廳士氣阻擋。
 func readMoraleBlock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.GetValue())), true
 }
 
 // readScore 讀餐廳分數。
 func readScore(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Score.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Score.GetValue())), true
 }
 
 // readEnergy 讀出牌能量。
 func readEnergy(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Energy.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Energy.GetValue())), true
 }
 
 // readEnergyMax 讀出牌能量上限。
 func readEnergyMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.GetValue())), true
 }
 
 // readEnergyKeep 讀能量保留量。
 func readEnergyKeep(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.GetValue())), true
 }
 
 // readHandMax 讀手牌上限。
 func readHandMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.HandMax.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.HandMax.GetValue())), true
 }
 
 // readDrawMax 讀每回合補牌上限。
 func readDrawMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.Value)), true
+	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.GetValue())), true
 }
 
 // === 階段 / 回合 ===
@@ -166,18 +166,17 @@ func readNextPhase(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool)
 
 // readRound 讀當前回合數。
 func readRound(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Round)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Round.GetValue())), true
 }
 
 // readRoundMax 讀回合上限。
 func readRoundMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.RoundMax)), true
+	return exprs.NewNum(float64(eng.runtime.Game.RoundMax.GetValue())), true
 }
 
 // readRoundLeft 讀剩餘回合數(上限 - 當前,夾 0)。
 func readRoundLeft(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	game := eng.runtime.Game
-	return exprs.NewNum(float64(max(int32(0), game.RoundMax-game.Round))), true
+	return exprs.NewNum(float64(max(int32(0), eng.runtime.Game.RoundMax.GetValue()-eng.runtime.Game.Round.GetValue()))), true
 }
 
 // === 士氣受損事件 ===
@@ -474,54 +473,54 @@ func readExileTotal(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool
 	return groupTotal(eng.runtime.Game.ExileTotal, arg)
 }
 
-// === 全域屬性鎖定計數(基底名 → .Lock) ===
+// === 全域屬性鎖定計數(基底名 → .GetLock()) ===
 
 // readMoraleLock 讀餐廳士氣的鎖定計數。
 func readMoraleLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Morale.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Morale.GetLock())), true
 }
 
 // readMoraleMaxLock 讀餐廳士氣上限的鎖定計數。
 func readMoraleMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.GetLock())), true
 }
 
 // readMoraleShieldLock 讀餐廳士氣護盾的鎖定計數。
 func readMoraleShieldLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.GetLock())), true
 }
 
 // readMoraleBlockLock 讀餐廳士氣阻擋的鎖定計數。
 func readMoraleBlockLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.GetLock())), true
 }
 
 // readScoreLock 讀餐廳分數的鎖定計數。
 func readScoreLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Score.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Score.GetLock())), true
 }
 
 // readEnergyLock 讀出牌能量的鎖定計數。
 func readEnergyLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Energy.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.Energy.GetLock())), true
 }
 
 // readEnergyMaxLock 讀出牌能量上限的鎖定計數。
 func readEnergyMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.GetLock())), true
 }
 
 // readEnergyKeepLock 讀能量保留量的鎖定計數。
 func readEnergyKeepLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.GetLock())), true
 }
 
 // readHandMaxLock 讀手牌上限的鎖定計數。
 func readHandMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.HandMax.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.HandMax.GetLock())), true
 }
 
 // readDrawMaxLock 讀補牌上限的鎖定計數。
 func readDrawMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.Lock)), true
+	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.GetLock())), true
 }

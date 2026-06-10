@@ -102,10 +102,10 @@ func (this *SuiteEffectTrigger) TestCondPass() {
 
 	this.True(condPass(eng, nil)) // 空欄 → 恆成立
 
-	eng.runtime.Game.Morale.Value = 10
+	eng.runtime.Game.Morale = NewValue(10, 0)
 	this.True(condPass(eng, this.expr("morale > 5"))) // 真
 
-	eng.runtime.Game.Morale.Value = 3
+	eng.runtime.Game.Morale = NewValue(3, 0)
 	this.False(condPass(eng, this.expr("morale > 5"))) // 假
 
 	this.False(condPass(eng, this.expr("self.calm"))) // self 未綁 → 評估失敗 → 不成立

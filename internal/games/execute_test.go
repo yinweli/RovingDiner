@@ -19,13 +19,13 @@ type SuiteExecute struct {
 
 func (this *SuiteExecute) TestExecuteAssign() {
 	runtime := cores.NewRuntime(0)
-	runtime.Game.Score.Value = 10
+	runtime.Game.Score = cores.NewValue(10, 0)
 	eng := cores.NewEngine(runtime, nil, nil, nil, nil, nil)
 
 	command, err := Parse("score += 5") // Parse → execute → engine.ExecAssign
 	this.Require().NoError(err)
 	execute(eng, command)
-	this.Equal(int32(15), runtime.Game.Score.Value)
+	this.Equal(int32(15), runtime.Game.Score.GetValue())
 }
 
 func (this *SuiteExecute) TestExecuteOperate() {

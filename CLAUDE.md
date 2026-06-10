@@ -84,9 +84,11 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
     if ok == false {
     ```
 
-- When a function returns more than one value, every return value must be named (single-return functions need not be named). Applies to hand-written code; generated code under `sheet/` is exempt.
+- When a function returns more than one value, every return value must be named; when it returns exactly one value, the return value must NOT be named. Applies to hand-written code; generated code under `sheet/` is exempt.
   - Example: `func Load(dir string) (data *sheeter.Sheeter, err error)`
   - Forbidden: `func Load(dir string) (*sheeter.Sheeter, error)`
+  - Example: `func (this *Value) Add(n float64) bool`
+  - Forbidden: `func (this *Value) Add(n float64) (changed bool)`
 
 - Names must always be singular — variables, struct fields, parameters, and named return values — even for slices, arrays, maps, and other collections.
   - Example: `item := []Item{}`, `guest := []Guest{}`, `err []error`

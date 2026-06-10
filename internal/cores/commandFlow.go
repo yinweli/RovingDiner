@@ -23,23 +23,21 @@ func commandCardRun(eng *Engine, target []InstanceID, arg []exprs.Value) {
 			continue // 不存在 / 流放牌堆（位置不符）→ 該項 no-op
 		} // if
 
-		if card.Seal.Locked() {
+		if card.Seal.IsLock() {
 			continue // 封印閘門 → no-op
 		} // if
 
-		game := eng.runtime.Game
-
 		if useEnergy {
-			if game.Energy.Value < card.Cost.Value {
+			if eng.runtime.Game.Energy.GetValue() < card.Cost.GetValue() {
 				continue // 點數不足 → no-op
 			} // if
 
-			game.Energy.Value -= card.Cost.Value
+			eng.runtime.Game.Energy.Sub(float64(card.Cost.GetValue())) // 出牌耗能(鎖定 → 不扣、照出牌)
 		} // if
 
-		game.PlayLast = card
-		game.PlayCount++
-		game.PlayTotal[cardGroup(eng, card)]++                              // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
+		eng.runtime.Game.PlayLast = card
+		eng.runtime.Game.PlayCount++
+		eng.runtime.Game.PlayTotal[cardGroup(eng, card)]++                  // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
 		runEffectList(eng, card.EffectID, cardSkillGroup(eng, card.CardID)) // 啟動實例效果列表（§二十五 step4 出牌前）
 
 		// 效果命令可能在出牌途中搬動本卡（甚至移出四牌堆），故進棄牌堆前重新定位當前容器,不沿用上方 where。
@@ -103,17 +101,16 @@ func morph(eng *Engine, target []InstanceID, arg []exprs.Value, where ContainerK
 		oldID := card.CardID
 		card.CardID = newID
 		card.InstanceID = eng.runtime.NextID() // 重分配實例編號（舊編號失效）
-		card.Cost = Value{Value: meta.Cost}    // §二十五 step4 僅載 出牌費用 / 不棄鎖 / 封印鎖 / 實例效果列表
-		card.Keep = boolLock(meta.Keep)
-		card.Seal = boolLock(meta.Seal)
+		card.Cost = NewValue(meta.Cost, 0)     // §二十五 step4 僅載 出牌費用 / 不棄鎖 / 封印鎖 / 實例效果列表
+		card.Keep = NewValuel(meta.Keep)
+		card.Seal = NewValuel(meta.Seal)
 		card.EffectID = skillEffect(eng, meta.SkillID)
 		// TODO(M13)：cleanupEffect 以變身前舊實例編號清理佇列（M13 實作須在重分配 InstanceID 前先存舊編號）
 
-		game := eng.runtime.Game
-		game.MorphLast = card
-		game.MorphOldID = oldID
-		game.MorphNewID = newID
-		game.MorphCount++
+		eng.runtime.Game.MorphLast = card
+		eng.runtime.Game.MorphOldID = oldID
+		eng.runtime.Game.MorphNewID = newID
+		eng.runtime.Game.MorphCount++
 		fireTrigger(eng, TriggerCardMorph) // 卡牌變身觸發
 	} // for
 }
@@ -143,9 +140,9 @@ func commandCardify(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		delete(eng.runtime.Seat, guest.SeatID) // 1. 自座位列表移除
 		guest.SeatID = 0
 		eng.runtime.Cardify = append(eng.runtime.Cardify, guest) // 2. 加入卡牌化列表
-		guest.Freeze = eng.runtime.Game.Round                    // 3. 凍結起始回合
+		guest.Freeze = eng.runtime.Game.Round.GetValue()         // 3. 凍結起始回合
 		card.Cardify = guest                                     // 5. 綁卡牌化來源
-		card.Keep.Lock++                                         // 6. 不棄卡牌鎖定 + 1
+		card.Keep.Lock()                                         // 6. 不棄卡牌鎖定 + 1
 		placeCard(eng, ContainerHand, card)                      // 7. 加入手牌
 	} // for
 }
@@ -153,7 +150,7 @@ func commandCardify(eng *Engine, target []InstanceID, arg []exprs.Value) {
 // commandRestore 卡牌化還原（restore 處理流程）：把卡牌綁定的卡牌化顧客送回隨機空座位、調整其效果到期、解凍、解綁、不棄回退。
 // self.cardify = none / 剩餘座位 = 0 → 該項 no-op。參數：無。
 func commandRestore(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	round := eng.runtime.Game.Round
+	round := eng.runtime.Game.Round.GetValue()
 
 	for _, itor := range target {
 		card, _, found := eng.locateCard(itor)
@@ -244,9 +241,9 @@ func commandGuestRoam(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		delete(eng.runtime.Seat, guest.SeatID)
 		guest.SeatID = 0
 		eng.runtime.Roam = append(eng.runtime.Roam, guest)
-		guest.Sate.Lock++ // 自動鎖
-		guest.SateSeal.Lock++
-		guest.CalmSeal.Lock++
+		guest.Sate.Lock() // 自動鎖
+		guest.SateSeal.Lock()
+		guest.CalmSeal.Lock()
 	} // for
 }
 
@@ -268,9 +265,8 @@ func commandGuestSeat(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	guest.SeatID = seatID
 	eng.runtime.Seat[seatID] = guest
 
-	game := eng.runtime.Game
-	game.SeatLast = guest
-	game.SeatCount++
+	eng.runtime.Game.SeatLast = guest
+	eng.runtime.Game.SeatCount++
 	fireTrigger(eng, TriggerGuestSeat) // 顧客入座觸發
 }
 
@@ -278,10 +274,9 @@ func commandGuestSeat(eng *Engine, target []InstanceID, arg []exprs.Value) {
 
 // guestExitOne 對單一顧客執行 guestExit 處理流程（供 commandGuestExit 與 guestReturn 無座位分支共用）。
 func guestExitOne(eng *Engine, guest *Guest, where ContainerKind, giveScore, dropMorale bool) {
-	game := eng.runtime.Game
-	game.ExitLast = guest // 1. 離場事件
-	game.ExitLastSeat = guest.SeatID
-	game.ExitCount++
+	eng.runtime.Game.ExitLast = guest // 1. 離場事件
+	eng.runtime.Game.ExitLastSeat = guest.SeatID
+	eng.runtime.Game.ExitCount++
 	fireTrigger(eng, TriggerExitAny) // 2. 顧客離場時機
 
 	if giveScore {
@@ -297,11 +292,11 @@ func guestExitOne(eng *Engine, guest *Guest, where ContainerKind, giveScore, dro
 	// TODO(M13)：cleanupEffect(Self{Guest: guest})（7. 清理離場顧客殘留效果）
 
 	if giveScore {
-		game.Score.Value += guest.Score.Value // 8. 給滿意值
+		eng.runtime.Game.Score.Add(float64(guest.Score.GetValue())) // 8. 給滿意值(鎖定 → 不給)
 	} // if
 
 	if dropMorale {
-		moraleDamage(eng, float64(guest.Morale.Value), guest) // 9. 扣士氣（morale -= 特例,以離場顧客為來源）
+		moraleDamage(eng, float64(guest.Morale.GetValue()), guest) // 9. 扣士氣（morale -= 特例,以離場顧客為來源）
 	} // if
 }
 

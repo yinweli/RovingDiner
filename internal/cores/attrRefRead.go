@@ -98,7 +98,7 @@ func readRefCost(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.Cost.Value)), true
+	return exprs.NewNum(float64(card.Cost.GetValue())), true
 }
 
 // readRefExtraRunMin 讀卡牌的額外執行次數下限值。
@@ -108,7 +108,7 @@ func readRefExtraRunMin(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.ExtraRunMin.Value)), true
+	return exprs.NewNum(float64(card.ExtraRunMin.GetValue())), true
 }
 
 // readRefExtraRunMax 讀卡牌的額外執行次數上限值。
@@ -118,7 +118,7 @@ func readRefExtraRunMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.ExtraRunMax.Value)), true
+	return exprs.NewNum(float64(card.ExtraRunMax.GetValue())), true
 }
 
 // readRefCardSeal 讀卡牌的封印值(恆 0,僅供鎖定承載)。
@@ -128,7 +128,7 @@ func readRefCardSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.Seal.Value)), true
+	return exprs.NewNum(float64(card.Seal.GetValue())), true
 }
 
 // readRefKeep 讀卡牌的保留值(恆 0,僅供鎖定承載)。
@@ -138,7 +138,7 @@ func readRefKeep(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.Keep.Value)), true
+	return exprs.NewNum(float64(card.Keep.GetValue())), true
 }
 
 // readRefPlayExile 讀卡牌的出牌流放值(恆 0,僅供鎖定承載)。
@@ -148,7 +148,7 @@ func readRefPlayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exp
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.PlayExile.Value)), true
+	return exprs.NewNum(float64(card.PlayExile.GetValue())), true
 }
 
 // readRefUnplayExile 讀卡牌的未出牌流放值(恆 0,僅供鎖定承載)。
@@ -158,7 +158,7 @@ func readRefUnplayExile(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(card.UnplayExile.Value)), true
+	return exprs.NewNum(float64(card.UnplayExile.GetValue())), true
 }
 
 // readRefCardify 讀卡牌所卡牌化的顧客引用(無則 none)。
@@ -261,7 +261,7 @@ func readRefCalm(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.Calm.Value)), true
+	return exprs.NewNum(float64(guest.Calm.GetValue())), true
 }
 
 // readRefSate 讀顧客的飽食值。
@@ -271,7 +271,7 @@ func readRefSate(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Va
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.Sate.Value)), true
+	return exprs.NewNum(float64(guest.Sate.GetValue())), true
 }
 
 // readRefSateMax 讀顧客的飽食上限。
@@ -281,7 +281,7 @@ func readRefSateMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.SateMax.Value)), true
+	return exprs.NewNum(float64(guest.SateMax.GetValue())), true
 }
 
 // readRefMorale 讀顧客的士氣值。
@@ -291,7 +291,7 @@ func readRefMorale(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.Morale.Value)), true
+	return exprs.NewNum(float64(guest.Morale.GetValue())), true
 }
 
 // readRefMoraleMax 讀顧客的士氣上限。
@@ -301,7 +301,7 @@ func readRefMoraleMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exp
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.MoraleMax.Value)), true
+	return exprs.NewNum(float64(guest.MoraleMax.GetValue())), true
 }
 
 // readRefScore 讀顧客的分數值。
@@ -311,7 +311,7 @@ func readRefScore(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.V
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.Score.Value)), true
+	return exprs.NewNum(float64(guest.Score.GetValue())), true
 }
 
 // readRefScoreMax 讀顧客的分數上限。
@@ -321,7 +321,7 @@ func readRefScoreMax(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.ScoreMax.Value)), true
+	return exprs.NewNum(float64(guest.ScoreMax.GetValue())), true
 }
 
 // readRefSateSeal 讀顧客的封印飽食值(恆 0,僅供鎖定承載)。
@@ -331,7 +331,7 @@ func readRefSateSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.SateSeal.Value)), true
+	return exprs.NewNum(float64(guest.SateSeal.GetValue())), true
 }
 
 // readRefCalmSeal 讀顧客的封印耐心值(恆 0,僅供鎖定承載)。
@@ -341,7 +341,7 @@ func readRefCalmSeal(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result expr
 	if ok == false {
 		return exprs.Value{}, false
 	} // if
-	return exprs.NewNum(float64(guest.CalmSeal.Value)), true
+	return exprs.NewNum(float64(guest.CalmSeal.GetValue())), true
 }
 
 // readRefSeatID 讀顧客的座位編號。
@@ -499,86 +499,86 @@ func readRefEffectGroup(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result e
 	return exprs.NewNum(float64(count)), true
 }
 
-// === 卡牌引用屬性鎖定計數(基底名 → .Lock) ===
+// === 卡牌引用屬性鎖定計數(基底名 → .GetLock()) ===
 
 // readRefCostLock 讀卡牌費用的鎖定計數。
 func readRefCostLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.Cost.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.Cost.GetLock() })
 }
 
 // readRefExtraRunMinLock 讀卡牌額外執行次數下限的鎖定計數。
 func readRefExtraRunMinLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.ExtraRunMin.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.ExtraRunMin.GetLock() })
 }
 
 // readRefExtraRunMaxLock 讀卡牌額外執行次數上限的鎖定計數。
 func readRefExtraRunMaxLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.ExtraRunMax.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.ExtraRunMax.GetLock() })
 }
 
 // readRefCardSealLock 讀卡牌封印的鎖定計數。
 func readRefCardSealLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.Seal.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.Seal.GetLock() })
 }
 
 // readRefKeepLock 讀卡牌保留的鎖定計數。
 func readRefKeepLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.Keep.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.Keep.GetLock() })
 }
 
 // readRefPlayExileLock 讀卡牌出牌流放的鎖定計數。
 func readRefPlayExileLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.PlayExile.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.PlayExile.GetLock() })
 }
 
 // readRefUnplayExileLock 讀卡牌未出牌流放的鎖定計數。
 func readRefUnplayExileLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardLock(ref, func(c *Card) int32 { return c.UnplayExile.Lock })
+	return cardLock(ref, func(c *Card) int32 { return c.UnplayExile.GetLock() })
 }
 
-// === 顧客引用屬性鎖定計數(基底名 → .Lock) ===
+// === 顧客引用屬性鎖定計數(基底名 → .GetLock()) ===
 
 // readRefCalmLock 讀顧客耐心的鎖定計數。
 func readRefCalmLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.Calm.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.Calm.GetLock() })
 }
 
 // readRefSateLock 讀顧客飽食的鎖定計數。
 func readRefSateLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.Sate.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.Sate.GetLock() })
 }
 
 // readRefSateMaxLock 讀顧客飽食上限的鎖定計數。
 func readRefSateMaxLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.SateMax.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.SateMax.GetLock() })
 }
 
 // readRefMoraleLock 讀顧客士氣的鎖定計數。
 func readRefMoraleLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.Morale.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.Morale.GetLock() })
 }
 
 // readRefMoraleMaxLock 讀顧客士氣上限的鎖定計數。
 func readRefMoraleMaxLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.MoraleMax.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.MoraleMax.GetLock() })
 }
 
 // readRefScoreLock 讀顧客分數的鎖定計數。
 func readRefScoreLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.Score.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.Score.GetLock() })
 }
 
 // readRefScoreMaxLock 讀顧客分數上限的鎖定計數。
 func readRefScoreMaxLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.ScoreMax.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.ScoreMax.GetLock() })
 }
 
 // readRefSateSealLock 讀顧客封印飽食的鎖定計數。
 func readRefSateSealLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.SateSeal.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.SateSeal.GetLock() })
 }
 
 // readRefCalmSealLock 讀顧客封印耐心的鎖定計數。
 func readRefCalmSealLock(eng *Engine, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestLock(ref, func(g *Guest) int32 { return g.CalmSeal.Lock })
+	return guestLock(ref, func(g *Guest) int32 { return g.CalmSeal.GetLock() })
 }
