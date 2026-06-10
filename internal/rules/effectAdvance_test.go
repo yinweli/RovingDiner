@@ -48,7 +48,7 @@ func (this *SuiteEffectAdvance) TestAdvanceEffect() {
 
 	strayData := tester.BuildData() // 以另一份資料建構效果 999 → 本場查無編譯資料 → 略過
 	strayData.SetEffect(999, cores.EffectData{Kind: cores.EffectPersist, RunRound: 1, End: record(999)})
-	strayGame := cores.NewGame(0, strayData, nil, nil)
+	strayGame := cores.NewGame(0, 0, strayData, nil, nil)
 	strayGame.GetRound().Set(1)
 	game.Effect.Push(cores.NewEffect(strayGame, 999, cores.Ref{}, 1))
 

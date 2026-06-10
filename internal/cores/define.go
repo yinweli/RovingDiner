@@ -118,7 +118,7 @@ const (
 type PhaseKind string
 
 const (
-	PhaseNone         PhaseKind = ""         // 無階段 / 無跳轉（下一階段清除後的值）
+	PhaseNone         PhaseKind = ""     // 無階段 / 無跳轉（下一階段清除後的值）
 	PhaseGameStart    PhaseKind = "營業開始" // 營業開始階段；啟動前置技能
 	PhaseRoundStart   PhaseKind = "回合開始" // 回合開始階段；回合數遞增、入座
 	PhasePlayerAction PhaseKind = "玩家行動" // 玩家行動階段；補牌 / 出牌 / 結束

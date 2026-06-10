@@ -85,7 +85,8 @@ type Game struct {
 	// 流程旗標與設置
 	Settling    bool       // 結算旗標；執行結算的重入防護
 	Seed        int64      // 本場 PRNG 種子（執行期狀態，供顯示 / 重現）
-	PrefixSkill []int32    // 前置技能列表（營業開始時逐一啟動）
+	StageID     int32      // 本場關卡編號（執行期狀態，供顯示 / 重現）;phaseGameStart 據此查關卡表格建置開局
+	PrefixSkill []int32    // 前置技能列表（營業開始時逐一啟動;開局建置自關卡表格填入）
 	lastID      InstanceID // 實例編號產生器游標
 
 	// 引擎注入與求值脈絡
@@ -105,10 +106,11 @@ type Game struct {
 }
 
 // NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用），
-// 注入遊戲資料（原始表 + 衍生索引,nil 補空殼）與玩家輸入 / 亂數兩 port，並預建七張空詞彙表（Register* 填入）。
-// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / tester）填入；self 為求值脈絡 run-state、
+// 注入本場身分（seed / 關卡編號;同 seed + 同關卡 + 同玩家輸入 = 同一局）、遊戲資料（原始表 + 衍生索引,nil 補空殼）
+// 與玩家輸入 / 亂數兩 port，並預建七張空詞彙表（Register* 填入）。
+// 開局盤面（手牌 / 三堆 / 排隊 / 前置技能）由 phaseGameStart 依關卡編號自關卡表格建置；self 為求值脈絡 run-state、
 // 詞彙為裝備（rules.Register）,皆不入建構。
-func NewGame(seed int64, data *Data, operator Operator, rander Rander) *Game {
+func NewGame(seed int64, stageID int32, data *Data, operator Operator, rander Rander) *Game {
 	if data == nil {
 		data = NewData(nil, nil)
 	} // if
@@ -116,6 +118,7 @@ func NewGame(seed int64, data *Data, operator Operator, rander Rander) *Game {
 	return &Game{
 		Seat:         SeatList{},
 		Seed:         seed,
+		StageID:      stageID,
 		data:         data,
 		operator:     operator,
 		rander:       rander,

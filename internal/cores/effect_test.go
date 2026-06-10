@@ -17,7 +17,7 @@ type SuiteEffect struct {
 
 // TestNewEffect 驗證 NewEffect 建構效果實例、結束回合依作用回合（0 整場 / N 期限）、建構即夾堆疊上限;資料不存在回 nil。
 func (this *SuiteEffect) TestNewEffect() {
-	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
 	game.round = NewValue(5, 0)
 
 	guest := &Guest{instanceID: 99}
@@ -77,7 +77,7 @@ func (this *SuiteEffect) TestEffectSetExpire() {
 
 // TestEffectRefresh 驗證 Refresh 依作用回合重算結束回合（0 → 整場、N → 當前回合 + N − 1）。
 func (this *SuiteEffect) TestEffectRefresh() {
-	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
 	game.round = NewValue(8, 0)
 	effect := &Effect{expire: 6}
 
@@ -158,7 +158,7 @@ func (this *SuiteEffect) TestEffectListFind() {
 
 // TestEffectListSort 驗證 Sort 依作用順序排序:大者優先、同序效果編號小者優先、查無資料殿後。
 func (this *SuiteEffect) TestEffectListSort() {
-	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
 
 	effect := EffectList{
 		{instanceID: 1, effectID: 402}, // RunOrder 10

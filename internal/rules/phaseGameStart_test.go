@@ -14,7 +14,8 @@ func TestSuitePhaseGameStart(t *testing.T) {
 	suite.Run(t, new(SuitePhaseGameStart))
 }
 
-// SuitePhaseGameStart 驗證營業開始階段（phaseGameStart.go）:設定載入 / 歸零設置 / 累積表清空 / 前置技能 / gameStart 觸發。
+// SuitePhaseGameStart 驗證營業開始階段（phaseGameStart.go）:設定載入 / 歸零設置 / 累積表清空 / 開局建置（buildStage）/
+// 前置技能 / gameStart 觸發。
 type SuitePhaseGameStart struct {
 	suite.Suite
 }
@@ -23,8 +24,8 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	count := 0
 	fired := 0
 	data := tester.BuildData()
-	game := newGameData(data)
-	game.PrefixSkill = []int32{301, 999} // 999:查無技能 → 效果列表空、不啟動（防禦）
+	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{}) // 關卡 601:前置技能 301
+	Register(game)
 	data.SetEffect(401, cores.EffectData{Kind: cores.EffectImmed, Immed: func(game *cores.Game) { count++ }})
 	data.SetEffect(402, cores.EffectData{Kind: cores.EffectImmed, Immed: func(game *cores.Game) { count++ }})
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerGameStart, Trigger: func(game *cores.Game) { fired++ }})
@@ -53,8 +54,49 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(int32(0), game.GetPlayTotal().Sum())
 	this.Equal(int32(0), game.GetExileTotal().Sum())
 
+	this.Len(game.Hand, 1) // 開局建置（關卡 601）
+	this.Len(game.Deck, 2)
+	this.Len(game.Wait, 2)
+	this.Equal([]int32{301}, game.PrefixSkill)
 	this.Equal(2, count) // 前置技能 301 → 效果 401 / 402 各啟動一次
 	this.Equal(1, fired) // 營業開始觸發
+}
+
+// TestBuildStage 驗證開局建置:五容器順序語意（第 1 個 = 頂端 / 隊首）、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。
+func (this *SuitePhaseGameStart) TestBuildStage() {
+	data := tester.BuildData()
+	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{})
+
+	buildStage(game)
+	this.Require().Len(game.Hand, 1) // 手牌列表
+	this.Equal(int32(101), game.Hand[0].GetCardID())
+	this.Require().Len(game.Deck, 2) // 第 1 個 = 牌堆頂
+	this.Equal(int32(101), game.Deck[0].GetCardID())
+	this.Equal(int32(102), game.Deck[1].GetCardID())
+	this.Require().Len(game.Drop, 1)
+	this.Equal(int32(102), game.Drop[0].GetCardID())
+	this.Require().Len(game.Exile, 1)
+	this.Equal(int32(101), game.Exile[0].GetCardID())
+	this.Require().Len(game.Wait, 2) // 第 1 個 = 隊首
+	this.Equal(int32(501), game.Wait[0].GetGuestID())
+	this.Equal([]int32{301}, game.PrefixSkill)
+
+	this.Equal(int32(0), game.GetDrawCount()) // 設置非命令:不觸發 / 不動事件屬性
+	this.Nil(game.GetDrawLast())
+	this.Nil(game.GetDropLast())
+	this.Nil(game.GetExileLast())
+
+	bad := cores.NewGame(0, 602, data, tester.FakeOperator{}, tester.FakeRander{}) // 全列壞引用 → 逐筆跳過
+	buildStage(bad)
+	this.Empty(bad.Hand)
+	this.Empty(bad.Deck)
+	this.Empty(bad.Wait)
+	this.Equal([]int32{999}, bad.PrefixSkill) // 技能編號原樣（查無由啟動端防禦）
+
+	none := cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{}) // 查無關卡 → 空盤面照走
+	buildStage(none)
+	this.Empty(none.Hand)
+	this.Nil(none.PrefixSkill)
 }
 
 // TestSettingNum 驗證 settingNum 讀數字設定值;缺鍵 / 空值 / 非數字回 0。

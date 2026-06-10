@@ -8,7 +8,7 @@ import (
 )
 
 // BuildSheet 組裝測試用 in-memory 靜態表:設定六鍵、3 座位(桌1:座1,2;桌2:座3)、3 卡牌(群組 1 / 2)、效果群組 5 / 6、
-// 技能 301、抽獎群組 7 / 8 / 9、顧客 501。各層測試共用同一份迷你表,測試只關注自己用到的列。
+// 技能 301、抽獎群組 7 / 8 / 9、顧客 501、關卡 601(完整開局)/ 602(壞引用)。各層測試共用同一份迷你表,測試只關注自己用到的列。
 func BuildSheet() *sheeter.Sheeter {
 	data := &sheeter.Sheeter{}
 	data.Setting.Data = map[string]*sheeter.Setting{
@@ -46,6 +46,10 @@ func BuildSheet() *sheeter.Sheeter {
 	}
 	data.Guest.Data = map[int32]*sheeter.Guest{
 		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 12, SateSeal: true},
+	}
+	data.Stage.Data = map[int32]*sheeter.Stage{
+		601: {ID: 601, Name: "測試關卡", HandID: []int32{101}, DeckID: []int32{101, 102}, DropID: []int32{102}, ExileID: []int32{101}, WaitID: []int32{501, 501}, PrefixSkillID: []int32{301}},
+		602: {ID: 602, Name: "壞引用", HandID: []int32{999}, DeckID: []int32{999}, WaitID: []int32{999}, PrefixSkillID: []int32{999}}, // 全列查無資料 → 逐筆跳過
 	}
 	return data
 }

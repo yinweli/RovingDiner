@@ -20,7 +20,7 @@ type SuiteRegister struct {
 
 // TestRegister 驗證 Register 對 Game 裝備七類詞彙（屬性讀寫 / 引用讀寫 / 命令 / 命令對象 / 內建函式）。
 func (this *SuiteRegister) TestRegister() {
-	game := cores.NewGame(0, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{})
+	game := cores.NewGame(0, 0, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{})
 	Register(game)
 
 	_, ok := game.Attr("morale", nil) // 屬性讀
@@ -50,7 +50,7 @@ func newGame() *cores.Game {
 
 // newGameData 以指定遊戲資料組裝全裝備測試營業(供 Data.SetEffect 注入自訂編譯效果的測試)。
 func newGameData(data *cores.Data) *cores.Game {
-	game := cores.NewGame(0, data, tester.FakeOperator{}, tester.FakeRander{})
+	game := cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{})
 	Register(game)
 	return game
 }

@@ -19,7 +19,7 @@ type SuiteExecute struct {
 }
 
 func (this *SuiteExecute) TestExecuteAssign() {
-	game := cores.NewGame(0, nil, nil, nil)
+	game := cores.NewGame(0, 0, nil, nil, nil)
 	rules.Register(game)
 	game.GetScore().Set(10)
 
@@ -30,7 +30,7 @@ func (this *SuiteExecute) TestExecuteAssign() {
 }
 
 func (this *SuiteExecute) TestExecuteOperate() {
-	game := cores.NewGame(0, nil, nil, nil)
+	game := cores.NewGame(0, 0, nil, nil, nil)
 	rules.Register(game)
 
 	command, err := Parse("phaseJump(none, '玩家行動')") // Parse → execute → Game.ExecOperate(端到端派發)

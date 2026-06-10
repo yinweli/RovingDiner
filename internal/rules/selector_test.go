@@ -166,7 +166,7 @@ func (this *SuiteSelector) TestSelectNearSame() {
 	this.Equal(guestIDs([]*cores.Guest{alone}), this.must(one, "samePick", nil))
 
 	// Operator 回空(防禦):候選 > 1 但選不出 → 空集合(pickGuestOne 的 chosen 空分支)
-	emptyPick := cores.NewGame(0, tester.BuildData(), tester.FakeOperator{EmptyPick: true}, tester.FakeRander{})
+	emptyPick := cores.NewGame(0, 0, tester.BuildData(), tester.FakeOperator{EmptyPick: true}, tester.FakeRander{})
 	Register(emptyPick)
 	seatGuest(emptyPick)
 	this.Empty(this.must(emptyPick, "nearPick", nil))

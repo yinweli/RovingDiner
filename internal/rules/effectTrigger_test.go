@@ -38,7 +38,7 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 
 	strayData := tester.BuildData() // 以另一份資料建構效果 999 → 本場查無編譯資料 → 略過
 	strayData.SetEffect(999, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerCardPlay, Trigger: record(999)})
-	game.Effect.Push(cores.NewEffect(cores.NewGame(0, strayData, nil, nil), 999, cores.Ref{}, 1))
+	game.Effect.Push(cores.NewEffect(cores.NewGame(0, 0, strayData, nil, nil), 999, cores.Ref{}, 1))
 
 	frozen := cores.NewGuest(game, 501) // 凍結中顧客的效果 → 效果凍結跳過(【二十一｜凍結語意】)
 	game.Cardify.Push(frozen)
