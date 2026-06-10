@@ -9,8 +9,7 @@ import (
 )
 
 // 處理流程命令（【營業規格書 | 二十五、操作命令清單】各「處理流程」）：cardRun / *Morph / cardify / restore / guest*。
-// 命令本體於 M9 完成；觸發（fireTrigger，M11）與啟動效果列表（runEffectList，M12）已接呼叫;
-// 清理效果（cleanupEffect）留 M13,插入點以 // TODO(M13) 標（空 stub 無語句、無法覆蓋，故不先建）。
+// 命令本體於 M9 完成；觸發（fireTrigger，M11）、啟動效果列表（runEffectList，M12）與清理效果（cleanupEffect，M13）已接呼叫。
 
 // commandCardRun 強制發動卡牌（cardRun 處理流程）：消耗點數、設出牌事件、啟動實例效果列表、進棄牌堆、觸發 cardPlay。
 // 卡牌可位於 手牌 / 抽牌 / 棄牌；流放牌堆視為位置不符 → 該項 no-op。參數：消耗點數（bool）、進棄牌堆（bool）。
@@ -93,12 +92,12 @@ func morph(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, where
 		} // if
 
 		oldID := card.GetCardID()
-		// TODO(M13)：cleanupEffect 以變身前舊實例編號清理佇列（M13 實作須在呼叫 Morph 前先存 GetInstanceID）
 
 		if card.Morph(game, newID) == false {
 			continue // 變身後卡牌資料不存在 → 跳過（防禦）
 		} // if
 
+		cleanupEffect(game, cores.NewRefCard(card)) // 5. 清理舊實例編號殘留效果（同卡引用 IsSame 比當下編號 → 變身前綁定者全中）
 		game.EventMorph(card, oldID, newID)
 		fireTrigger(game, cores.TriggerCardMorph) // 卡牌變身觸發
 	} // for
@@ -169,7 +168,8 @@ func commandRestore(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 
 // === 顧客流程 ===
 
-// commandGuestExit 顧客離場（guestExit 處理流程）：設離場事件、（M11）觸發離場時機、自所在容器移除、（M13）清理效果、給滿意值、扣士氣。
+// commandGuestExit 顧客離場（guestExit 處理流程）：設離場事件、觸發離場時機、自所在容器移除、清理效果、給滿意值、扣士氣。
+// 卡牌化（凍結）中顧客視為位置不符 → 該項 no-op（指令隔離防禦:退場會使綁定卡的 cardify 懸空;【營業規格書 | 二十一、流程補充 | 凍結語意】）。
 // 參數：是否給滿意值（bool）、是否扣士氣（bool）。
 func commandGuestExit(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
 	giveScore := argBool(arg)
@@ -178,8 +178,8 @@ func commandGuestExit(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 	for _, itor := range target {
 		guest, where, found := game.LocateGuest(itor)
 
-		if found == false {
-			continue // 非顧客實例 → 該項 no-op
+		if found == false || where == cores.ContainerCardify {
+			continue // 非顧客實例 / 卡牌化（凍結）中 → 該項 no-op
 		} // if
 
 		guestExitOne(game, guest, where, giveScore, dropMorale)
@@ -261,9 +261,9 @@ func guestExitOne(game *cores.Game, guest *cores.Guest, where cores.ContainerKin
 		fireTrigger(game, cores.TriggerExitCalm) // 4. 生氣離場時機（扣士氣前）
 	} // if
 
-	removeGuestContainer(game, where, guest) // 5. 自所在容器移除
-	fireTrigger(game, cores.TriggerExitDone) // 6. 顧客離場後時機
-	// TODO(M13)：cleanupEffect(NewRefGuest(guest))（7. 清理離場顧客殘留效果）
+	removeGuestContainer(game, where, guest)      // 5. 自所在容器移除
+	fireTrigger(game, cores.TriggerExitDone)      // 6. 顧客離場後時機
+	cleanupEffect(game, cores.NewRefGuest(guest)) // 7. 清理離場顧客殘留效果
 
 	if giveScore {
 		game.GetScore().Add(float64(guest.GetScore().GetValue())) // 8. 給滿意值(鎖定 → 不給)

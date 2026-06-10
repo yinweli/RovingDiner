@@ -540,7 +540,8 @@ func (this *Game) AttrRef(ref exprs.Ref, name string, arg []exprs.Value) (result
 }
 
 // ExecAssign 執行屬性修改命令(【營業規格書 | 十七、命令 | 1】);回報是否實際寫入。
-// 帶值賦值先求值右值(評估失敗 / 右值非數值 → no-op);引用左值先解析引用主體(空物件 / 型別不符 / 不存在 → no-op);
+// 帶值賦值先求值右值(評估失敗 / 右值非數值 → no-op);引用左值先解析引用主體(空物件 / 型別不符 / 不存在 → no-op),
+// 主體為凍結中顧客一律 no-op(屬性凍結;【營業規格書 | 二十一、流程補充 | 凍結語意】);
 // 再經寫入詞彙表(全域 attrWrite / 引用 attrRefWrite)依賦值符變更狀態。名稱可寫性由 games.Validate 先行檢查。
 func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, value *exprs.Expr) (changed bool) {
 	n := float64(0)
@@ -560,6 +561,10 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 
 		if ok == false || owner.IsRef() == false {
 			return false // 引用解析為空物件 / 型別不符 / 不存在 → no-op
+		} // if
+
+		if guest, isGuest := AsGuest(owner.Ref()); isGuest && this.IsFrozen(guest) {
+			return false // 屬性凍結:寫入主體為凍結中顧客 → no-op
 		} // if
 
 		write, known := this.attrRefWrite[refAttr]
@@ -595,6 +600,13 @@ func (this *Game) ExecOperate(verb, selectorName string, selectorParam, arg []*e
 
 	if known == false {
 		return // 命令對象未登錄 → no-op
+	} // if
+
+	// none / 篩空正規化:none → nil(全域掃描記號)、其他命令對象篩空 → 非 nil 空切片(verb 以 target == nil 判 none;見 SelectorNone)
+	if selectorName == SelectorNone {
+		target = nil
+	} else if target == nil {
+		target = []InstanceID{}
 	} // if
 
 	argValue, ok := this.evalAll(arg)
@@ -685,6 +697,13 @@ func (this *Game) LocateGuest(id InstanceID) (guest *Guest, where ContainerKind,
 	} // if
 
 	return nil, ContainerNone, false
+}
+
+// IsFrozen 回報顧客是否凍結中(位於卡牌化列表;【營業規格書 | 二十一、流程補充 | 凍結語意】)。
+// 容器成員身分即凍結狀態的單一來源;freeze 欄位僅作解凍補回結束回合的起算錨點、不兼任旗標
+// (round 0 期間卡牌化時 freeze == 0,與未凍結零值無法區分)。
+func (this *Game) IsFrozen(guest *Guest) bool {
+	return this.Cardify.Find(guest.GetInstanceID()) != nil
 }
 
 // Env 組裝求值期環境:以自身為條件對象 Resolver、帶入裝備的內建函式註冊表。

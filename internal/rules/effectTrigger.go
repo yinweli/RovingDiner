@@ -6,7 +6,7 @@ import (
 )
 
 // fireTrigger 派發一個觸發時機（【營業規格書 | 二十、獨立流程 | 觸發時機】）;自效果佇列篩選「效果類型 == 觸發 && 觸發時機 == 時機」者、依作用順序排序、逐一處理。
-// 觸發時機僅為時間訊號、不攜帶資料,各效果自持 self（啟動技能時已固定）。
+// 觸發時機僅為時間訊號、不攜帶資料,各效果自持 self（啟動技能時已固定）;凍結中顧客的效果一律跳過（【營業規格書 | 二十一、流程補充 | 凍結語意】效果凍結）。
 func fireTrigger(game *cores.Game, timing cores.TriggerKind) {
 	fire := cores.EffectList{}
 
@@ -15,6 +15,10 @@ func fireTrigger(game *cores.Game, timing cores.TriggerKind) {
 
 		if ok == false {
 			continue // 查無編譯資料（防禦;正常實例必有對應效果）→ 略過
+		} // if
+
+		if frozenSelf(game, itor) {
+			continue // 效果凍結:凍結中顧客的效果不觸發
 		} // if
 
 		if meta.Kind == cores.EffectTrigger && meta.TriggerKind == timing {

@@ -102,6 +102,21 @@ func (this *SuiteEffect) TestEffectStackAdd() {
 	this.Equal(int32(6), effect.GetStack())
 }
 
+// TestEffectStackSub 驗證 StackSub 退層、至多扣到 0 與實際扣減回傳。
+func (this *SuiteEffect) TestEffectStackSub() {
+	effect := &Effect{stack: 5}
+
+	this.Equal(int32(2), effect.StackSub(2)) // 一般退層
+	this.Equal(int32(3), effect.GetStack())
+
+	this.Equal(int32(3), effect.StackSub(9)) // 超量 → 扣到 0 為止
+	this.Equal(int32(0), effect.GetStack())
+
+	this.Equal(int32(0), effect.StackSub(1)) // 已歸 0 → 不扣
+	this.Equal(int32(0), effect.StackSub(0)) // 非正數 → 不扣（防禦）
+	this.Equal(int32(0), effect.GetStack())
+}
+
 // TestEffectListPush 驗證 Push 加入佇列尾端。
 func (this *SuiteEffect) TestEffectListPush() {
 	list := EffectList{}

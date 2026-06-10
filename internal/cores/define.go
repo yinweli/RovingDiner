@@ -30,10 +30,17 @@ type AttrRefReadFunc func(game *Game, ref exprs.Ref, arg []exprs.Value) (result 
 type AttrRefWriteFunc func(game *Game, ref exprs.Ref, op AssignKind, n float64) bool
 
 // CommandFunc 操作命令詞條的執行行為:target 為已解析命令對象(身分集)、arg 為其餘已求值參數。
+// target == nil 代表命令對象為 none(ExecOperate 正規化;見 SelectorNone),與「篩空的非 nil 空切片」有別——
+// 多數詞條不分辨兩者(固定 none 詞條忽略 target、其餘空集合即整體 no-op),目前僅 effectClear 以 nil 判全域掃描。
 type CommandFunc func(game *Game, target []InstanceID, arg []exprs.Value)
 
 // SelectorFunc 命令對象詞條的解析行為:arg 為 [...] 內已求值參數,產出作用對象集合(身分集)。
 type SelectorFunc func(game *Game, arg []exprs.Value) (result []InstanceID)
+
+// SelectorNone 無命令對象的保留詞條名;ExecOperate 對它把 target 正規化為 nil(全域掃描記號),
+// 其他命令對象篩空時正規化為非 nil 空切片,供 verb 以 target == nil 判別「對象為 none」
+// (【營業規格書 | 二十五、操作命令清單 | effectClear】對象 = none 為全域掃描)。
+const SelectorNone = "none"
 
 // Compiler 把單一命令字串編譯為效果命令執行器;由 games 注入(cores 無命令解析能力)。語法錯回 error。
 // prepareEffect 僅於命令欄非空時呼叫此原語,故空字串處理不在本型別契約內。

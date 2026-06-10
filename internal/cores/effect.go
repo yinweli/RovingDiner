@@ -74,6 +74,21 @@ func (this *Effect) StackAdd(add, stackMax int32) int32 {
 	return this.stack - before
 }
 
+// StackSub 扣減堆疊層數（至多扣到 0）;回實際扣減層數（【營業規格書 | 二十五、操作命令清單 | effectDel】退層,
+// 層數歸 0 後是否出佇列由呼叫端決定）。
+func (this *Effect) StackSub(sub int32) int32 {
+	if sub <= 0 {
+		return 0
+	} // if
+
+	if sub > this.stack {
+		sub = this.stack
+	} // if
+
+	this.stack -= sub
+	return sub
+}
+
 // EffectList 效果佇列(順序無關);對應【營業規格書 | 六、容器結構 | 效果佇列】。
 // 處理時依作用順序排序快照(Sort)、不就地排佇列;唯讀操作(長度 / 迭代)直接用語言內建。
 type EffectList []*Effect

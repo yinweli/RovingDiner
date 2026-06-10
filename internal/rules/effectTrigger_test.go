@@ -14,7 +14,7 @@ func TestSuiteEffectTrigger(t *testing.T) {
 	suite.Run(t, new(SuiteEffectTrigger))
 }
 
-// SuiteEffectTrigger 驗證觸發時機流程（effectTrigger.go）:篩選 / 排序 / 觸發條件 / 觸發次數 / 觸發後行為 / self 綁定。
+// SuiteEffectTrigger 驗證觸發時機流程（effectTrigger.go）:篩選 / 排序 / 凍結跳過 / 觸發條件 / 觸發次數 / 觸發後行為 / self 綁定。
 type SuiteEffectTrigger struct {
 	suite.Suite
 }
@@ -40,9 +40,14 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 	strayData.SetEffect(999, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerCardPlay, Trigger: record(999)})
 	game.Effect.Push(cores.NewEffect(cores.NewGame(0, strayData, nil, nil), 999, cores.Ref{}, 1))
 
+	frozen := cores.NewGuest(game, 501) // 凍結中顧客的效果 → 效果凍結跳過(【二十一｜凍結語意】)
+	game.Cardify.Push(frozen)
+	data.SetEffect(904, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerCardPlay, Trigger: record(904)})
+	game.Effect.Push(cores.NewEffect(game, 904, cores.NewRefGuest(frozen), 1))
+
 	fireTrigger(game, cores.TriggerCardPlay)
-	this.Equal([]int32{903, 902}, fired) // 作用順序 20 先於 10;時機 / 類型不符未觸發
-	this.Len(game.Effect, 5)             // 觸發後行為預設保留 → 佇列不變
+	this.Equal([]int32{903, 902}, fired) // 作用順序 20 先於 10;時機 / 類型不符、凍結中未觸發
+	this.Len(game.Effect, 6)             // 觸發後行為預設保留 → 佇列不變
 }
 
 func (this *SuiteEffectTrigger) TestFireOne() {

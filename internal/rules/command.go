@@ -13,7 +13,7 @@ func HasCommand(name string) bool {
 
 // command 操作命令詞彙表(名稱 → 執行行為);對應【營業規格書 | 二十五、操作命令清單】。
 // 每一詞條對應一個獨立的 command* 具名函式(比照讀寫 / 命令對象詞彙表);詞條依類別分檔
-// (commandMove / commandCard / commandGuest / commandInstance / commandFlow.go),本檔僅持型別、註冊表與 bootstrap 詞條。
+// (commandMove / commandCard / commandEffect / commandGuest / commandInstance / commandFlow.go),本檔僅持型別、註冊表與 bootstrap 詞條。
 var command = map[string]cores.CommandFunc{
 	// bootstrap（command.go）
 	"phaseJump":   commandPhaseJump,
@@ -40,6 +40,11 @@ var command = map[string]cores.CommandFunc{
 	"cardEffectAdd":    commandCardEffectAdd,
 	"cardEffectDel":    commandCardEffectDel,
 	"cardEffectDelAll": commandCardEffectDelAll,
+
+	// 效果佇列（commandEffect.go）
+	"effectClear": commandEffectClear,
+	"effectDel":   commandEffectDel,
+	"effectRun":   commandEffectRun,
 
 	// 顧客免疫 / 行動（commandGuest.go）
 	"effectImmuneAdd": commandEffectImmuneAdd,

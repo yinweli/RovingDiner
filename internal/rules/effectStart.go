@@ -17,13 +17,14 @@ func runEffectList(game *cores.Game, effectID []int32, skillGroup int32) {
 		} // if
 
 		for _, self := range selectTargets(game, meta, skillGroup, &inherit) {
-			dispatchEffect(game, meta, itor, self)
+			dispatchEffect(game, meta, itor, self, 0)
 		} // for
 	} // for
 }
 
 // dispatchEffect 對單一 self 依效果類型派發:立即跑立即命令、觸發 / 常駐入佇列、常駐再每增一層跑一次啟動命令。
-func dispatchEffect(game *cores.Game, meta cores.EffectData, effectID int32, self cores.Ref) {
+// override > 0 為 effectRun 命令覆寫的本次增加層數（啟動技能路徑恆 0;立即類型忽略——層數概念不適用,只跑一次）。
+func dispatchEffect(game *cores.Game, meta cores.EffectData, effectID int32, self cores.Ref, override int32) {
 	restore := game.SetSelf(&self) // self 綁定:立即命令 / 觸發條件 / 啟動命令以此 self 求值
 
 	defer restore()
@@ -35,10 +36,10 @@ func dispatchEffect(game *cores.Game, meta cores.EffectData, effectID int32, sel
 		} // if
 
 	case cores.EffectTrigger:
-		effectStack(game, self, effectID, 0) // 入佇列;觸發命令留 fireTrigger
+		effectStack(game, self, effectID, override) // 入佇列;觸發命令留 fireTrigger
 
 	case cores.EffectPersist:
-		added := effectStack(game, self, effectID, 0)
+		added := effectStack(game, self, effectID, override)
 		runEffectExec(game, meta.Start, added) // 常駐:啟動命令每增加一層執行一次
 	} // switch
 }

@@ -13,10 +13,10 @@ import (
 // 多數詞條只讀;deckTop 為唯一在解析時會修改狀態者(auto-shuffle 補牌)。
 var selector = map[string]cores.SelectorFunc{
 	// 無對象 / self 系
-	"none":     selectNone,
-	"self":     selectSelf,
-	"selfNear": selectSelfNear,
-	"selfSame": selectSelfSame,
+	cores.SelectorNone: selectNone,
+	"self":             selectSelf,
+	"selfNear":         selectSelfNear,
+	"selfSame":         selectSelfSame,
 
 	// 事件單例(取 Game 上最近一次事件的引用)
 	"damageGuest": selectDamageGuest,
@@ -66,7 +66,7 @@ func HasSelector(name string) bool {
 
 // === 無對象 / self 系 ===
 
-// selectNone 無命令對象(空集合)。
+// selectNone 無命令對象(空集合);保留名 cores.SelectorNone,ExecOperate 對它把 target 正規化為 nil(全域掃描記號)。
 func selectNone(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
 	return nil
 }

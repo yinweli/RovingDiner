@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"slices"
+
 	"github.com/yinweli/RovingDiner/internal/cores"
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
@@ -283,4 +285,65 @@ func damageSource(self *cores.Ref) *cores.Guest {
 	} // if
 
 	return nil
+}
+
+// 效果佇列共用:凍結判定、退場核心、身分取值。供觸發(effectTrigger)、推進(effectAdvance)、清理(effectCleanup)與效果佇列命令(commandEffect)共用。
+
+// frozenSelf 回報效果的 self 是否為凍結中顧客(效果凍結判定;【營業規格書 | 二十一、流程補充 | 凍結語意】)。
+// 觸發(fireTrigger)/ 推進(advanceEffect)/ 清除(effectClear)三處篩選共用;清理以失效對象判凍結,另於 cleanupEffect 把關。
+func frozenSelf(game *cores.Game, effect *cores.Effect) bool {
+	guest := effect.GetSelf().GetGuest()
+	return guest != nil && game.IsFrozen(guest)
+}
+
+// retireEffect 效果退場核心:綁該效果 self → 結束命令 × 當前堆疊層數 → 出佇列(【營業規格書 | 十六、堆疊規則】離開佇列語意);
+// 供推進 / 清理 / effectClear 的逐效果退場共用,呼叫端須先確認編譯資料存在。
+func retireEffect(game *cores.Game, effect *cores.Effect) {
+	meta, _ := game.EffectData(effect.GetEffectID()) // 呼叫端已確認存在
+
+	runEffectEnd(game, effect, meta.End, effect.GetStack())
+	game.Effect.Remove(effect.GetInstanceID())
+}
+
+// runEffectEnd 以效果自身 self 綁定執行結束命令 times 次(綁定逐層 save / restore;退場與 effectDel 退層共用)。
+func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32) {
+	self := effect.GetSelf()
+	restore := game.SetSelf(&self)
+
+	defer restore()
+
+	runEffectExec(game, end, times)
+}
+
+// instanceRef 以實例編號自卡牌四牌堆 / 顧客四容器找出實例引用;未命中回 ok=false。
+// 供以「命令對象元素為 self」的效果佇列命令(effectDel / effectRun)取 self 引用。
+func instanceRef(game *cores.Game, id cores.InstanceID) (ref cores.Ref, ok bool) {
+	if card, _, found := game.LocateCard(id); found {
+		return cores.NewRefCard(card), true
+	} // if
+
+	if guest, _, found := game.LocateGuest(id); found {
+		return cores.NewRefGuest(guest), true
+	} // if
+
+	return cores.Ref{}, false
+}
+
+// selfIn 回報效果的 self 是否屬於命令對象身分集(空物件 self 不屬於任何身分集);供 effectClear 非全域掃描篩選。
+func selfIn(effect *cores.Effect, target []cores.InstanceID) bool {
+	id := cores.NoneID
+
+	if card := effect.GetSelf().GetCard(); card != nil {
+		id = card.GetInstanceID()
+	} // if
+
+	if guest := effect.GetSelf().GetGuest(); guest != nil {
+		id = guest.GetInstanceID()
+	} // if
+
+	if id == cores.NoneID {
+		return false
+	} // if
+
+	return slices.Contains(target, id)
 }

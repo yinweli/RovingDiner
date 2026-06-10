@@ -114,11 +114,19 @@ func (this *SuiteCommandFlow) TestCardRunEffectMove() {
 }
 
 func (this *SuiteCommandFlow) TestMorph() {
-	game := newGame()
+	ended := 0
+	data := tester.BuildData()
+	game := newGameData(data)
 	card := cores.NewCard(game, 102)
 	card.GetCost().Set(9)
 	id := card.GetInstanceID()
 	game.Hand = cores.CardList{card}
+	other := cores.NewCard(game, 102)
+	game.Deck = cores.CardList{other}
+
+	data.SetEffect(801, cores.EffectData{Kind: cores.EffectPersist, TargetKind: cores.TargetCardRand, End: func(game *cores.Game) { ended++ }})
+	game.Effect.Push(cores.NewEffect(game, 801, cores.NewRefCard(card), 2))  // 變身卡的殘留效果 → 步驟 5 清理
+	game.Effect.Push(cores.NewEffect(game, 801, cores.NewRefCard(other), 1)) // 他卡效果 → 留佇列
 
 	commandHandMorph(game, []cores.InstanceID{id}, nums(7)) // 群組 7 → 抽中卡 101
 	this.Equal(int32(101), card.GetCardID())                // cardID 換成抽中值
@@ -129,6 +137,10 @@ func (this *SuiteCommandFlow) TestMorph() {
 	this.Equal(card, game.GetMorphLast())
 	this.Equal(int32(1), game.GetMorphCount())
 	this.Len(game.Hand, 1) // 留原牌堆
+
+	this.Equal(2, ended) // 5. 清理變身前綁定本卡的效果:結束命令 × 層數 2
+	this.Require().Len(game.Effect, 1)
+	this.Equal(other, game.Effect[0].GetSelf().GetCard()) // 他卡效果不受影響
 }
 
 func (this *SuiteCommandFlow) TestMorphNoop() {
@@ -233,13 +245,18 @@ func (this *SuiteCommandFlow) TestRestoreNoop() {
 }
 
 func (this *SuiteCommandFlow) TestGuestExit() {
-	game := newGame()
+	ended := 0
+	data := tester.BuildData()
+	game := newGameData(data)
 	game.GetScore().Set(10)
 	game.GetMorale().Set(20)
 	guest := cores.NewGuest(game, 501)
 	game.Seat.Place(2, guest)
 	guest.GetScore().Set(3)
 	guest.GetMorale().Set(5)
+
+	data.SetEffect(801, cores.EffectData{Kind: cores.EffectPersist, TargetKind: cores.TargetGuestRand, End: func(game *cores.Game) { ended++ }})
+	game.Effect.Push(cores.NewEffect(game, 801, cores.NewRefGuest(guest), 1)) // 離場顧客殘留效果 → 步驟 7 清理
 
 	commandGuestExit(game, []cores.InstanceID{guest.GetInstanceID()}, this.flag(true, true)) // 給滿意、扣士氣
 	this.Equal(guest, game.GetExitLast())
@@ -250,6 +267,9 @@ func (this *SuiteCommandFlow) TestGuestExit() {
 	this.Equal(int32(15), game.GetMorale().GetValue()) // 20 - 5(無格擋 / 護盾)
 	this.Equal(guest, game.GetDamageGuest())           // morale 特例來源 = 離場顧客
 	this.Equal(int32(5), game.GetDamageValue())
+
+	this.Equal(1, ended) // 7. 清理離場顧客殘留效果
+	this.Empty(game.Effect)
 }
 
 func (this *SuiteCommandFlow) TestGuestExitNoScoreMorale() {
@@ -267,6 +287,11 @@ func (this *SuiteCommandFlow) TestGuestExitNoScoreMorale() {
 	this.Nil(game.Seat[2]) // 仍移除
 
 	commandGuestExit(game, []cores.InstanceID{99}, nil) // 非顧客實例 → no-op
+
+	frozen := cores.NewGuest(game, 501)
+	game.Cardify.Push(frozen)
+	commandGuestExit(game, []cores.InstanceID{frozen.GetInstanceID()}, this.flag(false, false)) // 卡牌化(凍結)中 → 該項 no-op(指令隔離防禦)
+	this.Len(game.Cardify, 1)
 }
 
 func (this *SuiteCommandFlow) TestGuestExitScoreLock() {

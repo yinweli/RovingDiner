@@ -563,7 +563,7 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("'text'")))
 }
 
-// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 未知屬性 / 空物件 no-op。
+// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op。
 func (this *SuiteGame) TestGameExecAssignRef() {
 	card := &Card{instanceID: 1}
 	game := NewGame(0, nil, nil, nil)
@@ -591,6 +591,29 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 	// 引用解析為空物件(drawLast 為 nil → 引用 Value 為 none)→ no-op
 	game.drawLast = nil
 	this.False(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
+
+	// 屬性凍結:寫入主體為凍結中(卡牌化列表)顧客 → no-op;移出卡牌化列表(解凍)後寫入恢復
+	guest := &Guest{instanceID: 2}
+	game.Cardify = GuestList{guest}
+	game.RegisterAttrRead("exitLast", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
+		return NewRefGuest(guest).Value(), true
+	})
+	game.RegisterAttrRefWrite("calm", func(game *Game, ref exprs.Ref, op AssignKind, n float64) bool {
+		target, valid := AsGuest(ref)
+
+		if valid == false {
+			return false
+		} // if
+
+		return target.GetCalm().Apply(op, n)
+	})
+
+	this.False(game.ExecAssign("exitLast", "calm", true, AssignSet, this.expr("3"))) // 凍結中 → no-op
+	this.Equal(int32(0), guest.GetCalm().GetValue())
+
+	game.Cardify = GuestList{}
+	this.True(game.ExecAssign("exitLast", "calm", true, AssignSet, this.expr("3"))) // 解凍 → 寫入
+	this.Equal(int32(3), guest.GetCalm().GetValue())
 }
 
 // TestGameExecOperate 驗證 ExecOperate 分派:求值命令對象參數 → 解析作用集合 → 求值參數 → 查表 fan-out;
@@ -613,6 +636,25 @@ func (this *SuiteGame) TestGameExecOperate() {
 	game.ExecOperate("nope", "fake", []*exprs.Expr{this.expr("1")}, nil)                                 // 未知命令 → no-op
 	game.ExecOperate("record", "fake", []*exprs.Expr{this.expr("1")}, []*exprs.Expr{this.expr("1 / 0")}) // 參數評估失敗 → no-op
 	this.Equal([]InstanceID{7}, run)
+
+	// none / 篩空正規化:none → target nil(全域掃描記號)、其他命令對象篩空 → 非 nil 空切片
+	got := []InstanceID{}
+	game.RegisterSelector(SelectorNone, func(game *Game, arg []exprs.Value) (result []InstanceID) {
+		return nil
+	})
+	game.RegisterSelector("empty", func(game *Game, arg []exprs.Value) (result []InstanceID) {
+		return nil
+	})
+	game.RegisterCommand("probe", func(game *Game, target []InstanceID, arg []exprs.Value) {
+		got = target
+	})
+
+	game.ExecOperate("probe", SelectorNone, nil, nil) // none → nil
+	this.Nil(got)
+
+	game.ExecOperate("probe", "empty", nil, nil) // 篩空 → 非 nil 空切片
+	this.NotNil(got)
+	this.Empty(got)
 }
 
 // TestGameSelectObject 驗證 selectObject 對命令對象詞彙表的分派與未登錄回報。
@@ -674,6 +716,18 @@ func (this *SuiteGame) TestGameLocateGuest() {
 	this.Nil(guest)
 	this.Equal(ContainerNone, where)
 	this.False(ok)
+}
+
+// TestGameIsFrozen 驗證 IsFrozen 以卡牌化列表成員身分判凍結（freeze 欄位不參與判定）。
+func (this *SuiteGame) TestGameIsFrozen() {
+	frozen := &Guest{instanceID: 1}
+	free := &Guest{instanceID: 2}
+	free.SetFreeze(3) // freeze 殘值不影響判定（僅作解凍補回錨點）
+	game := NewGame(0, nil, nil, nil)
+	game.Cardify = GuestList{frozen}
+
+	this.True(game.IsFrozen(frozen))
+	this.False(game.IsFrozen(free))
 }
 
 // TestGameEnv 驗證 Env 組裝求值期環境:自身為 Resolver、帶入裝備的內建函式。

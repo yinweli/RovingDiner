@@ -23,9 +23,12 @@ type SuiteCommand struct {
 func (this *SuiteCommand) TestCommandHas() {
 	this.True(HasCommand("phaseJump")) // M9.0 bootstrap 詞條已填入
 	this.True(HasCommand("deckShuffle"))
-	this.True(HasCommand("handAdd"))      // M9.3 實例化
-	this.True(HasCommand("cardRun"))      // M9.4 處理流程
-	this.False(HasCommand("effectClear")) // 效果佇列類,留效果系統(M12/M13)
+	this.True(HasCommand("handAdd"))     // M9.3 實例化
+	this.True(HasCommand("cardRun"))     // M9.4 處理流程
+	this.True(HasCommand("effectClear")) // M13 效果佇列三命令接回
+	this.True(HasCommand("effectDel"))
+	this.True(HasCommand("effectRun"))
+	this.False(HasCommand("nope")) // 未登錄
 }
 
 func (this *SuiteCommand) TestExecOperatePhaseJump() {
