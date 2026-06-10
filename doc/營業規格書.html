@@ -792,16 +792,14 @@ flowchart TD
     C1 --> R1
 
     B3 -->|常駐| C2[/"套用 [堆疊處理]"/]
-    C2 --> B5{"實際增加層數 > 0?"}
-    B5 -->|是| A9["執行 啟動命令"]
+    C2 --> A9["重複 實際增加層數 次:<br/>執行 啟動命令"]
     A9 --> R1
-    B5 -->|否| R1
 
     R1 --> B1
 
     class Start,End terminal
     class A0,A1,A2,A4n,A4r,A5n,A5r,A6n,A6r,A7,A8,A9 action
-    class B1,B2,B3,B4,B5 decision
+    class B1,B2,B3,B4 decision
     class C1,C2 cleanup
     classDef action fill:#e2ecdf,stroke:#4a6c5a,color:#2b2a26
     classDef cleanup fill:#ede4ce,stroke:#c9c0a8,color:#2b2a26
@@ -2739,7 +2737,7 @@ while true {
       case 常駐:
         套用 [堆疊處理]
 
-        if 實際增加層數 > 0 {
+        重複 實際增加層數 次 {
           執行 啟動命令
         }
       }
