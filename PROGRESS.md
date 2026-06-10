@@ -7,7 +7,7 @@
 ## 現況
 
 - **架構已定案、不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心四包:`cores`(營業引擎本體＝資料模型 + 驅動引擎 `Game`,單向 import `exprs`)+ `rules`(命令語言詞彙層＝屬性讀寫/操作命令/命令對象/內建函式 + 效果流程,單向 import `cores`/`exprs`)+ `games`(對外介面層＝`Parse`/`Validate`/`Run`,單向 import `rules`/`cores`/`exprs`)+ `exprs`(零遊戲依賴的運算式語言,可單獨測);依賴 `games → rules → cores → exprs` 一條直線。`infra` 為 Go-only 基礎設施、`internal/tester` 為跨包測試基建(BuildSheet/BuildData/FakeOperator/FakeRander)。
-- **M0–M12 已落地;M13(推進/清理/免疫)起未動**。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%。歷史里程碑的逐項落地紀錄已自本檔收斂(過程細節 git log 可查);跨重構仍有效的拍板整併入下方決策與待辦。
+- **M0–M13 已落地;M14(phase 狀態機)起未動**。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%。歷史里程碑的逐項落地紀錄已自本檔收斂(過程細節 git log 可查);跨重構仍有效的拍板整併入下方決策與待辦。
 - **整備重構完成(M12 後、M13 前;組件化→三合一→拆包)**:①組件化——`Value` 全封裝(`Apply`/`Clamp`)、實例與容器方法化、每型別一檔;②三合一——`Runtime`+`Engine` 收斂為 `cores.Game` 單型別(game.go),概念檔行為為吃 `game` 的自由函式;③拆包——命令語言詞彙全數遷出 cores 至 `internal/rules`(map 字面值 SSOT + `Game` 裝備制;commit `82d3278`),`Data` 聚合遊戲資料(原始表+衍生索引+效果預編譯,`Compiler` 注入)。改名:`CompileCommand`→`Compiler`、`EffectCommand`→`EffectExec`、`NewValuel`→`NewValueLock`、`runEffectCommand`→`runEffectExec`。**實作規格書已同步現行結構**(§二/§三/§四/§六/§七/§十);本檔決策節的重構前機制敘述以「重構對照」換讀。
 
 ## 里程碑進度
@@ -29,7 +29,7 @@
 | M10    | ✅   | 效果實例 + 佇列（資料 + push/pop）       |
 | M11    | ✅   | 觸發派發 fireTrigger                     |
 | M12    | ✅   | 堆疊處理 + 啟動效果列表                  |
-| M13    | ⬜   | 推進／清理／免疫 + 接回延後命令 *(prov)* |
+| M13    | ✅   | 推進／清理／凍結 + 效果佇列三命令        |
 | M14    | ⬜   | phase 狀態機 *(prov)*                    |
 | M15    | ⬜   | 啟動技能 *(prov)*                        |
 | M16    | ⬜   | 執行結算 → 跑通第一局 *(prov)*          |
@@ -45,7 +45,6 @@
 - **[企劃驗證器後補] 命令對象參數數量 / 型別校驗**:M8 selector 對 `[...]` 參數採執行期寬鬆——數量 / 型別不符(`oneInt` / `twoInt` 失敗)→ 該 selector 回空集合、命令對該對象 no-op;**未做 Validate 期 arity 檢查**(裸寫 `guestPick`、`handAll` 缺卡牌編號等於 Validate 漏過、執行期靜默 no-op)。規格【二十四｜參數規則】要求「參數欄非空者必帶完整參數、裸寫視為語法錯誤」——靜態 arity 校驗歸企劃驗證器支線(避免另立一張與 `selector` 同步的 arity 表),非引擎正確性所需。
 - **[Validate 後補] 引用左值的引用基底合法性**:M7 的 `Validate` 對引用左值只查屬性可寫性(`HasAttrRefWrite(refAttr)`),未查引用基底本身是否為合法物件引用(主表類別 = 卡牌 / 顧客 / 卡牌兼顧客引用)——故 `morale.cost = 1` 這類「以非引用作基底」於 Validate 漏過(執行期安全:`ExecAssign` 解析基底非 ref → no-op)。`rules` 目前無「某名稱是否為物件引用」的匯出述詞;企劃驗證器要完整時補一個(如 `HasObjectRef`)。
 - **企劃驗證器工具本體 = M5 後置支線**:命令解析地基已隨 M5 落地(`games` 的 `parse.go` 重用 `exprs.SyntaxError`、吐帶位置中文錯誤;名稱合法性由自由 `Validate` 查詞彙表 keys、M6+ 詞條到位後生效);工具本體(CLI＋Effect 表掃描器＋`task`／CI)依賴 M5、可與效果系統並行,尚未做。詳見實作規格書【附錄:企劃驗證器】。
-- **[M13] 凍結語意「屬性凍結」no-op 守衛尚無里程碑認領**:【二十一｜凍結語意】要求 `self == 卡牌化顧客` 時屬性修改命令(`= += -= *= /= %= @ #`)一律 no-op,但 `ExecAssign` 與寫側詞彙表(`attrWrite` / `attrRefWrite`)目前無 freeze 閘門。效果凍結(`fireTrigger` / 推進 / 清理 跳過卡牌化顧客的效果)、指令隔離(verb / `locateGuest` 層對卡牌化顧客設防;selector 層因卡牌化顧客已不在 `Seat`、天然滿足)合理隨 M13 落地;**唯「屬性凍結 no-op」與 M7 屬性修改路徑相關、卻不在 M13「推進 / 清理 / 免疫」命名範圍內**,明確歸入 M13 一併補,避免遺漏。
 - **[M16 前置] 結算重入鏈設計待先釘死再寫碼**:【二十｜執行命令】要求每次執行命令後「結算旗標 == false → 執行結算」,而執行結算又會經 觸發時機 / 清理效果 觸發更多命令,形成 執行命令 ↔ 執行結算 ↔ `fireTrigger` 遞迴重入。地基已備(`fireOne` / `dispatchEffect` 的 self 綁定逐層 save / restore、`Game.Settling` 旗標、`runEffectExec` 的 `// TODO(M16)` 插入點)。M16 動工前先以流程圖 / design note 釘死:哪些進入點設 `Settling`、【終止判定】如何「立即跳出結算進入對應階段」(panic / sentinel error / 回傳碼 擇一)、self 綁定於重入各層的還原次序——再寫實作,避免遞迴邊界的微妙 bug。
 - **[M14 還型] `Operator.PlayerAction` 暫借 `Action` 型別作回傳佔位**:玩家動作(出牌 X / 結束)與顧客行動實例(`Action`＝顧客+行動類型+技能)語意不同,M14 玩家行動主迴圈到站時定義專屬回傳型別還型(`define.go` 的 `Operator`)。
 - **[企劃驗證器後補] `taskAdd` 對行動類型直接轉型未驗範圍**:`commandTaskAdd`(`rules/commandGuest.go`)以 `cores.TaskKind(kind)` 直接 cast,越界值原樣入行動佇列,由 M14 顧客行動消費端防禦或驗證器靜態把關。
@@ -92,3 +91,4 @@
 - **Value 命名拍板(組件化重構)**:建構式 `NewValue(value, lock)` / `NewValueLock(lock bool)`;`Set` 與 `GetValue` 不對稱、`Lock()` 動詞與 `GetLock()`/`IsLock()` 同字根並存、`Clamp(low)` 純下限。**`addRaw` 除役**——四個繞鎖點全改守衛 `Sub`/`Add`(格擋鎖定→不減層仍無視本次 N、護盾鎖定→不消耗殘餘全進 morale、耗能鎖定→照出牌不扣、給分鎖定→不給),Value 無繞鎖通道。round/roundMax 為寫屬性(`ApplyValueOnly`;鎖定計數恆 0)。
 - **Lock 讀詞條改全名鍵**:讀側無後綴路由——`moraleLock` 等以全名為鍵直接併入 `attrRead`/`attrRefRead` 主表(取代 M6『獨立鎖表+CutSuffix』方案 A);寫側本就無 Lock 詞條(`@`/`#` 即表達鎖定變更)。
 - **rules 盤點全數否決(勿重提)**:維持每詞條一具名函式;詞條工廠化/合併/預建索引等十項盤點建議全數不採。
+- **M13 開工前敲定(推進/清理/凍結+效果佇列三命令,七問)**:① **effectClear 的 none 全域掃描接線**——ExecOperate 正規化:selector 名 none → target 傳 nil、其他 selector 篩空 → 非 nil 空切片;verb 以 target == nil 判全域掃描(CommandFunc 註解寫明約定+專測釘住;白箱測直呼 verb 須遵守同約定)。② **morph 接清理改以 Ref 匹配**——Morph 後以 NewRefCard(card)(同指標、IsSame 恆中)清理;作廢舊 TODO「Morph 前先存舊實例編號」方案(Ref 比的是當下編號,佇列 self 讀出已是新編號,以舊編號比對永遠 miss)。③ **effectRun 依類型派發**——薄接 dispatchEffect 加 N override(立即類型:過觸發條件閘門直接跑立即命令、忽略 N 只跑一次;觸發/常駐:[堆疊處理] N>0 用 N;常駐每實際增一層跑一次啟動命令);規格【二十五｜effectRun】補明文。④ **凍結述詞 = 卡牌化列表成員**——Game.IsFrozen(guest) 查 Cardify(容器成員身分即凍結狀態 SSOT;freeze 欄位只當解凍補回錨點——round 0 卡牌化時 freeze=0 會與未凍結零值相撞,不可兼任旗標)。⑤ **指令隔離 verb 層防禦最小化**——僅 guestExit 對 where == ContainerCardify 視為位置不符(唯一不檢 where 且誤中會毀 cardify 綁定不變式的 verb);其餘 verb 不加(selector 層已天然隔離:顧客系候選全取自 Seat/Wait)。⑥ **檔案切法**——effectAdvance.go(advanceEffect)/effectCleanup.go(cleanupEffect) 各一檔(沿用一獨立流程一檔)+ commandEffect.go(效果佇列三命令自成一類);退場共用核心(綁 self → 結束命令 × 層數 → 出佇列)放 help.go。⑦ **effectClear 受效果凍結**——全域掃描跳過 self == 凍結中顧客 的效果(凍結中=場外實體,與指令隔離同精神);規格【二十一｜效果凍結】補列 effectClear。**子切:M13.0 凍結述詞+屬性凍結閘門 / M13.1 推進效果 / M13.2 清理效果+morph、guestExit 兩呼叫點接回 / M13.3 三命令+Effect.StackSub 原語+收尾(規格兩處補文、TODO 清除、TestCommandHas 翻轉,task lint+task doc)**。
