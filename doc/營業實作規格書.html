@@ -486,14 +486,18 @@ RovingDiner/
 │  │   ├─ builtin.go        內建函式註冊表（min／max）
 │  │   ├─ effect*.go        效果流程：堆疊處理（effectStack）／啟動效果列表（effectStart）／觸發派發（effectTrigger）
 │  │   │                    ／推進（effectAdvance）／清理（effectCleanup）
-│  │   ├─ phase*.go         核心流程：runPhase 分派＋六階段（GameStart／RoundStart／PlayerAction／GuestAction／RoundEnd／GameEnd），
+│  │   ├─ phase*.go         核心流程：RunPhase 分派（games.Run 的驅動接縫、終止哨兵單點 recover）＋六階段
+│  │   │                    （GameStart／RoundStart／PlayerAction／GuestAction／RoundEnd／GameEnd），
 │  │   │                    每站回報下一站、PhaseNone 為停機訊號（營業規格書【十九、核心流程】）
+│  │   ├─ settle.go         執行結算 + 終止判定：門檻命中入行動佇列／飽食･生氣離場／手牌上限棄牌;
+│  │   │                    終止命中以 gameEnd 哨兵 panic 跳出（營業規格書【二十、獨立流程】）
 │  │   └─ help.go           跨概念共用 helper：參數取值／分組計數／引用鎖定取值／卡牌容器原語／士氣扣減特例
 │  ├─ games/                對外介面層（單向 import rules／cores／exprs），依關注點分檔：
 │  │   ├─ parse.go          命令文法 parser + Command AST（純文法、名稱原始字串；對外入口 Parse）
 │  │   ├─ validate.go       命令 AST 名稱驗證：自由 Validate 逐名查 rules 詞彙表（Has* 四查詢）
 │  │   ├─ execute.go        走法 X 薄派發：AST 型別 switch → Game.ExecAssign／ExecOperate
-│  │   └─ run.go            （M16 未建）營業執行對外入口 Run：NewGame + rules.Register 後驅動 rules 的 runPhase 迴圈、逐單位 Emit
+│  │   └─ run.go            營業執行對外入口 Run：NewGame + rules.Register + Compiler 閉包（Parse → execute + Settle 結算尾）後
+│  │                        驅動 rules.RunPhase 迴圈至停機、回報成敗;逐單位 Emit 隨 M17
 │  └─ tester/               跨包共用測試基建：BuildSheet／BuildData 迷你資料、FakeOperator／FakeRander 決定性替身
 │                           （cores 白箱測試不能 import tester——成環，自持私有複本）
 ├─ sheet/ sheetdata/ gamedata/    （已存在，沿用既有 Sheeter pipeline）
@@ -530,7 +534,7 @@ RovingDiner/
 | 命令     | `rules/command*.go`                                              | 屬性修改 + ~60 操作命令 verb 執行行為（command 詞彙表 + commandMove／Card／Effect／Guest／Instance／Flow.go）；命令文法 parser／名稱驗證屬 games 對外層（parse.go／validate.go） | 營業規格書【十七、命令】【二十五、操作命令清單】              |
 | 命令對象 | `rules/selector.go`                                              | ~35 命令對象解析行為（作用對象集合；含 N 邊界／退化／filter／deckTop auto-shuffle）                                                                                              | 營業規格書【二十四、命令對象清單】                            |
 | 效果     | `rules/effect*.go`                                               | 堆疊處理（effectStack）／啟動效果列表（effectStart）／觸發派發（effectTrigger）／推進（effectAdvance）／清理（effectCleanup）＋ 免疫與凍結閘門；佇列操作原語歸 `cores/effect.go` | 營業規格書【七、效果類型】【十~十六】【二十、獨立流程】       |
-| 流程     | `rules/phase*.go`                                                | 6 個 phase 狀態機（runPhase 分派,每站回報下一站、PhaseNone 停機）+ 玩家行動主迴圈;執行結算／終止判定／結算旗標重入防護隨 M16                                                     | 營業規格書【十九、核心流程】【二十、獨立流程】                |
+| 流程     | `rules/phase*.go` + `rules/settle.go`                            | 6 個 phase 狀態機（RunPhase 分派,每站回報下一站、PhaseNone 停機）+ 玩家行動主迴圈 + 執行結算／終止判定（結算旗標擋重入、終止以哨兵 panic 跳出、RunPhase 單點 recover）           | 營業規格書【十九、核心流程】【二十、獨立流程】                |
 
 三個易混的「解析對象」概念，分屬不同層、不同時機，務必分清：
 
