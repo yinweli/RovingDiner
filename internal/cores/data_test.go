@@ -77,6 +77,22 @@ func (this *SuiteData) TestDataSetEffect() {
 	this.Equal(int32(5), meta.Group)
 }
 
+// TestDataGetGuest 驗證 GetGuest 查顧客門檻配對、查無回 ok=false（即無門檻）。
+func (this *SuiteData) TestDataGetGuest() {
+	sheet := &sheeter.Sheeter{}
+	sheet.Guest.Data = map[int32]*sheeter.Guest{
+		501: {ID: 501, SateSkillID: []string{"6^301"}},
+	}
+	data := NewData(sheet, nil)
+
+	meta, ok := data.GetGuest(501)
+	this.True(ok)
+	this.Equal([]Threshold{{Value: 6, SkillID: 301}}, meta.Sate)
+
+	_, ok = data.GetGuest(999) // 查無 → 失敗
+	this.False(ok)
+}
+
 func (this *SuiteData) TestPrepareAward() {
 	award := prepareAward(buildSheet())
 	this.Equal([]int32{101, 102}, award[7].cardID) // 群組 7:101(w3) / 102(w1)
@@ -139,6 +155,27 @@ func (this *SuiteData) TestPrepareEffect() {
 	this.NotNil(result[700].Start)
 
 	this.Empty(prepareEffect(nil, stub)) // data nil → 空
+}
+
+// TestPrepareGuest 驗證顧客門檻衍生索引:解析「門檻值^技能編號」、飽食升序 / 耐心降序、壞格式跳過該筆、無門檻不建項。
+func (this *SuiteData) TestPrepareGuest() {
+	data := &sheeter.Sheeter{}
+	data.Guest.Data = map[int32]*sheeter.Guest{
+		501: {ID: 501, SateSkillID: []string{"9^301", "6^302"}, CalmSkillID: []string{"1^303", "2^304"}},
+		502: {ID: 502, SateSkillID: []string{"x^1", "2^y", "3", "4^5^6"}}, // 全壞格式（非數字 / 缺 ^ / 多段）→ 不建項
+		503: {ID: 503, CalmSkillID: []string{"bad", "5^301"}},             // 壞筆跳過、好筆保留
+		504: {ID: 504},                                                    // 無門檻 → 不建項
+	}
+
+	result := prepareGuest(data)
+	this.Require().Contains(result, int32(501))
+	this.Equal([]Threshold{{Value: 6, SkillID: 302}, {Value: 9, SkillID: 301}}, result[501].Sate) // 升序
+	this.Equal([]Threshold{{Value: 2, SkillID: 304}, {Value: 1, SkillID: 303}}, result[501].Calm) // 降序
+	this.NotContains(result, int32(502))
+	this.Equal([]Threshold{{Value: 5, SkillID: 301}}, result[503].Calm)
+	this.NotContains(result, int32(504))
+
+	this.Empty(prepareGuest(nil)) // data nil → 空
 }
 
 // === 測試輔助（置尾） ===

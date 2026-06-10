@@ -2,26 +2,30 @@ package cores
 
 import (
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// Data 一份遊戲資料：原始靜態表 + 載入期衍生索引（抽獎 / 預編譯效果）。
+// Data 一份遊戲資料：原始靜態表 + 載入期衍生索引（抽獎 / 預編譯效果 / 顧客門檻）。
 // 衍生索引跟資料走、不跟營業走：同一份 Data 可供多場營業共用；組裝期建立、營業期唯讀。
 type Data struct {
 	sheet  *sheeter.Sheeter     // 原始靜態表（Sheeter 資料 port）
 	award  map[int32]AwardData  // 抽獎衍生索引（群組 → 候選）;prepareAward 建,供 Game.RollCard 用
 	effect map[int32]EffectData // 預編譯效果索引（效果編號 → 編譯形）;prepareEffect 建,供效果流程查 Kind / 命令 / 條件
+	guest  map[int32]GuestData  // 顧客門檻衍生索引（顧客編號 → 飽食 / 耐心門檻配對）;prepareGuest 建,供執行結算用
 }
 
-// NewData 以原始表組裝遊戲資料，建構時整理衍生索引（prepareAward / prepareEffect）;
+// NewData 以原始表組裝遊戲資料，建構時整理衍生索引（prepareAward / prepareEffect / prepareGuest）;
 // 效果編譯需命令解析，由 games 經 Compiler 注入（無命令資料可傳 nil）;sheet nil → 空表空索引。
 func NewData(sheet *sheeter.Sheeter, compile Compiler) *Data {
 	return &Data{
 		sheet:  sheet,
 		award:  prepareAward(sheet),
 		effect: prepareEffect(sheet, compile),
+		guest:  prepareGuest(sheet),
 	}
 }
 
@@ -45,6 +49,12 @@ func (this *Data) GetEffect(effectID int32) (meta EffectData, ok bool) {
 // SetEffect 組裝期補登 / 覆寫預編譯效果（測試注入自訂編譯閉包用;營業開始後不應再呼叫）。
 func (this *Data) SetEffect(effectID int32, meta EffectData) {
 	this.effect[effectID] = meta
+}
+
+// GetGuest 查顧客門檻配對;查無回 ok=false（無門檻資料的顧客不建項,查無即無門檻）。
+func (this *Data) GetGuest(guestID int32) (meta GuestData, ok bool) {
+	meta, ok = this.guest[guestID]
+	return meta, ok
 }
 
 // AwardData 抽獎群組的平行候選(cardID 與 weight 一一對應、同序);供 weighted random 直接餵 Rander.Weighted。
@@ -190,6 +200,66 @@ func prepareEffect(data *sheeter.Sheeter, compile Compiler) map[int32]EffectData
 			Start:        start,
 			End:          end,
 		}
+	} // for
+
+	return result
+}
+
+// GuestData 顧客門檻的解析形:飽食門檻升序、耐心門檻降序（對齊【營業規格書 | 二十、獨立流程 | 執行結算】迭代序）。
+type GuestData struct {
+	Sate []Threshold // 飽食門檻配對（門檻值由低到高）
+	Calm []Threshold // 耐心門檻配對（門檻值由高到低）
+}
+
+// Threshold 門檻配對:門檻值與對應門檻技能（顧客表格「門檻值^技能編號」的解析形;【營業規格書 | 四、表格結構 | 顧客（Guest）表格】）。
+type Threshold struct {
+	Value   int32 // 門檻值
+	SkillID int32 // 門檻技能編號
+}
+
+// prepareGuest 自 Guest 表建「顧客編號 → 門檻配對」衍生索引:解析 SateSkillID / CalmSkillID 的「門檻值^技能編號」字串並排序;
+// 壞格式（缺 ^ / 非數字）跳過該筆（寬鬆,比照 prepareAward / prepareEffect,嚴格把關交企劃驗證器）;無門檻的顧客不建項。
+func prepareGuest(data *sheeter.Sheeter) map[int32]GuestData {
+	result := map[int32]GuestData{}
+
+	if data == nil {
+		return result
+	} // if
+
+	for _, itor := range data.Guest.Keys() {
+		guest := data.Guest.Get(itor)
+		sate := parseThreshold(guest.SateSkillID)
+		calm := parseThreshold(guest.CalmSkillID)
+
+		if len(sate) == 0 && len(calm) == 0 {
+			continue // 無門檻 → 不建項
+		} // if
+
+		sort.SliceStable(sate, func(i, j int) bool { return sate[i].Value < sate[j].Value })
+		sort.SliceStable(calm, func(i, j int) bool { return calm[i].Value > calm[j].Value })
+		result[itor] = GuestData{Sate: sate, Calm: calm}
+	} // for
+
+	return result
+}
+
+// parseThreshold 解析「門檻值^技能編號」配對列表;壞格式跳過該筆。供 prepareGuest 的飽食 / 耐心兩欄共用。
+func parseThreshold(source []string) (result []Threshold) {
+	for _, itor := range source {
+		part := strings.Split(itor, "^")
+
+		if len(part) != 2 {
+			continue // 缺 ^ 分隔 → 跳過該筆
+		} // if
+
+		value, errValue := strconv.ParseInt(part[0], 10, 32)
+		skillID, errSkill := strconv.ParseInt(part[1], 10, 32)
+
+		if errValue != nil || errSkill != nil {
+			continue // 非數字 / 超出 int32 → 跳過該筆
+		} // if
+
+		result = append(result, Threshold{Value: int32(value), SkillID: int32(skillID)})
 	} // for
 
 	return result

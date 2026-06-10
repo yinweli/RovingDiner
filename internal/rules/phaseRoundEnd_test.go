@@ -25,6 +25,8 @@ func (this *SuitePhaseRoundEnd) TestPhaseRoundEnd() {
 	game := newGameData(data)
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundEnd, Trigger: func(game *cores.Game) { fired++ }})
 	data.SetEffect(905, cores.EffectData{Kind: cores.EffectPersist, RunRound: 1, End: func(game *cores.Game) { ended++ }})
+	game.GetRoundMax().Set(99) // 結算已接線:佈置回合上限與士氣,避免終止判定命中
+	game.GetMorale().Set(30)
 	game.GetRound().Set(1)
 	game.Effect.Push(cores.NewEffect(game, 901, cores.Ref{}, 1))
 	game.Effect.Push(cores.NewEffect(game, 905, cores.Ref{}, 1)) // 結束回合 1 → 本站推進退場

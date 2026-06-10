@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/exprs"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuiteGame(t *testing.T) {
@@ -478,6 +479,22 @@ func (this *SuiteGame) TestGameEffectData() {
 	this.Equal(int32(5), meta.Group)
 
 	_, ok = game.EffectData(999) // 查無 → 失敗
+	this.False(ok)
+}
+
+// TestGameGuestData 驗證 GuestData 委派遊戲資料查顧客門檻;查無回 ok=false（即無門檻）。
+func (this *SuiteGame) TestGameGuestData() {
+	sheet := &sheeter.Sheeter{}
+	sheet.Guest.Data = map[int32]*sheeter.Guest{
+		501: {ID: 501, SateSkillID: []string{"6^301"}},
+	}
+	game := NewGame(0, 0, NewData(sheet, nil), nil, nil)
+
+	meta, ok := game.GuestData(501)
+	this.True(ok)
+	this.Len(meta.Sate, 1)
+
+	_, ok = game.GuestData(999) // 查無 → 失敗
 	this.False(ok)
 }
 

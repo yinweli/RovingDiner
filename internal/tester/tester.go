@@ -45,11 +45,13 @@ func BuildSheet() *sheeter.Sheeter {
 		4: {ID: 4, Group: 9, CardID: 999, Weight: 1}, // 群組 9：抽中編號 999 無卡牌資料 → 跳過該張
 	}
 	data.Guest.Data = map[int32]*sheeter.Guest{
-		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 12, SateSeal: true},
+		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 12, SateSeal: true, SateSkillID: []string{"9^301", "6^301"}, CalmSkillID: []string{"1^301", "2^301"}},
+		502: {ID: 502, Score: 2, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 99, SateMax: 12}, // 高耐心(供回合上限失敗局)、無門檻
 	}
 	data.Stage.Data = map[int32]*sheeter.Stage{
 		601: {ID: 601, Name: "測試關卡", HandID: []int32{101}, DeckID: []int32{101, 102}, DropID: []int32{102}, ExileID: []int32{101}, WaitID: []int32{501, 501}, PrefixSkillID: []int32{301}},
 		602: {ID: 602, Name: "壞引用", HandID: []int32{999}, DeckID: []int32{999}, WaitID: []int32{999}, PrefixSkillID: []int32{999}}, // 全列查無資料 → 逐筆跳過
+		603: {ID: 603, Name: "耗到上限", WaitID: []int32{502}},                                                                         // 顧客耐心耗不完 → 回合上限失敗
 	}
 	return data
 }
@@ -80,8 +82,9 @@ func (this FakeOperator) PickCard(source []*cores.Card, count int) []*cores.Card
 	return source[:count]
 }
 
+// PickDiscard 良性版棄牌選擇——棄掉候選的前 over 張;行為不良分支由各測試自備替身驗證。
 func (this FakeOperator) PickDiscard(source []*cores.Card, over int) []*cores.Card {
-	return nil
+	return source[:over]
 }
 
 // FakeRander 決定性亂數替身:Intn 固定回 N(預設 0、取候選首位);Shuffle 恆等(randSubset 取候選前綴,結果可預期);Weighted 恆取首位。

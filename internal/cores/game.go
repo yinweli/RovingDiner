@@ -512,6 +512,11 @@ func (this *Game) EffectData(effectID int32) (meta EffectData, ok bool) {
 	return this.data.GetEffect(effectID)
 }
 
+// GuestData 查顧客門檻配對（委派遊戲資料;執行結算的飽食 / 耐心門檻迭代用）;查無回 ok=false（即無門檻）。
+func (this *Game) GuestData(guestID int32) (meta GuestData, ok bool) {
+	return this.data.GetGuest(guestID)
+}
+
 // RollCard 對抽獎群組做 weighted random 抽一張卡牌編號（deckRoll / handRoll / *Morph 用）;
 // 群組不存在 / 總權重 0 回 ok=false。
 func (this *Game) RollCard(group int32) (cardID int32, ok bool) {

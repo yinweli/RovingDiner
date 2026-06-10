@@ -6,10 +6,23 @@ import (
 
 // 核心流程家族（phase*.go）:【營業規格書 | 十九、核心流程】一階段一檔一函式,檔名 = 函式名 = cores.PhaseKind 列舉名。
 // 每站只回報下一站、不互相呼叫（單站可獨立測試）;營業成功 / 失敗觸發後回 PhaseNone 作停機訊號。
-// 本檔持分派入口（runPhase）與跨站共用 helper;驅動迴圈與匯出接縫屬 games.Run（M16）。
+// 本檔持分派入口（RunPhase,games.Run 的驅動接縫）與跨站共用 helper;驅動迴圈與成敗記錄屬 games.Run。
 
-// runPhase 跑指定階段一站、回下一站;PhaseNone / 未知階段回 PhaseNone（停機）。
-func runPhase(game *cores.Game, phase cores.PhaseKind) cores.PhaseKind {
+// RunPhase 跑指定階段一站、回下一站;PhaseNone / 未知階段回 PhaseNone（停機）。
+// 終止判定的哨兵（gameEnd）在此單點 recover → 回對應終止站;非哨兵 panic 原樣重拋（真 bug 不被吞）。
+func RunPhase(game *cores.Game, phase cores.PhaseKind) (next cores.PhaseKind) {
+	defer func() {
+		if cause := recover(); cause != nil {
+			end, ok := cause.(gameEnd)
+
+			if ok == false {
+				panic(cause) // 非哨兵 → 原樣重拋
+			} // if
+
+			next = end.phase
+		} // if
+	}()
+
 	switch phase {
 	case cores.PhaseGameStart:
 		return phaseGameStart(game)

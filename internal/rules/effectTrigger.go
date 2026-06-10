@@ -98,6 +98,8 @@ func triggerCount(game *cores.Game, count *exprs.Expr) (n int32, ok bool) {
 }
 
 // runEffectExec 連續執行效果命令 times 次;nil 命令（空欄）整體略過、times <= 0 不執行。
+// 「執行命令」的結算尾不在此:games 的 Compiler 把它編進命令閉包（execute → Settle）,
+// 真實命令必經、測試注入的裸閉包不受擾（【營業規格書 | 二十、獨立流程 | 執行命令】）。
 func runEffectExec(game *cores.Game, command cores.EffectExec, times int32) {
 	if command == nil {
 		return
@@ -105,6 +107,5 @@ func runEffectExec(game *cores.Game, command cores.EffectExec, times int32) {
 
 	for itor := int32(0); itor < times; itor++ {
 		command(game)
-		// TODO(M16)：執行命令 結算重入尾 —— 結算旗標 == false → 執行結算（【營業規格書 | 二十、獨立流程 | 執行命令】）;結算為 M16 seam。
 	} // for
 }

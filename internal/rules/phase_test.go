@@ -6,28 +6,38 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
+	"github.com/yinweli/RovingDiner/internal/tester"
 )
 
 func TestSuitePhase(t *testing.T) {
 	suite.Run(t, new(SuitePhase))
 }
 
-// SuitePhase 驗證核心流程分派（phase.go）:runPhase 七站分派與停機、跨站共用 helper。
+// SuitePhase 驗證核心流程分派（phase.go）:RunPhase 七站分派、哨兵 recover 與停機、跨站共用 helper。
 type SuitePhase struct {
 	suite.Suite
 }
 
-// TestRunPhase 驗證 runPhase 分派七站並以空盤面走完最小一輪;PhaseNone / 未知 → 停機。
+// TestRunPhase 驗證 RunPhase 分派七站並以空盤面走完最小一局:回合結束的結算判定「全場清空」→ 哨兵跳出 →
+// recover 轉營業成功站 → 停機;非哨兵 panic 原樣重拋。
 func (this *SuitePhase) TestRunPhase() {
 	game := newGame()
-	this.Equal(cores.PhaseRoundStart, runPhase(game, cores.PhaseGameStart))
-	this.Equal(cores.PhasePlayerAction, runPhase(game, cores.PhaseRoundStart))
-	this.Equal(cores.PhaseGuestAction, runPhase(game, cores.PhasePlayerAction)) // FakeOperator 恆回玩家結束
-	this.Equal(cores.PhaseRoundEnd, runPhase(game, cores.PhaseGuestAction))     // 行動佇列空 → 收尾
-	this.Equal(cores.PhaseRoundStart, runPhase(game, cores.PhaseRoundEnd))
-	this.Equal(cores.PhaseNone, runPhase(game, cores.PhaseGameSucc))
-	this.Equal(cores.PhaseNone, runPhase(game, cores.PhaseGameFail))
-	this.Equal(cores.PhaseNone, runPhase(game, cores.PhaseNone)) // 停機
+	this.Equal(cores.PhaseRoundStart, RunPhase(game, cores.PhaseGameStart))
+	this.Equal(cores.PhasePlayerAction, RunPhase(game, cores.PhaseRoundStart))
+	this.Equal(cores.PhaseGuestAction, RunPhase(game, cores.PhasePlayerAction)) // FakeOperator 恆回玩家結束
+	this.Equal(cores.PhaseRoundEnd, RunPhase(game, cores.PhaseGuestAction))     // 行動佇列空 → 收尾
+	this.Equal(cores.PhaseGameSucc, RunPhase(game, cores.PhaseRoundEnd))        // 空盤面結算 → 全場清空 → 哨兵 → 營業成功
+	this.Equal(cores.PhaseNone, RunPhase(game, cores.PhaseGameSucc))
+	this.Equal(cores.PhaseNone, RunPhase(game, cores.PhaseGameFail))
+	this.Equal(cores.PhaseNone, RunPhase(game, cores.PhaseNone)) // 停機
+
+	this.PanicsWithValue("boom", func() { // 非哨兵 panic → 原樣重拋
+		data := tester.BuildData()
+		bad := newGameData(data)
+		data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundEnd, Trigger: func(game *cores.Game) { panic("boom") }})
+		bad.Effect.Push(cores.NewEffect(bad, 901, cores.Ref{}, 1))
+		RunPhase(bad, cores.PhaseRoundEnd)
+	})
 }
 
 // TestEnergyFill 驗證 energyFill 點數補滿:低於上限補至上限、高於上限保留、鎖定不補。

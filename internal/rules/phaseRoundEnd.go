@@ -5,8 +5,8 @@ import (
 )
 
 // phaseRoundEnd 回合結束階段（【營業規格書 | 十九、核心流程 | 5. 回合結束階段】）:觸發 roundEnd →
-// 座位與遊蕩每位顧客耐心 -1（鎖定 → 不扣）、出牌點數保留未鎖定時點數歸零 → 推進效果（advanceEffect）→ 回回合開始。
-// 執行結算為 M16 seam（接於推進效果之後）。
+// 座位與遊蕩每位顧客耐心 -1（鎖定 → 不扣）、出牌點數保留未鎖定時點數歸零 → 推進效果（advanceEffect）→
+// 執行結算（Settle;終止判定命中以哨兵跳出）→ 回回合開始。
 func phaseRoundEnd(game *cores.Game) cores.PhaseKind {
 	fireTrigger(game, cores.TriggerRoundEnd) // 回合結束觸發
 
@@ -23,6 +23,6 @@ func phaseRoundEnd(game *cores.Game) cores.PhaseKind {
 	} // if
 
 	advanceEffect(game)
-	// TODO(M16)：執行結算（【營業規格書 | 二十、獨立流程 | 執行結算】）;結算為 M16 seam。
+	Settle(game)
 	return cores.PhaseRoundStart
 }
