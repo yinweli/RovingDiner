@@ -161,6 +161,6 @@ linters:
           - goconst
       # 詞彙表的 map 鍵即名稱 SSOT（鍵與行為配對為單一定義點）：屬性讀寫表跨「全域／引用 × 值／鎖」、
       # 命令對象表（selector）與操作命令表（command）同名跨來源檔與測試重複是結構必然，非可抽常數的魔法字串。
-      - path: internal/cores/(attr.*|selector|command.*)\.go
+      - path: internal/rules/(attr.*|selector|command.*)\.go
         linters:
           - goconst

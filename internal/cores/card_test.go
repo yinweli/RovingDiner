@@ -17,8 +17,7 @@ type SuiteCard struct {
 
 // TestNewCard 驗證 NewCard 載入卡牌資料初始值、bool 欄轉鎖、SkillID 取技能效果列表;資料不存在回 nil。
 func (this *SuiteCard) TestNewCard() {
-	game := NewGame(0, nil, nil, nil, nil)
-	injectPort(game)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 
 	card := NewCard(game, 103) // 卡 103：Cost 2、Keep / Seal bool → 鎖、SkillID 301 → 效果列表
 	this.Require().NotNil(card)
@@ -35,9 +34,8 @@ func (this *SuiteCard) TestNewCard() {
 
 // TestCopyCard 驗證 CopyCard 淺複製載初始值、深複製複製 source 當前狀態與效果列表;實例編號皆重生。
 func (this *SuiteCard) TestCopyCard() {
-	game := NewGame(0, nil, nil, nil, nil)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 	source := &Card{instanceID: game.NextID(), cardID: 103, cost: NewValue(9, 0), effectID: NewIDList(777)}
-	injectPort(game)
 
 	shallow := CopyCard(game, source, false) // 淺複製：載卡牌資料初始值（非 source 當前狀態）
 	this.Require().NotNil(shallow)
@@ -143,8 +141,7 @@ func (this *SuiteCard) TestCardCardifyFree() {
 
 // TestCardMorph 驗證 Morph 變身重設:重配實例編號、換編號、僅載四欄;查無資料回 false 不動。
 func (this *SuiteCard) TestCardMorph() {
-	game := NewGame(0, nil, nil, nil, nil)
-	injectPort(game)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 	card := &Card{instanceID: game.NextID(), cardID: 102, cost: NewValue(9, 0), extraRunMin: NewValue(7, 0)}
 	old := card.GetInstanceID()
 

@@ -1,8 +1,6 @@
 package cores
 
 import (
-	"strings"
-
 	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
@@ -12,13 +10,12 @@ import (
 //
 // Game 是唯一真相、持有全部實例與容器（零顯示依賴）；
 // 前端靠事件流 + InstanceID 對照投影畫面，不持有第二份規則狀態。
-// 作為驅動引擎，Game 持兩 port 與靜態表、委派實作 exprs.Resolver（Attr / AttrRef），
-// 對外執行命令（ExecAssign / ExecOperate）；games 僅透過匯出方法操作、經 NewGame 建立。
-// 內建函式註冊表為套件層全域 builtin（同 attrRead 等詞彙表），非 per-instance 狀態，故不入欄位。
+// 作為驅動引擎，Game 持遊戲資料與兩 port、委派實作 exprs.Resolver（Attr / AttrRef），
+// 對外執行命令（ExecAssign / ExecOperate）；詞彙行為由 rules 套件經 Register* 裝備。
 //
 // 欄位紀律：數值屬性私有，經 Get* 取 *Value 組件讀寫（寫入紀律由 Value 把關）；
 // 事件欄位只能經 Event* 方法成組寫入（Last + Count + Total 等從不單獨寫）、Get* 讀取；
-// 容器欄位公開，佇列紀律由各列表型別的方法把關；注入欄位建構時定、self 為 run-state。
+// 容器欄位公開，佇列紀律由各列表型別的方法把關；注入欄位建構時定、詞彙裝備後唯讀、self 為 run-state。
 type Game struct {
 	// 餐廳 / 出牌全域數值屬性
 	morale       Value // 餐廳士氣值
@@ -92,28 +89,36 @@ type Game struct {
 	lastID      InstanceID // 實例編號產生器游標
 
 	// 引擎注入與求值脈絡
-	self       *Ref                 // 當前求值脈絡的 self 綁定（run-state，效果流程 save / restore 切換）;nil 代表 self 未固定
-	data       *sheeter.Sheeter     // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
-	operator   Operator             // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
-	rander     Rander               // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
-	awardData  map[int32]awardData  // 抽獎衍生索引(群組 → 候選);NewGame 經 prepareAward 內部建、唯讀,供 *Roll / *Morph 用
-	effectData map[int32]effectData // 預編譯效果索引(效果編號 → 編譯形);NewGame 經 prepareEffect 內部建、唯讀,供效果流程查 Kind / 命令 / 條件
+	self     *Ref     // 當前求值脈絡的 self 綁定（run-state，效果流程 save / restore 切換）;nil 代表 self 未固定
+	data     *Data    // 遊戲資料（原始表 + 衍生索引;建構注入、營業期唯讀）
+	operator Operator // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
+	rander   Rander   // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
+
+	// 詞彙裝備（rules 經 Register* 逐詞條注入;裝備後唯讀、等同常數,不破壞決定性）
+	attrRead     map[string]AttrReadFunc     // 全域屬性讀詞彙表（含 Lock 全名詞條）
+	attrWrite    map[string]AttrWriteFunc    // 全域屬性寫詞彙表
+	attrRefRead  map[string]AttrRefReadFunc  // 引用屬性讀詞彙表（含 Lock 全名詞條）
+	attrRefWrite map[string]AttrRefWriteFunc // 引用屬性寫詞彙表
+	command      map[string]CommandFunc      // 操作命令詞彙表
+	selector     map[string]SelectorFunc     // 命令對象詞彙表
+	builtin      map[string]exprs.Builtin    // 內建函式註冊表（Env 帶入 exprs）
 }
 
-// NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用；不載入任何遊戲資料），
-// 並注入靜態表格 / 玩家輸入與亂數兩 port / 命令編譯器。
-// awardData 與 effectData 於建構時自 data 整理（prepareAward / prepareEffect）；effectData 多吃 compile 原語（命令字串 → 閉包），
-// 因 cores 不能 import games 的命令解析，由 games 經 CompileCommand 注入（無命令資料時可傳 nil）。
-// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入；self 為求值脈絡 run-state、不入建構。
-func NewGame(seed int64, data *sheeter.Sheeter, operator Operator, rander Rander, compile CompileCommand) *Game {
+// NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用），
+// 並注入遊戲資料（原始表 + 衍生索引,nil 補空殼）與玩家輸入 / 亂數兩 port。
+// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / tester）填入；self 為求值脈絡 run-state、
+// 詞彙為裝備（rules.Register）,皆不入建構。
+func NewGame(seed int64, data *Data, operator Operator, rander Rander) *Game {
+	if data == nil {
+		data = NewData(nil, nil)
+	} // if
+
 	return &Game{
-		Seat:       SeatList{},
-		Seed:       seed,
-		data:       data,
-		operator:   operator,
-		rander:     rander,
-		awardData:  prepareAward(data),
-		effectData: prepareEffect(data, compile),
+		Seat:     SeatList{},
+		Seed:     seed,
+		data:     data,
+		operator: operator,
+		rander:   rander,
 	}
 }
 
@@ -121,6 +126,97 @@ func NewGame(seed int64, data *sheeter.Sheeter, operator Operator, rander Rander
 func (this *Game) NextID() InstanceID {
 	this.lastID++
 	return this.lastID
+}
+
+// RegisterAttrRead 註冊全域屬性讀詞條（Lock 詞條以全名為鍵,如 moraleLock）;重複註冊後者覆蓋。
+func (this *Game) RegisterAttrRead(name string, read AttrReadFunc) {
+	if this.attrRead == nil {
+		this.attrRead = map[string]AttrReadFunc{}
+	} // if
+
+	this.attrRead[name] = read
+}
+
+// RegisterAttrWrite 註冊全域屬性寫詞條;重複註冊後者覆蓋。
+func (this *Game) RegisterAttrWrite(name string, write AttrWriteFunc) {
+	if this.attrWrite == nil {
+		this.attrWrite = map[string]AttrWriteFunc{}
+	} // if
+
+	this.attrWrite[name] = write
+}
+
+// RegisterAttrRefRead 註冊引用屬性讀詞條（Lock 詞條以全名為鍵）;重複註冊後者覆蓋。
+func (this *Game) RegisterAttrRefRead(name string, read AttrRefReadFunc) {
+	if this.attrRefRead == nil {
+		this.attrRefRead = map[string]AttrRefReadFunc{}
+	} // if
+
+	this.attrRefRead[name] = read
+}
+
+// RegisterAttrRefWrite 註冊引用屬性寫詞條;重複註冊後者覆蓋。
+func (this *Game) RegisterAttrRefWrite(name string, write AttrRefWriteFunc) {
+	if this.attrRefWrite == nil {
+		this.attrRefWrite = map[string]AttrRefWriteFunc{}
+	} // if
+
+	this.attrRefWrite[name] = write
+}
+
+// RegisterCommand 註冊操作命令詞條;重複註冊後者覆蓋。
+func (this *Game) RegisterCommand(name string, run CommandFunc) {
+	if this.command == nil {
+		this.command = map[string]CommandFunc{}
+	} // if
+
+	this.command[name] = run
+}
+
+// RegisterSelector 註冊命令對象詞條;重複註冊後者覆蓋。
+func (this *Game) RegisterSelector(name string, resolve SelectorFunc) {
+	if this.selector == nil {
+		this.selector = map[string]SelectorFunc{}
+	} // if
+
+	this.selector[name] = resolve
+}
+
+// RegisterBuiltin 註冊內建函式詞條（Env 帶入 exprs 求值）;重複註冊後者覆蓋。
+func (this *Game) RegisterBuiltin(name string, run exprs.Builtin) {
+	if this.builtin == nil {
+		this.builtin = map[string]exprs.Builtin{}
+	} // if
+
+	this.builtin[name] = run
+}
+
+// GetSheet 取原始靜態表（委派遊戲資料;卡牌 / 顧客 / 座位 / 技能 / 設定查詢）。
+func (this *Game) GetSheet() *sheeter.Sheeter {
+	return this.data.GetSheet()
+}
+
+// GetSelf 取當前求值脈絡的 self 綁定;nil 代表 self 未固定。
+func (this *Game) GetSelf() *Ref {
+	return this.self
+}
+
+// SetSelf 設定求值脈絡 self 並回傳還原函式;呼叫端 defer restore() 逐層還原（結算重入安全）。
+// self 的唯一寫入門:存舊值與還原目標都鎖在方法內,呼叫端只需記得 defer。
+func (this *Game) SetSelf(self *Ref) (restore func()) {
+	prev := this.self
+	this.self = self
+	return func() { this.self = prev }
+}
+
+// GetOperator 取玩家輸入 port（命令對象 *Pick / 目標選取暫停流程用）。
+func (this *Game) GetOperator() Operator {
+	return this.operator
+}
+
+// GetRander 取亂數 port（*Rand 隨機選取 / 洗牌 / 隨機空位用）。
+func (this *Game) GetRander() Rander {
+	return this.rander
 }
 
 // GetMorale 取餐廳士氣值。
@@ -402,7 +498,7 @@ func (this *Game) RoundReset() {
 // SkillEffect 取技能的效果編號列表複本（新卡實例效果列表來源 = Card.SkillID → Skill.EffectID）;技能不存在回 nil。
 // 複製以免共享靜態表切片。供 NewCard 載入卡牌實例效果列表、Morph 變身後重設效果共用。
 func (this *Game) SkillEffect(skillID int32) []int32 {
-	skill := this.data.Skill.Get(skillID)
+	skill := this.data.sheet.Skill.Get(skillID)
 
 	if skill == nil {
 		return nil
@@ -414,13 +510,13 @@ func (this *Game) SkillEffect(skillID int32) []int32 {
 // CardSkillGroup 取卡牌的技能群組編號（卡牌資料.SkillID → Skill.Group）;卡牌 / 技能資料不存在回 0。
 // 供 cardRun 啟動效果列表時 skillImmune 排除免疫顧客。
 func (this *Game) CardSkillGroup(cardID int32) int32 {
-	card := this.data.Card.Get(cardID)
+	card := this.data.sheet.Card.Get(cardID)
 
 	if card == nil {
 		return 0
 	} // if
 
-	skill := this.data.Skill.Get(card.SkillID)
+	skill := this.data.sheet.Skill.Get(card.SkillID)
 
 	if skill == nil {
 		return 0
@@ -429,32 +525,36 @@ func (this *Game) CardSkillGroup(cardID int32) int32 {
 	return skill.Group
 }
 
-// Attr 委派全域屬性詞彙表,以自身為 context 求值。
-// 先查值表 attrRead;未命中且名稱以 Lock 結尾,剝去後綴改查鎖表 attrLockRead(讀鎖定計數)。
-func (this *Game) Attr(name string, arg []exprs.Value) (result exprs.Value, ok bool) {
-	if read, known := attrRead[name]; known {
-		return read(this, arg)
+// EffectData 查預編譯效果（委派遊戲資料;效果流程查 Kind / 命令 / 條件）;查無回 ok=false。
+func (this *Game) EffectData(effectID int32) (meta EffectData, ok bool) {
+	return this.data.GetEffect(effectID)
+}
+
+// RollCard 對抽獎群組做 weighted random 抽一張卡牌編號（deckRoll / handRoll / *Morph 用）;
+// 群組不存在 / 總權重 0 回 ok=false。
+func (this *Game) RollCard(group int32) (cardID int32, ok bool) {
+	award, found := this.data.award[group]
+
+	if found == false || len(award.weight) == 0 {
+		return 0, false
 	} // if
 
-	if base, found := strings.CutSuffix(name, "Lock"); found {
-		if read, known := attrLockRead[base]; known {
-			return read(this, arg)
-		} // if
+	return award.cardID[this.rander.Weighted(award.weight)], true
+}
+
+// Attr 委派全域屬性詞彙表,以自身為 context 求值;名稱即詞條鍵（Lock 詞條以全名註冊,無後綴路由）。
+func (this *Game) Attr(name string, arg []exprs.Value) (result exprs.Value, ok bool) {
+	if read, known := this.attrRead[name]; known {
+		return read(this, arg)
 	} // if
 
 	return exprs.Value{}, false
 }
 
-// AttrRef 以引用 ref 為主體委派引用屬性詞彙表。Lock 後綴路由規則同 Attr。
+// AttrRef 以引用 ref 為主體委派引用屬性詞彙表;名稱即詞條鍵。
 func (this *Game) AttrRef(ref exprs.Ref, name string, arg []exprs.Value) (result exprs.Value, ok bool) {
-	if read, known := attrRefRead[name]; known {
+	if read, known := this.attrRefRead[name]; known {
 		return read(this, ref, arg)
-	} // if
-
-	if base, found := strings.CutSuffix(name, "Lock"); found {
-		if read, known := attrRefLockRead[base]; known {
-			return read(this, ref, arg)
-		} // if
 	} // if
 
 	return exprs.Value{}, false
@@ -467,7 +567,7 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 	n := float64(0)
 
 	if op != AssignLock && op != AssignUnlock { // @ # 不帶右值
-		result, ok := value.Eval(this.env())
+		result, ok := value.Eval(this.Env())
 
 		if ok == false || result.IsNum() == false {
 			return false // 算術評估失敗 / 右值非數值 → no-op
@@ -483,7 +583,7 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 			return false // 引用解析為空物件 / 型別不符 / 不存在 → no-op
 		} // if
 
-		write, known := attrRefWrite[refAttr]
+		write, known := this.attrRefWrite[refAttr]
 
 		if known == false {
 			return false
@@ -492,7 +592,7 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 		return write(this, owner.Ref(), op, n)
 	} // if
 
-	write, known := attrWrite[base]
+	write, known := this.attrWrite[base]
 
 	if known == false {
 		return false
@@ -524,7 +624,7 @@ func (this *Game) ExecOperate(verb, selectorName string, selectorParam, arg []*e
 		return // 其餘參數評估失敗 → 整動作 no-op
 	} // if
 
-	run, found := command[verb]
+	run, found := this.command[verb]
 
 	if found == false {
 		return // 未知命令 → no-op
@@ -538,7 +638,7 @@ func (this *Game) ExecOperate(verb, selectorName string, selectorParam, arg []*e
 // 回身分集 []InstanceID(非具型別實例):M9 verb 自行 locate 取實例 + 查容器位置(位置不符 no-op 本就要查),
 // 使本表保持同構、與 Self / effect 的 InstanceID 身分模型一致。
 func (this *Game) selectObject(name string, arg []exprs.Value) (result []InstanceID, ok bool) {
-	resolve, known := selector[name]
+	resolve, known := this.selector[name]
 
 	if known == false {
 		return nil, false
@@ -552,7 +652,7 @@ func (this *Game) evalAll(expr []*exprs.Expr) (result []exprs.Value, ok bool) {
 	result = make([]exprs.Value, 0, len(expr))
 
 	for _, itor := range expr {
-		value, valid := itor.Eval(this.env())
+		value, valid := itor.Eval(this.Env())
 
 		if valid == false {
 			return nil, false
@@ -564,9 +664,9 @@ func (this *Game) evalAll(expr []*exprs.Expr) (result []exprs.Value, ok bool) {
 	return result, true
 }
 
-// locateCard 以實例編號自四牌堆找出卡牌及其所在容器;未命中回 (nil, ContainerNone, false)。
+// LocateCard 以實例編號自四牌堆找出卡牌及其所在容器;未命中回 (nil, ContainerNone, false)。
 // 供操作命令取實例 + 查容器位置(位置不符 no-op);卡牌僅存在於 手牌 / 抽牌 / 棄牌 / 流放。
-func (this *Game) locateCard(id InstanceID) (card *Card, where ContainerKind, ok bool) {
+func (this *Game) LocateCard(id InstanceID) (card *Card, where ContainerKind, ok bool) {
 	if found := this.Hand.Find(id); found != nil {
 		return found, ContainerHand, true
 	} // if
@@ -586,9 +686,9 @@ func (this *Game) locateCard(id InstanceID) (card *Card, where ContainerKind, ok
 	return nil, ContainerNone, false
 }
 
-// locateGuest 以實例編號自顧客四容器找出顧客及其所在容器;未命中回 (nil, ContainerNone, false)。
+// LocateGuest 以實例編號自顧客四容器找出顧客及其所在容器;未命中回 (nil, ContainerNone, false)。
 // 供操作命令取顧客實例 + 查容器位置(型別不符 / 位置不符 no-op);顧客存在於 座位 / 排隊 / 遊蕩 / 卡牌化。
-func (this *Game) locateGuest(id InstanceID) (guest *Guest, where ContainerKind, ok bool) {
+func (this *Game) LocateGuest(id InstanceID) (guest *Guest, where ContainerKind, ok bool) {
 	for _, itor := range this.Seat {
 		if itor != nil && itor.GetInstanceID() == id {
 			return itor, ContainerSeat, true
@@ -610,9 +710,9 @@ func (this *Game) locateGuest(id InstanceID) (guest *Guest, where ContainerKind,
 	return nil, ContainerNone, false
 }
 
-// env 組裝求值期環境:以自身為條件對象 Resolver、帶入套件層全域內建函式註冊表 builtin。
-func (this *Game) env() exprs.Env {
-	return exprs.Env{Resolver: this, Builtin: builtin}
+// Env 組裝求值期環境:以自身為條件對象 Resolver、帶入裝備的內建函式註冊表。
+func (this *Game) Env() exprs.Env {
+	return exprs.Env{Resolver: this, Builtin: this.builtin}
 }
 
 // 編譯期確認 Game 滿足 exprs.Resolver(條件對象求值的接縫)。

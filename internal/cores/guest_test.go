@@ -17,8 +17,7 @@ type SuiteGuest struct {
 
 // TestNewGuest 驗證 NewGuest 載入顧客數值與封印鎖、飽食值初值 0、免疫表初始化;資料不存在回 nil。
 func (this *SuiteGuest) TestNewGuest() {
-	game := NewGame(0, nil, nil, nil, nil)
-	injectPort(game)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 
 	guest := NewGuest(game, 501) // 顧客 501：載數值 + SateSeal bool → 鎖
 	this.Require().NotNil(guest)

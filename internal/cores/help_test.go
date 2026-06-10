@@ -4,15 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
 func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的組件與無狀態輔助:免疫計數 / 門檻集合 / 編號列表 / 累積計數 / 參數取值 / 分組計數與比較 / 引用鎖定取值。
+// SuiteHelp 驗證 help.go 的組件:免疫計數 / 門檻集合 / 編號列表 / 累積計數。
 type SuiteHelp struct {
 	suite.Suite
 }
@@ -181,161 +179,4 @@ func (this *SuiteHelp) TestTallySum() {
 
 	zero := Tally{}
 	this.Equal(int32(0), zero.Sum()) // 零值 → 0
-}
-
-func (this *SuiteHelp) TestOneInt() {
-	num, ok := oneInt([]exprs.Value{exprs.NewNum(5)})
-	this.True(ok)
-	this.Equal(int32(5), num)
-
-	num, ok = oneInt([]exprs.Value{exprs.NewNum(3.9)}) // 浮點截斷為整數
-	this.True(ok)
-	this.Equal(int32(3), num)
-
-	_, ok = oneInt(nil) // 數量不符(0 個)
-	this.False(ok)
-
-	_, ok = oneInt([]exprs.Value{exprs.NewNum(1), exprs.NewNum(2)}) // 數量不符(2 個)
-	this.False(ok)
-
-	_, ok = oneInt([]exprs.Value{exprs.NewText("x")}) // 型別不符
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestTwoInt() {
-	a, b, ok := twoInt([]exprs.Value{exprs.NewNum(2), exprs.NewNum(5)})
-	this.True(ok)
-	this.Equal(int32(2), a)
-	this.Equal(int32(5), b)
-
-	_, _, ok = twoInt([]exprs.Value{exprs.NewNum(1)}) // 數量不符(1 個)
-	this.False(ok)
-
-	_, _, ok = twoInt([]exprs.Value{exprs.NewText("x"), exprs.NewNum(1)}) // 第一參型別不符
-	this.False(ok)
-
-	_, _, ok = twoInt([]exprs.Value{exprs.NewNum(1), exprs.NewText("x")}) // 第二參型別不符
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestArgInt() {
-	n, ok := argInt([]exprs.Value{exprs.NewNum(3.9)}) // 浮點截斷
-	this.True(ok)
-	this.Equal(int32(3), n)
-
-	_, ok = argInt(nil) // 缺漏
-	this.False(ok)
-
-	_, ok = argInt([]exprs.Value{exprs.NewText("x")}) // 非數值
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestArgNum() {
-	n, ok := argNum([]exprs.Value{exprs.NewNum(2.5)})
-	this.True(ok)
-	this.Equal(float64(2.5), n)
-
-	_, ok = argNum(nil) // 缺漏
-	this.False(ok)
-
-	_, ok = argNum([]exprs.Value{exprs.NewBool(true)}) // 非數值
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestArgBool() {
-	this.True(argBool([]exprs.Value{exprs.NewBool(true)}))
-	this.False(argBool([]exprs.Value{exprs.NewBool(false)}))
-	this.False(argBool(nil))                            // 缺漏
-	this.False(argBool([]exprs.Value{exprs.NewNum(1)})) // 非布林
-	// 讀第 k 個參數由呼叫端傳 arg[k:]:此處讀 index 1(M9.3 copy/clone 的洗牌位於 index 1)
-	this.True(argBool([]exprs.Value{exprs.NewNum(1), exprs.NewBool(true)}[1:]))
-}
-
-func (this *SuiteHelp) TestIntList() {
-	this.Equal([]int32{1, 2}, intList([]exprs.Value{exprs.NewNum(1), exprs.NewText("x"), exprs.NewNum(2)})) // 略過非數值
-	this.Nil(intList(nil))
-}
-
-func (this *SuiteHelp) TestArgTail() {
-	full := []exprs.Value{exprs.NewNum(1), exprs.NewNum(2)}
-	this.Len(argTail(full, 1), 1) // 自 index 1
-	this.Nil(argTail(full, 2))    // from == len → nil
-	this.Nil(argTail(full, 5))    // from > len → nil
-}
-
-func (this *SuiteHelp) TestGroupSize() {
-	data := buildSheet()
-	card := []*Card{{cardID: 101}, {cardID: 101}, {cardID: 102}}
-
-	result, ok := groupSize(card, data, []exprs.Value{exprs.NewNum(0)}) // N==0 全量
-	this.True(ok)
-	this.Equal(float64(3), result.Num())
-
-	result, ok = groupSize(card, data, []exprs.Value{exprs.NewNum(1)}) // 群組 1 = 卡 101 兩張
-	this.True(ok)
-	this.Equal(float64(2), result.Num())
-
-	_, ok = groupSize(card, data, nil) // 參數不符 → 失敗
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestGroupTotal() {
-	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
-
-	result, ok := groupTotal(&total, []exprs.Value{exprs.NewNum(0)}) // N==0 全加總
-	this.True(ok)
-	this.Equal(float64(8), result.Num())
-
-	result, ok = groupTotal(&total, []exprs.Value{exprs.NewNum(1)})
-	this.True(ok)
-	this.Equal(float64(3), result.Num())
-
-	_, ok = groupTotal(&total, nil) // 參數不符 → 失敗
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestCompareOp() {
-	for _, itor := range []struct {
-		op   string
-		a, b int32
-		want bool
-	}{
-		{"<", 1, 2, true}, {"<", 2, 1, false},
-		{">", 2, 1, true}, {">", 1, 2, false},
-		{"<=", 2, 2, true}, {"<=", 3, 2, false},
-		{">=", 2, 2, true}, {">=", 1, 2, false},
-		{"==", 2, 2, true}, {"==", 1, 2, false},
-		{"!=", 1, 2, true}, {"!=", 2, 2, false},
-	} {
-		result, ok := compareOp(itor.op, itor.a, itor.b)
-		this.True(ok, itor.op)
-		this.Equal(itor.want, result, itor.op)
-	} // for
-
-	_, ok := compareOp("~=", 1, 1) // 未知運算符 → 失敗
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestCardLock() {
-	card := &Card{cost: NewValue(0, 4)}
-	pick := func(c *Card) int32 { return c.GetCost().GetLock() }
-
-	result, ok := cardLock(NewRefCard(card), pick)
-	this.True(ok)
-	this.Equal(float64(4), result.Num())
-
-	_, ok = cardLock(NewRefGuest(&Guest{}), pick) // 非卡牌引用 → 失敗
-	this.False(ok)
-}
-
-func (this *SuiteHelp) TestGuestLock() {
-	guest := &Guest{calm: NewValue(0, 7)}
-	pick := func(g *Guest) int32 { return g.GetCalm().GetLock() }
-
-	result, ok := guestLock(NewRefGuest(guest), pick)
-	this.True(ok)
-	this.Equal(float64(7), result.Num())
-
-	_, ok = guestLock(NewRefCard(&Card{}), pick) // 非顧客引用 → 失敗
-	this.False(ok)
 }

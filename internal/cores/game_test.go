@@ -21,7 +21,8 @@ type SuiteGame struct {
 // TestNewGame 驗證 NewGame 建構營業實例:盤面空白(屬性零值、無跳轉階段、累積計數零值可用、座位 map 就緒、容器空、種子入欄),
 // 注入靜態表與衍生索引、self 不入建構。
 func (this *SuiteGame) TestNewGame() {
-	game := NewGame(123, buildSheet(), fakeOperator{}, fakeRander{}, nil)
+	sheet := buildSheet()
+	game := NewGame(123, NewData(sheet, nil), nil, nil)
 	this.Require().NotNil(game)
 	this.Equal(int32(0), game.GetMorale().GetValue())
 	this.Equal(PhaseNone, game.GetNextPhase())
@@ -35,18 +36,48 @@ func (this *SuiteGame) TestNewGame() {
 	this.Empty(game.Action)
 	this.Equal(int64(123), game.Seed)
 
-	this.NotNil(game.data)       // 注入靜態表
-	this.NotNil(game.awardData)  // 衍生索引於建構時整理
-	this.NotNil(game.effectData) //
-	this.Nil(game.self)          // self 為 run-state,建構不綁定
+	this.Same(sheet, game.GetSheet()) // 注入遊戲資料
+	this.Nil(game.GetSelf())          // self 為 run-state,建構不綁定
+
+	empty := NewGame(0, nil, nil, nil) // data nil → 補空殼,查詢不爆
+	this.Nil(empty.GetSheet())
 }
 
 // TestGameNextID 驗證 NextID 配發遞增唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。
 func (this *SuiteGame) TestGameNextID() {
-	game := NewGame(0, nil, nil, nil, nil)
+	game := NewGame(0, nil, nil, nil)
 	this.Equal(InstanceID(1), game.NextID())
 	this.Equal(InstanceID(2), game.NextID())
 	this.Equal(InstanceID(3), game.NextID())
+}
+
+// TestGameSetSelf 驗證 SetSelf 成對寫門:綁定 + 還原函式逐層退棧（結算重入安全）。
+func (this *SuiteGame) TestGameSetSelf() {
+	game := NewGame(0, nil, nil, nil)
+	outer := NewRefGuest(&Guest{instanceID: 1})
+	inner := NewRefCard(&Card{instanceID: 2})
+
+	restoreOuter := game.SetSelf(&outer)
+	this.Same(&outer, game.GetSelf())
+
+	restoreInner := game.SetSelf(&inner) // 巢狀綁定
+	this.Same(&inner, game.GetSelf())
+
+	restoreInner() // 逐層還原
+	this.Same(&outer, game.GetSelf())
+
+	restoreOuter()
+	this.Nil(game.GetSelf())
+}
+
+// TestGameGetOperator 驗證 GetOperator 取回注入的玩家輸入 port。
+func (this *SuiteGame) TestGameGetOperator() {
+	this.Equal(fakeOperator{}, NewGame(0, nil, fakeOperator{}, nil).GetOperator())
+}
+
+// TestGameGetRander 驗證 GetRander 取回注入的亂數 port。
+func (this *SuiteGame) TestGameGetRander() {
+	this.Equal(fakeRander{}, NewGame(0, nil, nil, fakeRander{}).GetRander())
 }
 
 // TestGameGetMorale 驗證 GetMorale 取回餐廳士氣值組件（寫入經組件可見）。
@@ -418,7 +449,7 @@ func (this *SuiteGame) TestGameRoundReset() {
 
 // TestGameSkillEffect 驗證 SkillEffect 取技能效果列表複本(不共享靜態表底層);技能不存在回 nil。
 func (this *SuiteGame) TestGameSkillEffect() {
-	game := NewGame(0, buildSheet(), nil, nil, nil)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 
 	effect := game.SkillEffect(301)
 	this.Equal([]int32{401, 402}, effect)
@@ -431,64 +462,92 @@ func (this *SuiteGame) TestGameSkillEffect() {
 
 // TestGameCardSkillGroup 驗證 CardSkillGroup 取卡牌技能群組;卡牌 / 技能資料缺失回 0。
 func (this *SuiteGame) TestGameCardSkillGroup() {
-	game := NewGame(0, buildSheet(), nil, nil, nil)
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 	this.Equal(int32(3), game.CardSkillGroup(103)) // 卡 103 → 技能 301 → 群組 3
 	this.Equal(int32(0), game.CardSkillGroup(101)) // 卡 101 無技能（SkillID 0）→ 0
 	this.Equal(int32(0), game.CardSkillGroup(999)) // 卡牌資料不存在 → 0
 }
 
-// TestGameAttr 驗證 Attr 對全域屬性詞彙表的委派與 Lock 後綴路由(只驗分派機制)。
-func (this *SuiteGame) TestGameAttr() {
-	game := NewGame(0, nil, nil, nil, nil)
-	game.morale = NewValue(30, 2)
+// TestGameEffectData 驗證 EffectData 委派遊戲資料查預編譯效果;查無回 ok=false。
+func (this *SuiteGame) TestGameEffectData() {
+	game := NewGame(0, NewData(buildSheet(), nil), nil, nil)
 
-	// 值表命中
-	value, ok := game.Attr("morale", nil)
+	meta, ok := game.EffectData(401)
 	this.True(ok)
-	this.Equal(float64(30), value.Num())
+	this.Equal(int32(5), meta.Group)
 
-	// Lock 後綴 → 剝後綴查鎖表
-	value, ok = game.Attr("moraleLock", nil)
-	this.True(ok)
-	this.Equal(float64(2), value.Num())
-
-	// 未知名稱 → 失敗
-	_, ok = game.Attr("nope", nil)
-	this.False(ok)
-
-	// 非鎖屬性的 Lock 後綴 → 失敗(round 為「寫」無鎖,鎖表無此鍵)
-	_, ok = game.Attr("roundLock", nil)
+	_, ok = game.EffectData(999) // 查無 → 失敗
 	this.False(ok)
 }
 
-// TestGameAttrRef 驗證 AttrRef 對引用屬性詞彙表的委派與 Lock 後綴路由。
-func (this *SuiteGame) TestGameAttrRef() {
-	game := NewGame(0, nil, nil, nil, nil)
-	ref := NewRefGuest(&Guest{calm: NewValue(5, 1)})
+// TestGameRollCard 驗證 RollCard 對抽獎群組 weighted random 抽卡牌編號;群組不存在 / 總權重 0 回 ok=false。
+func (this *SuiteGame) TestGameRollCard() {
+	game := NewGame(0, NewData(buildSheet(), nil), nil, fakeRander{})
 
-	// 值表命中
-	value, ok := game.AttrRef(ref, "calm", nil)
+	cardID, ok := game.RollCard(7) // 群組 7:Weighted 恆取首位 → 101
+	this.True(ok)
+	this.Equal(int32(101), cardID)
+
+	_, ok = game.RollCard(8) // 群組 8 全 0 權重 → 失敗
+	this.False(ok)
+
+	_, ok = game.RollCard(99) // 群組不存在 → 失敗
+	this.False(ok)
+}
+
+// TestGameAttr 驗證 Attr 對全域屬性詞彙表的單查分派(裝備經 RegisterAttrRead;只驗分派機制,真詞條驗證歸 rules)。
+func (this *SuiteGame) TestGameAttr() {
+	game := NewGame(0, nil, nil, nil)
+	game.RegisterAttrRead("fake", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
+		return exprs.NewNum(7), true
+	})
+
+	value, ok := game.Attr("fake", nil) // 詞條命中
+	this.True(ok)
+	this.Equal(float64(7), value.Num())
+
+	_, ok = game.Attr("nope", nil) // 未知名稱 → 失敗
+	this.False(ok)
+
+	_, ok = NewGame(0, nil, nil, nil).Attr("fake", nil) // 未裝備 → 失敗
+	this.False(ok)
+}
+
+// TestGameAttrRef 驗證 AttrRef 對引用屬性詞彙表的單查分派(裝備經 RegisterAttrRefRead)。
+func (this *SuiteGame) TestGameAttrRef() {
+	game := NewGame(0, nil, nil, nil)
+	game.RegisterAttrRefRead("fake", func(game *Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
+		guest, valid := AsGuest(ref)
+
+		if valid == false {
+			return exprs.Value{}, false
+		} // if
+
+		return exprs.NewNum(float64(guest.GetCalm().GetValue())), true
+	})
+
+	value, ok := game.AttrRef(NewRefGuest(&Guest{calm: NewValue(5, 0)}), "fake", nil) // 詞條命中
 	this.True(ok)
 	this.Equal(float64(5), value.Num())
 
-	// Lock 後綴 → 剝後綴查鎖表
-	value, ok = game.AttrRef(ref, "calmLock", nil)
-	this.True(ok)
-	this.Equal(float64(1), value.Num())
-
-	// 未知名稱 → 失敗
-	_, ok = game.AttrRef(ref, "nope", nil)
+	_, ok = game.AttrRef(NewRefGuest(&Guest{}), "nope", nil) // 未知名稱 → 失敗
 	this.False(ok)
 }
 
-// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值 / 鎖定 / 未知名稱與評估失敗 no-op。
+// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值（含 builtin 注入）/ 鎖定 / 未知名稱與評估失敗 no-op。
 func (this *SuiteGame) TestGameExecAssignGlobal() {
-	game := NewGame(0, nil, nil, nil, nil)
+	game := NewGame(0, nil, nil, nil)
 	game.score = NewValue(10, 0)
+	game.RegisterAttrWrite("score", func(game *Game, op AssignKind, n float64) bool {
+		return game.GetScore().Apply(op, n)
+	})
+	game.RegisterBuiltin("seven", func(arg []exprs.Value) (result exprs.Value, ok bool) {
+		return exprs.NewNum(7), true
+	})
 
-	// 全域帶值賦值;RHS 經 exprs 求值(含內建函式 min,驗證 builtin 注入)
-	this.True(game.ExecAssign("score", "", false, AssignAdd, this.expr("min(5, 8)")))
-	this.Equal(int32(15), game.GetScore().GetValue())
+	// 全域帶值賦值;RHS 經 exprs 求值(內建函式 seven 驗證 builtin 裝備經 Env 帶入)
+	this.True(game.ExecAssign("score", "", false, AssignAdd, this.expr("seven()")))
+	this.Equal(int32(17), game.GetScore().GetValue())
 
 	// @ 鎖定(不帶右值,value 為 nil、不求值)
 	this.True(game.ExecAssign("score", "", false, AssignLock, nil))
@@ -498,44 +557,135 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 	this.False(game.ExecAssign("nope", "", false, AssignSet, this.expr("1")))
 
 	// RHS 評估失敗(除 0)→ no-op
-	this.False(game.ExecAssign("energy", "", false, AssignSet, this.expr("1 / 0")))
+	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("1 / 0")))
 
 	// RHS 非數值(字串)→ no-op
-	this.False(game.ExecAssign("energy", "", false, AssignSet, this.expr("'text'")))
+	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("'text'")))
 }
 
-// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 型別不符 / 未知屬性 / 空物件 no-op。
+// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 未知屬性 / 空物件 no-op。
 func (this *SuiteGame) TestGameExecAssignRef() {
 	card := &Card{instanceID: 1}
-	game := NewGame(0, nil, nil, nil, nil)
+	game := NewGame(0, nil, nil, nil)
 	game.drawLast = card
+	game.RegisterAttrRead("drawLast", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
+		return NewRefCard(game.GetDrawLast()).Value(), true
+	})
+	game.RegisterAttrRefWrite("cost", func(game *Game, ref exprs.Ref, op AssignKind, n float64) bool {
+		target, valid := AsCard(ref)
+
+		if valid == false {
+			return false
+		} // if
+
+		return target.GetCost().Apply(op, n)
+	})
 
 	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3)
 	this.True(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
 	this.Equal(int32(3), card.GetCost().GetValue())
 
-	// 引用屬性型別不符(卡牌引用寫顧客屬性 calm)→ no-op
-	this.False(game.ExecAssign("drawLast", "calm", true, AssignSet, this.expr("3")))
-
 	// 未知引用屬性 → no-op
 	this.False(game.ExecAssign("drawLast", "nope", true, AssignSet, this.expr("3")))
 
-	// 引用解析為空物件(drawLast 為 nil)→ no-op
+	// 引用解析為空物件(drawLast 為 nil → 引用 Value 為 none)→ no-op
 	game.drawLast = nil
 	this.False(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
 }
 
+// TestGameExecOperate 驗證 ExecOperate 分派:求值命令對象參數 → 解析作用集合 → 求值參數 → 查表 fan-out;
+// 任一參數評估失敗 / 名稱未登錄 → 整動作 no-op(evalAll 順帶覆蓋)。
+func (this *SuiteGame) TestGameExecOperate() {
+	run := []InstanceID{}
+	game := NewGame(0, nil, nil, nil)
+	game.RegisterSelector("fake", func(game *Game, arg []exprs.Value) (result []InstanceID) {
+		return []InstanceID{InstanceID(arg[0].Num())}
+	})
+	game.RegisterCommand("record", func(game *Game, target []InstanceID, arg []exprs.Value) {
+		run = append(run, target...)
+	})
+
+	game.ExecOperate("record", "fake", []*exprs.Expr{this.expr("7")}, nil) // 正常分派
+	this.Equal([]InstanceID{7}, run)
+
+	game.ExecOperate("record", "fake", []*exprs.Expr{this.expr("1 / 0")}, nil)                           // 命令對象參數評估失敗 → no-op
+	game.ExecOperate("record", "nope", nil, nil)                                                         // 命令對象未登錄 → no-op
+	game.ExecOperate("nope", "fake", []*exprs.Expr{this.expr("1")}, nil)                                 // 未知命令 → no-op
+	game.ExecOperate("record", "fake", []*exprs.Expr{this.expr("1")}, []*exprs.Expr{this.expr("1 / 0")}) // 參數評估失敗 → no-op
+	this.Equal([]InstanceID{7}, run)
+}
+
 // TestGameSelectObject 驗證 selectObject 對命令對象詞彙表的分派與未登錄回報。
 func (this *SuiteGame) TestGameSelectObject() {
-	game := NewGame(0, buildSheet(), fakeOperator{}, fakeRander{}, nil)
-	game.drawLast = &Card{instanceID: 7}
+	game := NewGame(0, nil, nil, nil)
+	game.RegisterSelector("fake", func(game *Game, arg []exprs.Value) (result []InstanceID) {
+		return []InstanceID{7}
+	})
 
-	result, ok := game.selectObject("drawLast", nil) // 已登錄 → 派發至詞條
+	result, ok := game.selectObject("fake", nil) // 已登錄 → 派發至詞條
 	this.True(ok)
 	this.Equal([]InstanceID{7}, result)
 
 	_, ok = game.selectObject("nope", nil) // 未登錄命令對象 → ok=false
 	this.False(ok)
+}
+
+// TestGameLocateCard 驗證 LocateCard 自四牌堆定位卡牌與所在容器;未命中回 ContainerNone。
+func (this *SuiteGame) TestGameLocateCard() {
+	game := NewGame(0, nil, nil, nil)
+	game.Hand = CardList{{instanceID: 1}}
+	game.Deck = CardList{{instanceID: 2}}
+	game.Drop = CardList{{instanceID: 3}}
+	game.Exile = CardList{{instanceID: 4}}
+
+	for id, want := range map[InstanceID]ContainerKind{
+		1: ContainerHand, 2: ContainerDeck, 3: ContainerDrop, 4: ContainerExile,
+	} {
+		card, where, ok := game.LocateCard(id)
+		this.True(ok)
+		this.Equal(want, where)
+		this.Equal(id, card.GetInstanceID())
+	} // for
+
+	card, where, ok := game.LocateCard(99) // 未命中
+	this.Nil(card)
+	this.Equal(ContainerNone, where)
+	this.False(ok)
+}
+
+// TestGameLocateGuest 驗證 LocateGuest 自顧客四容器定位顧客與所在容器;未命中回 ContainerNone。
+func (this *SuiteGame) TestGameLocateGuest() {
+	game := NewGame(0, nil, nil, nil)
+	game.Seat.Place(1, &Guest{instanceID: 1})
+	game.Wait = WaitList{{instanceID: 2}}
+	game.Roam = GuestList{{instanceID: 3}}
+	game.Cardify = GuestList{{instanceID: 4}}
+
+	for id, want := range map[InstanceID]ContainerKind{
+		1: ContainerSeat, 2: ContainerWait, 3: ContainerRoam, 4: ContainerCardify,
+	} {
+		guest, where, ok := game.LocateGuest(id)
+		this.True(ok)
+		this.Equal(want, where)
+		this.Equal(id, guest.GetInstanceID())
+	} // for
+
+	guest, where, ok := game.LocateGuest(99) // 未命中
+	this.Nil(guest)
+	this.Equal(ContainerNone, where)
+	this.False(ok)
+}
+
+// TestGameEnv 驗證 Env 組裝求值期環境:自身為 Resolver、帶入裝備的內建函式。
+func (this *SuiteGame) TestGameEnv() {
+	game := NewGame(0, nil, nil, nil)
+	game.RegisterBuiltin("seven", func(arg []exprs.Value) (result exprs.Value, ok bool) {
+		return exprs.NewNum(7), true
+	})
+
+	env := game.Env()
+	this.Equal(exprs.Resolver(game), env.Resolver)
+	this.Contains(env.Builtin, "seven")
 }
 
 // === 測試輔助（置尾） ===
@@ -547,12 +697,35 @@ func (this *SuiteGame) expr(source string) *exprs.Expr {
 	return result
 }
 
-// injectPort 注入測試替身:共用 buildSheet 靜態表、決定性 fake Operator / Rander,並重建衍生索引(等價 NewGame 的注入半部)。
-// 供各 suite 對已佈置狀態的 Game 補注入;全空 Game 直接以 NewGame 帶參建構即可。
-func injectPort(game *Game) {
-	game.data = buildSheet()
-	game.operator = fakeOperator{}
-	game.rander = fakeRander{}
-	game.awardData = prepareAward(game.data)
-	game.effectData = prepareEffect(game.data, nil)
+// fakeOperator 玩家輸入空替身(cores 白箱測試私有;rules / games 用 tester.FakeOperator)。
+type fakeOperator struct{}
+
+func (this fakeOperator) PlayerAction(game *Game) Action {
+	return Action{}
+}
+
+func (this fakeOperator) PickGuest(source []*Guest, count int) []*Guest {
+	return source[:count]
+}
+
+func (this fakeOperator) PickCard(source []*Card, count int) []*Card {
+	return source[:count]
+}
+
+func (this fakeOperator) PickDiscard(source []*Card, over int) []*Card {
+	return nil
+}
+
+// fakeRander 決定性亂數空替身(cores 白箱測試私有;rules / games 用 tester.FakeRander)。
+type fakeRander struct{}
+
+func (this fakeRander) Intn(n int) int {
+	return 0
+}
+
+func (this fakeRander) Shuffle(n int, swap func(i, j int)) {
+}
+
+func (this fakeRander) Weighted(weight []int32) int {
+	return 0
 }

@@ -21,7 +21,7 @@ type Card struct {
 
 // NewCard 依卡牌編號實例化新卡（載卡牌資料初始值;bool 欄 → 鎖定計數、SkillID → Skill.EffectID）;資料不存在回 nil。
 func NewCard(game *Game, cardID int32) *Card {
-	meta := game.data.Card.Get(cardID)
+	meta := game.data.sheet.Card.Get(cardID)
 
 	if meta == nil {
 		return nil
@@ -134,7 +134,7 @@ func (this *Card) CardifyFree() {
 // 換卡牌編號、依新卡資料僅載 出牌費用 / 不棄鎖 / 封印鎖 / 實例效果列表;查無卡牌資料回 false 不動。
 // 實例身分的改寫入口僅 NewCard 與此;抽獎 / 事件 / 觸發留 morph 流程。
 func (this *Card) Morph(game *Game, cardID int32) bool {
-	meta := game.data.Card.Get(cardID)
+	meta := game.data.sheet.Card.Get(cardID)
 
 	if meta == nil {
 		return false

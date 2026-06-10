@@ -1,5 +1,9 @@
 package cores
 
+import (
+	"github.com/yinweli/RovingDiner/internal/exprs"
+)
+
 // 這三個介面是核心對外的唯一行為邊界；TUI 與測試各自提供實作。
 // 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面】。
 //
@@ -9,6 +13,34 @@ package cores
 // 核心完全同步、單執行緒、無 channel：需要玩家輸入時阻塞呼叫 Operator，
 // 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。
 // 三 port 定義於 cores（純資料模型）；games 驅動引擎與 infra / TUI 各自實作。
+
+// 詞彙行為的函式型別:rules 各概念檔的行為簽名,經 Game.Register* 逐詞條裝備。
+// 詞彙表為 Game 私有成員（建後唯讀、等同常數）;名稱即詞條鍵,Lock 讀詞條以全名（如 moraleLock）註冊、無後綴路由。
+
+// AttrReadFunc 全域屬性詞條的讀取行為:以 Game 為 context 求值;arg 供查詢函式型屬性(deckSize…),純屬性忽略。
+type AttrReadFunc func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool)
+
+// AttrWriteFunc 全域屬性詞條的寫入行為:op 為賦值符、n 為已求值的右值(@ # 時忽略)。
+type AttrWriteFunc func(game *Game, op AssignKind, n float64) bool
+
+// AttrRefReadFunc 引用屬性詞條的讀取行為:對 ref(卡牌 / 顧客)以 Game 為 context 取子屬性;arg 供引用查詢函式。
+type AttrRefReadFunc func(game *Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool)
+
+// AttrRefWriteFunc 引用屬性詞條的寫入行為:對 ref 依賦值符 op 與右值 n 變更狀態。
+type AttrRefWriteFunc func(game *Game, ref exprs.Ref, op AssignKind, n float64) bool
+
+// CommandFunc 操作命令詞條的執行行為:target 為已解析命令對象(身分集)、arg 為其餘已求值參數。
+type CommandFunc func(game *Game, target []InstanceID, arg []exprs.Value)
+
+// SelectorFunc 命令對象詞條的解析行為:arg 為 [...] 內已求值參數,產出作用對象集合(身分集)。
+type SelectorFunc func(game *Game, arg []exprs.Value) (result []InstanceID)
+
+// Compiler 把單一命令字串編譯為效果命令執行器;由 games 注入(cores 無命令解析能力)。語法錯回 error。
+// prepareEffect 僅於命令欄非空時呼叫此原語,故空字串處理不在本型別契約內。
+type Compiler func(source string) (command EffectExec, err error)
+
+// EffectExec 預編譯效果命令的執行器;games 的 compileCommand 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、cores 於效果流程呼叫。空命令欄為 nil。
+type EffectExec func(game *Game)
 
 // Rander 唯一亂數來源（單一 seeded PRNG）；決定性的基礎。
 type Rander interface {
@@ -127,9 +159,6 @@ const (
 	TriggerGameSucc   TriggerKind = "gameSucc"   // 營業成功；通關結算判定後
 	TriggerGameFail   TriggerKind = "gameFail"   // 營業失敗；失敗結算判定後
 )
-
-// EffectCommand 預編譯效果命令的執行器;games 的 compileCommand 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、cores 於效果流程呼叫。空命令欄為 nil。
-type EffectCommand func(game *Game)
 
 // EffectKind 效果類型；對應【營業規格書 | 七、效果類型】。
 // （效果實例型別見 instance.go 的 Effect；此 enum 表達其靜態類型，故以 Kind 為後綴避免撞名。）

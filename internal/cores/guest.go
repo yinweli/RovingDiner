@@ -31,7 +31,7 @@ type Guest struct {
 // NewGuest 依顧客編號實例化新顧客（載顧客資料初始值：Score / ScoreMax / Morale / MoraleMax / Calm / SateMax 數值、封印 bool → 鎖定計數）;
 // Sate 初值 0（顧客資料無此欄、隨服務累積至飽食值離場線）;Hit / Immune 初始化空表。資料不存在回 nil。
 func NewGuest(game *Game, guestID int32) *Guest {
-	meta := game.data.Guest.Get(guestID)
+	meta := game.data.sheet.Guest.Get(guestID)
 
 	if meta == nil {
 		return nil
