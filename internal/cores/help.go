@@ -151,3 +151,8 @@ func (this *Tally) Sum() (sum int32) {
 
 	return sum
 }
+
+// Reset 清空全部計數（營業開始清空整場累積;【營業規格書 | 十九、核心流程 | 1. 營業開始階段】）。
+func (this *Tally) Reset() {
+	this.count = map[int32]int32{}
+}

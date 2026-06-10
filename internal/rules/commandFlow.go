@@ -133,36 +133,16 @@ func commandCardify(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 	} // for
 }
 
-// commandRestore 卡牌化還原（restore 處理流程）：把卡牌綁定的卡牌化顧客送回隨機空座位、調整其效果到期、解凍、解綁、不棄回退。
-// self.cardify = none / 剩餘座位 = 0 → 該項 no-op。參數：無。
+// commandRestore 卡牌化還原（restore 處理流程）：對每張目標卡牌執行 restoreOne;非卡牌 → 該項 no-op。參數：無。
 func commandRestore(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
-	round := game.GetRound().GetValue()
-
 	for _, itor := range target {
 		card, _, found := game.LocateCard(itor)
 
-		if found == false || card.GetCardify() == nil {
-			continue // 非卡牌 / self.cardify = none → 該項 no-op
+		if found == false {
+			continue // 非卡牌 → 該項 no-op
 		} // if
 
-		seatID, ok := randomEmptySeat(game)
-
-		if ok == false {
-			continue // 剩餘座位 = 0 → 該項 no-op
-		} // if
-
-		guest := card.GetCardify()
-		game.Cardify.Remove(guest.GetInstanceID()) // 2. 自卡牌化列表移除
-		game.Seat.Place(seatID, guest)             // 3. 加入座位列表（隨機空位）
-
-		for _, effect := range game.Effect { // 4. 調整其效果結束回合（補回凍結期間）
-			if effect.GetSelf().GetGuest() == guest && effect.GetExpire() > 0 {
-				effect.SetExpire(effect.GetExpire() + round - guest.GetFreeze())
-			} // if
-		} // for
-
-		guest.SetFreeze(0) // 5. 解凍
-		card.CardifyFree() // 6+7. 解綁 + 不棄卡牌鎖定 - 1（Unlock 夾 ≥ 0）
+		restoreOne(game, card)
 	} // for
 }
 
@@ -226,17 +206,25 @@ func commandGuestRoam(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 	} // for
 }
 
-// commandGuestSeat 顧客入座（guestSeat）：自排隊佇列彈出隊首 1 位加入隨機空座位、設入座事件、（M11）觸發 guestSeat。
+// commandGuestSeat 顧客入座（guestSeat）：執行一次 guestSeatOne。
 // 命令對象固定 none;排隊佇列空 / 無空位 → no-op。參數：無。
 func commandGuestSeat(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
+	guestSeatOne(game)
+}
+
+// === 流程輔助 ===
+
+// guestSeatOne 自排隊佇列彈出隊首 1 位入隨機空座位、設入座事件、觸發 guestSeat;佇列空 / 無空位回 false。
+// 供 guestSeat 命令與回合開始入座迴圈（phaseRoundStart）共用（【營業規格書 | 十九、核心流程 | 2】【營業規格書 | 二十五、操作命令清單 | guestSeat】）。
+func guestSeatOne(game *cores.Game) bool {
 	if len(game.Wait) == 0 {
-		return // 排隊佇列空 → no-op
+		return false // 排隊佇列空
 	} // if
 
 	seatID, ok := randomEmptySeat(game)
 
 	if ok == false {
-		return // 無空座位 → no-op
+		return false // 無空座位
 	} // if
 
 	guest := game.Wait.Pop() // 彈出隊首
@@ -244,9 +232,36 @@ func commandGuestSeat(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 
 	game.EventSeat(guest)
 	fireTrigger(game, cores.TriggerGuestSeat) // 顧客入座觸發
+	return true
 }
 
-// === 流程輔助 ===
+// restoreOne 對單一卡牌執行 restore 處理流程（步驟 1~7）;未綁卡牌化顧客 / 剩餘座位 = 0 → no-op。
+// 供 restore 命令與玩家出牌的卡牌化自動還原（playCard）共用（【營業規格書 | 二十五、操作命令清單 | restore 處理流程】）。
+func restoreOne(game *cores.Game, card *cores.Card) {
+	if card.GetCardify() == nil {
+		return // 未綁卡牌化顧客 → no-op
+	} // if
+
+	seatID, ok := randomEmptySeat(game)
+
+	if ok == false {
+		return // 剩餘座位 = 0 → no-op
+	} // if
+
+	round := game.GetRound().GetValue()
+	guest := card.GetCardify()
+	game.Cardify.Remove(guest.GetInstanceID()) // 2. 自卡牌化列表移除
+	game.Seat.Place(seatID, guest)             // 3. 加入座位列表（隨機空位）
+
+	for _, effect := range game.Effect { // 4. 調整其效果結束回合（補回凍結期間）
+		if effect.GetSelf().GetGuest() == guest && effect.GetExpire() > 0 {
+			effect.SetExpire(effect.GetExpire() + round - guest.GetFreeze())
+		} // if
+	} // for
+
+	guest.SetFreeze(0) // 5. 解凍
+	card.CardifyFree() // 6+7. 解綁 + 不棄卡牌鎖定 - 1（Unlock 夾 ≥ 0）
+}
 
 // guestExitOne 對單一顧客執行 guestExit 處理流程（供 commandGuestExit 與 guestReturn 無座位分支共用）。
 func guestExitOne(game *cores.Game, guest *cores.Guest, where cores.ContainerKind, giveScore, dropMorale bool) {
@@ -294,18 +309,23 @@ func removeGuestContainer(game *cores.Game, where cores.ContainerKind, guest *co
 	} // switch
 }
 
-// randomEmptySeat 自座位表格取一個隨機空座位編號（依座位編號排序後以 Rander 抽,確保決定性）;無空位回 ok=false。
-func randomEmptySeat(game *cores.Game) (seatID int32, ok bool) {
+// emptySeat 取全部空座位編號（依座位編號升序,確保決定性）。供 randomEmptySeat 抽位與卡牌化卡出牌的空位閘（playCard）共用。
+func emptySeat(game *cores.Game) (result []int32) {
 	id := game.GetSheet().Seat.Keys()
 	sort.Slice(id, func(i, j int) bool { return id[i] < id[j] })
 
-	empty := []int32{}
-
 	for _, itor := range id {
 		if game.Seat[itor] == nil {
-			empty = append(empty, itor)
+			result = append(result, itor)
 		} // if
 	} // for
+
+	return result
+}
+
+// randomEmptySeat 自空座位以 Rander 抽 1 個隨機空座位編號;無空位回 ok=false。
+func randomEmptySeat(game *cores.Game) (seatID int32, ok bool) {
+	empty := emptySeat(game)
 
 	if len(empty) == 0 {
 		return 0, false

@@ -58,7 +58,7 @@ type Rander interface {
 
 // Operator 玩家輸入；對應所有「暫停流程」點。
 type Operator interface {
-	PlayerAction(game *Game) Action                // 玩家行動：出牌 / 結束
+	PlayerAction(game *Game) *Card                 // 玩家行動：出牌回該手牌卡、nil 即玩家結束（【營業規格書 | 十九、核心流程 | 3】）
 	PickGuest(source []*Guest, count int) []*Guest // 新選顧客 / guestPick / nearPick / samePick
 	PickCard(source []*Card, count int) []*Card    // 新選手牌 / *Pick 牌堆類
 	PickDiscard(source []*Card, over int) []*Card  // 手牌上限棄牌
@@ -118,7 +118,7 @@ const (
 type PhaseKind string
 
 const (
-	PhaseNone         PhaseKind = ""     // 無階段 / 無跳轉（下一階段清除後的值）
+	PhaseNone         PhaseKind = ""         // 無階段 / 無跳轉（下一階段清除後的值）
 	PhaseGameStart    PhaseKind = "營業開始" // 營業開始階段；啟動前置技能
 	PhaseRoundStart   PhaseKind = "回合開始" // 回合開始階段；回合數遞增、入座
 	PhasePlayerAction PhaseKind = "玩家行動" // 玩家行動階段；補牌 / 出牌 / 結束

@@ -7,10 +7,18 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// BuildSheet 組裝測試用 in-memory 靜態表:3 座位(桌1:座1,2;桌2:座3)、3 卡牌(群組 1 / 2)、效果群組 5 / 6、
+// BuildSheet 組裝測試用 in-memory 靜態表:設定六鍵、3 座位(桌1:座1,2;桌2:座3)、3 卡牌(群組 1 / 2)、效果群組 5 / 6、
 // 技能 301、抽獎群組 7 / 8 / 9、顧客 501。各層測試共用同一份迷你表,測試只關注自己用到的列。
 func BuildSheet() *sheeter.Sheeter {
 	data := &sheeter.Sheeter{}
+	data.Setting.Data = map[string]*sheeter.Setting{
+		"RoundMax":  {ID: "RoundMax", Value: []string{"12"}},
+		"Morale":    {ID: "Morale", Value: []string{"30"}},
+		"MoraleMax": {ID: "MoraleMax", Value: []string{"50"}},
+		"EnergyMax": {ID: "EnergyMax", Value: []string{"3"}},
+		"HandMax":   {ID: "HandMax", Value: []string{"10"}},
+		"DrawMax":   {ID: "DrawMax", Value: []string{"5"}},
+	}
 	data.Seat.Data = map[int32]*sheeter.Seat{
 		1: {ID: 1, TableID: 1, SameSeatID: []int32{1, 2}, NearSeatID: []int32{3}},
 		2: {ID: 2, TableID: 1, SameSeatID: []int32{1, 2}, NearSeatID: []int32{3}},
@@ -52,8 +60,8 @@ type FakeOperator struct {
 	EmptyPick bool
 }
 
-func (this FakeOperator) PlayerAction(game *cores.Game) cores.Action {
-	return cores.Action{}
+func (this FakeOperator) PlayerAction(game *cores.Game) *cores.Card {
+	return nil // 恆回玩家結束;出牌序列由各測試自備腳本 Operator
 }
 
 func (this FakeOperator) PickGuest(source []*cores.Guest, count int) []*cores.Guest {

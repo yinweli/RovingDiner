@@ -754,8 +754,8 @@ func (this *SuiteGame) expr(source string) *exprs.Expr {
 // fakeOperator 玩家輸入空替身(cores 白箱測試私有;rules / games 用 tester.FakeOperator)。
 type fakeOperator struct{}
 
-func (this fakeOperator) PlayerAction(game *Game) Action {
-	return Action{}
+func (this fakeOperator) PlayerAction(game *Game) *Card {
+	return nil
 }
 
 func (this fakeOperator) PickGuest(source []*Guest, count int) []*Guest {

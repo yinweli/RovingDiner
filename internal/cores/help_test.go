@@ -180,3 +180,14 @@ func (this *SuiteHelp) TestTallySum() {
 	zero := Tally{}
 	this.Equal(int32(0), zero.Sum()) // 零值 → 0
 }
+
+// TestTallyReset 驗證 Reset 清空全部計數（清空後可繼續累計）。
+func (this *SuiteHelp) TestTallyReset() {
+	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
+
+	total.Reset()
+	this.Equal(int32(0), total.Sum())
+
+	total.Add(1) // 清空後可繼續累計
+	this.Equal(int32(1), total.Get(1))
+}
