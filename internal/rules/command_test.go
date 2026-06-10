@@ -14,7 +14,7 @@ func TestSuiteCommand(t *testing.T) {
 	suite.Run(t, new(SuiteCommand))
 }
 
-// SuiteCommand 驗證操作命令派發(engine.ExecOperate)、登錄查詢(HasCommand)與 bootstrap 詞條(command.go:phaseJump / deckShuffle)。
+// SuiteCommand 驗證操作命令派發(Game.ExecOperate)、登錄查詢(HasCommand)與 bootstrap 詞條(command.go:phaseJump / deckShuffle)。
 // 經 ExecOperate 真實入口測:求值失敗 / 未登錄 → 整動作 no-op;phaseJump 階段合法性;deckShuffle 委派 Rander。
 type SuiteCommand struct {
 	suite.Suite

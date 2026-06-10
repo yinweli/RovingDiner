@@ -308,7 +308,7 @@ func readRefMoraleMax(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (resul
 	return exprs.NewNum(float64(guest.GetMoraleMax().GetValue())), true
 }
 
-// readRefScore 讀顧客的分數值。
+// readRefScore 讀顧客的滿意值。
 func readRefScore(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := cores.AsGuest(ref)
 
@@ -319,7 +319,7 @@ func readRefScore(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result ex
 	return exprs.NewNum(float64(guest.GetScore().GetValue())), true
 }
 
-// readRefScoreMax 讀顧客的分數上限。
+// readRefScoreMax 讀顧客的滿意值上限。
 func readRefScoreMax(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := cores.AsGuest(ref)
 
@@ -582,12 +582,12 @@ func readRefMoraleMaxLock(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (r
 	return guestLock(ref, func(g *cores.Guest) int32 { return g.GetMoraleMax().GetLock() })
 }
 
-// readRefScoreLock 讀顧客分數的鎖定計數。
+// readRefScoreLock 讀顧客滿意值的鎖定計數。
 func readRefScoreLock(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return guestLock(ref, func(g *cores.Guest) int32 { return g.GetScore().GetLock() })
 }
 
-// readRefScoreMaxLock 讀顧客分數上限的鎖定計數。
+// readRefScoreMaxLock 讀顧客滿意值上限的鎖定計數。
 func readRefScoreMaxLock(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return guestLock(ref, func(g *cores.Guest) int32 { return g.GetScoreMax().GetLock() })
 }

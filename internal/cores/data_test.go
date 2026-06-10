@@ -39,6 +39,18 @@ func (this *SuiteData) TestDataGetSheet() {
 	this.Same(sheet, NewData(sheet, nil).GetSheet())
 }
 
+// TestDataGetAward 驗證 GetAward 查抽獎群組候選、查無回 ok=false。
+func (this *SuiteData) TestDataGetAward() {
+	data := NewData(buildSheet(), nil)
+
+	meta, ok := data.GetAward(7)
+	this.True(ok)
+	this.Equal([]int32{101, 102}, meta.cardID)
+
+	_, ok = data.GetAward(999) // 查無 → 失敗
+	this.False(ok)
+}
+
 // TestDataGetEffect 驗證 GetEffect 查預編譯效果、查無回 ok=false。
 func (this *SuiteData) TestDataGetEffect() {
 	data := NewData(buildSheet(), nil)

@@ -84,22 +84,22 @@ func (this *SuiteCard) TestCardGetExtraRunMax() {
 
 // TestCardGetKeep 驗證 GetKeep 取回不棄卡牌。
 func (this *SuiteCard) TestCardGetKeep() {
-	this.Equal(int32(1), (&Card{keep: NewValuel(true)}).GetKeep().GetLock())
+	this.Equal(int32(1), (&Card{keep: NewValueLock(true)}).GetKeep().GetLock())
 }
 
 // TestCardGetSeal 驗證 GetSeal 取回封印卡牌。
 func (this *SuiteCard) TestCardGetSeal() {
-	this.Equal(int32(1), (&Card{seal: NewValuel(true)}).GetSeal().GetLock())
+	this.Equal(int32(1), (&Card{seal: NewValueLock(true)}).GetSeal().GetLock())
 }
 
 // TestCardGetPlayExile 驗證 GetPlayExile 取回出牌後流放。
 func (this *SuiteCard) TestCardGetPlayExile() {
-	this.Equal(int32(1), (&Card{playExile: NewValuel(true)}).GetPlayExile().GetLock())
+	this.Equal(int32(1), (&Card{playExile: NewValueLock(true)}).GetPlayExile().GetLock())
 }
 
 // TestCardGetUnplayExile 驗證 GetUnplayExile 取回未出牌流放。
 func (this *SuiteCard) TestCardGetUnplayExile() {
-	this.Equal(int32(1), (&Card{unplayExile: NewValuel(true)}).GetUnplayExile().GetLock())
+	this.Equal(int32(1), (&Card{unplayExile: NewValueLock(true)}).GetUnplayExile().GetLock())
 }
 
 // TestCardGetEffectID 驗證 GetEffectID 取回實例效果列表（零值可用）。

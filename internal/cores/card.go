@@ -21,7 +21,7 @@ type Card struct {
 
 // NewCard 依卡牌編號實例化新卡（載卡牌資料初始值;bool 欄 → 鎖定計數、SkillID → Skill.EffectID）;資料不存在回 nil。
 func NewCard(game *Game, cardID int32) *Card {
-	meta := game.data.sheet.Card.Get(cardID)
+	meta := game.GetSheet().Card.Get(cardID)
 
 	if meta == nil {
 		return nil
@@ -33,33 +33,26 @@ func NewCard(game *Game, cardID int32) *Card {
 		cost:        NewValue(meta.Cost, 0),
 		extraRunMin: NewValue(meta.ExtraRunMin, 0),
 		extraRunMax: NewValue(meta.ExtraRunMax, 0),
-		keep:        NewValuel(meta.Keep),
-		seal:        NewValuel(meta.Seal),
-		playExile:   NewValuel(meta.PlayExile),
-		unplayExile: NewValuel(meta.UnplayExile),
+		keep:        NewValueLock(meta.Keep),
+		seal:        NewValueLock(meta.Seal),
+		playExile:   NewValueLock(meta.PlayExile),
+		unplayExile: NewValueLock(meta.UnplayExile),
 		effectID:    NewIDList(game.SkillEffect(meta.SkillID)...),
 	}
 }
 
-// CopyCard 複製卡牌：淺複製依 source 的卡牌編號載入卡牌資料初始值、深複製複製 source 當前狀態（效果列表深複製）;
-// 卡牌化來源皆 none、實例編號重生。淺複製於卡牌資料不存在時回 nil。
+// CopyCard 複製卡牌：淺複製依 source 的卡牌編號載入卡牌資料初始值、深複製以結構拷貝承接 source 當前狀態
+// （新欄位自動入拷;僅 實例編號重生 / 效果列表另深複製 / 卡牌化來源 none 三欄覆寫）。淺複製於卡牌資料不存在時回 nil。
 func CopyCard(game *Game, source *Card, deep bool) *Card {
 	if deep == false {
 		return NewCard(game, source.cardID)
 	} // if
 
-	return &Card{
-		instanceID:  game.NextID(),
-		cardID:      source.cardID,
-		cost:        source.cost,
-		extraRunMin: source.extraRunMin,
-		extraRunMax: source.extraRunMax,
-		keep:        source.keep,
-		seal:        source.seal,
-		playExile:   source.playExile,
-		unplayExile: source.unplayExile,
-		effectID:    NewIDList(source.effectID.List()...),
-	}
+	result := *source
+	result.instanceID = game.NextID()
+	result.effectID = NewIDList(source.effectID.List()...)
+	result.cardify = nil
+	return &result
 }
 
 // GetInstanceID 讀實例編號。
@@ -134,7 +127,7 @@ func (this *Card) CardifyFree() {
 // 換卡牌編號、依新卡資料僅載 出牌費用 / 不棄鎖 / 封印鎖 / 實例效果列表;查無卡牌資料回 false 不動。
 // 實例身分的改寫入口僅 NewCard 與此;抽獎 / 事件 / 觸發留 morph 流程。
 func (this *Card) Morph(game *Game, cardID int32) bool {
-	meta := game.data.sheet.Card.Get(cardID)
+	meta := game.GetSheet().Card.Get(cardID)
 
 	if meta == nil {
 		return false
@@ -143,8 +136,8 @@ func (this *Card) Morph(game *Game, cardID int32) bool {
 	this.instanceID = game.NextID()
 	this.cardID = cardID
 	this.cost = NewValue(meta.Cost, 0)
-	this.keep = NewValuel(meta.Keep)
-	this.seal = NewValuel(meta.Seal)
+	this.keep = NewValueLock(meta.Keep)
+	this.seal = NewValueLock(meta.Seal)
 	this.effectID = NewIDList(game.SkillEffect(meta.SkillID)...)
 	return true
 }
@@ -172,7 +165,7 @@ func (this *CardList) Remove(instanceID InstanceID) {
 	*this = result
 }
 
-// Find 依實例編號找出卡牌;未命中回 nil。供 locateCard 逐牌堆掃描。
+// Find 依實例編號找出卡牌;未命中回 nil。供 LocateCard 逐牌堆掃描。
 func (this *CardList) Find(instanceID InstanceID) *Card {
 	for _, itor := range *this {
 		if itor.instanceID == instanceID {

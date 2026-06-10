@@ -30,6 +30,12 @@ func (this *Data) GetSheet() *sheeter.Sheeter {
 	return this.sheet
 }
 
+// GetAward 查抽獎群組候選;查無回 ok=false（供 Game.RollCard 做 weighted random）。
+func (this *Data) GetAward(group int32) (meta AwardData, ok bool) {
+	meta, ok = this.award[group]
+	return meta, ok
+}
+
 // GetEffect 查預編譯效果;查無回 ok=false。
 func (this *Data) GetEffect(effectID int32) (meta EffectData, ok bool) {
 	meta, ok = this.effect[effectID]

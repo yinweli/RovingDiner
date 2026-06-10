@@ -8,7 +8,7 @@ import (
 // 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面】。
 //
 // 靜態表格不走介面：核心直接吃 Sheeter 雙語言生成的 *sheeter.Sheeter（資料 port 本身），
-// 以 reader.Get 查詢；衍生索引由核心（games）預建。
+// 以 reader.Get 查詢；衍生索引由核心（cores 的 NewData）預建。
 //
 // 核心完全同步、單執行緒、無 channel：需要玩家輸入時阻塞呼叫 Operator，
 // 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。
@@ -39,7 +39,7 @@ type SelectorFunc func(game *Game, arg []exprs.Value) (result []InstanceID)
 // prepareEffect 僅於命令欄非空時呼叫此原語,故空字串處理不在本型別契約內。
 type Compiler func(source string) (command EffectExec, err error)
 
-// EffectExec 預編譯效果命令的執行器;games 的 compileCommand 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、cores 於效果流程呼叫。空命令欄為 nil。
+// EffectExec 預編譯效果命令的執行器;games 注入的 Compiler 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、rules 於效果流程（runEffectExec）呼叫。空命令欄為 nil。
 type EffectExec func(game *Game)
 
 // Rander 唯一亂數來源（單一 seeded PRNG）；決定性的基礎。
@@ -161,7 +161,7 @@ const (
 )
 
 // EffectKind 效果類型；對應【營業規格書 | 七、效果類型】。
-// （效果實例型別見 instance.go 的 Effect；此 enum 表達其靜態類型，故以 Kind 為後綴避免撞名。）
+// （效果實例型別見 effect.go 的 Effect；此 enum 表達其靜態類型，故以 Kind 為後綴避免撞名。）
 type EffectKind int32
 
 const (
@@ -210,7 +210,7 @@ const (
 
 // AssignKind 屬性修改命令的賦值符種類；對應【營業規格書 | 十七、命令 | 1】。
 //
-// 由 games 的命令解析器（parse.go）產出、cores 的屬性修改執行（attrWrite.go）據此分派；
+// 由 games 的命令解析器（parse.go）產出、cores 的數值原語（value.go 的 Apply 系列）據此分派；
 // 賦值符是 cores 分派的語意，故型別下沉 cores 作單一來源。
 // AssignLock（@）/ AssignUnlock（#）不帶算術式，其餘必帶。
 type AssignKind int

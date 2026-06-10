@@ -17,7 +17,7 @@ type Effect struct {
 // NewEffect 依效果編號建構效果實例;結束回合依【營業規格書 | 十四、作用回合】（0 → 0 整場保留、N → 當前回合 + N − 1）;
 // 當前層數由呼叫端決定、建構即依堆疊上限夾制（堆疊處理【營業規格書 | 十六、堆疊規則】,實際層數以 GetStack 讀回）;查無編譯資料回 nil。
 func NewEffect(game *Game, effectID int32, self Ref, stack int32) *Effect {
-	meta, ok := game.data.effect[effectID]
+	meta, ok := game.EffectData(effectID)
 
 	if ok == false {
 		return nil
@@ -113,7 +113,7 @@ func (this *EffectList) Find(self Ref, effectID int32) *Effect {
 // 作用順序查 game 的預編譯效果索引（查無回 0,防禦）。觸發時機 / 推進效果 / 清理效果三流程對快照共用此排序。
 func (this EffectList) Sort(game *Game) {
 	order := func(effect *Effect) int32 {
-		meta, ok := game.data.effect[effect.effectID]
+		meta, ok := game.EffectData(effect.effectID)
 
 		if ok == false {
 			return 0

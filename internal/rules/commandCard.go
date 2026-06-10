@@ -7,7 +7,7 @@ import (
 
 // 卡牌屬性命令（【營業規格書 | 二十五、操作命令清單】cardCost* / cardEffect*）：
 // 對命令對象的每張卡牌實例直接改其欄位（非卡牌實例該項 no-op；不限容器位置）。
-// cardCost* 重用 writeValue（出牌費用為「寫鎖」屬性：尊重鎖定計數、捨入、夾下限 0），與 self.cost 寫路徑一致。
+// cardCost* 經 Value.Apply 套用賦值符（出牌費用為「寫鎖」屬性：尊重鎖定計數、捨入）後夾下限 0。
 
 func commandCardCostAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
 	cardCost(game, target, cores.AssignAdd, arg)

@@ -33,7 +33,7 @@ func (this *SuiteEffect) TestNewEffect() {
 	this.Require().NotNil(zero)
 	this.Equal(int32(0), zero.GetExpire())
 
-	game.data.effect[404] = EffectData{StackMax: 2}
+	game.data.SetEffect(404, EffectData{StackMax: 2})
 	capped := NewEffect(game, 404, Ref{}, 5) // 建構即依堆疊上限夾制
 	this.Require().NotNil(capped)
 	this.Equal(int32(2), capped.GetStack())

@@ -31,7 +31,7 @@ type Guest struct {
 // NewGuest 依顧客編號實例化新顧客（載顧客資料初始值：Score / ScoreMax / Morale / MoraleMax / Calm / SateMax 數值、封印 bool → 鎖定計數）;
 // Sate 初值 0（顧客資料無此欄、隨服務累積至飽食值離場線）;Hit / Immune 初始化空表。資料不存在回 nil。
 func NewGuest(game *Game, guestID int32) *Guest {
-	meta := game.data.sheet.Guest.Get(guestID)
+	meta := game.GetSheet().Guest.Get(guestID)
 
 	if meta == nil {
 		return nil
@@ -46,8 +46,8 @@ func NewGuest(game *Game, guestID int32) *Guest {
 		moraleMax:    NewValue(meta.MoraleMax, 0),
 		calm:         NewValue(meta.Calm, 0),
 		sateMax:      NewValue(meta.SateMax, 0),
-		sateSeal:     NewValuel(meta.SateSeal),
-		calmSeal:     NewValuel(meta.CalmSeal),
+		sateSeal:     NewValueLock(meta.SateSeal),
+		calmSeal:     NewValueLock(meta.CalmSeal),
 		sateHit:      NewHit(),
 		calmHit:      NewHit(),
 		effectImmune: NewImmune(),
@@ -192,7 +192,7 @@ func (this *WaitList) Remove(instanceID InstanceID) {
 	*this = result
 }
 
-// Find 依實例編號查找顧客;未命中回 nil。供 locateGuest 掃描排隊佇列。
+// Find 依實例編號查找顧客;未命中回 nil。供 LocateGuest 掃描排隊佇列。
 func (this *WaitList) Find(instanceID InstanceID) *Guest {
 	for _, itor := range *this {
 		if itor.instanceID == instanceID {
@@ -216,6 +216,17 @@ func (this SeatList) Place(seatID int32, guest *Guest) {
 func (this SeatList) Remove(guest *Guest) {
 	delete(this, guest.seatID)
 	guest.seatID = 0
+}
+
+// Find 依實例編號查找在座顧客;未命中回 nil。供 LocateGuest 掃描座位列表（編號唯一,map 迭代無序無礙）。
+func (this SeatList) Find(instanceID InstanceID) *Guest {
+	for _, itor := range this {
+		if itor != nil && itor.instanceID == instanceID {
+			return itor
+		} // if
+	} // for
+
+	return nil
 }
 
 // Sorted 取全部入座顧客,依座位編號升序（消除 map 迭代無序,確保 Pick / Rand 候選決定性）。
@@ -267,7 +278,7 @@ func (this *GuestList) Remove(instanceID InstanceID) {
 	*this = result
 }
 
-// Find 依實例編號查找顧客;未命中回 nil。供 locateGuest 掃描遊蕩 / 卡牌化列表。
+// Find 依實例編號查找顧客;未命中回 nil。供 LocateGuest 掃描遊蕩 / 卡牌化列表。
 func (this *GuestList) Find(instanceID InstanceID) *Guest {
 	for _, itor := range *this {
 		if itor.instanceID == instanceID {

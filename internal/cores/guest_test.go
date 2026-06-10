@@ -92,12 +92,12 @@ func (this *SuiteGuest) TestGuestGetCalm() {
 
 // TestGuestGetSateSeal 驗證 GetSateSeal 取回封印飽食技能。
 func (this *SuiteGuest) TestGuestGetSateSeal() {
-	this.Equal(int32(1), (&Guest{sateSeal: NewValuel(true)}).GetSateSeal().GetLock())
+	this.Equal(int32(1), (&Guest{sateSeal: NewValueLock(true)}).GetSateSeal().GetLock())
 }
 
 // TestGuestGetCalmSeal 驗證 GetCalmSeal 取回封印耐心技能。
 func (this *SuiteGuest) TestGuestGetCalmSeal() {
-	this.Equal(int32(1), (&Guest{calmSeal: NewValuel(true)}).GetCalmSeal().GetLock())
+	this.Equal(int32(1), (&Guest{calmSeal: NewValueLock(true)}).GetCalmSeal().GetLock())
 }
 
 // TestGuestGetSateHit 驗證 GetSateHit 取回飽食門檻集合（零值可用）。
@@ -234,6 +234,16 @@ func (this *SuiteGuest) TestSeatListRemove() {
 
 	seat.Remove(&Guest{instanceID: 2}) // 未入座（seatID 0 無鍵）→ no-op
 	this.Empty(seat)
+}
+
+// TestSeatListFind 驗證 Find 依實例編號查找在座顧客;未命中回 nil。
+func (this *SuiteGuest) TestSeatListFind() {
+	guest := &Guest{instanceID: 1}
+	seat := SeatList{}
+	seat.Place(3, guest)
+
+	this.Same(guest, seat.Find(1))
+	this.Nil(seat.Find(99)) // 未命中
 }
 
 // TestSeatListSorted 驗證 Sorted 依座位編號升序取顧客（決定性）。

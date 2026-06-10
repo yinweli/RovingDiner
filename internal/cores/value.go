@@ -23,8 +23,8 @@ func NewValue(value, lock int32) Value {
 	return Value{value: value, lock: lock}
 }
 
-// NewValuel 以靜態 bool 旗標建構鎖屬性初值：true → 鎖定計數 1、false → 0（數值固定 0）。供新實例化卡牌 / 顧客載入鎖型欄位。
-func NewValuel(lock bool) Value {
+// NewValueLock 以靜態 bool 旗標建構鎖屬性初值：true → 鎖定計數 1、false → 0（數值固定 0）。供新實例化卡牌 / 顧客載入鎖型欄位。
+func NewValueLock(lock bool) Value {
 	if lock {
 		return NewValue(0, 1)
 	} // if

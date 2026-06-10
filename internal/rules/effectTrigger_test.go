@@ -133,7 +133,8 @@ func (this *SuiteEffectTrigger) TestTriggerCount() {
 	this.False(ok)
 }
 
-func (this *SuiteEffectTrigger) TestRunEffectCommand() {
+// TestRunEffectExec 驗證 runEffectExec 連續執行命令 times 次;nil 命令整體略過、times <= 0 不執行。
+func (this *SuiteEffectTrigger) TestRunEffectExec() {
 	game := newGame()
 	count := 0
 	command := func(game *cores.Game) { count++ }

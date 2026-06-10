@@ -22,13 +22,13 @@ func (this *SuiteValue) TestNewValue() {
 	this.Equal(int32(2), v.GetLock())
 }
 
-// TestNewValuel 驗證 NewValuel 以 bool 旗標建構鎖屬性初值（true → 計數 1、false → 0，數值固定 0）。
-func (this *SuiteValue) TestNewValuel() {
-	on := NewValuel(true)
+// TestNewValueLock 驗證 NewValueLock 以 bool 旗標建構鎖屬性初值（true → 計數 1、false → 0，數值固定 0）。
+func (this *SuiteValue) TestNewValueLock() {
+	on := NewValueLock(true)
 	this.Equal(int32(0), on.GetValue())
 	this.Equal(int32(1), on.GetLock())
 
-	off := NewValuel(false)
+	off := NewValueLock(false)
 	this.Equal(int32(0), off.GetValue())
 	this.Equal(int32(0), off.GetLock())
 }

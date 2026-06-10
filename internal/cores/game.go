@@ -105,7 +105,7 @@ type Game struct {
 }
 
 // NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用），
-// 並注入遊戲資料（原始表 + 衍生索引,nil 補空殼）與玩家輸入 / 亂數兩 port。
+// 注入遊戲資料（原始表 + 衍生索引,nil 補空殼）與玩家輸入 / 亂數兩 port，並預建七張空詞彙表（Register* 填入）。
 // 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / tester）填入；self 為求值脈絡 run-state、
 // 詞彙為裝備（rules.Register）,皆不入建構。
 func NewGame(seed int64, data *Data, operator Operator, rander Rander) *Game {
@@ -114,11 +114,18 @@ func NewGame(seed int64, data *Data, operator Operator, rander Rander) *Game {
 	} // if
 
 	return &Game{
-		Seat:     SeatList{},
-		Seed:     seed,
-		data:     data,
-		operator: operator,
-		rander:   rander,
+		Seat:         SeatList{},
+		Seed:         seed,
+		data:         data,
+		operator:     operator,
+		rander:       rander,
+		attrRead:     map[string]AttrReadFunc{},
+		attrWrite:    map[string]AttrWriteFunc{},
+		attrRefRead:  map[string]AttrRefReadFunc{},
+		attrRefWrite: map[string]AttrRefWriteFunc{},
+		command:      map[string]CommandFunc{},
+		selector:     map[string]SelectorFunc{},
+		builtin:      map[string]exprs.Builtin{},
 	}
 }
 
@@ -128,66 +135,38 @@ func (this *Game) NextID() InstanceID {
 	return this.lastID
 }
 
-// RegisterAttrRead 註冊全域屬性讀詞條（Lock 詞條以全名為鍵,如 moraleLock）;重複註冊後者覆蓋。
+// RegisterAttrRead 註冊全域屬性讀詞條（Lock 詞條以全名為鍵,如 moraleLock）;重複註冊後者覆蓋。表由 NewGame 預建。
 func (this *Game) RegisterAttrRead(name string, read AttrReadFunc) {
-	if this.attrRead == nil {
-		this.attrRead = map[string]AttrReadFunc{}
-	} // if
-
 	this.attrRead[name] = read
 }
 
 // RegisterAttrWrite 註冊全域屬性寫詞條;重複註冊後者覆蓋。
 func (this *Game) RegisterAttrWrite(name string, write AttrWriteFunc) {
-	if this.attrWrite == nil {
-		this.attrWrite = map[string]AttrWriteFunc{}
-	} // if
-
 	this.attrWrite[name] = write
 }
 
 // RegisterAttrRefRead 註冊引用屬性讀詞條（Lock 詞條以全名為鍵）;重複註冊後者覆蓋。
 func (this *Game) RegisterAttrRefRead(name string, read AttrRefReadFunc) {
-	if this.attrRefRead == nil {
-		this.attrRefRead = map[string]AttrRefReadFunc{}
-	} // if
-
 	this.attrRefRead[name] = read
 }
 
 // RegisterAttrRefWrite 註冊引用屬性寫詞條;重複註冊後者覆蓋。
 func (this *Game) RegisterAttrRefWrite(name string, write AttrRefWriteFunc) {
-	if this.attrRefWrite == nil {
-		this.attrRefWrite = map[string]AttrRefWriteFunc{}
-	} // if
-
 	this.attrRefWrite[name] = write
 }
 
 // RegisterCommand 註冊操作命令詞條;重複註冊後者覆蓋。
 func (this *Game) RegisterCommand(name string, run CommandFunc) {
-	if this.command == nil {
-		this.command = map[string]CommandFunc{}
-	} // if
-
 	this.command[name] = run
 }
 
 // RegisterSelector 註冊命令對象詞條;重複註冊後者覆蓋。
 func (this *Game) RegisterSelector(name string, resolve SelectorFunc) {
-	if this.selector == nil {
-		this.selector = map[string]SelectorFunc{}
-	} // if
-
 	this.selector[name] = resolve
 }
 
 // RegisterBuiltin 註冊內建函式詞條（Env 帶入 exprs 求值）;重複註冊後者覆蓋。
 func (this *Game) RegisterBuiltin(name string, run exprs.Builtin) {
-	if this.builtin == nil {
-		this.builtin = map[string]exprs.Builtin{}
-	} // if
-
 	this.builtin[name] = run
 }
 
@@ -498,7 +477,7 @@ func (this *Game) RoundReset() {
 // SkillEffect 取技能的效果編號列表複本（新卡實例效果列表來源 = Card.SkillID → Skill.EffectID）;技能不存在回 nil。
 // 複製以免共享靜態表切片。供 NewCard 載入卡牌實例效果列表、Morph 變身後重設效果共用。
 func (this *Game) SkillEffect(skillID int32) []int32 {
-	skill := this.data.sheet.Skill.Get(skillID)
+	skill := this.GetSheet().Skill.Get(skillID)
 
 	if skill == nil {
 		return nil
@@ -510,13 +489,13 @@ func (this *Game) SkillEffect(skillID int32) []int32 {
 // CardSkillGroup 取卡牌的技能群組編號（卡牌資料.SkillID → Skill.Group）;卡牌 / 技能資料不存在回 0。
 // 供 cardRun 啟動效果列表時 skillImmune 排除免疫顧客。
 func (this *Game) CardSkillGroup(cardID int32) int32 {
-	card := this.data.sheet.Card.Get(cardID)
+	card := this.GetSheet().Card.Get(cardID)
 
 	if card == nil {
 		return 0
 	} // if
 
-	skill := this.data.sheet.Skill.Get(card.SkillID)
+	skill := this.GetSheet().Skill.Get(card.SkillID)
 
 	if skill == nil {
 		return 0
@@ -533,7 +512,7 @@ func (this *Game) EffectData(effectID int32) (meta EffectData, ok bool) {
 // RollCard 對抽獎群組做 weighted random 抽一張卡牌編號（deckRoll / handRoll / *Morph 用）;
 // 群組不存在 / 總權重 0 回 ok=false。
 func (this *Game) RollCard(group int32) (cardID int32, ok bool) {
-	award, found := this.data.award[group]
+	award, found := this.data.GetAward(group)
 
 	if found == false || len(award.weight) == 0 {
 		return 0, false
@@ -689,11 +668,9 @@ func (this *Game) LocateCard(id InstanceID) (card *Card, where ContainerKind, ok
 // LocateGuest 以實例編號自顧客四容器找出顧客及其所在容器;未命中回 (nil, ContainerNone, false)。
 // 供操作命令取顧客實例 + 查容器位置(型別不符 / 位置不符 no-op);顧客存在於 座位 / 排隊 / 遊蕩 / 卡牌化。
 func (this *Game) LocateGuest(id InstanceID) (guest *Guest, where ContainerKind, ok bool) {
-	for _, itor := range this.Seat {
-		if itor != nil && itor.GetInstanceID() == id {
-			return itor, ContainerSeat, true
-		} // if
-	} // for
+	if found := this.Seat.Find(id); found != nil {
+		return found, ContainerSeat, true
+	} // if
 
 	if found := this.Wait.Find(id); found != nil {
 		return found, ContainerWait, true

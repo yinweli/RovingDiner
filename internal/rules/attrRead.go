@@ -122,22 +122,22 @@ func readMoraleBlock(game *cores.Game, arg []exprs.Value) (result exprs.Value, o
 	return exprs.NewNum(float64(game.GetMoraleBlock().GetValue())), true
 }
 
-// readScore 讀餐廳分數。
+// readScore 讀餐廳滿意值。
 func readScore(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetScore().GetValue())), true
 }
 
-// readEnergy 讀出牌能量。
+// readEnergy 讀出牌點數。
 func readEnergy(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergy().GetValue())), true
 }
 
-// readEnergyMax 讀出牌能量上限。
+// readEnergyMax 讀出牌點數上限。
 func readEnergyMax(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergyMax().GetValue())), true
 }
 
-// readEnergyKeep 讀能量保留量。
+// readEnergyKeep 讀出牌點數保留。
 func readEnergyKeep(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergyKeep().GetValue())), true
 }
@@ -497,22 +497,22 @@ func readMoraleBlockLock(game *cores.Game, arg []exprs.Value) (result exprs.Valu
 	return exprs.NewNum(float64(game.GetMoraleBlock().GetLock())), true
 }
 
-// readScoreLock 讀餐廳分數的鎖定計數。
+// readScoreLock 讀餐廳滿意值的鎖定計數。
 func readScoreLock(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetScore().GetLock())), true
 }
 
-// readEnergyLock 讀出牌能量的鎖定計數。
+// readEnergyLock 讀出牌點數的鎖定計數。
 func readEnergyLock(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergy().GetLock())), true
 }
 
-// readEnergyMaxLock 讀出牌能量上限的鎖定計數。
+// readEnergyMaxLock 讀出牌點數上限的鎖定計數。
 func readEnergyMaxLock(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergyMax().GetLock())), true
 }
 
-// readEnergyKeepLock 讀能量保留量的鎖定計數。
+// readEnergyKeepLock 讀出牌點數保留的鎖定計數。
 func readEnergyKeepLock(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(game.GetEnergyKeep().GetLock())), true
 }
