@@ -20,31 +20,31 @@ type SuiteAttrRead struct {
 
 func (this *SuiteAttrRead) TestAttrReadValue() {
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = NewValue(25, 0)
-	runtime.Game.MoraleMax = NewValue(50, 0)
-	runtime.Game.MoraleShield = NewValue(9, 0)
-	runtime.Game.MoraleBlock = NewValue(8, 0)
-	runtime.Game.Score = NewValue(7, 0)
-	runtime.Game.Energy = NewValue(3, 0)
-	runtime.Game.EnergyMax = NewValue(6, 0)
-	runtime.Game.HandMax = NewValue(10, 0)
-	runtime.Game.DrawMax = NewValue(5, 0)
-	runtime.Game.Round = NewValue(4, 0)
-	runtime.Game.RoundMax = NewValue(12, 0)
-	runtime.Game.DamageValue = 6
-	runtime.Game.SeatCount = 2
-	runtime.Game.ExitLastSeat = 3
-	runtime.Game.ExitCount = 1
-	runtime.Game.TaskSkill = 77
-	runtime.Game.TaskCount = 4
-	runtime.Game.DrawCount = 2
-	runtime.Game.DropCount = 1
-	runtime.Game.PlayCount = 3
-	runtime.Game.ExileCount = 1
-	runtime.Game.MorphCount = 2
-	runtime.Game.MorphOldID = 100
-	runtime.Game.MorphNewID = 200
-	runtime.Game.NextPhase = PhasePlayerAction
+	runtime.Game.morale = NewValue(25, 0)
+	runtime.Game.moraleMax = NewValue(50, 0)
+	runtime.Game.moraleShield = NewValue(9, 0)
+	runtime.Game.moraleBlock = NewValue(8, 0)
+	runtime.Game.score = NewValue(7, 0)
+	runtime.Game.energy = NewValue(3, 0)
+	runtime.Game.energyMax = NewValue(6, 0)
+	runtime.Game.handMax = NewValue(10, 0)
+	runtime.Game.drawMax = NewValue(5, 0)
+	runtime.Game.round = NewValue(4, 0)
+	runtime.Game.roundMax = NewValue(12, 0)
+	runtime.Game.damageValue = 6
+	runtime.Game.seatCount = 2
+	runtime.Game.exitLastSeat = 3
+	runtime.Game.exitCount = 1
+	runtime.Game.taskSkill = 77
+	runtime.Game.taskCount = 4
+	runtime.Game.drawCount = 2
+	runtime.Game.dropCount = 1
+	runtime.Game.playCount = 3
+	runtime.Game.exileCount = 1
+	runtime.Game.morphCount = 2
+	runtime.Game.morphOldID = 100
+	runtime.Game.morphNewID = 200
+	runtime.Game.nextPhase = PhasePlayerAction
 	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(25), this.num(eng, "morale"))
@@ -85,7 +85,7 @@ func (this *SuiteAttrRead) TestAttrReadContainer() {
 	runtime.Roam = []*Guest{{}, {}, {}}
 	runtime.Seat[1] = &Guest{}
 	runtime.Cardify = []*Guest{{}}
-	runtime.Action = []*Action{{}}
+	runtime.Action = ActionList{{}}
 	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(1), this.num(eng, "seatSize"))
@@ -98,39 +98,39 @@ func (this *SuiteAttrRead) TestAttrReadContainer() {
 
 func (this *SuiteAttrRead) TestAttrReadRoundLeft() {
 	runtime := NewRuntime(0)
-	runtime.Game.Round = NewValue(8, 0)
-	runtime.Game.RoundMax = NewValue(10, 0)
+	runtime.Game.round = NewValue(8, 0)
+	runtime.Game.roundMax = NewValue(10, 0)
 	eng := &Engine{runtime: runtime}
 	this.Equal(float64(2), this.num(eng, "roundLeft"))
 
-	runtime.Game.Round = NewValue(12, 0) // 超過上限 → 夾 0
+	runtime.Game.round = NewValue(12, 0) // 超過上限 → 夾 0
 	this.Equal(float64(0), this.num(eng, "roundLeft"))
 }
 
 func (this *SuiteAttrRead) TestAttrReadObject() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: 11}
-	guest := &Guest{InstanceID: 21}
-	runtime.Game.DrawLast = card
-	runtime.Game.DropLast = card
-	runtime.Game.ExileLast = card
-	runtime.Game.MorphLast = card
-	runtime.Game.SeatLast = guest
-	runtime.Game.ExitLast = guest
-	runtime.Game.TaskGuest = guest
-	runtime.Game.DamageGuest = guest
+	card := &Card{instanceID: 11}
+	guest := &Guest{instanceID: 21}
+	runtime.Game.drawLast = card
+	runtime.Game.dropLast = card
+	runtime.Game.exileLast = card
+	runtime.Game.morphLast = card
+	runtime.Game.seatLast = guest
+	runtime.Game.exitLast = guest
+	runtime.Game.taskGuest = guest
+	runtime.Game.damageGuest = guest
 	eng := &Engine{runtime: runtime}
 
 	for _, name := range []string{"drawLast", "dropLast", "exileLast", "morphLast"} {
 		value, ok := eng.Attr(name, nil)
 		this.True(ok)
-		this.True(value.Ref().Same(cardRef{card: card}), name)
+		this.True(NewRefCard(card).IsSame(value.Ref()), name)
 	} // for
 
 	for _, name := range []string{"seatLast", "exitLast", "taskGuest", "damageGuest"} {
 		value, ok := eng.Attr(name, nil)
 		this.True(ok)
-		this.True(value.Ref().Same(guestRef{guest: guest}), name)
+		this.True(NewRefGuest(guest).IsSame(value.Ref()), name)
 	} // for
 
 	value, ok := eng.Attr("playLast", nil) // 尚無 → 空物件
@@ -144,30 +144,30 @@ func (this *SuiteAttrRead) TestAttrReadSelf() {
 	_, ok := eng.Attr("self", nil) // 未綁定 → 失敗
 	this.False(ok)
 
-	eng.self = &Self{} // 綁定空物件 → none
+	eng.self = &Ref{} // 綁定空物件 → none
 	value, ok := eng.Attr("self", nil)
 	this.True(ok)
 	this.True(value.IsNone())
 
-	guest := &Guest{InstanceID: 9} // 綁定顧客 → 引用
-	eng.self = &Self{Guest: guest}
+	guest := &Guest{instanceID: 9} // 綁定顧客 → 引用
+	eng.self = &Ref{guest: guest}
 	value, ok = eng.Attr("self", nil)
 	this.True(ok)
-	this.True(value.Ref().Same(guestRef{guest: guest}))
+	this.True(NewRefGuest(guest).IsSame(value.Ref()))
 }
 
 func (this *SuiteAttrRead) TestAttrReadLock() {
 	runtime := NewRuntime(0)
-	runtime.Game.Morale = NewValue(0, 1)
-	runtime.Game.MoraleMax = NewValue(0, 2)
-	runtime.Game.MoraleShield = NewValue(0, 3)
-	runtime.Game.MoraleBlock = NewValue(0, 4)
-	runtime.Game.Score = NewValue(0, 5)
-	runtime.Game.Energy = NewValue(3, 6)
-	runtime.Game.EnergyMax = NewValue(0, 7)
-	runtime.Game.EnergyKeep = NewValue(0, 8)
-	runtime.Game.HandMax = NewValue(0, 9)
-	runtime.Game.DrawMax = NewValue(0, 10)
+	runtime.Game.morale = NewValue(0, 1)
+	runtime.Game.moraleMax = NewValue(0, 2)
+	runtime.Game.moraleShield = NewValue(0, 3)
+	runtime.Game.moraleBlock = NewValue(0, 4)
+	runtime.Game.score = NewValue(0, 5)
+	runtime.Game.energy = NewValue(3, 6)
+	runtime.Game.energyMax = NewValue(0, 7)
+	runtime.Game.energyKeep = NewValue(0, 8)
+	runtime.Game.handMax = NewValue(0, 9)
+	runtime.Game.drawMax = NewValue(0, 10)
 	eng := &Engine{runtime: runtime}
 
 	this.Equal(float64(1), this.num(eng, "moraleLock"))
@@ -221,14 +221,14 @@ func (this *SuiteAttrRead) TestAttrReadTableCount() {
 
 func (this *SuiteAttrRead) TestAttrReadGroupQuery() {
 	runtime := NewRuntime(0)
-	runtime.Hand = []*Card{{CardID: 101}, {CardID: 101}, {CardID: 102}}
-	runtime.Deck = []*Card{{CardID: 101}}
-	runtime.Drop = []*Card{{CardID: 102}, {CardID: 102}}
-	runtime.Exile = []*Card{{CardID: 101}}
-	runtime.Game.DrawTotal = map[int32]int32{1: 3, 2: 5}
-	runtime.Game.DropTotal = map[int32]int32{1: 1}
-	runtime.Game.PlayTotal = map[int32]int32{2: 2}
-	runtime.Game.ExileTotal = map[int32]int32{1: 4}
+	runtime.Hand = []*Card{{cardID: 101}, {cardID: 101}, {cardID: 102}}
+	runtime.Deck = []*Card{{cardID: 101}}
+	runtime.Drop = []*Card{{cardID: 102}, {cardID: 102}}
+	runtime.Exile = []*Card{{cardID: 101}}
+	runtime.Game.drawTotal = Tally{count: map[int32]int32{1: 3, 2: 5}}
+	runtime.Game.dropTotal = Tally{count: map[int32]int32{1: 1}}
+	runtime.Game.playTotal = Tally{count: map[int32]int32{2: 2}}
+	runtime.Game.exileTotal = Tally{count: map[int32]int32{1: 4}}
 	eng := &Engine{runtime: runtime, data: buildSheet()}
 
 	this.Equal(float64(2), this.num(eng, "handSize", exprs.NewNum(1))) // 群組 1 = 卡 101 兩張

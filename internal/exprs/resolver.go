@@ -14,11 +14,11 @@ type Resolver interface {
 }
 
 // Ref 是物件引用(卡牌 / 顧客實例)在運算式中的不透明代表;exprs 不解讀其內容,
-// 僅在 == / != 比較時以 Same 判定是否同一實例(對齊【營業規格書 | 二十七、運算式 | 2】比實例編號)。
-// 由 games 實作。
+// 僅在 == / != 比較時以 IsSame 判定是否同一實例(對齊【營業規格書 | 二十七、運算式 | 2】比實例編號)。
+// 由 cores 實作。
 type Ref interface {
-	// Same 回傳是否與另一引用指向同一實例。
-	Same(other Ref) bool
+	// IsSame 回傳是否與另一引用指向同一實例。
+	IsSame(other Ref) bool
 }
 
 // Builtin 是內建純運算函式(min / max…),只對輸入參數運算、不讀系統狀態

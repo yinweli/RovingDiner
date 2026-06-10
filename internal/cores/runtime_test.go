@@ -20,15 +20,15 @@ func (this *SuiteRuntime) TestNewRuntime() {
 	this.Require().NotNil(runtime.Game)
 	this.Equal(int64(123), runtime.Seed)
 
-	// 容器初始化：map 必須可用、多重集合 map 已就緒
+	// 容器初始化：座位 map 必須可用、累積計數零值可用（Sum 回 0）
 	this.NotNil(runtime.Seat)
-	this.NotNil(runtime.Game.DrawTotal)
-	this.NotNil(runtime.Game.DropTotal)
-	this.NotNil(runtime.Game.PlayTotal)
-	this.NotNil(runtime.Game.ExileTotal)
+	this.Equal(int32(0), runtime.Game.GetDrawTotal().Sum())
+	this.Equal(int32(0), runtime.Game.GetDropTotal().Sum())
+	this.Equal(int32(0), runtime.Game.GetPlayTotal().Sum())
+	this.Equal(int32(0), runtime.Game.GetExileTotal().Sum())
 
 	// 初始階段為空、容器為空
-	this.Equal(PhaseNone, runtime.Game.NextPhase)
+	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
 	this.Empty(runtime.Hand)
 	this.Empty(runtime.Deck)
 	this.Empty(runtime.Effect)

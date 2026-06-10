@@ -24,12 +24,12 @@ func (this *SuiteCommandInstance) TestCardAdd() {
 	commandHandAdd(eng, nil, nums(103, 2)) // 卡 103 × 2 入手牌
 	this.Require().Len(runtime.Hand, 2)
 	card := runtime.Hand[0]
-	this.Equal(int32(103), card.CardID)
-	this.Equal(int32(2), card.Cost.GetValue())                 // 卡牌資料初始費用
-	this.Equal(int32(1), card.Keep.GetLock())                  // bool 欄 → 鎖定計數
-	this.Equal(int32(1), card.Seal.GetLock())                  //
-	this.Equal([]int32{401, 402}, card.EffectID)               // SkillID 301 → Skill.EffectID
-	this.NotEqual(runtime.Hand[1].InstanceID, card.InstanceID) // 各自實例編號
+	this.Equal(int32(103), card.GetCardID())
+	this.Equal(int32(2), card.GetCost().GetValue())                      // 卡牌資料初始費用
+	this.Equal(int32(1), card.GetKeep().GetLock())                       // bool 欄 → 鎖定計數
+	this.Equal(int32(1), card.GetSeal().GetLock())                       //
+	this.Equal([]int32{401, 402}, card.GetEffectID().List())             // SkillID 301 → Skill.GetEffectID().List()
+	this.NotEqual(runtime.Hand[1].GetInstanceID(), card.GetInstanceID()) // 各自實例編號
 
 	commandDeckAdd(eng, nil, nums(103, 1))
 	commandDropAdd(eng, nil, nums(103, 1))
@@ -51,7 +51,7 @@ func (this *SuiteCommandInstance) TestCardRoll() {
 
 	commandHandRoll(eng, nil, nums(7, 2)) // 群組 7 抽 2(fakeRander.Weighted → index 0 → 卡 101)
 	this.Require().Len(runtime.Hand, 2)
-	this.Equal(int32(101), runtime.Hand[0].CardID)
+	this.Equal(int32(101), runtime.Hand[0].GetCardID())
 
 	commandDeckRoll(eng, nil, nums(7, 1))
 	commandDropRoll(eng, nil, nums(7, 1))
@@ -71,21 +71,21 @@ func (this *SuiteCommandInstance) TestCardRoll() {
 
 func (this *SuiteCommandInstance) TestCardCopy() {
 	runtime := NewRuntime(0)
-	source := &Card{InstanceID: runtime.NextID(), CardID: 103, Cost: NewValue(9, 0), EffectID: []int32{777}}
+	source := &Card{instanceID: runtime.NextID(), cardID: 103, cost: NewValue(9, 0), effectID: NewIDList(777)}
 	runtime.Hand = []*Card{source}
 	eng := this.engine(runtime)
 
 	commandHandCopy(eng, []InstanceID{1}, nums(1)) // 淺複製:載卡牌資料初始值
 	this.Require().Len(runtime.Hand, 2)
 	shallow := runtime.Hand[0]
-	this.Equal(int32(2), shallow.Cost.GetValue())   // 初始費用 2(非 source 當前 9)
-	this.Equal([]int32{401, 402}, shallow.EffectID) // 技能效果列表
+	this.Equal(int32(2), shallow.GetCost().GetValue())          // 初始費用 2(非 source 當前 9)
+	this.Equal([]int32{401, 402}, shallow.GetEffectID().List()) // 技能效果列表
 
 	// deck 變體:洗牌參數於 index 1、附加效果自 index 2
 	runtime.Deck = nil
 	commandDeckCopy(eng, []InstanceID{1}, []exprs.Value{exprs.NewNum(1), exprs.NewBool(true), exprs.NewNum(888)})
 	this.Require().Len(runtime.Deck, 1)
-	this.Equal([]int32{401, 402, 888}, runtime.Deck[0].EffectID) // 技能效果 + 附加 888
+	this.Equal([]int32{401, 402, 888}, runtime.Deck[0].GetEffectID().List()) // 技能效果 + 附加 888
 
 	commandDropCopy(eng, []InstanceID{1}, nums(1))
 	commandExileCopy(eng, []InstanceID{1}, nums(1))
@@ -95,16 +95,16 @@ func (this *SuiteCommandInstance) TestCardCopy() {
 
 func (this *SuiteCommandInstance) TestCardClone() {
 	runtime := NewRuntime(0)
-	source := &Card{InstanceID: runtime.NextID(), CardID: 103, Cost: NewValue(9, 0), EffectID: []int32{777}}
+	source := &Card{instanceID: runtime.NextID(), cardID: 103, cost: NewValue(9, 0), effectID: NewIDList(777)}
 	runtime.Hand = []*Card{source}
 	eng := this.engine(runtime)
 
 	commandHandClone(eng, []InstanceID{1}, nums(1, 888, 999)) // 深複製 + 附加 888,999
 	this.Require().Len(runtime.Hand, 2)
 	deep := runtime.Hand[0]
-	this.Equal(int32(9), deep.Cost.GetValue())        // source 當前狀態
-	this.Equal([]int32{777, 888, 999}, deep.EffectID) // source 效果 + 附加
-	this.NotEqual(source.InstanceID, deep.InstanceID) // 實例編號重生
+	this.Equal(int32(9), deep.GetCost().GetValue())               // source 當前狀態
+	this.Equal([]int32{777, 888, 999}, deep.GetEffectID().List()) // source 效果 + 附加
+	this.NotEqual(source.GetInstanceID(), deep.GetInstanceID())   // 實例編號重生
 
 	commandDeckClone(eng, []InstanceID{1}, nums(1))
 	commandDropClone(eng, []InstanceID{1}, nums(1))
@@ -116,8 +116,8 @@ func (this *SuiteCommandInstance) TestCardClone() {
 
 func (this *SuiteCommandInstance) TestCopyCloneNoop() {
 	runtime := NewRuntime(0)
-	source := &Card{InstanceID: 1, CardID: 103}
-	missing := &Card{InstanceID: 2, CardID: 999} // 卡 999 無 sheet
+	source := &Card{instanceID: 1, cardID: 103}
+	missing := &Card{instanceID: 2, cardID: 999} // 卡 999 無 sheet
 	runtime.Hand = []*Card{source, missing}
 	eng := this.engine(runtime)
 
@@ -141,16 +141,16 @@ func (this *SuiteCommandInstance) TestGuestSpawn() {
 	commandGuestSpawn(eng, nil, nums(501, 0)) // 座位 0 → 遊蕩 + 自動鎖
 	this.Require().Len(runtime.Roam, 1)
 	guest := runtime.Roam[0]
-	this.Equal(int32(501), guest.GuestID)
-	this.Equal(int32(5), guest.Morale.GetValue())   // 顧客資料初始值
-	this.Equal(int32(12), guest.SateMax.GetValue()) // 飽食值離場線取自顧客資料
-	this.Equal(int32(0), guest.Sate.GetValue())     // 飽食值初值 0
-	this.Equal(int32(1), guest.Sate.GetLock())      // 自動鎖 +1
-	this.Equal(int32(1), guest.CalmSeal.GetLock())  // sheet false → 0,自動鎖 +1
+	this.Equal(int32(501), guest.GetGuestID())
+	this.Equal(int32(5), guest.GetMorale().GetValue())   // 顧客資料初始值
+	this.Equal(int32(12), guest.GetSateMax().GetValue()) // 飽食值離場線取自顧客資料
+	this.Equal(int32(0), guest.GetSate().GetValue())     // 飽食值初值 0
+	this.Equal(int32(1), guest.GetSate().GetLock())      // 自動鎖 +1
+	this.Equal(int32(1), guest.GetCalmSeal().GetLock())  // sheet false → 0,自動鎖 +1
 
 	commandGuestSpawn(eng, nil, nums(501, 2)) // 座位 2(buildSheet 存在且空)→ 入座
 	this.Require().NotNil(runtime.Seat[2])
-	this.Equal(int32(2), runtime.Seat[2].SeatID)
+	this.Equal(int32(2), runtime.Seat[2].GetSeatID())
 
 	occupied := runtime.Seat[2]
 	commandGuestSpawn(eng, nil, nums(501, 2)) // 座位已占用 → no-op
@@ -168,13 +168,13 @@ func (this *SuiteCommandInstance) TestGuestSpawn() {
 
 func (this *SuiteCommandInstance) TestWaitAdd() {
 	runtime := NewRuntime(0)
-	runtime.Wait = []*Guest{{InstanceID: 1}} // 既有 1 位
+	runtime.Wait = []*Guest{{instanceID: 1}} // 既有 1 位
 	eng := this.engine(runtime)
 
 	commandWaitAdd(eng, nil, nums(501, 2)) // 加 2 位至前端(優先入座)
 	this.Require().Len(runtime.Wait, 3)
-	this.Equal(int32(501), runtime.Wait[0].GuestID)
-	this.Equal(InstanceID(1), runtime.Wait[2].InstanceID) // 原有者沉到尾
+	this.Equal(int32(501), runtime.Wait[0].GetGuestID())
+	this.Equal(InstanceID(1), runtime.Wait[2].GetInstanceID()) // 原有者沉到尾
 
 	commandWaitAdd(eng, nil, nums(501, 0)) // N <= 0 → no-op
 	commandWaitAdd(eng, nil, nums(999, 1)) // 顧客資料不存在 → no-op

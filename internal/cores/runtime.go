@@ -11,20 +11,20 @@ type Runtime struct {
 	Game *Game // 全域屬性與事件型狀態
 
 	// 卡牌容器
-	Hand  []*Card // 手牌（玩家檢視序）
-	Deck  []*Card // 抽牌牌堆（先進後出；新進入者置頂）
-	Drop  []*Card // 棄牌牌堆（先進後出；新進入者置頂）
-	Exile []*Card // 流放牌堆（先進後出；新進入者置頂）
+	Hand  CardList // 手牌（玩家檢視序）
+	Deck  CardList // 抽牌牌堆（先進後出；新進入者置頂）
+	Drop  CardList // 棄牌牌堆（先進後出；新進入者置頂）
+	Exile CardList // 流放牌堆（先進後出；新進入者置頂）
 
 	// 顧客容器
-	Wait    []*Guest         // 排隊佇列（先進先出）
-	Seat    map[int32]*Guest // 座位列表（座位編號 -> 顧客）
-	Roam    []*Guest         // 遊蕩列表（順序無關）
-	Cardify []*Guest         // 卡牌化列表（順序無關）
+	Wait    WaitList  // 排隊佇列（先進先出）
+	Seat    SeatList  // 座位列表（座位編號 -> 顧客）
+	Roam    GuestList // 遊蕩列表（順序無關）
+	Cardify GuestList // 卡牌化列表（順序無關）
 
 	// 效果 / 行動容器
-	Effect []*Effect // 效果佇列（處理時依【營業規格書 | 十五、作用順序】排序）
-	Action []*Action // 行動佇列（先進先出）
+	Effect EffectList // 效果佇列（處理時依【營業規格書 | 十五、作用順序】排序）
+	Action ActionList // 行動佇列（先進先出）
 
 	// 流程旗標與設置
 	Settling    bool       // 結算旗標；執行結算的重入防護
@@ -37,13 +37,8 @@ type Runtime struct {
 // 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入。
 func NewRuntime(seed int64) *Runtime {
 	return &Runtime{
-		Game: &Game{
-			DrawTotal:  map[int32]int32{},
-			DropTotal:  map[int32]int32{},
-			PlayTotal:  map[int32]int32{},
-			ExileTotal: map[int32]int32{},
-		},
-		Seat: map[int32]*Guest{},
+		Game: NewGame(),
+		Seat: SeatList{},
 		Seed: seed,
 	}
 }

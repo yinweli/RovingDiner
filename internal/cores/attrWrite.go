@@ -45,83 +45,83 @@ func writeMorale(eng *Engine, op AssignKind, n float64) bool {
 		return moraleDamage(eng, n, damageSource(eng.self))
 	} // if
 
-	return eng.runtime.Game.Morale.Apply(op, n)
+	return eng.runtime.Game.GetMorale().Apply(op, n)
 }
 
 // writeMoraleMax 寫餐廳士氣上限。
 func writeMoraleMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.MoraleMax.Apply(op, n)
+	return eng.runtime.Game.GetMoraleMax().Apply(op, n)
 }
 
 // writeMoraleShield 寫餐廳士氣護盾(下限夾 0)。
 func writeMoraleShield(eng *Engine, op AssignKind, n float64) bool {
-	changed := eng.runtime.Game.MoraleShield.Apply(op, n)
-	eng.runtime.Game.MoraleShield.Clamp(0)
+	changed := eng.runtime.Game.GetMoraleShield().Apply(op, n)
+	eng.runtime.Game.GetMoraleShield().Clamp(0)
 	return changed
 }
 
 // writeMoraleBlock 寫餐廳士氣格擋(下限夾 0)。
 func writeMoraleBlock(eng *Engine, op AssignKind, n float64) bool {
-	changed := eng.runtime.Game.MoraleBlock.Apply(op, n)
-	eng.runtime.Game.MoraleBlock.Clamp(0)
+	changed := eng.runtime.Game.GetMoraleBlock().Apply(op, n)
+	eng.runtime.Game.GetMoraleBlock().Clamp(0)
 	return changed
 }
 
 // writeScore 寫餐廳滿意值。
 func writeScore(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.Score.Apply(op, n)
+	return eng.runtime.Game.GetScore().Apply(op, n)
 }
 
 // writeEnergy 寫出牌點數。
 func writeEnergy(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.Energy.Apply(op, n)
+	return eng.runtime.Game.GetEnergy().Apply(op, n)
 }
 
 // writeEnergyMax 寫出牌點數上限。
 func writeEnergyMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.EnergyMax.Apply(op, n)
+	return eng.runtime.Game.GetEnergyMax().Apply(op, n)
 }
 
 // writeEnergyKeep 寫出牌點數保留(純鎖屬性,數值固定 0,僅 @ #)。
 func writeEnergyKeep(eng *Engine, op AssignKind, n float64) bool {
-	return writeLockOnly(&eng.runtime.Game.EnergyKeep, op)
+	return writeLockOnly(eng.runtime.Game.GetEnergyKeep(), op)
 }
 
 // writeHandMax 寫手牌張數上限。
 func writeHandMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.HandMax.Apply(op, n)
+	return eng.runtime.Game.GetHandMax().Apply(op, n)
 }
 
 // writeDrawMax 寫補牌張數上限。
 func writeDrawMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.DrawMax.Apply(op, n)
+	return eng.runtime.Game.GetDrawMax().Apply(op, n)
 }
 
 // === 回合 ===
 
 // writeRound 寫當前回合數(寫屬性、無鎖定語意)。
 func writeRound(eng *Engine, op AssignKind, n float64) bool {
-	return writeValueOnly(&eng.runtime.Game.Round, op, n)
+	return writeValueOnly(eng.runtime.Game.GetRound(), op, n)
 }
 
 // writeRoundMax 寫回合上限(寫屬性、無鎖定語意)。
 func writeRoundMax(eng *Engine, op AssignKind, n float64) bool {
-	return writeValueOnly(&eng.runtime.Game.RoundMax, op, n)
+	return writeValueOnly(eng.runtime.Game.GetRoundMax(), op, n)
 }
 
 // writeRoundLeft 寫剩餘回合(衍生):轉譯為對回合上限的調整(剩餘回合 = N → 回合上限 = 回合 + N),
 // 操作後夾使回合上限 >= 回合(【二十三】roundLeft)。基準取原始 回合上限 - 回合(含可負,使 += N 等同 回合上限 += N),
 // 以暫存 Value 套運算後夾 剩餘 >= 0(等價於 回合上限 >= 回合)再寫回。
 func writeRoundLeft(eng *Engine, op AssignKind, n float64) bool {
-	round := eng.runtime.Game.Round.GetValue()
-	left := NewValue(eng.runtime.Game.RoundMax.GetValue()-round, 0)
+	round := eng.runtime.Game.GetRound().GetValue()
+	left := NewValue(eng.runtime.Game.GetRoundMax().GetValue()-round, 0)
 
 	if writeValueOnly(&left, op, n) == false {
 		return false // @ # 或 /= %= 除 0 → no-op
 	} // if
 
 	left.Clamp(0)
-	return eng.runtime.Game.RoundMax.Set(float64(round + left.GetValue()))
+	return eng.runtime.Game.GetRoundMax().Set(float64(round + left.GetValue()))
 }
 
 // === 餐廳士氣值 -= 特例 ===
@@ -135,27 +135,26 @@ func moraleDamage(eng *Engine, n float64, source *Guest) bool {
 	damage := exprs.Round(n)
 	changed := false
 
-	if eng.runtime.Game.MoraleBlock.GetValue() > 0 { // 格擋優先:格擋 -= 1(鎖定 → 不減層),本次無視 N
-		return eng.runtime.Game.MoraleBlock.Sub(1)
+	if eng.runtime.Game.GetMoraleBlock().GetValue() > 0 { // 格擋優先:格擋 -= 1(鎖定 → 不減層),本次無視 N
+		return eng.runtime.Game.GetMoraleBlock().Sub(1)
 	} // if
 
 	if damage > 0 { // 護盾消耗:d = min(N, 護盾) → 護盾 -= d → N -= d(鎖定 → 不消耗、殘餘進 morale)
-		d := min(damage, eng.runtime.Game.MoraleShield.GetValue())
+		d := min(damage, eng.runtime.Game.GetMoraleShield().GetValue())
 
-		if d > 0 && eng.runtime.Game.MoraleShield.Sub(float64(d)) {
+		if d > 0 && eng.runtime.Game.GetMoraleShield().Sub(float64(d)) {
 			damage -= d
 			changed = true
 		} // if
 	} // if
 
-	if damage > 0 && eng.runtime.Game.Morale.IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣)
-		before := eng.runtime.Game.Morale.GetValue()
-		eng.runtime.Game.Morale.Sub(float64(damage))
-		actual := before - eng.runtime.Game.Morale.GetValue()
+	if damage > 0 && eng.runtime.Game.GetMorale().IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣)
+		before := eng.runtime.Game.GetMorale().GetValue()
+		eng.runtime.Game.GetMorale().Sub(float64(damage))
+		actual := before - eng.runtime.Game.GetMorale().GetValue()
 
 		if actual > 0 {
-			eng.runtime.Game.DamageValue = actual
-			eng.runtime.Game.DamageGuest = source
+			eng.runtime.Game.EventDamage(actual, source)
 			changed = true
 			fireTrigger(eng, TriggerDamage) // 士氣受損時機
 		} // if
@@ -165,9 +164,9 @@ func moraleDamage(eng *Engine, n float64, source *Guest) bool {
 }
 
 // damageSource 取士氣受損來源顧客:self 為顧客時回該顧客,否則空物件(nil);供 Phase 4 命令路徑的 morale -= 使用。
-func damageSource(self *Self) *Guest {
-	if self != nil && self.Guest != nil {
-		return self.Guest
+func damageSource(self *Ref) *Guest {
+	if self != nil {
+		return self.GetGuest()
 	} // if
 
 	return nil

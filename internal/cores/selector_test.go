@@ -30,36 +30,36 @@ func (this *SuiteSelector) TestSelectNone() {
 }
 
 func (this *SuiteSelector) TestSelectSelf() {
-	this.Equal([]InstanceID{1}, this.must(this.engine(NewRuntime(0), &Self{Card: &Card{InstanceID: 1}}), "self", nil))   // 綁定卡牌
-	this.Equal([]InstanceID{2}, this.must(this.engine(NewRuntime(0), &Self{Guest: &Guest{InstanceID: 2}}), "self", nil)) // 綁定顧客
-	this.Empty(this.must(this.engine(NewRuntime(0), &Self{}), "self", nil))                                              // 綁定空物件
-	this.Empty(this.must(this.engine(NewRuntime(0), nil), "self", nil))                                                  // 未綁定
+	this.Equal([]InstanceID{1}, this.must(this.engine(NewRuntime(0), &Ref{card: &Card{instanceID: 1}}), "self", nil))   // 綁定卡牌
+	this.Equal([]InstanceID{2}, this.must(this.engine(NewRuntime(0), &Ref{guest: &Guest{instanceID: 2}}), "self", nil)) // 綁定顧客
+	this.Empty(this.must(this.engine(NewRuntime(0), &Ref{}), "self", nil))                                              // 綁定空物件
+	this.Empty(this.must(this.engine(NewRuntime(0), nil), "self", nil))                                                 // 未綁定
 }
 
 func (this *SuiteSelector) TestSelectSelfNearSame() {
 	runtime, g1 := seatGuestRuntime()
 
-	near := this.engine(runtime, &Self{Guest: g1})
+	near := this.engine(runtime, &Ref{guest: g1})
 	this.Equal([]InstanceID{13}, this.must(near, "selfNear", nil))     // g1(座1)鄰桌 = 座3 = g3
 	this.Equal([]InstanceID{11, 12}, this.must(near, "selfSame", nil)) // g1 同桌 = 座1,2 = g1,g2
 
-	card := this.engine(runtime, &Self{Card: &Card{InstanceID: 9}})
+	card := this.engine(runtime, &Ref{card: &Card{instanceID: 9}})
 	this.Empty(this.must(card, "selfNear", nil)) // self 非顧客 → 空集合
 	this.Empty(this.must(card, "selfSame", nil))
 
 	// self 顧客但未入座(SeatID=0、座位不存在)→ nearOf / sameOf meta 為 nil → 空集合
-	roam := this.engine(runtime, &Self{Guest: &Guest{InstanceID: 99, SeatID: 0}})
+	roam := this.engine(runtime, &Ref{guest: &Guest{instanceID: 99, seatID: 0}})
 	this.Empty(this.must(roam, "selfNear", nil))
 	this.Empty(this.must(roam, "selfSame", nil))
 }
 
 func (this *SuiteSelector) TestSelectEventSingle() {
-	card := &Card{InstanceID: 1}
-	guest := &Guest{InstanceID: 2}
+	card := &Card{instanceID: 1}
+	guest := &Guest{instanceID: 2}
 	runtime := NewRuntime(0)
 	game := runtime.Game
-	game.DrawLast, game.DropLast, game.ExileLast, game.MorphLast, game.PlayLast = card, card, card, card, card
-	game.DamageGuest, game.ExitLast, game.SeatLast, game.TaskGuest = guest, guest, guest, guest
+	game.drawLast, game.dropLast, game.exileLast, game.morphLast, game.playLast = card, card, card, card, card
+	game.damageGuest, game.exitLast, game.seatLast, game.taskGuest = guest, guest, guest, guest
 	eng := this.engine(runtime, nil)
 
 	for name, want := range map[string]InstanceID{
@@ -105,7 +105,7 @@ func (this *SuiteSelector) TestSelectGuestRand() {
 
 func (this *SuiteSelector) TestSelectGuestWait() {
 	runtime := NewRuntime(0)
-	runtime.Wait = []*Guest{{InstanceID: 21}, {InstanceID: 22}, {InstanceID: 23}}
+	runtime.Wait = []*Guest{{instanceID: 21}, {instanceID: 22}, {instanceID: 23}}
 	eng := this.engine(runtime, nil)
 
 	this.Equal([]InstanceID{21, 22}, this.must(eng, "guestWait", nums(2)))     // 取隊首 2 位
@@ -132,7 +132,7 @@ func (this *SuiteSelector) TestSelectNearSame() {
 
 	// 單一在座顧客:pickGuestOne 退化直取(len==1)→ g2 同桌(座1,2)= g2
 	one := NewRuntime(0)
-	one.Seat[2] = &Guest{InstanceID: 12, SeatID: 2}
+	one.Seat[2] = &Guest{instanceID: 12, seatID: 2}
 	this.Equal([]InstanceID{12}, this.must(this.engine(one, nil), "samePick", nil))
 
 	// Operator 回空(防禦):候選 > 1 但選不出 → 空集合(pickGuestOne 的 chosen 空分支)
@@ -142,10 +142,10 @@ func (this *SuiteSelector) TestSelectNearSame() {
 
 func (this *SuiteSelector) TestSelectContainerAll() {
 	runtime := NewRuntime(0)
-	runtime.Hand = []*Card{{InstanceID: 1, CardID: 101}, {InstanceID: 2, CardID: 102}}
-	runtime.Deck = []*Card{{InstanceID: 3, CardID: 101}}
-	runtime.Drop = []*Card{{InstanceID: 4, CardID: 103}}
-	runtime.Exile = []*Card{{InstanceID: 5, CardID: 104}}
+	runtime.Hand = []*Card{{instanceID: 1, cardID: 101}, {instanceID: 2, cardID: 102}}
+	runtime.Deck = []*Card{{instanceID: 3, cardID: 101}}
+	runtime.Drop = []*Card{{instanceID: 4, cardID: 103}}
+	runtime.Exile = []*Card{{instanceID: 5, cardID: 104}}
 	eng := this.engine(runtime, nil)
 
 	this.Equal([]InstanceID{1, 2}, this.must(eng, "handAll", nums(0))) // 編號 0 → 取全部
@@ -160,10 +160,10 @@ func (this *SuiteSelector) TestSelectContainerAll() {
 
 func (this *SuiteSelector) TestSelectContainerPick() {
 	runtime := NewRuntime(0)
-	runtime.Hand = []*Card{{InstanceID: 1}, {InstanceID: 2}, {InstanceID: 3}}
-	runtime.Deck = []*Card{{InstanceID: 4}}
-	runtime.Drop = []*Card{{InstanceID: 5}}
-	runtime.Exile = []*Card{{InstanceID: 6}}
+	runtime.Hand = []*Card{{instanceID: 1}, {instanceID: 2}, {instanceID: 3}}
+	runtime.Deck = []*Card{{instanceID: 4}}
+	runtime.Drop = []*Card{{instanceID: 5}}
+	runtime.Exile = []*Card{{instanceID: 6}}
 	eng := this.engine(runtime, nil)
 
 	this.Equal([]InstanceID{1, 2}, this.must(eng, "handPick", nums(2, 0)))    // 候選 3 > 2 → Operator 取前 2
@@ -178,10 +178,10 @@ func (this *SuiteSelector) TestSelectContainerPick() {
 
 func (this *SuiteSelector) TestSelectContainerRand() {
 	runtime := NewRuntime(0)
-	runtime.Hand = []*Card{{InstanceID: 1}, {InstanceID: 2}, {InstanceID: 3}}
-	runtime.Deck = []*Card{{InstanceID: 4}}
-	runtime.Drop = []*Card{{InstanceID: 5}}
-	runtime.Exile = []*Card{{InstanceID: 6}}
+	runtime.Hand = []*Card{{instanceID: 1}, {instanceID: 2}, {instanceID: 3}}
+	runtime.Deck = []*Card{{instanceID: 4}}
+	runtime.Drop = []*Card{{instanceID: 5}}
+	runtime.Exile = []*Card{{instanceID: 6}}
 	eng := this.engine(runtime, nil)
 
 	this.Equal([]InstanceID{1, 2}, this.must(eng, "handRand", nums(2, 0))) // 候選 3 > 2 → 隨機取 2(恆等洗牌取前綴)
@@ -236,7 +236,7 @@ func (this *SuiteSelector) TestSelectDropTop() {
 // === 測試輔助(置尾) ===
 
 // engine 組裝測試引擎:注入 runtime / self、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
-func (this *SuiteSelector) engine(runtime *Runtime, self *Self) *Engine {
+func (this *SuiteSelector) engine(runtime *Runtime, self *Ref) *Engine {
 	return NewEngine(runtime, self, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 }
 
@@ -250,17 +250,17 @@ func (this *SuiteSelector) must(eng *Engine, name string, arg []exprs.Value) (re
 // seatGuestRuntime 組裝 3 位在座顧客(座1=g1=11 / 座2=12 / 座3=13;桌1=座1,2、桌2=座3,對齊 buildSheet);回傳 g1 供 self 綁定。
 func seatGuestRuntime() (runtime *Runtime, g1 *Guest) {
 	runtime = NewRuntime(0)
-	g1 = &Guest{InstanceID: 11, SeatID: 1}
+	g1 = &Guest{instanceID: 11, seatID: 1}
 	runtime.Seat[1] = g1
-	runtime.Seat[2] = &Guest{InstanceID: 12, SeatID: 2}
-	runtime.Seat[3] = &Guest{InstanceID: 13, SeatID: 3}
+	runtime.Seat[2] = &Guest{instanceID: 12, seatID: 2}
+	runtime.Seat[3] = &Guest{instanceID: 13, seatID: 3}
 	return runtime, g1
 }
 
 // cards 以實例編號批次建卡牌切片(供容器 / 牌堆測試)。
 func cards(id ...int) (result []*Card) {
 	for _, itor := range id {
-		result = append(result, &Card{InstanceID: InstanceID(itor)})
+		result = append(result, &Card{instanceID: InstanceID(itor)})
 	} // for
 
 	return result

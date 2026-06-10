@@ -98,7 +98,7 @@ func commandPhaseJump(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		return
 	} // if
 
-	eng.runtime.Game.NextPhase = phase
+	eng.runtime.Game.SetNextPhase(phase)
 }
 
 // commandDeckShuffle 將抽牌牌堆隨機洗牌(【營業規格書 | 二十五、操作命令清單 | deckShuffle】);命令對象固定 none、無參數。

@@ -28,16 +28,16 @@ func (this *SuiteCommandMove) TestMoveToHand() {
 		{"exileToHand", commandExileToHand, func(runtime *Runtime, card *Card) { runtime.Exile = []*Card{card} }},
 	} {
 		runtime := NewRuntime(0)
-		card := &Card{InstanceID: 1, CardID: 101}
+		card := &Card{instanceID: 1, cardID: 101}
 		tc.put(runtime, card)
 		eng := this.engine(runtime)
 
 		tc.verb(eng, []InstanceID{1}, nil)
 
-		this.Equal([]*Card{card}, runtime.Hand, tc.name)         // 移入手牌頂端
-		this.Equal(card, runtime.Game.DrawLast, tc.name)         // 最後抽出
-		this.Equal(int32(1), runtime.Game.DrawCount, tc.name)    // 回合抽牌計數
-		this.Equal(int32(1), runtime.Game.DrawTotal[1], tc.name) // 群組 1 累積
+		this.Equal(CardList{card}, runtime.Hand, tc.name)                 // 移入手牌頂端
+		this.Equal(card, runtime.Game.GetDrawLast(), tc.name)             // 最後抽出
+		this.Equal(int32(1), runtime.Game.GetDrawCount(), tc.name)        // 回合抽牌計數
+		this.Equal(int32(1), runtime.Game.GetDrawTotal().Get(1), tc.name) // 群組 1 累積
 	} // for
 }
 
@@ -52,14 +52,14 @@ func (this *SuiteCommandMove) TestMoveToDeck() {
 		{"exileToDeck", commandExileToDeck, func(runtime *Runtime, card *Card) { runtime.Exile = []*Card{card} }},
 	} {
 		runtime := NewRuntime(0)
-		card := &Card{InstanceID: 1, CardID: 101}
+		card := &Card{instanceID: 1, cardID: 101}
 		tc.put(runtime, card)
 		eng := this.engine(runtime)
 
 		tc.verb(eng, []InstanceID{1}, nil) // 洗牌參數缺(nil)→ 不洗牌
 
-		this.Equal([]*Card{card}, runtime.Deck, tc.name) // 移入抽牌牌堆
-		this.Nil(runtime.Game.DrawLast, tc.name)         // 進抽牌牌堆無事件
+		this.Equal(CardList{card}, runtime.Deck, tc.name) // 移入抽牌牌堆
+		this.Nil(runtime.Game.GetDrawLast(), tc.name)     // 進抽牌牌堆無事件
 	} // for
 }
 
@@ -74,15 +74,15 @@ func (this *SuiteCommandMove) TestMoveToDrop() {
 		{"exileToDrop", commandExileToDrop, func(runtime *Runtime, card *Card) { runtime.Exile = []*Card{card} }},
 	} {
 		runtime := NewRuntime(0)
-		card := &Card{InstanceID: 1, CardID: 101}
+		card := &Card{instanceID: 1, cardID: 101}
 		tc.put(runtime, card)
 		eng := this.engine(runtime)
 
 		tc.verb(eng, []InstanceID{1}, nil)
 
-		this.Equal([]*Card{card}, runtime.Drop, tc.name)
-		this.Equal(card, runtime.Game.DropLast, tc.name)
-		this.Equal(int32(1), runtime.Game.DropTotal[1], tc.name)
+		this.Equal(CardList{card}, runtime.Drop, tc.name)
+		this.Equal(card, runtime.Game.GetDropLast(), tc.name)
+		this.Equal(int32(1), runtime.Game.GetDropTotal().Get(1), tc.name)
 	} // for
 }
 
@@ -97,33 +97,33 @@ func (this *SuiteCommandMove) TestMoveToExile() {
 		{"dropToExile", commandDropToExile, func(runtime *Runtime, card *Card) { runtime.Drop = []*Card{card} }},
 	} {
 		runtime := NewRuntime(0)
-		card := &Card{InstanceID: 1, CardID: 101}
+		card := &Card{instanceID: 1, cardID: 101}
 		tc.put(runtime, card)
 		eng := this.engine(runtime)
 
 		tc.verb(eng, []InstanceID{1}, nil)
 
-		this.Equal([]*Card{card}, runtime.Exile, tc.name)
-		this.Equal(card, runtime.Game.ExileLast, tc.name)
-		this.Equal(int32(1), runtime.Game.ExileTotal[1], tc.name)
+		this.Equal(CardList{card}, runtime.Exile, tc.name)
+		this.Equal(card, runtime.Game.GetExileLast(), tc.name)
+		this.Equal(int32(1), runtime.Game.GetExileTotal().Get(1), tc.name)
 	} // for
 }
 
 func (this *SuiteCommandMove) TestMovePositionMismatch() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: 1, CardID: 101}
+	card := &Card{instanceID: 1, cardID: 101}
 	runtime.Hand = []*Card{card} // 卡在手牌,但 deckToHand 期望源為抽牌牌堆
 	eng := this.engine(runtime)
 
 	commandDeckToHand(eng, []InstanceID{1}, nil)
 
-	this.Equal([]*Card{card}, runtime.Hand) // 位置不符 → no-op,仍在手牌
-	this.Nil(runtime.Game.DrawLast)
+	this.Equal(CardList{card}, runtime.Hand) // 位置不符 → no-op,仍在手牌
+	this.Nil(runtime.Game.GetDrawLast())
 }
 
 func (this *SuiteCommandMove) TestMoveNotFound() {
 	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{InstanceID: 1, CardID: 101}}
+	runtime.Deck = []*Card{{instanceID: 1, cardID: 101}}
 	eng := this.engine(runtime)
 
 	commandDeckToHand(eng, []InstanceID{99}, nil) // 編號不存在 → no-op
@@ -134,7 +134,7 @@ func (this *SuiteCommandMove) TestMoveNotFound() {
 
 func (this *SuiteCommandMove) TestMoveShuffle() {
 	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{InstanceID: 1, CardID: 101}, {InstanceID: 2, CardID: 101}}
+	runtime.Deck = []*Card{{instanceID: 1, cardID: 101}, {instanceID: 2, cardID: 101}}
 	eng := this.engine(runtime)
 
 	commandDeckToHand(eng, []InstanceID{1}, []exprs.Value{exprs.NewBool(true)}) // 洗牌=true:移 id1 後洗抽牌牌堆
@@ -145,19 +145,19 @@ func (this *SuiteCommandMove) TestMoveShuffle() {
 
 func (this *SuiteCommandMove) TestMoveCardGroup() {
 	runtime := NewRuntime(0)
-	runtime.Hand = []*Card{{InstanceID: 1, CardID: 101}, {InstanceID: 2, CardID: 999}} // 101→群組 1、999→資料缺失→群組 0
+	runtime.Hand = []*Card{{instanceID: 1, cardID: 101}, {instanceID: 2, cardID: 999}} // 101→群組 1、999→資料缺失→群組 0
 	eng := this.engine(runtime)
 
 	commandHandToDrop(eng, []InstanceID{1, 2}, nil)
 
-	this.Equal(int32(1), runtime.Game.DropTotal[1]) // 群組 1
-	this.Equal(int32(1), runtime.Game.DropTotal[0]) // 群組 0(靜態資料缺失)
-	this.Equal(int32(2), runtime.Game.DropCount)
+	this.Equal(int32(1), runtime.Game.GetDropTotal().Get(1)) // 群組 1
+	this.Equal(int32(1), runtime.Game.GetDropTotal().Get(0)) // 群組 0(靜態資料缺失)
+	this.Equal(int32(2), runtime.Game.GetDropCount())
 }
 
 func (this *SuiteCommandMove) TestMoveDefaults() {
 	runtime := NewRuntime(0)
-	card := &Card{InstanceID: 1}
+	card := &Card{instanceID: 1}
 	eng := this.engine(runtime)
 
 	removeCard(eng, ContainerNone, card) // 非四牌堆 → default no-op、不 panic
@@ -174,10 +174,10 @@ func (this *SuiteCommandMove) TestPlaceCardTrigger() {
 	record := func(timing TriggerKind) EffectCommand { return func(*Engine) { fired[timing] = true } }
 
 	runtime := NewRuntime(0)
-	runtime.Effect = []*Effect{
-		{InstanceID: 1, EffectID: 801, Stack: 1},
-		{InstanceID: 2, EffectID: 802, Stack: 1},
-		{InstanceID: 3, EffectID: 803, Stack: 1},
+	runtime.Effect = EffectList{
+		{instanceID: 1, effectID: 801, stack: 1},
+		{instanceID: 2, effectID: 802, stack: 1},
+		{instanceID: 3, effectID: 803, stack: 1},
 	}
 	eng := this.engine(runtime)
 	eng.effect = map[int32]effectData{
@@ -186,9 +186,9 @@ func (this *SuiteCommandMove) TestPlaceCardTrigger() {
 		803: {Kind: EffectTrigger, TriggerKind: TriggerCardExile, Trigger: record(TriggerCardExile)},
 	}
 
-	placeCard(eng, ContainerHand, &Card{InstanceID: 10, CardID: 101})  // 進手牌 → cardDraw
-	placeCard(eng, ContainerDrop, &Card{InstanceID: 11, CardID: 101})  // 進棄牌牌堆 → cardDrop
-	placeCard(eng, ContainerExile, &Card{InstanceID: 12, CardID: 101}) // 進流放牌堆 → cardExile
+	placeCard(eng, ContainerHand, &Card{instanceID: 10, cardID: 101})  // 進手牌 → cardDraw
+	placeCard(eng, ContainerDrop, &Card{instanceID: 11, cardID: 101})  // 進棄牌牌堆 → cardDrop
+	placeCard(eng, ContainerExile, &Card{instanceID: 12, cardID: 101}) // 進流放牌堆 → cardExile
 
 	this.True(fired[TriggerCardDraw])
 	this.True(fired[TriggerCardDrop])

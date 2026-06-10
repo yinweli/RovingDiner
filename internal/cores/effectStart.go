@@ -3,7 +3,7 @@ package cores
 // runEffectList 啟動效果列表（【營業規格書 | 二十、獨立流程 | 啟動技能】）:逐效果選目標、對每個 self 依效果類型派發。
 // effectID 為效果編號列表（卡牌實例效果列表 / 技能效果列表）;skillGroup 供 skillImmune 排除免疫顧客;沿用來源空集合起步。
 func runEffectList(eng *Engine, effectID []int32, skillGroup int32) {
-	var inherit []Self
+	var inherit []Ref
 
 	for _, itor := range effectID {
 		meta, ok := eng.effect[itor]
@@ -19,7 +19,7 @@ func runEffectList(eng *Engine, effectID []int32, skillGroup int32) {
 }
 
 // dispatchEffect 對單一 self 依效果類型派發:立即跑立即命令、觸發 / 常駐入佇列、常駐再每增一層跑一次啟動命令。
-func dispatchEffect(eng *Engine, meta effectData, effectID int32, self Self) {
+func dispatchEffect(eng *Engine, meta effectData, effectID int32, self Ref) {
 	prev := eng.self
 	eng.self = &self // self 綁定:立即命令 / 觸發條件 / 啟動命令以此 self 求值
 
@@ -42,13 +42,13 @@ func dispatchEffect(eng *Engine, meta effectData, effectID int32, self Self) {
 
 // selectTargets 依目標類型選出本次 self 集合（【營業規格書 | 二十、獨立流程 | 啟動技能】目標選取段）;
 // inherit 為沿用來源（跨效果列表維護）:新選 / 隨機設值、無目標清空、沿用讀取。每個 self 之後各建一個效果（【九、目標數量】）。
-func selectTargets(eng *Engine, meta effectData, skillGroup int32, inherit *[]Self) []Self {
-	result := []Self{}
+func selectTargets(eng *Engine, meta effectData, skillGroup int32, inherit *[]Ref) []Ref {
+	result := []Ref{}
 
 	switch meta.TargetKind {
 	case TargetNone:
 		*inherit = nil
-		result = []Self{{}} // 無目標 → 一個空物件 self
+		result = []Ref{{}} // 無目標 → 一個空物件 self
 
 	case TargetGuestPick:
 		result = setInherit(inherit, pickGuestSelf(eng, skillGroup, meta.TargetCount, false))
@@ -84,26 +84,26 @@ func selectTargets(eng *Engine, meta effectData, skillGroup int32, inherit *[]Se
 }
 
 // setInherit 設沿用來源並回傳同一集合（新選 / 隨機選取後共用）。
-func setInherit(inherit *[]Self, target []Self) []Self {
+func setInherit(inherit *[]Ref, target []Ref) []Ref {
 	*inherit = target
 
 	return target
 }
 
 // pickGuestSelf 自座位候選（排除 skillImmune）選 count 位顧客為 self;random 為系統隨機、否則暫停由玩家選。
-func pickGuestSelf(eng *Engine, skillGroup, count int32, random bool) []Self {
+func pickGuestSelf(eng *Engine, skillGroup, count int32, random bool) []Ref {
 	return guestSelf(selectN(eng, guestCandidate(eng, skillGroup), count, random, eng.operator.PickGuest))
 }
 
 // pickCardSelf 自手牌候選選 count 張手牌為 self;random 為系統隨機、否則暫停由玩家選。
-func pickCardSelf(eng *Engine, count int32, random bool) []Self {
+func pickCardSelf(eng *Engine, count int32, random bool) []Ref {
 	return cardSelf(selectN(eng, cardCandidate(eng), count, random, eng.operator.PickCard))
 }
 
 // guestCandidate 取座位列表顧客（依座位編號序）、排除技能群組 skillGroup 免疫者（【二十、獨立流程 | 啟動技能】顧客類 filter）。
 func guestCandidate(eng *Engine, skillGroup int32) (result []*Guest) {
-	for _, itor := range seatGuest(eng) {
-		if itor.SkillImmune[skillGroup] == 0 {
+	for _, itor := range eng.runtime.Seat.Sorted() {
+		if itor.GetSkillImmune().Get(skillGroup) == 0 {
 			result = append(result, itor)
 		} // if
 	} // for
@@ -130,29 +130,29 @@ func selectN[T any](eng *Engine, candidate []T, count int32, random bool, pick f
 }
 
 // guestSelf 把顧客列表包成 self 集合（每位顧客一個 self）。
-func guestSelf(guest []*Guest) (result []Self) {
+func guestSelf(guest []*Guest) (result []Ref) {
 	for _, itor := range guest {
-		result = append(result, Self{Guest: itor})
+		result = append(result, NewRefGuest(itor))
 	} // for
 
 	return result
 }
 
 // cardSelf 把手牌列表包成 self 集合（每張手牌一個 self）。
-func cardSelf(card []*Card) (result []Self) {
+func cardSelf(card []*Card) (result []Ref) {
 	for _, itor := range card {
-		result = append(result, Self{Card: itor})
+		result = append(result, NewRefCard(itor))
 	} // for
 
 	return result
 }
 
 // hasGuest 回報沿用來源是否為非空的顧客集合（沿用顧客有效;否則退化新選,【八、目標類型】）。
-func hasGuest(inherit []Self) bool {
-	return len(inherit) > 0 && inherit[0].Guest != nil
+func hasGuest(inherit []Ref) bool {
+	return len(inherit) > 0 && inherit[0].GetGuest() != nil
 }
 
 // hasCard 回報沿用來源是否為非空的手牌集合（沿用手牌有效;否則退化新選）。
-func hasCard(inherit []Self) bool {
-	return len(inherit) > 0 && inherit[0].Card != nil
+func hasCard(inherit []Ref) bool {
+	return len(inherit) > 0 && inherit[0].GetCard() != nil
 }

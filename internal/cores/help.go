@@ -5,6 +5,158 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
+// Immune 免疫群組計數（群組編號 → 鎖定計數）;效果免疫 / 技能免疫共用
+// （【營業規格書 | 五、實例結構 | 顧客（Guest）實例】）。零值可用（Add 自建表）。
+type Immune struct {
+	count map[int32]int32 // 群組編號 -> 鎖定計數
+}
+
+// NewImmune 建構空免疫計數。
+func NewImmune() Immune {
+	return Immune{count: map[int32]int32{}}
+}
+
+// Add 對群組鎖定計數 +1;表未建時自建。
+func (this *Immune) Add(group int32) {
+	if this.count == nil {
+		this.count = map[int32]int32{}
+	} // if
+
+	this.count[group]++
+}
+
+// Del 對群組鎖定計數 -1,夾 ≥ 0（無鍵 / 空表自然視為 0）。
+func (this *Immune) Del(group int32) {
+	if this.count[group] > 0 {
+		this.count[group]--
+	} // if
+}
+
+// Get 讀群組鎖定計數;無鍵回 0（>0 / ==0 判斷由呼叫端比較）。
+func (this *Immune) Get(group int32) int32 {
+	return this.count[group]
+}
+
+// Hit 已觸發門檻集合（門檻值 → 已觸發）;飽食 / 耐心門檻共用,擋同門檻重複觸發
+// （【營業規格書 | 二十、獨立流程 | 執行結算】）。零值可用（Add 自建表）。
+type Hit struct {
+	hit map[int32]bool // 門檻值 -> 已觸發
+}
+
+// NewHit 建構空門檻集合。
+func NewHit() Hit {
+	return Hit{hit: map[int32]bool{}}
+}
+
+// Add 標記門檻已觸發（M16 執行結算用）;表未建時自建。
+func (this *Hit) Add(threshold int32) {
+	if this.hit == nil {
+		this.hit = map[int32]bool{}
+	} // if
+
+	this.hit[threshold] = true
+}
+
+// IsHit 回報門檻是否已觸發。
+func (this *Hit) IsHit(threshold int32) bool {
+	return this.hit[threshold]
+}
+
+// Count 讀已觸發門檻數量（sateHit / calmHit 屬性）。
+func (this *Hit) Count() int32 {
+	return int32(len(this.hit))
+}
+
+// IDList 編號列表（有序多重集合,允許重複）;卡牌實例效果列表用,零值可用。
+type IDList struct {
+	id []int32 // 編號列表（保持加入順序）
+}
+
+// NewIDList 以編號集建構列表（複製輸入,不共享底層）。
+func NewIDList(id ...int32) IDList {
+	return IDList{id: append([]int32(nil), id...)}
+}
+
+// Add 尾端加入（可變參數,批次附加共用）。
+func (this *IDList) Add(id ...int32) {
+	this.id = append(this.id, id...)
+}
+
+// DelOne 移除第一個 == id 者;無命中原樣不動。
+func (this *IDList) DelOne(id int32) {
+	for itor, value := range this.id {
+		if value == id {
+			this.id = append(this.id[:itor], this.id[itor+1:]...)
+			return
+		} // if
+	} // for
+}
+
+// DelAll 移除全部 == id 者。
+func (this *IDList) DelAll(id int32) {
+	result := []int32{}
+
+	for _, itor := range this.id {
+		if itor != id {
+			result = append(result, itor)
+		} // if
+	} // for
+
+	this.id = result
+}
+
+// Count 計數 == id 的個數。
+func (this *IDList) Count(id int32) int32 {
+	result := int32(0)
+
+	for _, itor := range this.id {
+		if itor == id {
+			result++
+		} // if
+	} // for
+
+	return result
+}
+
+// List 取底層編號列表供迭代（呼叫端唯讀約定）。
+func (this *IDList) List() []int32 {
+	return this.id
+}
+
+// Tally 分組累積計數（群組編號 → 數量）;抽牌 / 棄牌 / 出牌 / 流放的整場累積多重集合共用
+// （【營業規格書 | 五、實例結構 | 營業（Game）實例】）。零值可用（Add 自建表）。
+type Tally struct {
+	count map[int32]int32 // 群組編號 -> 數量
+}
+
+// NewTally 建構空累積計數。
+func NewTally() Tally {
+	return Tally{count: map[int32]int32{}}
+}
+
+// Add 對群組數量 +1;表未建時自建。
+func (this *Tally) Add(group int32) {
+	if this.count == nil {
+		this.count = map[int32]int32{}
+	} // if
+
+	this.count[group]++
+}
+
+// Get 讀群組數量;無鍵回 0。
+func (this *Tally) Get(group int32) int32 {
+	return this.count[group]
+}
+
+// Sum 讀全群組數量加總（查詢函式 N == 0 全加總用）。
+func (this *Tally) Sum() (sum int32) {
+	for _, v := range this.count {
+		sum += v
+	} // for
+
+	return sum
+}
+
 // 參數取值:自 []exprs.Value 取出型別化參數(嚴格數量 / 首參寬鬆 / 集合)。供查詢函式、命令對象、操作命令位置參數共用。
 
 // oneInt 取單一整數參數;數量 / 型別不符回 ok=false。供單參數查詢函式(handSize / tableGuest / effectImmune…)共用。
@@ -89,15 +241,19 @@ func groupSize(card []*Card, data *sheeter.Sheeter, arg []exprs.Value) (result e
 	return exprs.NewNum(float64(countByGroup(card, n, data))), true
 }
 
-// groupTotal 求分組累積多重集合中 N 的數量(N == 0 回全加總);包裝 oneInt + totalByGroup。
-func groupTotal(total map[int32]int32, arg []exprs.Value) (result exprs.Value, ok bool) {
+// groupTotal 求分組累積多重集合中 N 的數量(N == 0 回全加總);包裝 oneInt + Tally 查詢。
+func groupTotal(total *Tally, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
 
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
 
-	return exprs.NewNum(float64(totalByGroup(total, n))), true
+	if n == 0 {
+		return exprs.NewNum(float64(total.Sum())), true
+	} // if
+
+	return exprs.NewNum(float64(total.Get(n))), true
 }
 
 // countByGroup 計卡牌容器中卡牌群組編號 == group 的張數;group == 0 回容器全量(不過濾)。
@@ -107,7 +263,7 @@ func countByGroup(card []*Card, group int32, data *sheeter.Sheeter) (count int32
 	} // if
 
 	for _, itor := range card {
-		meta := data.Card.Get(itor.CardID)
+		meta := data.Card.Get(itor.GetCardID())
 
 		if meta != nil && meta.Group == group {
 			count++
@@ -115,19 +271,6 @@ func countByGroup(card []*Card, group int32, data *sheeter.Sheeter) (count int32
 	} // for
 
 	return count
-}
-
-// totalByGroup 取分組累積多重集合的數量;n == 0 回全加總(不過濾)。
-func totalByGroup(total map[int32]int32, n int32) (sum int32) {
-	if n == 0 {
-		for _, v := range total {
-			sum += v
-		} // for
-
-		return sum
-	} // if
-
-	return total[n]
 }
 
 // compareOp 以字串運算符比較 a 與 b(對齊【二十七、運算式 | 2】比較運算符);未知運算符回 ok=false。
@@ -159,7 +302,7 @@ func compareOp(op string, a, b int32) (result, ok bool) {
 
 // cardLock 取卡牌引用某屬性的鎖定計數;非卡牌引用回 ok=false。pick 自卡牌實例取出對應 Value.Lock。
 func cardLock(ref exprs.Ref, pick func(card *Card) int32) (result exprs.Value, ok bool) {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return exprs.Value{}, false
@@ -170,7 +313,7 @@ func cardLock(ref exprs.Ref, pick func(card *Card) int32) (result exprs.Value, o
 
 // guestLock 取顧客引用某屬性的鎖定計數;非顧客引用回 ok=false。
 func guestLock(ref exprs.Ref, pick func(guest *Guest) int32) (result exprs.Value, ok bool) {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return exprs.Value{}, false
@@ -179,12 +322,12 @@ func guestLock(ref exprs.Ref, pick func(guest *Guest) int32) (result exprs.Value
 	return exprs.NewNum(float64(pick(guest))), true
 }
 
-// 容器掃描與歸屬判定:卡牌定位、座位占用計數、效果所屬比對。供定位 / 座位 / 效果查詢型屬性共用。
+// 容器掃描與歸屬判定:卡牌定位、座位占用計數。供定位 / 座位查詢型屬性共用。
 
 // inContainer 回報卡牌實例是否位於指定容器(以實例編號比對)。供 inHand / inDeck / inDrop / inExile 容器掃描。
 func inContainer(card *Card, container []*Card) bool {
 	for _, itor := range container {
-		if itor.InstanceID == card.InstanceID {
+		if itor.GetInstanceID() == card.GetInstanceID() {
 			return true
 		} // if
 	} // for
@@ -201,18 +344,6 @@ func occupiedAmong(eng *Engine, seatID []int32) (count int32) {
 	} // for
 
 	return count
-}
-
-// effectSelfIs 回報效果項目的 self 是否就是引用 ref;供 effectStack / effectGroup 比對所屬對象(卡牌或顧客)。
-func effectSelfIs(effect *Effect, ref exprs.Ref) bool {
-	switch value := ref.(type) {
-	case cardRef:
-		return effect.Self.Card != nil && effect.Self.Card.InstanceID == value.card.InstanceID
-	case guestRef:
-		return effect.Self.Guest != nil && effect.Self.Guest.InstanceID == value.guest.InstanceID
-	} // switch
-
-	return false
 }
 
 // 屬性寫入:依賦值符與存取等級(寫 / 寫鎖 / 鎖)變更屬性。供 attrWrite.go / attrRefWrite.go 的寫側詞條共用。
@@ -242,71 +373,17 @@ func writeValueOnly(target *Value, op AssignKind, n float64) bool {
 	return target.Apply(op, n)
 }
 
-// lockDec 對鎖屬性的鎖定計數 - 1(夾 ≥ 0);供解鎖(guestReturn 入列自動鎖回退、restore 不棄回退)共用。
-func lockDec(value *Value) {
-	value.Unlock()
-}
-
-// 切片增刪查:實例切片的定位 / 前端加入 / 移除(以實例編號比對),回新切片不影響原序。供操作命令的容器搬移與實例化共用。
-
-// findCard 自卡牌切片以實例編號找出卡牌;未命中回 nil。供 locateCard 逐牌堆掃描。
-func findCard(card []*Card, id InstanceID) *Card {
-	for _, itor := range card {
-		if itor.InstanceID == id {
-			return itor
-		} // if
-	} // for
-
-	return nil
-}
+// 切片增刪查:實例切片的定位(以實例編號比對)。供引擎跨容器分派共用。
 
 // findGuest 自顧客切片以實例編號找出顧客;未命中回 nil。供 locateGuest 掃描排隊 / 遊蕩 / 卡牌化列表。
 func findGuest(guest []*Guest, id InstanceID) *Guest {
 	for _, itor := range guest {
-		if itor.InstanceID == id {
+		if itor.GetInstanceID() == id {
 			return itor
 		} // if
 	} // for
 
 	return nil
-}
-
-// prepend 把卡牌加入切片前端(頂端);對齊牌堆「新進入者置頂」(M8 約定:前端為頂)。
-func prepend(card []*Card, add *Card) []*Card {
-	return append([]*Card{add}, card...)
-}
-
-// removeFrom 自卡牌切片移除指定卡牌(以實例編號比對),回新切片;其餘元素保持原序。
-func removeFrom(card []*Card, remove *Card) (result []*Card) {
-	for _, itor := range card {
-		if itor.InstanceID != remove.InstanceID {
-			result = append(result, itor)
-		} // if
-	} // for
-
-	return result
-}
-
-// removeGuest 自顧客切片移除指定顧客(以實例編號比對),回新切片;其餘元素保持原序。供遊蕩 / 排隊 / 卡牌化列表移除共用。
-func removeGuest(guest []*Guest, remove *Guest) (result []*Guest) {
-	for _, itor := range guest {
-		if itor.InstanceID != remove.InstanceID {
-			result = append(result, itor)
-		} // if
-	} // for
-
-	return result
-}
-
-// removeEffect 自效果切片移除指定效果（以實例編號比對），回新切片;其餘元素保持原序。供效果佇列的觸發後移除 / 推進 / 清理共用。
-func removeEffect(effect []*Effect, remove *Effect) (result []*Effect) {
-	for _, itor := range effect {
-		if itor.InstanceID != remove.InstanceID {
-			result = append(result, itor)
-		} // if
-	} // for
-
-	return result
 }
 
 // 技能靜態查詢:自卡牌經 SkillID 取技能靜態欄位(效果編號列表 / 技能群組編號)。供 newCard 載入實例效果列表、cardMorph 重設、與效果列表啟動的 skillImmune 排除共用。

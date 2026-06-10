@@ -104,22 +104,19 @@ func commandGuestSpawn(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		return // 座位不存在 / 已占用 → no-op（先於實例化判定，不白費實例編號）
 	} // if
 
-	guest := newGuest(eng, guestID)
+	guest := NewGuest(eng, guestID)
 
 	if guest == nil {
 		return // 顧客資料不存在 → no-op
 	} // if
 
 	if seatID == 0 {
-		guest.Sate.Lock()
-		guest.SateSeal.Lock()
-		guest.CalmSeal.Lock()
-		eng.runtime.Roam = append(eng.runtime.Roam, guest)
+		guest.RoamLock()
+		eng.runtime.Roam.Push(guest)
 		return
 	} // if
 
-	guest.SeatID = seatID
-	eng.runtime.Seat[seatID] = guest
+	eng.runtime.Seat.Place(seatID, guest)
 }
 
 // commandWaitAdd 依顧客編號實例化 N 位新顧客插入排隊佇列前端（優先入座）；N <= 0 / 顧客資料不存在 → no-op（【二十五 | waitAdd】）。
@@ -137,13 +134,13 @@ func commandWaitAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // if
 
 	for itor := int32(0); itor < n; itor++ {
-		guest := newGuest(eng, guestID)
+		guest := NewGuest(eng, guestID)
 
 		if guest == nil {
 			return // 顧客資料不存在 → no-op
 		} // if
 
-		eng.runtime.Wait = append([]*Guest{guest}, eng.runtime.Wait...)
+		eng.runtime.Wait.Insert(guest)
 	} // for
 }
 
@@ -164,7 +161,7 @@ func cardAdd(eng *Engine, arg []exprs.Value, dest ContainerKind) {
 	} // if
 
 	for itor := int32(0); itor < n; itor++ {
-		card := newCard(eng, cardID)
+		card := NewCard(eng, cardID)
 
 		if card == nil {
 			return // 卡牌資料不存在 → no-op
@@ -195,7 +192,7 @@ func cardRoll(eng *Engine, arg []exprs.Value, dest ContainerKind) {
 			return // 群組總權重 0 / 群組不存在 → no-op
 		} // if
 
-		card := newCard(eng, cardID)
+		card := NewCard(eng, cardID)
 
 		if card == nil {
 			continue // 抽中編號無資料 → 跳過該張（防禦）
@@ -232,13 +229,13 @@ func copyClone(eng *Engine, target []InstanceID, arg []exprs.Value, dest Contain
 		} // if
 
 		for count := int32(0); count < n; count++ {
-			card := copyCard(eng, source, deep)
+			card := CopyCard(eng, source, deep)
 
 			if card == nil {
 				continue // 淺複製載入失敗（卡牌資料不存在）→ 跳過該張
 			} // if
 
-			card.EffectID = append(card.EffectID, addEffect...)
+			card.GetEffectID().Add(addEffect...)
 			placeCard(eng, dest, card)
 		} // for
 	} // for

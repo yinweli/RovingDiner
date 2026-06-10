@@ -15,7 +15,7 @@ import (
 // 內建函式註冊表為套件層全域 builtin(同 attrRead 等詞彙表),非 per-instance 狀態,故不入欄位。
 type Engine struct {
 	runtime  *Runtime             // 一場營業的聚合狀態(全域屬性 + 全部容器)
-	self     *Self                // 當前求值脈絡的 self 綁定;nil 代表 self 未固定
+	self     *Ref                 // 當前求值脈絡的 self 綁定;nil 代表 self 未固定
 	data     *sheeter.Sheeter     // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
 	operator Operator             // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
 	rander   Rander               // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
@@ -26,7 +26,7 @@ type Engine struct {
 // NewEngine 建立驅動引擎;注入聚合狀態 / self 綁定 / 靜態表格 / 玩家輸入與亂數兩 port / 命令編譯器。
 // award 與 effect 皆於建構時自 data 整理(prepareAward / prepareEffect);effect 多吃 compile 原語(命令字串 → 閉包),
 // 因 cores 不能 import games 的命令解析,由 games 經 CompileCommand 注入(無命令資料時可傳 nil)。
-func NewEngine(runtime *Runtime, self *Self, data *sheeter.Sheeter, operator Operator, rander Rander, compile CompileCommand) (engine *Engine) {
+func NewEngine(runtime *Runtime, self *Ref, data *sheeter.Sheeter, operator Operator, rander Rander, compile CompileCommand) (engine *Engine) {
 	return &Engine{
 		runtime:  runtime,
 		self:     self,
@@ -178,19 +178,19 @@ func (this *Engine) evalAll(expr []*exprs.Expr) (result []exprs.Value, ok bool) 
 func (this *Engine) locateCard(id InstanceID) (card *Card, where ContainerKind, ok bool) {
 	runtime := this.runtime
 
-	if found := findCard(runtime.Hand, id); found != nil {
+	if found := runtime.Hand.Find(id); found != nil {
 		return found, ContainerHand, true
 	} // if
 
-	if found := findCard(runtime.Deck, id); found != nil {
+	if found := runtime.Deck.Find(id); found != nil {
 		return found, ContainerDeck, true
 	} // if
 
-	if found := findCard(runtime.Drop, id); found != nil {
+	if found := runtime.Drop.Find(id); found != nil {
 		return found, ContainerDrop, true
 	} // if
 
-	if found := findCard(runtime.Exile, id); found != nil {
+	if found := runtime.Exile.Find(id); found != nil {
 		return found, ContainerExile, true
 	} // if
 
@@ -203,7 +203,7 @@ func (this *Engine) locateGuest(id InstanceID) (guest *Guest, where ContainerKin
 	runtime := this.runtime
 
 	for _, itor := range runtime.Seat {
-		if itor != nil && itor.InstanceID == id {
+		if itor != nil && itor.GetInstanceID() == id {
 			return itor, ContainerSeat, true
 		} // if
 	} // for

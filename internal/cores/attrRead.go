@@ -109,190 +109,190 @@ var attrLockRead = map[string]attrReadFunc{
 
 // readMorale 讀餐廳士氣值。
 func readMorale(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Morale.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMorale().GetValue())), true
 }
 
 // readMoraleMax 讀餐廳士氣上限。
 func readMoraleMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleMax().GetValue())), true
 }
 
 // readMoraleShield 讀餐廳士氣護盾。
 func readMoraleShield(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleShield().GetValue())), true
 }
 
 // readMoraleBlock 讀餐廳士氣阻擋。
 func readMoraleBlock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleBlock().GetValue())), true
 }
 
 // readScore 讀餐廳分數。
 func readScore(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Score.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetScore().GetValue())), true
 }
 
 // readEnergy 讀出牌能量。
 func readEnergy(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Energy.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergy().GetValue())), true
 }
 
 // readEnergyMax 讀出牌能量上限。
 func readEnergyMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergyMax().GetValue())), true
 }
 
 // readEnergyKeep 讀能量保留量。
 func readEnergyKeep(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergyKeep().GetValue())), true
 }
 
 // readHandMax 讀手牌上限。
 func readHandMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.HandMax.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetHandMax().GetValue())), true
 }
 
 // readDrawMax 讀每回合補牌上限。
 func readDrawMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetDrawMax().GetValue())), true
 }
 
 // === 階段 / 回合 ===
 
 // readNextPhase 讀下一階段(文字)。
 func readNextPhase(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewText(string(eng.runtime.Game.NextPhase)), true
+	return exprs.NewText(string(eng.runtime.Game.GetNextPhase())), true
 }
 
 // readRound 讀當前回合數。
 func readRound(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Round.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetRound().GetValue())), true
 }
 
 // readRoundMax 讀回合上限。
 func readRoundMax(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.RoundMax.GetValue())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetRoundMax().GetValue())), true
 }
 
 // readRoundLeft 讀剩餘回合數(上限 - 當前,夾 0)。
 func readRoundLeft(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(max(int32(0), eng.runtime.Game.RoundMax.GetValue()-eng.runtime.Game.Round.GetValue()))), true
+	return exprs.NewNum(float64(max(int32(0), eng.runtime.Game.GetRoundMax().GetValue()-eng.runtime.Game.GetRound().GetValue()))), true
 }
 
 // === 士氣受損事件 ===
 
 // readDamageValue 讀本次士氣受損量。
 func readDamageValue(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DamageValue)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetDamageValue())), true
 }
 
 // readDamageGuest 讀造成士氣受損的顧客引用。
 func readDamageGuest(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestValue(eng.runtime.Game.DamageGuest), true
+	return NewRefGuest(eng.runtime.Game.GetDamageGuest()).Value(), true
 }
 
 // === 入座 / 離場 / 行動事件 ===
 
 // readSeatLast 讀最後入座的顧客引用。
 func readSeatLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestValue(eng.runtime.Game.SeatLast), true
+	return NewRefGuest(eng.runtime.Game.GetSeatLast()).Value(), true
 }
 
 // readSeatCount 讀本回合入座計數。
 func readSeatCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.SeatCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetSeatCount())), true
 }
 
 // readExitLast 讀最後離場的顧客引用。
 func readExitLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestValue(eng.runtime.Game.ExitLast), true
+	return NewRefGuest(eng.runtime.Game.GetExitLast()).Value(), true
 }
 
 // readExitLastSeat 讀最後離場顧客的座位編號。
 func readExitLastSeat(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.ExitLastSeat)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetExitLastSeat())), true
 }
 
 // readExitCount 讀本回合離場計數。
 func readExitCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.ExitCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetExitCount())), true
 }
 
 // readTaskGuest 讀當前行動的顧客引用。
 func readTaskGuest(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return guestValue(eng.runtime.Game.TaskGuest), true
+	return NewRefGuest(eng.runtime.Game.GetTaskGuest()).Value(), true
 }
 
 // readTaskSkill 讀當前行動的技能編號。
 func readTaskSkill(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.TaskSkill)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetTaskSkill())), true
 }
 
 // readTaskCount 讀本回合行動計數。
 func readTaskCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.TaskCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetTaskCount())), true
 }
 
 // === 卡牌事件:回合計數 / 最後引用 / 變身編號 ===
 
 // readDrawLast 讀最後抽到的卡牌引用。
 func readDrawLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardValue(eng.runtime.Game.DrawLast), true
+	return NewRefCard(eng.runtime.Game.GetDrawLast()).Value(), true
 }
 
 // readDrawCount 讀本回合抽牌計數。
 func readDrawCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DrawCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetDrawCount())), true
 }
 
 // readDropLast 讀最後棄置的卡牌引用。
 func readDropLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardValue(eng.runtime.Game.DropLast), true
+	return NewRefCard(eng.runtime.Game.GetDropLast()).Value(), true
 }
 
 // readDropCount 讀本回合棄牌計數。
 func readDropCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DropCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetDropCount())), true
 }
 
 // readPlayLast 讀最後打出的卡牌引用。
 func readPlayLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardValue(eng.runtime.Game.PlayLast), true
+	return NewRefCard(eng.runtime.Game.GetPlayLast()).Value(), true
 }
 
 // readPlayCount 讀本回合出牌計數。
 func readPlayCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.PlayCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetPlayCount())), true
 }
 
 // readExileLast 讀最後流放的卡牌引用。
 func readExileLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardValue(eng.runtime.Game.ExileLast), true
+	return NewRefCard(eng.runtime.Game.GetExileLast()).Value(), true
 }
 
 // readExileCount 讀本回合流放計數。
 func readExileCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.ExileCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetExileCount())), true
 }
 
 // readMorphLast 讀最後變身的卡牌引用。
 func readMorphLast(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return cardValue(eng.runtime.Game.MorphLast), true
+	return NewRefCard(eng.runtime.Game.GetMorphLast()).Value(), true
 }
 
 // readMorphCount 讀本回合變身計數。
 func readMorphCount(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MorphCount)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMorphCount())), true
 }
 
 // readMorphOldID 讀變身前的卡牌編號。
 func readMorphOldID(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MorphOldID)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMorphOldID())), true
 }
 
 // readMorphNewID 讀變身後的卡牌編號。
 func readMorphNewID(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MorphNewID)), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMorphNewID())), true
 }
 
 // === 容器當下大小 ===
@@ -330,9 +330,14 @@ func readGuestSize(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool)
 	return exprs.NewNum(float64(len(r.Seat) + len(r.Wait) + len(r.Roam) + len(r.Cardify))), true
 }
 
-// readSelf 讀 self:綁定顧客 / 卡牌回引用、綁定空物件回 none、未固定回失敗。
+// readSelf 讀 self:綁定顧客 / 卡牌回引用、綁定空物件回 none、未固定(nil)回失敗。
+// 對應【營業規格書 | 二十七、運算式 | 7】「self 未固定」與「綁定空物件」兩態之別。
 func readSelf(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return selfValue(eng.self)
+	if eng.self == nil {
+		return exprs.Value{}, false
+	} // if
+
+	return eng.self.Value(), true
 }
 
 // === 靜態座位佈局衍生 ===
@@ -455,72 +460,72 @@ func readExileSize(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool)
 
 // readDrawTotal 讀整場抽牌累積中群組 N 的張數(N == 0 回全加總)。
 func readDrawTotal(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return groupTotal(eng.runtime.Game.DrawTotal, arg)
+	return groupTotal(eng.runtime.Game.GetDrawTotal(), arg)
 }
 
 // readDropTotal 讀整場棄牌累積中群組 N 的張數(N == 0 回全加總)。
 func readDropTotal(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return groupTotal(eng.runtime.Game.DropTotal, arg)
+	return groupTotal(eng.runtime.Game.GetDropTotal(), arg)
 }
 
 // readPlayTotal 讀整場出牌累積中群組 N 的張數(N == 0 回全加總)。
 func readPlayTotal(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return groupTotal(eng.runtime.Game.PlayTotal, arg)
+	return groupTotal(eng.runtime.Game.GetPlayTotal(), arg)
 }
 
 // readExileTotal 讀整場流放累積中群組 N 的張數(N == 0 回全加總)。
 func readExileTotal(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return groupTotal(eng.runtime.Game.ExileTotal, arg)
+	return groupTotal(eng.runtime.Game.GetExileTotal(), arg)
 }
 
 // === 全域屬性鎖定計數(基底名 → .GetLock()) ===
 
 // readMoraleLock 讀餐廳士氣的鎖定計數。
 func readMoraleLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Morale.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMorale().GetLock())), true
 }
 
 // readMoraleMaxLock 讀餐廳士氣上限的鎖定計數。
 func readMoraleMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleMax.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleMax().GetLock())), true
 }
 
 // readMoraleShieldLock 讀餐廳士氣護盾的鎖定計數。
 func readMoraleShieldLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleShield.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleShield().GetLock())), true
 }
 
 // readMoraleBlockLock 讀餐廳士氣阻擋的鎖定計數。
 func readMoraleBlockLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.MoraleBlock.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetMoraleBlock().GetLock())), true
 }
 
 // readScoreLock 讀餐廳分數的鎖定計數。
 func readScoreLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Score.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetScore().GetLock())), true
 }
 
 // readEnergyLock 讀出牌能量的鎖定計數。
 func readEnergyLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.Energy.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergy().GetLock())), true
 }
 
 // readEnergyMaxLock 讀出牌能量上限的鎖定計數。
 func readEnergyMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyMax.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergyMax().GetLock())), true
 }
 
 // readEnergyKeepLock 讀能量保留量的鎖定計數。
 func readEnergyKeepLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.EnergyKeep.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetEnergyKeep().GetLock())), true
 }
 
 // readHandMaxLock 讀手牌上限的鎖定計數。
 func readHandMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.HandMax.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetHandMax().GetLock())), true
 }
 
 // readDrawMaxLock 讀補牌上限的鎖定計數。
 func readDrawMaxLock(eng *Engine, arg []exprs.Value) (result exprs.Value, ok bool) {
-	return exprs.NewNum(float64(eng.runtime.Game.DrawMax.GetLock())), true
+	return exprs.NewNum(float64(eng.runtime.Game.GetDrawMax().GetLock())), true
 }

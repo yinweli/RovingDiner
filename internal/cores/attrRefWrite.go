@@ -43,178 +43,178 @@ func HasAttrRefWrite(name string) bool {
 
 // writeRefCost 寫卡牌出牌費用(寫鎖)。
 func writeRefCost(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return card.Cost.Apply(op, n)
+	return card.GetCost().Apply(op, n)
 }
 
 // writeRefExtraRunMin 寫卡牌額外發動次數下限(寫鎖)。
 func writeRefExtraRunMin(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return card.ExtraRunMin.Apply(op, n)
+	return card.GetExtraRunMin().Apply(op, n)
 }
 
 // writeRefExtraRunMax 寫卡牌額外發動次數上限(寫鎖)。
 func writeRefExtraRunMax(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return card.ExtraRunMax.Apply(op, n)
+	return card.GetExtraRunMax().Apply(op, n)
 }
 
 // writeRefCardSeal 寫卡牌封印(純鎖,僅 @ #)。
 func writeRefCardSeal(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&card.Seal, op)
+	return writeLockOnly(card.GetSeal(), op)
 }
 
 // writeRefKeep 寫卡牌不棄(純鎖,僅 @ #)。
 func writeRefKeep(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&card.Keep, op)
+	return writeLockOnly(card.GetKeep(), op)
 }
 
 // writeRefPlayExile 寫卡牌出牌後流放(純鎖,僅 @ #)。
 func writeRefPlayExile(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&card.PlayExile, op)
+	return writeLockOnly(card.GetPlayExile(), op)
 }
 
 // writeRefUnplayExile 寫卡牌未出牌流放(純鎖,僅 @ #)。
 func writeRefUnplayExile(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	card, ok := asCard(ref)
+	card, ok := AsCard(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&card.UnplayExile, op)
+	return writeLockOnly(card.GetUnplayExile(), op)
 }
 
 // === 顧客引用屬性 ===
 
 // writeRefCalm 寫顧客耐心值(寫鎖)。
 func writeRefCalm(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.Calm.Apply(op, n)
+	return guest.GetCalm().Apply(op, n)
 }
 
 // writeRefSate 寫顧客飽食值(寫鎖)。
 func writeRefSate(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.Sate.Apply(op, n)
+	return guest.GetSate().Apply(op, n)
 }
 
 // writeRefSateMax 寫顧客飽食值離場線(寫鎖)。
 func writeRefSateMax(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.SateMax.Apply(op, n)
+	return guest.GetSateMax().Apply(op, n)
 }
 
 // writeRefMorale 寫顧客士氣值(寫鎖);引用屬性的 -= 走一般運算,不啟動餐廳 morale 特例。
 func writeRefMorale(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.Morale.Apply(op, n)
+	return guest.GetMorale().Apply(op, n)
 }
 
 // writeRefMoraleMax 寫顧客士氣值上限(寫鎖)。
 func writeRefMoraleMax(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.MoraleMax.Apply(op, n)
+	return guest.GetMoraleMax().Apply(op, n)
 }
 
 // writeRefScore 寫顧客滿意值(寫鎖)。
 func writeRefScore(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.Score.Apply(op, n)
+	return guest.GetScore().Apply(op, n)
 }
 
 // writeRefScoreMax 寫顧客滿意值上限(寫鎖)。
 func writeRefScoreMax(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return guest.ScoreMax.Apply(op, n)
+	return guest.GetScoreMax().Apply(op, n)
 }
 
 // writeRefSateSeal 寫顧客封印飽食技能(純鎖,僅 @ #)。
 func writeRefSateSeal(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&guest.SateSeal, op)
+	return writeLockOnly(guest.GetSateSeal(), op)
 }
 
 // writeRefCalmSeal 寫顧客封印耐心技能(純鎖,僅 @ #)。
 func writeRefCalmSeal(eng *Engine, ref exprs.Ref, op AssignKind, n float64) bool {
-	guest, ok := asGuest(ref)
+	guest, ok := AsGuest(ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return writeLockOnly(&guest.CalmSeal, op)
+	return writeLockOnly(guest.GetCalmSeal(), op)
 }

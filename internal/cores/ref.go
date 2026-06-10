@@ -4,92 +4,84 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// cardRef 卡牌實例在運算式中的物件引用;實作 exprs.Ref,== / != 比較時比實例編號。
-// 對應【營業規格書 | 二十三、屬性清單 | 卡牌引用屬性】。
-type cardRef struct {
-	card *Card
+// Ref 實例引用(卡牌兼顧客);至多一欄非 nil、皆 nil 為空物件(none),零值即空物件。
+// 統一效果系統的 self 綁定(【營業規格書 | 八、目標類型】)與運算式的物件引用
+// (【營業規格書 | 二十三、屬性清單】);實作 exprs.Ref,運算式 == / != 經 IsSame 比實例編號。
+type Ref struct {
+	card  *Card  // 引用卡牌時非 nil
+	guest *Guest // 引用顧客時非 nil
 }
 
-// Same 回傳是否與另一引用指向同一卡牌實例(型別不符回 false)。
-func (this cardRef) Same(other exprs.Ref) bool {
-	ref, ok := other.(cardRef)
+// NewRefCard 以卡牌實例建構引用;card 為 nil 時即空物件(編碼點不需自帶 nil 守衛)。
+func NewRefCard(card *Card) Ref {
+	return Ref{card: card}
+}
+
+// NewRefGuest 以顧客實例建構引用;guest 為 nil 時即空物件。
+func NewRefGuest(guest *Guest) Ref {
+	return Ref{guest: guest}
+}
+
+// GetCard 讀引用的卡牌實例(非卡牌引用回 nil)。
+func (this Ref) GetCard() *Card {
+	return this.card
+}
+
+// GetGuest 讀引用的顧客實例(非顧客引用回 nil)。
+func (this Ref) GetGuest() *Guest {
+	return this.guest
+}
+
+// IsNone 回傳是否為空物件。
+func (this Ref) IsNone() bool {
+	return this.card == nil && this.guest == nil
+}
+
+// IsSame 回傳是否與另一引用指向同一實例:同為卡牌 / 顧客比實例編號、同為空物件相等、型別不符 false。
+func (this Ref) IsSame(other exprs.Ref) bool {
+	ref, ok := other.(Ref)
 
 	if ok == false {
 		return false
 	} // if
 
-	return ref.card.InstanceID == this.card.InstanceID
-}
-
-// guestRef 顧客實例在運算式中的物件引用;實作 exprs.Ref,== / != 比較時比實例編號。
-// 對應【營業規格書 | 二十三、屬性清單 | 顧客引用屬性】。
-type guestRef struct {
-	guest *Guest
-}
-
-// Same 回傳是否與另一引用指向同一顧客實例(型別不符回 false)。
-func (this guestRef) Same(other exprs.Ref) bool {
-	ref, ok := other.(guestRef)
-
-	if ok == false {
-		return false
+	if this.card != nil && ref.card != nil {
+		return this.card.GetInstanceID() == ref.card.GetInstanceID()
 	} // if
 
-	return ref.guest.InstanceID == this.guest.InstanceID
+	if this.guest != nil && ref.guest != nil {
+		return this.guest.GetInstanceID() == ref.guest.GetInstanceID()
+	} // if
+
+	return this.IsNone() && ref.IsNone()
 }
 
-// cardValue 把卡牌實例包成運算式值:nil 回空物件、否則回卡牌引用。供物件引用型全域屬性(drawLast…)使用。
-func cardValue(card *Card) exprs.Value {
-	if card == nil {
+// Value 編碼成運算式值:空物件 → none、否則 → 物件引用。唯一編碼門——
+// 空 Ref 經此路由為 none,不會被包進 exprs 的引用比較(對齊【營業規格書 | 二十七、運算式 | 2】)。
+func (this Ref) Value() exprs.Value {
+	if this.IsNone() {
 		return exprs.NewNone()
 	} // if
 
-	return exprs.NewRef(cardRef{card: card})
+	return exprs.NewRef(this)
 }
 
-// guestValue 把顧客實例包成運算式值:nil 回空物件、否則回顧客引用。供物件引用型全域屬性(seatLast…)使用。
-func guestValue(guest *Guest) exprs.Value {
-	if guest == nil {
-		return exprs.NewNone()
-	} // if
+// AsCard 把引用拆為卡牌實例(Value 編碼的逆運算);非卡牌引用回 ok=false(對齊【二十七、運算式 | 7】型別不符即失敗)。
+func AsCard(ref exprs.Ref) (card *Card, ok bool) {
+	value, ok := ref.(Ref)
 
-	return exprs.NewRef(guestRef{guest: guest})
-}
-
-// selfValue 解析 self:未綁定(nil)回失敗、綁定空物件回 none、綁定卡牌 / 顧客回對應引用。
-// 對應【營業規格書 | 二十七、運算式 | 7】「self 未固定」與「綁定空物件」兩態之別。
-func selfValue(self *Self) (result exprs.Value, ok bool) {
-	if self == nil {
-		return exprs.Value{}, false
-	} // if
-
-	if self.Card != nil {
-		return exprs.NewRef(cardRef{card: self.Card}), true
-	} // if
-
-	if self.Guest != nil {
-		return exprs.NewRef(guestRef{guest: self.Guest}), true
-	} // if
-
-	return exprs.NewNone(), true
-}
-
-// asCard 把引用拆為卡牌實例(cardValue 的逆運算);非卡牌引用回 ok=false(對齊【二十七、運算式 | 7】型別不符即失敗)。
-func asCard(ref exprs.Ref) (card *Card, ok bool) {
-	value, ok := ref.(cardRef)
-
-	if ok == false {
+	if ok == false || value.card == nil {
 		return nil, false
 	} // if
 
 	return value.card, true
 }
 
-// asGuest 把引用拆為顧客實例(guestValue 的逆運算);非顧客引用回 ok=false。
-func asGuest(ref exprs.Ref) (guest *Guest, ok bool) {
-	value, ok := ref.(guestRef)
+// AsGuest 把引用拆為顧客實例;非顧客引用回 ok=false。
+func AsGuest(ref exprs.Ref) (guest *Guest, ok bool) {
+	value, ok := ref.(Ref)
 
-	if ok == false {
+	if ok == false || value.guest == nil {
 		return nil, false
 	} // if
 

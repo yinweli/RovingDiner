@@ -19,18 +19,18 @@ type SuiteAttrRefRead struct {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 	card := &Card{
-		InstanceID:  1,
-		CardID:      101,
-		Cost:        NewValue(2, 0),
-		ExtraRunMin: NewValue(1, 0),
-		ExtraRunMax: NewValue(5, 0),
-		EffectID:    []int32{201, 201, 202},
+		instanceID:  1,
+		cardID:      101,
+		cost:        NewValue(2, 0),
+		extraRunMin: NewValue(1, 0),
+		extraRunMax: NewValue(5, 0),
+		effectID:    NewIDList(201, 201, 202),
 	}
 	runtime := NewRuntime(0)
 	runtime.Hand = []*Card{card}
-	runtime.Deck = []*Card{{InstanceID: 2}}
+	runtime.Deck = []*Card{{instanceID: 2}}
 	eng := &Engine{runtime: runtime, data: buildSheet()}
-	ref := cardRef{card: card}
+	ref := NewRefCard(card)
 
 	this.Equal(float64(101), this.num(eng, ref, "cardID"))
 	this.Equal(float64(2), this.num(eng, ref, "cost"))
@@ -49,42 +49,42 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 	this.False(this.flag(eng, ref, "inDeck"))
 	this.False(this.flag(eng, ref, "inDrop"))
 	this.False(this.flag(eng, ref, "inExile"))
-	this.True(this.flag(eng, cardRef{card: runtime.Deck[0]}, "inDeck")) // 牌堆內卡牌 → true
+	this.True(this.flag(eng, NewRefCard(runtime.Deck[0]), "inDeck")) // 牌堆內卡牌 → true
 
 	value, ok := eng.AttrRef(ref, "cardify", nil) // 初值 nil → none
 	this.True(ok)
 	this.True(value.IsNone())
 
-	_, ok = eng.AttrRef(guestRef{guest: &Guest{}}, "cardID", nil) // 顧客 ref 問卡牌屬性 → 失敗
+	_, ok = eng.AttrRef(NewRefGuest(&Guest{}), "cardID", nil) // 顧客 ref 問卡牌屬性 → 失敗
 	this.False(ok)
-	_, ok = eng.AttrRef(cardRef{card: &Card{CardID: 999}}, "cardGroup", nil) // 卡牌資料不存在 → 失敗
+	_, ok = eng.AttrRef(NewRefCard(&Card{cardID: 999}), "cardGroup", nil) // 卡牌資料不存在 → 失敗
 	this.False(ok)
 	_, ok = eng.AttrRef(ref, "cardEffect", nil) // 缺參數 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardCardify() {
-	guest := &Guest{InstanceID: 7}
-	card := &Card{InstanceID: 1, Cardify: guest}
+	guest := &Guest{instanceID: 7}
+	card := &Card{instanceID: 1, cardify: guest}
 	eng := &Engine{runtime: NewRuntime(0)}
 
-	value, ok := eng.AttrRef(cardRef{card: card}, "cardify", nil)
+	value, ok := eng.AttrRef(NewRefCard(card), "cardify", nil)
 	this.True(ok)
-	this.True(value.Ref().Same(guestRef{guest: guest}))
+	this.True(value.Ref().IsSame(NewRefGuest(guest)))
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardLock() {
 	card := &Card{
-		Cost:        NewValue(0, 3),
-		ExtraRunMin: NewValue(0, 4),
-		ExtraRunMax: NewValue(0, 6),
-		Seal:        NewValue(0, 7),
-		Keep:        NewValue(0, 8),
-		PlayExile:   NewValue(0, 9),
-		UnplayExile: NewValue(0, 10),
+		cost:        NewValue(0, 3),
+		extraRunMin: NewValue(0, 4),
+		extraRunMax: NewValue(0, 6),
+		seal:        NewValue(0, 7),
+		keep:        NewValue(0, 8),
+		playExile:   NewValue(0, 9),
+		unplayExile: NewValue(0, 10),
 	}
 	eng := &Engine{runtime: NewRuntime(0)}
-	ref := cardRef{card: card}
+	ref := NewRefCard(card)
 
 	this.Equal(float64(3), this.num(eng, ref, "costLock"))
 	this.Equal(float64(4), this.num(eng, ref, "extraRunMinLock"))
@@ -94,34 +94,34 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardLock() {
 	this.Equal(float64(9), this.num(eng, ref, "playExileLock"))
 	this.Equal(float64(10), this.num(eng, ref, "unplayExileLock"))
 
-	_, ok := eng.AttrRef(guestRef{guest: &Guest{}}, "costLock", nil) // 型別不符 → 失敗
+	_, ok := eng.AttrRef(NewRefGuest(&Guest{}), "costLock", nil) // 型別不符 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 	guest := &Guest{
-		InstanceID:   1,
-		GuestID:      5,
-		SeatID:       1,
-		Freeze:       3,
-		Calm:         NewValue(8, 0),
-		Sate:         NewValue(4, 0),
-		SateMax:      NewValue(20, 0),
-		Morale:       NewValue(6, 0),
-		MoraleMax:    NewValue(15, 0),
-		Score:        NewValue(9, 0),
-		ScoreMax:     NewValue(30, 0),
-		SateHit:      map[int32]bool{10: true, 20: true},
-		CalmHit:      map[int32]bool{5: true},
-		EffectImmune: map[int32]int32{7: 2},
-		SkillImmune:  map[int32]int32{3: 1},
+		instanceID:   1,
+		guestID:      5,
+		seatID:       1,
+		freeze:       3,
+		calm:         NewValue(8, 0),
+		sate:         NewValue(4, 0),
+		sateMax:      NewValue(20, 0),
+		morale:       NewValue(6, 0),
+		moraleMax:    NewValue(15, 0),
+		score:        NewValue(9, 0),
+		scoreMax:     NewValue(30, 0),
+		sateHit:      Hit{hit: map[int32]bool{10: true, 20: true}},
+		calmHit:      Hit{hit: map[int32]bool{5: true}},
+		effectImmune: Immune{count: map[int32]int32{7: 2}},
+		skillImmune:  Immune{count: map[int32]int32{3: 1}},
 	}
 	runtime := NewRuntime(0)
 	runtime.Seat[1] = guest
-	runtime.Seat[2] = &Guest{InstanceID: 2}
-	runtime.Seat[3] = &Guest{InstanceID: 3}
+	runtime.Seat[2] = &Guest{instanceID: 2}
+	runtime.Seat[3] = &Guest{instanceID: 3}
 	eng := &Engine{runtime: runtime, data: buildSheet()}
-	ref := guestRef{guest: guest}
+	ref := NewRefGuest(guest)
 
 	this.Equal(float64(5), this.num(eng, ref, "guestID"))
 	this.Equal(float64(1), this.num(eng, ref, "seatID"))
@@ -143,7 +143,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 	this.Equal(float64(2), this.num(eng, ref, "sameSize")) // 座 1,2 占用、含自身
 	this.Equal(float64(1), this.num(eng, ref, "nearSize")) // 座 3 占用
 
-	_, ok := eng.AttrRef(cardRef{card: &Card{}}, "calm", nil) // 卡牌 ref 問顧客屬性 → 失敗
+	_, ok := eng.AttrRef(NewRefCard(&Card{}), "calm", nil) // 卡牌 ref 問顧客屬性 → 失敗
 	this.False(ok)
 	_, ok = eng.AttrRef(ref, "effectImmune", nil) // 缺參數 → 失敗
 	this.False(ok)
@@ -153,18 +153,18 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuest() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestLock() {
 	guest := &Guest{
-		Calm:      NewValue(0, 11),
-		Sate:      NewValue(0, 12),
-		SateMax:   NewValue(0, 13),
-		Morale:    NewValue(0, 14),
-		MoraleMax: NewValue(0, 15),
-		Score:     NewValue(0, 16),
-		ScoreMax:  NewValue(0, 17),
-		SateSeal:  NewValue(0, 18),
-		CalmSeal:  NewValue(0, 19),
+		calm:      NewValue(0, 11),
+		sate:      NewValue(0, 12),
+		sateMax:   NewValue(0, 13),
+		morale:    NewValue(0, 14),
+		moraleMax: NewValue(0, 15),
+		score:     NewValue(0, 16),
+		scoreMax:  NewValue(0, 17),
+		sateSeal:  NewValue(0, 18),
+		calmSeal:  NewValue(0, 19),
 	}
 	eng := &Engine{runtime: NewRuntime(0)}
-	ref := guestRef{guest: guest}
+	ref := NewRefGuest(guest)
 
 	this.Equal(float64(11), this.num(eng, ref, "calmLock"))
 	this.Equal(float64(12), this.num(eng, ref, "sateLock"))
@@ -176,32 +176,32 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestLock() {
 	this.Equal(float64(18), this.num(eng, ref, "sateSealLock"))
 	this.Equal(float64(19), this.num(eng, ref, "calmSealLock"))
 
-	_, ok := eng.AttrRef(cardRef{card: &Card{}}, "calmLock", nil) // 型別不符 → 失敗
+	_, ok := eng.AttrRef(NewRefCard(&Card{}), "calmLock", nil) // 型別不符 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestNoSeat() {
-	guest := &Guest{InstanceID: 1, SeatID: 0} // 遊蕩 / 卡牌化
+	guest := &Guest{instanceID: 1, seatID: 0} // 遊蕩 / 卡牌化
 	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
-	ref := guestRef{guest: guest}
+	ref := NewRefGuest(guest)
 
 	this.Equal(float64(0), this.num(eng, ref, "sameSize"))
 	this.Equal(float64(0), this.num(eng, ref, "nearSize"))
 }
 
 func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
-	guest := &Guest{InstanceID: 1}
-	card := &Card{InstanceID: 2}
+	guest := &Guest{instanceID: 1}
+	card := &Card{instanceID: 2}
 	runtime := NewRuntime(0)
-	runtime.Effect = []*Effect{
-		{EffectID: 201, Stack: 3, Self: Self{Guest: guest}}, // 群組 5
-		{EffectID: 202, Stack: 1, Self: Self{Guest: guest}},
-		{EffectID: 201, Stack: 9, Self: Self{Card: card}}, // 不同 self
+	runtime.Effect = EffectList{
+		{effectID: 201, stack: 3, self: NewRefGuest(guest)}, // 群組 5
+		{effectID: 202, stack: 1, self: NewRefGuest(guest)},
+		{effectID: 201, stack: 9, self: NewRefCard(card)}, // 不同 self
 	}
 	data := buildSheet()
 	eng := &Engine{runtime: runtime, data: data, effect: prepareEffect(data, nil)}
-	guestR := guestRef{guest: guest}
-	cardR := cardRef{card: card}
+	guestR := NewRefGuest(guest)
+	cardR := NewRefCard(card)
 
 	this.Equal(float64(3), this.num(eng, guestR, "effectStack", exprs.NewNum(201))) // 顧客 self
 	this.Equal(float64(9), this.num(eng, cardR, "effectStack", exprs.NewNum(201)))  // 卡牌 self
@@ -217,7 +217,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
 	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
-	wrong := guestRef{guest: &Guest{}} // 以顧客引用問卡牌屬性,全應失敗
+	wrong := NewRefGuest(&Guest{}) // 以顧客引用問卡牌屬性,全應失敗
 
 	for _, name := range []string{
 		"cardID", "cost", "extraRunMin", "extraRunMax", "cardSeal", "keep",
@@ -231,7 +231,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestTypeMismatch() {
 	eng := &Engine{runtime: NewRuntime(0), data: buildSheet()}
-	wrong := cardRef{card: &Card{}} // 以卡牌引用問顧客屬性,全應失敗
+	wrong := NewRefCard(&Card{}) // 以卡牌引用問顧客屬性,全應失敗
 
 	for _, name := range []string{
 		"calm", "sate", "sateMax", "morale", "moraleMax", "score", "scoreMax",

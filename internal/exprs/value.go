@@ -35,7 +35,7 @@ func NewNone() Value {
 	return Value{kind: valueNone}
 }
 
-// NewRef 建立物件引用值;ref 由 Resolver 提供,exprs 不解讀其內容,僅在比較時用 Ref.Same。
+// NewRef 建立物件引用值;ref 由 Resolver 提供,exprs 不解讀其內容,僅在比較時用 Ref.IsSame。
 func NewRef(ref Ref) Value {
 	return Value{kind: valueRef, ref: ref}
 }

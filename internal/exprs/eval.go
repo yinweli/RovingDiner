@@ -345,7 +345,7 @@ func objectEqual(lhs, rhs Value) (result bool) {
 	} // if
 
 	if lhs.IsRef() && rhs.IsRef() {
-		return lhs.Ref().Same(rhs.Ref())
+		return lhs.Ref().IsSame(rhs.Ref())
 	} // if
 
 	return false // 一空一非空

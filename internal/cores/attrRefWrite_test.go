@@ -16,60 +16,60 @@ type SuiteAttrRefWrite struct {
 }
 
 func (this *SuiteAttrRefWrite) TestAttrRefWriteCard() {
-	card := &Card{InstanceID: 1}
+	card := &Card{instanceID: 1}
 	eng := &Engine{runtime: NewRuntime(0)}
-	ref := cardRef{card: card}
+	ref := NewRefCard(card)
 
 	this.True(writeRefCost(eng, ref, AssignSet, 4)) // 寫鎖:帶值
-	this.Equal(int32(4), card.Cost.GetValue())
+	this.Equal(int32(4), card.GetCost().GetValue())
 	this.True(writeRefExtraRunMin(eng, ref, AssignAdd, 2))
-	this.Equal(int32(2), card.ExtraRunMin.GetValue())
+	this.Equal(int32(2), card.GetExtraRunMin().GetValue())
 	this.True(writeRefExtraRunMax(eng, ref, AssignSet, 9))
-	this.Equal(int32(9), card.ExtraRunMax.GetValue())
+	this.Equal(int32(9), card.GetExtraRunMax().GetValue())
 
 	this.True(writeRefCardSeal(eng, ref, AssignLock, 0)) // 純鎖:@
-	this.Equal(int32(1), card.Seal.GetLock())
+	this.Equal(int32(1), card.GetSeal().GetLock())
 	this.False(writeRefCardSeal(eng, ref, AssignSet, 5)) // 純鎖:帶值賦值 no-op
-	this.Equal(int32(0), card.Seal.GetValue())
+	this.Equal(int32(0), card.GetSeal().GetValue())
 	this.True(writeRefKeep(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.Keep.GetLock())
+	this.Equal(int32(1), card.GetKeep().GetLock())
 	this.True(writeRefPlayExile(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.PlayExile.GetLock())
+	this.Equal(int32(1), card.GetPlayExile().GetLock())
 	this.True(writeRefUnplayExile(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), card.UnplayExile.GetLock())
+	this.Equal(int32(1), card.GetUnplayExile().GetLock())
 }
 
 func (this *SuiteAttrRefWrite) TestAttrRefWriteGuest() {
-	guest := &Guest{InstanceID: 1}
+	guest := &Guest{instanceID: 1}
 	eng := &Engine{runtime: NewRuntime(0)}
-	ref := guestRef{guest: guest}
+	ref := NewRefGuest(guest)
 
 	this.True(writeRefCalm(eng, ref, AssignSet, 8))
-	this.Equal(int32(8), guest.Calm.GetValue())
+	this.Equal(int32(8), guest.GetCalm().GetValue())
 	this.True(writeRefSate(eng, ref, AssignSet, 5))
-	this.Equal(int32(5), guest.Sate.GetValue())
+	this.Equal(int32(5), guest.GetSate().GetValue())
 	this.True(writeRefSateMax(eng, ref, AssignSet, 20))
-	this.Equal(int32(20), guest.SateMax.GetValue())
+	this.Equal(int32(20), guest.GetSateMax().GetValue())
 	this.True(writeRefMorale(eng, ref, AssignSet, 6)) // 引用 morale 走一般運算(無餐廳特例)
-	this.Equal(int32(6), guest.Morale.GetValue())
+	this.Equal(int32(6), guest.GetMorale().GetValue())
 	this.True(writeRefMorale(eng, ref, AssignSub, 2)) // 引用 -= 為一般減
-	this.Equal(int32(4), guest.Morale.GetValue())
+	this.Equal(int32(4), guest.GetMorale().GetValue())
 	this.True(writeRefMoraleMax(eng, ref, AssignSet, 15))
-	this.Equal(int32(15), guest.MoraleMax.GetValue())
+	this.Equal(int32(15), guest.GetMoraleMax().GetValue())
 	this.True(writeRefScore(eng, ref, AssignSet, 9))
-	this.Equal(int32(9), guest.Score.GetValue())
+	this.Equal(int32(9), guest.GetScore().GetValue())
 	this.True(writeRefScoreMax(eng, ref, AssignSet, 30))
-	this.Equal(int32(30), guest.ScoreMax.GetValue())
+	this.Equal(int32(30), guest.GetScoreMax().GetValue())
 
 	this.True(writeRefSateSeal(eng, ref, AssignLock, 0)) // 純鎖
-	this.Equal(int32(1), guest.SateSeal.GetLock())
+	this.Equal(int32(1), guest.GetSateSeal().GetLock())
 	this.True(writeRefCalmSeal(eng, ref, AssignLock, 0))
-	this.Equal(int32(1), guest.CalmSeal.GetLock())
+	this.Equal(int32(1), guest.GetCalmSeal().GetLock())
 }
 
 func (this *SuiteAttrRefWrite) TestAttrRefWriteTypeMismatch() {
 	eng := &Engine{runtime: NewRuntime(0)}
-	guestWrong := guestRef{guest: &Guest{}} // 以顧客引用寫卡牌屬性,全應失敗
+	guestWrong := NewRefGuest(&Guest{}) // 以顧客引用寫卡牌屬性,全應失敗
 
 	for _, name := range []string{
 		"cost", "extraRunMin", "extraRunMax", "cardSeal", "keep", "playExile", "unplayExile",
@@ -77,7 +77,7 @@ func (this *SuiteAttrRefWrite) TestAttrRefWriteTypeMismatch() {
 		this.False(attrRefWrite[name](eng, guestWrong, AssignSet, 1), name)
 	} // for
 
-	cardWrong := cardRef{card: &Card{}} // 以卡牌引用寫顧客屬性,全應失敗
+	cardWrong := NewRefCard(&Card{}) // 以卡牌引用寫顧客屬性,全應失敗
 
 	for _, name := range []string{
 		"calm", "sate", "sateMax", "morale", "moraleMax", "score", "scoreMax", "sateSeal", "calmSeal",

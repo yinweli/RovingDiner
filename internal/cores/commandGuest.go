@@ -9,23 +9,23 @@ import (
 // 免疫群組編號為命令尾端的 varargs（trailing 參數，逐個套用）。
 
 func commandEffectImmuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneAdd(eng, target, arg, func(guest *Guest) *map[int32]int32 { return &guest.EffectImmune })
+	immuneAdd(eng, target, arg, (*Guest).GetEffectImmune)
 }
 
 func commandEffectImmuneDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneDel(eng, target, arg, func(guest *Guest) *map[int32]int32 { return &guest.EffectImmune })
+	immuneDel(eng, target, arg, (*Guest).GetEffectImmune)
 }
 
 func commandSkillImmuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneAdd(eng, target, arg, func(guest *Guest) *map[int32]int32 { return &guest.SkillImmune })
+	immuneAdd(eng, target, arg, (*Guest).GetSkillImmune)
 }
 
 func commandSkillImmuneDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneDel(eng, target, arg, func(guest *Guest) *map[int32]int32 { return &guest.SkillImmune })
+	immuneDel(eng, target, arg, (*Guest).GetSkillImmune)
 }
 
-// immuneAdd 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 + 1；pick 取顧客的免疫 map 欄位位址（nil 時建表）。
-func immuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *map[int32]int32) {
+// immuneAdd 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 + 1；pick 取顧客的免疫計數組件（增減紀律由 Immune 把關）。
+func immuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
 	for _, itor := range target {
 		guest, _, ok := eng.locateGuest(itor)
 
@@ -33,22 +33,16 @@ func immuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(gu
 			continue // 非顧客實例 → 該項 no-op
 		} // if
 
-		immune := pick(guest)
-
-		if *immune == nil {
-			*immune = map[int32]int32{}
-		} // if
-
 		for _, value := range arg {
 			if value.IsNum() {
-				(*immune)[int32(value.Num())]++
+				pick(guest).Add(int32(value.Num()))
 			} // if
 		} // for
 	} // for
 }
 
-// immuneDel 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 - 1（夾 ≥ 0；nil 表自然視為 0）。
-func immuneDel(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *map[int32]int32) {
+// immuneDel 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 - 1（夾 ≥ 0,由 Immune.Del 把關）。
+func immuneDel(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
 	for _, itor := range target {
 		guest, _, ok := eng.locateGuest(itor)
 
@@ -56,17 +50,9 @@ func immuneDel(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(gu
 			continue
 		} // if
 
-		immune := *pick(guest)
-
 		for _, value := range arg {
-			if value.IsNum() == false {
-				continue
-			} // if
-
-			group := int32(value.Num())
-
-			if immune[group] > 0 {
-				immune[group]--
+			if value.IsNum() {
+				pick(guest).Del(int32(value.Num()))
 			} // if
 		} // for
 	} // for
@@ -94,10 +80,6 @@ func commandTaskAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 			continue
 		} // if
 
-		eng.runtime.Action = append(eng.runtime.Action, &Action{
-			Guest:   guest,
-			Kind:    TaskKind(kind),
-			SkillID: skillID,
-		})
+		eng.runtime.Action.Push(NewAction(guest, TaskKind(kind), skillID))
 	} // for
 }

@@ -77,20 +77,18 @@ func moveCards(eng *Engine, target []InstanceID, source, dest ContainerKind, shu
 
 // removeCard 自 source 牌堆移除指定卡牌（以實例編號比對）。
 func removeCard(eng *Engine, source ContainerKind, card *Card) {
-	runtime := eng.runtime
-
 	switch source {
 	case ContainerHand:
-		runtime.Hand = removeFrom(runtime.Hand, card)
+		eng.runtime.Hand.Remove(card.GetInstanceID())
 
 	case ContainerDeck:
-		runtime.Deck = removeFrom(runtime.Deck, card)
+		eng.runtime.Deck.Remove(card.GetInstanceID())
 
 	case ContainerDrop:
-		runtime.Drop = removeFrom(runtime.Drop, card)
+		eng.runtime.Drop.Remove(card.GetInstanceID())
 
 	case ContainerExile:
-		runtime.Exile = removeFrom(runtime.Exile, card)
+		eng.runtime.Exile.Remove(card.GetInstanceID())
 
 	default:
 		// 不可達：removeCard 僅以四牌堆 source 呼叫
@@ -99,32 +97,23 @@ func removeCard(eng *Engine, source ContainerKind, card *Card) {
 
 // placeCard 把卡牌加入 dest 牌堆頂端（前端），並依目的設事件與 system 觸發（進抽牌牌堆無事件）。供搬移與實例化（M9.3）共用。
 func placeCard(eng *Engine, dest ContainerKind, card *Card) {
-	runtime := eng.runtime
-	game := runtime.Game
-
 	switch dest {
 	case ContainerHand:
-		runtime.Hand = prepend(runtime.Hand, card)
-		game.DrawLast = card
-		game.DrawCount++
-		game.DrawTotal[cardGroup(eng, card)]++
+		eng.runtime.Hand.Push(card)
+		eng.runtime.Game.EventDraw(card, cardGroup(eng, card))
 		fireTrigger(eng, TriggerCardDraw) // 卡牌進手牌觸發
 
 	case ContainerDeck:
-		runtime.Deck = prepend(runtime.Deck, card)
+		eng.runtime.Deck.Push(card)
 
 	case ContainerDrop:
-		runtime.Drop = prepend(runtime.Drop, card)
-		game.DropLast = card
-		game.DropCount++
-		game.DropTotal[cardGroup(eng, card)]++
+		eng.runtime.Drop.Push(card)
+		eng.runtime.Game.EventDrop(card, cardGroup(eng, card))
 		fireTrigger(eng, TriggerCardDrop) // 卡牌進棄牌牌堆觸發
 
 	case ContainerExile:
-		runtime.Exile = prepend(runtime.Exile, card)
-		game.ExileLast = card
-		game.ExileCount++
-		game.ExileTotal[cardGroup(eng, card)]++
+		eng.runtime.Exile.Push(card)
+		eng.runtime.Game.EventExile(card, cardGroup(eng, card))
 		fireTrigger(eng, TriggerCardExile) // 卡牌進流放牌堆觸發
 
 	default:
@@ -134,7 +123,7 @@ func placeCard(eng *Engine, dest ContainerKind, card *Card) {
 
 // cardGroup 取卡牌的群組編號（供 *Total 多重集合鍵）；靜態資料缺失回 0。
 func cardGroup(eng *Engine, card *Card) int32 {
-	meta := eng.data.Card.Get(card.CardID)
+	meta := eng.data.Card.Get(card.GetCardID())
 
 	if meta == nil {
 		return 0

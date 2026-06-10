@@ -165,12 +165,12 @@ func (this *SuiteResolver) ok(source string, env Env) bool {
 	return ok
 }
 
-// stubRef 測試用物件引用,以 id 代表實例編號(Same 比 id)。
+// stubRef 測試用物件引用,以 id 代表實例編號(IsSame 比 id)。
 type stubRef struct {
 	id int
 }
 
-func (this stubRef) Same(other Ref) bool {
+func (this stubRef) IsSame(other Ref) bool {
 	stub, ok := other.(stubRef)
 	return ok && this.id == stub.id
 }

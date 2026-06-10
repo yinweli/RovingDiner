@@ -35,8 +35,8 @@ func cardCost(eng *Engine, target []InstanceID, op AssignKind, arg []exprs.Value
 			continue // 非卡牌實例 → 該項 no-op
 		} // if
 
-		card.Cost.Apply(op, n)
-		card.Cost.Clamp(0)
+		card.GetCost().Apply(op, n)
+		card.GetCost().Clamp(0)
 	} // for
 }
 
@@ -54,7 +54,7 @@ func commandCardEffectAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 			continue
 		} // if
 
-		card.EffectID = append(card.EffectID, effectID)
+		card.GetEffectID().Add(effectID)
 	} // for
 }
 
@@ -72,7 +72,7 @@ func commandCardEffectDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
 			continue
 		} // if
 
-		card.EffectID = removeOneEffect(card.EffectID, effectID)
+		card.GetEffectID().DelOne(effectID)
 	} // for
 }
 
@@ -90,33 +90,6 @@ func commandCardEffectDelAll(eng *Engine, target []InstanceID, arg []exprs.Value
 			continue
 		} // if
 
-		card.EffectID = removeAllEffect(card.EffectID, effectID)
+		card.GetEffectID().DelAll(effectID)
 	} // for
-}
-
-// removeOneEffect 自實例效果列表移除第一個 == effectID 者（卡上無此編號則原樣回）。
-func removeOneEffect(effect []int32, effectID int32) (result []int32) {
-	removed := false
-
-	for _, itor := range effect {
-		if removed == false && itor == effectID {
-			removed = true
-			continue
-		} // if
-
-		result = append(result, itor)
-	} // for
-
-	return result
-}
-
-// removeAllEffect 自實例效果列表移除全部 == effectID 者。
-func removeAllEffect(effect []int32, effectID int32) (result []int32) {
-	for _, itor := range effect {
-		if itor != effectID {
-			result = append(result, itor)
-		} // if
-	} // for
-
-	return result
 }

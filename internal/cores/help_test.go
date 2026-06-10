@@ -12,9 +12,175 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的無狀態輔助:參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬 / 技能靜態查詢。
+// SuiteHelp 驗證 help.go 的組件與無狀態輔助:免疫計數 / 門檻集合 / 參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬 / 技能靜態查詢。
 type SuiteHelp struct {
 	suite.Suite
+}
+
+// TestNewImmune 驗證 NewImmune 建構空計數。
+func (this *SuiteHelp) TestNewImmune() {
+	immune := NewImmune()
+	this.Equal(int32(0), immune.Get(1)) // 空表 → 0
+}
+
+// TestImmuneAdd 驗證 Add 計數遞增、零值自建表。
+func (this *SuiteHelp) TestImmuneAdd() {
+	immune := Immune{} // 零值可用
+
+	immune.Add(5)
+	immune.Add(5)
+	this.Equal(int32(2), immune.Get(5))
+}
+
+// TestImmuneDel 驗證 Del 計數遞減、夾 ≥ 0、空表安全。
+func (this *SuiteHelp) TestImmuneDel() {
+	immune := NewImmune()
+	immune.Add(5)
+
+	immune.Del(5)
+	this.Equal(int32(0), immune.Get(5))
+
+	immune.Del(5) // 已 0 再減 → 夾 ≥ 0
+	this.Equal(int32(0), immune.Get(5))
+
+	zero := Immune{}
+	zero.Del(9) // 零值（nil 表）→ 視為 0,不爆
+	this.Equal(int32(0), zero.Get(9))
+}
+
+// TestImmuneGet 驗證 Get 讀計數、無鍵回 0。
+func (this *SuiteHelp) TestImmuneGet() {
+	immune := Immune{count: map[int32]int32{7: 2}}
+	this.Equal(int32(2), immune.Get(7))
+	this.Equal(int32(0), immune.Get(99)) // 無鍵 → 0
+}
+
+// TestNewHit 驗證 NewHit 建構空集合。
+func (this *SuiteHelp) TestNewHit() {
+	hit := NewHit()
+	this.Equal(int32(0), hit.Count())
+}
+
+// TestHitAdd 驗證 Add 標記門檻、零值自建表、重複標記不增量。
+func (this *SuiteHelp) TestHitAdd() {
+	hit := Hit{} // 零值可用
+
+	hit.Add(10)
+	hit.Add(10) // 重複標記 → 集合語意不增量
+	this.True(hit.IsHit(10))
+	this.Equal(int32(1), hit.Count())
+}
+
+// TestHitIsHit 驗證 IsHit 已觸發判定。
+func (this *SuiteHelp) TestHitIsHit() {
+	hit := Hit{hit: map[int32]bool{10: true}}
+	this.True(hit.IsHit(10))
+	this.False(hit.IsHit(20)) // 未標記 → false
+
+	zero := Hit{}
+	this.False(zero.IsHit(10)) // 零值（nil 表）→ false,不爆
+}
+
+// TestHitCount 驗證 Count 已觸發數量。
+func (this *SuiteHelp) TestHitCount() {
+	hit := Hit{hit: map[int32]bool{10: true, 20: true}}
+	this.Equal(int32(2), hit.Count())
+
+	zero := Hit{}
+	this.Equal(int32(0), zero.Count()) // 零值 → 0
+}
+
+// TestNewIDList 驗證 NewIDList 複製輸入建構（不共享底層）。
+func (this *SuiteHelp) TestNewIDList() {
+	source := []int32{1, 2}
+	list := NewIDList(source...)
+	source[0] = 9 // 改輸入不影響列表
+
+	this.Equal([]int32{1, 2}, list.List())
+
+	empty := NewIDList() // 無輸入 → 空列表
+	this.Empty(empty.List())
+}
+
+// TestIDListAdd 驗證 Add 尾端加入（可變參數、零值可用、允許重複）。
+func (this *SuiteHelp) TestIDListAdd() {
+	list := IDList{} // 零值可用
+
+	list.Add(5)
+	list.Add(7, 5) // 批次 + 重複
+	this.Equal([]int32{5, 7, 5}, list.List())
+}
+
+// TestIDListDelOne 驗證 DelOne 移除第一個命中、無命中不動。
+func (this *SuiteHelp) TestIDListDelOne() {
+	list := NewIDList(5, 7, 5)
+
+	list.DelOne(5)
+	this.Equal([]int32{7, 5}, list.List()) // 僅移第一個
+
+	list.DelOne(9) // 無命中 → 不動
+	this.Equal([]int32{7, 5}, list.List())
+}
+
+// TestIDListDelAll 驗證 DelAll 移除全部命中。
+func (this *SuiteHelp) TestIDListDelAll() {
+	list := NewIDList(5, 7, 5)
+
+	list.DelAll(5)
+	this.Equal([]int32{7}, list.List())
+
+	list.DelAll(9) // 無命中 → 不動
+	this.Equal([]int32{7}, list.List())
+}
+
+// TestIDListCount 驗證 Count 計數指定編號個數。
+func (this *SuiteHelp) TestIDListCount() {
+	list := NewIDList(5, 7, 5)
+	this.Equal(int32(2), list.Count(5))
+	this.Equal(int32(0), list.Count(9)) // 無命中 → 0
+}
+
+// TestIDListList 驗證 List 取底層編號列表（保持加入順序）。
+func (this *SuiteHelp) TestIDListList() {
+	list := NewIDList(3, 1, 2)
+	this.Equal([]int32{3, 1, 2}, list.List())
+
+	zero := IDList{}
+	this.Empty(zero.List()) // 零值 → 空
+}
+
+// TestNewTally 驗證 NewTally 建構空累積計數。
+func (this *SuiteHelp) TestNewTally() {
+	total := NewTally()
+	this.Equal(int32(0), total.Get(1))
+	this.Equal(int32(0), total.Sum())
+}
+
+// TestTallyAdd 驗證 Add 對群組數量 +1;零值未建表時自建。
+func (this *SuiteHelp) TestTallyAdd() {
+	total := Tally{} // 零值可用
+
+	total.Add(1)
+	total.Add(1)
+	total.Add(2)
+	this.Equal(int32(2), total.Get(1))
+	this.Equal(int32(1), total.Get(2))
+}
+
+// TestTallyGet 驗證 Get 讀群組數量、無鍵回 0。
+func (this *SuiteHelp) TestTallyGet() {
+	total := Tally{count: map[int32]int32{1: 3}}
+	this.Equal(int32(3), total.Get(1))
+	this.Equal(int32(0), total.Get(9)) // 無鍵 → 0
+}
+
+// TestTallySum 驗證 Sum 全群組加總;零值回 0。
+func (this *SuiteHelp) TestTallySum() {
+	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
+	this.Equal(int32(8), total.Sum())
+
+	zero := Tally{}
+	this.Equal(int32(0), zero.Sum()) // 零值 → 0
 }
 
 func (this *SuiteHelp) TestOneInt() {
@@ -99,7 +265,7 @@ func (this *SuiteHelp) TestArgTail() {
 
 func (this *SuiteHelp) TestGroupSize() {
 	data := buildSheet()
-	card := []*Card{{CardID: 101}, {CardID: 101}, {CardID: 102}}
+	card := []*Card{{cardID: 101}, {cardID: 101}, {cardID: 102}}
 
 	result, ok := groupSize(card, data, []exprs.Value{exprs.NewNum(0)}) // N==0 全量
 	this.True(ok)
@@ -114,36 +280,28 @@ func (this *SuiteHelp) TestGroupSize() {
 }
 
 func (this *SuiteHelp) TestGroupTotal() {
-	total := map[int32]int32{1: 3, 2: 5}
+	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
 
-	result, ok := groupTotal(total, []exprs.Value{exprs.NewNum(0)}) // N==0 全加總
+	result, ok := groupTotal(&total, []exprs.Value{exprs.NewNum(0)}) // N==0 全加總
 	this.True(ok)
 	this.Equal(float64(8), result.Num())
 
-	result, ok = groupTotal(total, []exprs.Value{exprs.NewNum(1)})
+	result, ok = groupTotal(&total, []exprs.Value{exprs.NewNum(1)})
 	this.True(ok)
 	this.Equal(float64(3), result.Num())
 
-	_, ok = groupTotal(total, nil) // 參數不符 → 失敗
+	_, ok = groupTotal(&total, nil) // 參數不符 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteHelp) TestCountByGroup() {
 	data := buildSheet()
-	card := []*Card{{CardID: 101}, {CardID: 101}, {CardID: 102}, {CardID: 999}} // 999 無靜態資料
+	card := []*Card{{cardID: 101}, {cardID: 101}, {cardID: 102}, {cardID: 999}} // 999 無靜態資料
 
 	this.Equal(int32(4), countByGroup(card, 0, data)) // group==0 全量(不過濾)
 	this.Equal(int32(2), countByGroup(card, 1, data)) // 群組 1 = 卡 101 兩張
 	this.Equal(int32(1), countByGroup(card, 2, data)) // 群組 2 = 卡 102 一張
 	this.Equal(int32(0), countByGroup(card, 9, data)) // 無此群組(含資料缺失卡牌)
-}
-
-func (this *SuiteHelp) TestTotalByGroup() {
-	total := map[int32]int32{1: 3, 2: 5}
-
-	this.Equal(int32(8), totalByGroup(total, 0)) // n==0 全加總
-	this.Equal(int32(3), totalByGroup(total, 1))
-	this.Equal(int32(0), totalByGroup(total, 9)) // 無此鍵 → 0
 }
 
 func (this *SuiteHelp) TestCompareOp() {
@@ -169,35 +327,35 @@ func (this *SuiteHelp) TestCompareOp() {
 }
 
 func (this *SuiteHelp) TestCardLock() {
-	card := &Card{Cost: NewValue(0, 4)}
-	pick := func(c *Card) int32 { return c.Cost.GetLock() }
+	card := &Card{cost: NewValue(0, 4)}
+	pick := func(c *Card) int32 { return c.GetCost().GetLock() }
 
-	result, ok := cardLock(cardRef{card: card}, pick)
+	result, ok := cardLock(NewRefCard(card), pick)
 	this.True(ok)
 	this.Equal(float64(4), result.Num())
 
-	_, ok = cardLock(guestRef{guest: &Guest{}}, pick) // 非卡牌引用 → 失敗
+	_, ok = cardLock(NewRefGuest(&Guest{}), pick) // 非卡牌引用 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteHelp) TestGuestLock() {
-	guest := &Guest{Calm: NewValue(0, 7)}
-	pick := func(g *Guest) int32 { return g.Calm.GetLock() }
+	guest := &Guest{calm: NewValue(0, 7)}
+	pick := func(g *Guest) int32 { return g.GetCalm().GetLock() }
 
-	result, ok := guestLock(guestRef{guest: guest}, pick)
+	result, ok := guestLock(NewRefGuest(guest), pick)
 	this.True(ok)
 	this.Equal(float64(7), result.Num())
 
-	_, ok = guestLock(cardRef{card: &Card{}}, pick) // 非顧客引用 → 失敗
+	_, ok = guestLock(NewRefCard(&Card{}), pick) // 非顧客引用 → 失敗
 	this.False(ok)
 }
 
 func (this *SuiteHelp) TestInContainer() {
-	card := &Card{InstanceID: 5}
-	container := []*Card{{InstanceID: 1}, {InstanceID: 5}}
+	card := &Card{instanceID: 5}
+	container := []*Card{{instanceID: 1}, {instanceID: 5}}
 
 	this.True(inContainer(card, container))                  // 同實例編號(不同指標)
-	this.False(inContainer(&Card{InstanceID: 9}, container)) // 不在容器
+	this.False(inContainer(&Card{instanceID: 9}, container)) // 不在容器
 	this.False(inContainer(card, nil))                       // 空容器
 }
 
@@ -212,36 +370,9 @@ func (this *SuiteHelp) TestOccupiedAmong() {
 	this.Equal(int32(0), occupiedAmong(eng, nil))              // 空列表
 }
 
-func (this *SuiteHelp) TestEffectSelfIs() {
-	card := &Card{InstanceID: 1}
-	guest := &Guest{InstanceID: 2}
-
-	cardEffect := &Effect{Self: Self{Card: card}}
-	this.True(effectSelfIs(cardEffect, cardRef{card: card}))                  // 卡牌 self 命中
-	this.False(effectSelfIs(cardEffect, cardRef{card: &Card{InstanceID: 9}})) // 卡牌 self 不同實例
-	this.False(effectSelfIs(cardEffect, guestRef{guest: guest}))              // 卡牌 self 對顧客引用
-
-	guestEffect := &Effect{Self: Self{Guest: guest}}
-	this.True(effectSelfIs(guestEffect, guestRef{guest: guest}))                  // 顧客 self 命中
-	this.False(effectSelfIs(guestEffect, guestRef{guest: &Guest{InstanceID: 9}})) // 顧客 self 不同實例
-	this.False(effectSelfIs(guestEffect, cardRef{card: card}))                    // 顧客 self 對卡牌引用
-
-	this.False(effectSelfIs(cardEffect, fakeRef{})) // 既非卡牌也非顧客引用 → false
-}
-
 func (this *SuiteHelp) TestCardSkillGroup() {
 	eng := &Engine{data: buildSheet()}
 	this.Equal(int32(3), cardSkillGroup(eng, 103)) // 卡 103 → 技能 301 → 群組 3
 	this.Equal(int32(0), cardSkillGroup(eng, 101)) // 卡 101 無技能（SkillID 0）→ 0
 	this.Equal(int32(0), cardSkillGroup(eng, 999)) // 卡牌資料不存在 → 0
-}
-
-// === 測試輔助（置尾） ===
-
-// fakeRef 是既非卡牌也非顧客的第三方引用,用以驗證 effectSelfIs 對未知引用型別回 false。
-type fakeRef struct{}
-
-// Same 永不相等;僅為滿足 exprs.Ref 介面而存在。
-func (this fakeRef) Same(other exprs.Ref) bool {
-	return false
 }

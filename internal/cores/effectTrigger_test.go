@@ -24,12 +24,12 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 	}
 
 	runtime := NewRuntime(0)
-	runtime.Effect = []*Effect{
-		{InstanceID: 1, EffectID: 402, Stack: 1}, // 觸發、時機符、RunOrder 10
-		{InstanceID: 2, EffectID: 403, Stack: 1}, // 觸發、時機符、RunOrder 20（最先）
-		{InstanceID: 3, EffectID: 401, Stack: 1}, // 觸發但時機不符 → 不入列
-		{InstanceID: 4, EffectID: 201, Stack: 1}, // 立即類型 → 不入列
-		{InstanceID: 5, EffectID: 999, Stack: 1}, // 查無編譯資料 → 略過
+	runtime.Effect = EffectList{
+		{instanceID: 1, effectID: 402, stack: 1}, // 觸發、時機符、RunOrder 10
+		{instanceID: 2, effectID: 403, stack: 1}, // 觸發、時機符、RunOrder 20（最先）
+		{instanceID: 3, effectID: 401, stack: 1}, // 觸發但時機不符 → 不入列
+		{instanceID: 4, effectID: 201, stack: 1}, // 立即類型 → 不入列
+		{instanceID: 5, effectID: 999, stack: 1}, // 查無編譯資料 → 略過
 	}
 	effect := map[int32]effectData{
 		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, RunOrder: 10, Trigger: record(402)},
@@ -47,11 +47,11 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 func (this *SuiteEffectTrigger) TestFireOne() {
 	count := 0
 	endRun := 0
-	guest := &Guest{InstanceID: 7}
+	guest := &Guest{instanceID: 7}
 
 	runtime := NewRuntime(0)
-	target := &Effect{InstanceID: 1, EffectID: 402, Stack: 2, Self: Self{Guest: guest}}
-	runtime.Effect = []*Effect{target}
+	target := &Effect{instanceID: 1, effectID: 402, stack: 2, self: NewRefGuest(guest)}
+	runtime.Effect = EffectList{target}
 	effect := map[int32]effectData{
 		402: {
 			Kind:         EffectTrigger,
@@ -59,7 +59,7 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 			TriggerAfter: TriggerAfterRemove,
 			Count:        this.expr("3"),
 			Trigger: func(eng *Engine) {
-				this.Equal(guest, eng.self.Guest) // self 綁定為該效果 self
+				this.Equal(guest, eng.self.GetGuest()) // self 綁定為該效果 self
 				count++
 			},
 			End: func(eng *Engine) { endRun++ },
@@ -76,8 +76,8 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 	// 觸發條件不成立 → 觸發命令不執行、效果不移除
 	blocked := 0
 	runtimeCond := NewRuntime(0)
-	effectCond := &Effect{InstanceID: 1, EffectID: 402, Stack: 1}
-	runtimeCond.Effect = []*Effect{effectCond}
+	effectCond := &Effect{instanceID: 1, effectID: 402, stack: 1}
+	runtimeCond.Effect = EffectList{effectCond}
 	engCond := this.engine(runtimeCond, map[int32]effectData{
 		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Cond: this.expr("morale > 5"), Trigger: func(eng *Engine) { blocked++ }},
 	}) // morale 0 → 條件假
@@ -87,8 +87,8 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 
 	// 觸發次數 = 0 → 該效果中止:即使觸發後行為為移除,也不執行、不移除
 	runtimeStop := NewRuntime(0)
-	effectStop := &Effect{InstanceID: 1, EffectID: 402, Stack: 1}
-	runtimeStop.Effect = []*Effect{effectStop}
+	effectStop := &Effect{instanceID: 1, effectID: 402, stack: 1}
+	runtimeStop.Effect = EffectList{effectStop}
 	engStop := this.engine(runtimeStop, map[int32]effectData{
 		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, TriggerAfter: TriggerAfterRemove, Count: this.expr("0"), Trigger: func(eng *Engine) { blocked++ }},
 	})
@@ -102,10 +102,10 @@ func (this *SuiteEffectTrigger) TestCondPass() {
 
 	this.True(condPass(eng, nil)) // 空欄 → 恆成立
 
-	eng.runtime.Game.Morale = NewValue(10, 0)
+	eng.runtime.Game.morale = NewValue(10, 0)
 	this.True(condPass(eng, this.expr("morale > 5"))) // 真
 
-	eng.runtime.Game.Morale = NewValue(3, 0)
+	eng.runtime.Game.morale = NewValue(3, 0)
 	this.False(condPass(eng, this.expr("morale > 5"))) // 假
 
 	this.False(condPass(eng, this.expr("self.calm"))) // self 未綁 → 評估失敗 → 不成立

@@ -31,22 +31,22 @@ func (this *SuiteCommand) TestExecOperatePhaseJump() {
 	eng := this.engine(runtime)
 
 	eng.ExecOperate("phaseJump", "none", nil, this.arg("'玩家行動'"))
-	this.Equal(PhasePlayerAction, runtime.Game.NextPhase) // 合法跳轉值 → 設定
+	this.Equal(PhasePlayerAction, runtime.Game.GetNextPhase()) // 合法跳轉值 → 設定
 
-	runtime.Game.NextPhase = PhaseNone
+	runtime.Game.nextPhase = PhaseNone
 	eng.ExecOperate("phaseJump", "none", nil, this.arg("'營業開始'")) // 非跳轉合法值 → no-op
-	this.Equal(PhaseNone, runtime.Game.NextPhase)
+	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
 
 	eng.ExecOperate("phaseJump", "none", nil, this.arg("5")) // 非字串 → no-op
-	this.Equal(PhaseNone, runtime.Game.NextPhase)
+	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
 
 	eng.ExecOperate("phaseJump", "none", nil, nil) // 缺參數 → no-op
-	this.Equal(PhaseNone, runtime.Game.NextPhase)
+	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
 }
 
 func (this *SuiteCommand) TestExecOperateDeckShuffle() {
 	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{InstanceID: 1}, {InstanceID: 2}, {InstanceID: 3}}
+	runtime.Deck = []*Card{{instanceID: 1}, {instanceID: 2}, {instanceID: 3}}
 	eng := this.engine(runtime)
 
 	eng.ExecOperate("deckShuffle", "none", nil, nil)
@@ -55,7 +55,7 @@ func (this *SuiteCommand) TestExecOperateDeckShuffle() {
 
 func (this *SuiteCommand) TestExecOperateNoop() {
 	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{InstanceID: 1}}
+	runtime.Deck = []*Card{{instanceID: 1}}
 	eng := this.engine(runtime)
 
 	eng.ExecOperate("nope", "none", nil, nil)                         // 未知命令 → no-op
@@ -63,7 +63,7 @@ func (this *SuiteCommand) TestExecOperateNoop() {
 	eng.ExecOperate("deckShuffle", "deckTop", this.arg("1 / 0"), nil) // 命令對象參數評估失敗 → 整動作 no-op
 	eng.ExecOperate("phaseJump", "none", nil, this.arg("1 / 0"))      // 其餘參數評估失敗 → 整動作 no-op
 
-	this.Equal(PhaseNone, runtime.Game.NextPhase) // 全程未變更狀態
+	this.Equal(PhaseNone, runtime.Game.GetNextPhase()) // 全程未變更狀態
 	this.Len(runtime.Deck, 1)
 }
 

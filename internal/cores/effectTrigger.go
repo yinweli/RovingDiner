@@ -10,7 +10,7 @@ func fireTrigger(eng *Engine, timing TriggerKind) {
 	fire := []*Effect{}
 
 	for _, itor := range eng.runtime.Effect {
-		meta, ok := eng.effect[itor.EffectID]
+		meta, ok := eng.effect[itor.GetEffectID()]
 
 		if ok == false {
 			continue // 查無編譯資料（防禦;正常實例必有對應效果）→ 略過
@@ -30,10 +30,11 @@ func fireTrigger(eng *Engine, timing TriggerKind) {
 
 // fireOne 處理觸發列表中的單一效果:綁定 self → 觸發條件閘門 → 觸發次數（§十二）→ 連續執行觸發命令 → 觸發後行為 == 移除則執行結束命令並出佇列。
 func fireOne(eng *Engine, effect *Effect) {
-	meta := eng.effect[effect.EffectID] // fireTrigger 已確認存在
+	meta := eng.effect[effect.GetEffectID()] // fireTrigger 已確認存在
 
 	prev := eng.self
-	eng.self = &effect.Self // self / selfSame / selfNear 取效果建立時固定值
+	self := effect.GetSelf()
+	eng.self = &self // self / selfSame / selfNear 取效果建立時固定值（self 建立後不變,區域拷貝等價）
 
 	defer func() { eng.self = prev }() // 結算重入時逐層 save / restore
 
@@ -47,11 +48,11 @@ func fireOne(eng *Engine, effect *Effect) {
 		return // 觸發次數 <= 0 / 失敗 → 該效果中止（不觸發、不移除、留佇列）
 	} // if
 
-	runEffectCommand(eng, meta.Trigger, effect.Stack*count) // 重複（堆疊層數 × M）次
+	runEffectCommand(eng, meta.Trigger, effect.GetStack()*count) // 重複（堆疊層數 × M）次
 
 	if meta.TriggerAfter == TriggerAfterRemove {
-		runEffectCommand(eng, meta.End, effect.Stack) // 重複 堆疊層數 次
-		effectRemove(eng, effect)
+		runEffectCommand(eng, meta.End, effect.GetStack()) // 重複 堆疊層數 次
+		eng.runtime.Effect.Remove(effect.GetInstanceID())
 	} // if
 }
 
