@@ -173,6 +173,37 @@ func (this *SuiteValue) TestValueApply() {
 	this.False(v.Apply(AssignKind(99), 0)) // 未知賦值符 → default no-op
 }
 
+// TestValueApplyLockOnly 驗證 ApplyLockOnly 純鎖屬性派發:僅 @ # 生效、帶值賦值 no-op。
+func (this *SuiteValue) TestValueApplyLockOnly() {
+	v := NewValue(0, 0)
+
+	this.True(v.ApplyLockOnly(AssignLock)) // @ → lock++
+	this.Equal(int32(1), v.GetLock())
+
+	this.True(v.ApplyLockOnly(AssignUnlock)) // # → lock--
+	this.Equal(int32(0), v.GetLock())
+
+	this.False(v.ApplyLockOnly(AssignUnlock)) // 對 0 計數 → no-op
+
+	this.False(v.ApplyLockOnly(AssignSet)) // 帶值賦值不適用 → no-op
+	this.Equal(int32(0), v.GetValue())
+}
+
+// TestValueApplyValueOnly 驗證 ApplyValueOnly 寫屬性派發:僅帶值賦值生效、@ # no-op。
+func (this *SuiteValue) TestValueApplyValueOnly() {
+	v := NewValue(4, 0)
+
+	this.True(v.ApplyValueOnly(AssignAdd, 2)) // += → 6
+	this.Equal(int32(6), v.GetValue())
+
+	this.False(v.ApplyValueOnly(AssignLock, 0)) // @ 不適用 → no-op
+	this.False(v.ApplyValueOnly(AssignUnlock, 0))
+	this.Equal(int32(0), v.GetLock())
+
+	this.False(v.ApplyValueOnly(AssignDiv, 0)) // 除零 → no-op
+	this.Equal(int32(6), v.GetValue())
+}
+
 // TestValueClamp 驗證 Clamp 夾下限。
 func (this *SuiteValue) TestValueClamp() {
 	low := NewValue(-2, 0)

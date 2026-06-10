@@ -34,7 +34,7 @@ func (this *SuitePrepare) TestPrepareEffect() {
 			return nil, errors.New("compile failed")
 		} // if
 
-		return func(*Engine) {}, nil
+		return func(*Game) {}, nil
 	}
 
 	data := &sheeter.Sheeter{}

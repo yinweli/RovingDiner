@@ -10,9 +10,9 @@ func HasCommand(name string) bool {
 	return ok
 }
 
-// commandFunc 操作命令詞條的執行行為:以 Engine 為 context、target 為已解析命令對象(身分集)、arg 為其餘已求值參數。
+// commandFunc 操作命令詞條的執行行為:以 Game 為 context、target 為已解析命令對象(身分集)、arg 為其餘已求值參數。
 // verb 對集合逐元素處理、型別 / 位置不符該項 no-op,不回報錯誤(整動作 no-op 由 ExecOperate 在求值階段先擋)。
-type commandFunc func(eng *Engine, target []InstanceID, arg []exprs.Value)
+type commandFunc func(game *Game, target []InstanceID, arg []exprs.Value)
 
 // command 操作命令詞彙表(名稱 → 執行行為);對應【營業規格書 | 二十五、操作命令清單】。
 // 每一詞條對應一個獨立的 command* 具名函式(比照讀寫 / 命令對象詞彙表);詞條依類別分檔
@@ -87,7 +87,7 @@ var command = map[string]commandFunc{
 
 // commandPhaseJump 設下一階段(【營業規格書 | 二十五、操作命令清單 | phaseJump】);
 // 階段名稱 ∈ {玩家行動, 顧客行動, 回合結束}(PhaseJumpLegal),不在此集合 / 非字串 → no-op。命令對象固定 none、不使用 target。
-func commandPhaseJump(eng *Engine, target []InstanceID, arg []exprs.Value) {
+func commandPhaseJump(game *Game, target []InstanceID, arg []exprs.Value) {
 	if len(arg) < 1 || arg[0].IsText() == false {
 		return
 	} // if
@@ -98,10 +98,10 @@ func commandPhaseJump(eng *Engine, target []InstanceID, arg []exprs.Value) {
 		return
 	} // if
 
-	eng.runtime.Game.SetNextPhase(phase)
+	game.SetNextPhase(phase)
 }
 
 // commandDeckShuffle 將抽牌牌堆隨機洗牌(【營業規格書 | 二十五、操作命令清單 | deckShuffle】);命令對象固定 none、無參數。
-func commandDeckShuffle(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	shuffleCard(eng, eng.runtime.Deck)
+func commandDeckShuffle(game *Game, target []InstanceID, arg []exprs.Value) {
+	shuffleCard(game, game.Deck)
 }

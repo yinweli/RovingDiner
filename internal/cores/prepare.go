@@ -44,7 +44,7 @@ func prepareAward(data *sheeter.Sheeter) map[int32]awardData {
 	return result
 }
 
-// effectData 效果靜態資料的預編譯形（【營業實作規格書 | 三、套件結構】effect 命令解耦）;cores.prepareEffect 一趟產出、NewEngine 內部建、cores 唯讀消費，為 runtime 對效果靜態欄的唯一視圖。
+// effectData 效果靜態資料的預編譯形（【營業實作規格書 | 三、套件結構】effect 命令解耦）;cores.prepareEffect 一趟產出、NewGame 內部建、cores 唯讀消費，為 runtime 對效果靜態欄的唯一視圖。
 // 堆疊上限 / 堆疊時間 / 目標 / 立即·啟動命令 隨 M12.1–M12.3 各自讀者擴入。
 type effectData struct {
 	Kind         EffectKind    // 效果類型（篩選 觸發）

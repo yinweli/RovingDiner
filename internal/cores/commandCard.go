@@ -8,20 +8,20 @@ import (
 // 對命令對象的每張卡牌實例直接改其欄位（非卡牌實例該項 no-op；不限容器位置）。
 // cardCost* 重用 writeValue（出牌費用為「寫鎖」屬性：尊重鎖定計數、捨入、夾下限 0），與 self.cost 寫路徑一致。
 
-func commandCardCostAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	cardCost(eng, target, AssignAdd, arg)
+func commandCardCostAdd(game *Game, target []InstanceID, arg []exprs.Value) {
+	cardCost(game, target, AssignAdd, arg)
 }
 
-func commandCardCostMul(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	cardCost(eng, target, AssignMul, arg)
+func commandCardCostMul(game *Game, target []InstanceID, arg []exprs.Value) {
+	cardCost(game, target, AssignMul, arg)
 }
 
-func commandCardCostSet(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	cardCost(eng, target, AssignSet, arg)
+func commandCardCostSet(game *Game, target []InstanceID, arg []exprs.Value) {
+	cardCost(game, target, AssignSet, arg)
 }
 
 // cardCost 對命令對象每張卡牌套用賦值符於出牌費用（寫鎖 / 捨入 / 夾下限 0）；N 缺漏 / 非數值整動作 no-op。
-func cardCost(eng *Engine, target []InstanceID, op AssignKind, arg []exprs.Value) {
+func cardCost(game *Game, target []InstanceID, op AssignKind, arg []exprs.Value) {
 	n, ok := argNum(arg)
 
 	if ok == false {
@@ -29,7 +29,7 @@ func cardCost(eng *Engine, target []InstanceID, op AssignKind, arg []exprs.Value
 	} // if
 
 	for _, itor := range target {
-		card, _, found := eng.locateCard(itor)
+		card, _, found := game.locateCard(itor)
 
 		if found == false {
 			continue // 非卡牌實例 → 該項 no-op
@@ -40,7 +40,7 @@ func cardCost(eng *Engine, target []InstanceID, op AssignKind, arg []exprs.Value
 	} // for
 }
 
-func commandCardEffectAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
+func commandCardEffectAdd(game *Game, target []InstanceID, arg []exprs.Value) {
 	effectID, ok := argInt(arg)
 
 	if ok == false {
@@ -48,7 +48,7 @@ func commandCardEffectAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // if
 
 	for _, itor := range target {
-		card, _, found := eng.locateCard(itor)
+		card, _, found := game.locateCard(itor)
 
 		if found == false {
 			continue
@@ -58,7 +58,7 @@ func commandCardEffectAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // for
 }
 
-func commandCardEffectDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
+func commandCardEffectDel(game *Game, target []InstanceID, arg []exprs.Value) {
 	effectID, ok := argInt(arg)
 
 	if ok == false {
@@ -66,7 +66,7 @@ func commandCardEffectDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // if
 
 	for _, itor := range target {
-		card, _, found := eng.locateCard(itor)
+		card, _, found := game.locateCard(itor)
 
 		if found == false {
 			continue
@@ -76,7 +76,7 @@ func commandCardEffectDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // for
 }
 
-func commandCardEffectDelAll(eng *Engine, target []InstanceID, arg []exprs.Value) {
+func commandCardEffectDelAll(game *Game, target []InstanceID, arg []exprs.Value) {
 	effectID, ok := argInt(arg)
 
 	if ok == false {
@@ -84,7 +84,7 @@ func commandCardEffectDelAll(eng *Engine, target []InstanceID, arg []exprs.Value
 	} // if
 
 	for _, itor := range target {
-		card, _, found := eng.locateCard(itor)
+		card, _, found := game.locateCard(itor)
 
 		if found == false {
 			continue

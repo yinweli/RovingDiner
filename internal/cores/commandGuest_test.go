@@ -18,92 +18,88 @@ type SuiteCommandGuest struct {
 }
 
 func (this *SuiteCommandGuest) TestEffectImmune() {
-	runtime := NewRuntime(0)
+	game := NewGame(0, nil, nil, nil, nil)
 	guest := &Guest{instanceID: 11, seatID: 1}
-	runtime.Seat[1] = guest
-	eng := this.engine(runtime)
+	game.Seat[1] = guest
+	injectPort(game)
 
-	commandEffectImmuneAdd(eng, []InstanceID{11}, nums(5, 7, 5)) // nil 表初始化;群組 5 +2、群組 7 +1
+	commandEffectImmuneAdd(game, []InstanceID{11}, nums(5, 7, 5)) // nil 表初始化;群組 5 +2、群組 7 +1
 	this.Equal(int32(2), guest.GetEffectImmune().Get(5))
 	this.Equal(int32(1), guest.GetEffectImmune().Get(7))
 
-	commandEffectImmuneAdd(eng, []InstanceID{11}, nums(7)) // 表已存在(非 nil 分支);群組 7 → 2
+	commandEffectImmuneAdd(game, []InstanceID{11}, nums(7)) // 表已存在(非 nil 分支);群組 7 → 2
 	this.Equal(int32(2), guest.GetEffectImmune().Get(7))
 
-	commandEffectImmuneAdd(eng, []InstanceID{11}, []exprs.Value{exprs.NewText("x")}) // 非數值 → 略過
+	commandEffectImmuneAdd(game, []InstanceID{11}, []exprs.Value{exprs.NewText("x")}) // 非數值 → 略過
 	this.Equal(int32(2), guest.GetEffectImmune().Get(5))
 
-	commandEffectImmuneDel(eng, []InstanceID{11}, nums(5, 5, 5)) // 群組 5：2 → 1 → 0 → 夾 0
+	commandEffectImmuneDel(game, []InstanceID{11}, nums(5, 5, 5)) // 群組 5：2 → 1 → 0 → 夾 0
 	this.Equal(int32(0), guest.GetEffectImmune().Get(5))
 
-	commandEffectImmuneDel(eng, []InstanceID{11}, []exprs.Value{exprs.NewText("x"), exprs.NewNum(7)}) // 非數值略過、群組 7 -1
+	commandEffectImmuneDel(game, []InstanceID{11}, []exprs.Value{exprs.NewText("x"), exprs.NewNum(7)}) // 非數值略過、群組 7 -1
 	this.Equal(int32(1), guest.GetEffectImmune().Get(7))
 
-	commandEffectImmuneAdd(eng, []InstanceID{99}, nums(5)) // 非顧客實例 → no-op（Add）
-	commandEffectImmuneDel(eng, []InstanceID{99}, nums(7)) // 非顧客實例 → no-op（Del）
+	commandEffectImmuneAdd(game, []InstanceID{99}, nums(5)) // 非顧客實例 → no-op（Add）
+	commandEffectImmuneDel(game, []InstanceID{99}, nums(7)) // 非顧客實例 → no-op（Del）
 	this.Equal(int32(0), guest.GetEffectImmune().Get(5))
 	this.Equal(int32(1), guest.GetEffectImmune().Get(7))
 }
 
 func (this *SuiteCommandGuest) TestSkillImmune() {
-	runtime := NewRuntime(0)
+	game := NewGame(0, nil, nil, nil, nil)
 	guest := &Guest{instanceID: 11, seatID: 1}
-	runtime.Seat[1] = guest
-	eng := this.engine(runtime)
+	game.Seat[1] = guest
+	injectPort(game)
 
-	commandSkillImmuneAdd(eng, []InstanceID{11}, nums(9))
+	commandSkillImmuneAdd(game, []InstanceID{11}, nums(9))
 	this.Equal(int32(1), guest.GetSkillImmune().Get(9))
 
-	commandSkillImmuneDel(eng, []InstanceID{11}, nums(9))
+	commandSkillImmuneDel(game, []InstanceID{11}, nums(9))
 	this.Equal(int32(0), guest.GetSkillImmune().Get(9))
 }
 
 func (this *SuiteCommandGuest) TestTaskAdd() {
-	runtime := NewRuntime(0)
+	game := NewGame(0, nil, nil, nil, nil)
 	guest := &Guest{instanceID: 11, seatID: 1}
-	runtime.Seat[1] = guest
-	eng := this.engine(runtime)
+	game.Seat[1] = guest
+	injectPort(game)
 
-	commandTaskAdd(eng, []InstanceID{11}, nums(1, 2005)) // 行動類型 1(耐心)、技能 2005
-	this.Require().Len(runtime.Action, 1)
-	this.Equal(guest, runtime.Action[0].GetGuest())
-	this.Equal(TaskCalm, runtime.Action[0].GetKind())
-	this.Equal(int32(2005), runtime.Action[0].GetSkillID())
+	commandTaskAdd(game, []InstanceID{11}, nums(1, 2005)) // 行動類型 1(耐心)、技能 2005
+	this.Require().Len(game.Action, 1)
+	this.Equal(guest, game.Action[0].GetGuest())
+	this.Equal(TaskCalm, game.Action[0].GetKind())
+	this.Equal(int32(2005), game.Action[0].GetSkillID())
 
-	commandTaskAdd(eng, []InstanceID{11}, nums(1)) // 缺技能編號 → no-op
-	this.Len(runtime.Action, 1)
+	commandTaskAdd(game, []InstanceID{11}, nums(1)) // 缺技能編號 → no-op
+	this.Len(game.Action, 1)
 
-	commandTaskAdd(eng, []InstanceID{11}, nil) // 缺行動類型 → no-op
-	this.Len(runtime.Action, 1)
+	commandTaskAdd(game, []InstanceID{11}, nil) // 缺行動類型 → no-op
+	this.Len(game.Action, 1)
 
-	commandTaskAdd(eng, []InstanceID{99}, nums(0, 1)) // 非顧客實例 → no-op
-	this.Len(runtime.Action, 1)
+	commandTaskAdd(game, []InstanceID{99}, nums(0, 1)) // 非顧客實例 → no-op
+	this.Len(game.Action, 1)
 }
 
 func (this *SuiteCommandGuest) TestLocateGuestContainers() {
-	runtime := NewRuntime(0)
-	runtime.Seat[1] = &Guest{instanceID: 1, seatID: 1}
-	runtime.Wait = []*Guest{{instanceID: 2}}
-	runtime.Roam = []*Guest{{instanceID: 3}}
-	runtime.Cardify = []*Guest{{instanceID: 4}}
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	game.Seat[1] = &Guest{instanceID: 1, seatID: 1}
+	game.Wait = []*Guest{{instanceID: 2}}
+	game.Roam = []*Guest{{instanceID: 3}}
+	game.Cardify = []*Guest{{instanceID: 4}}
+	injectPort(game)
 
 	for id, want := range map[InstanceID]ContainerKind{
 		1: ContainerSeat, 2: ContainerWait, 3: ContainerRoam, 4: ContainerCardify,
 	} {
-		guest, where, ok := eng.locateGuest(id)
+		guest, where, ok := game.locateGuest(id)
 		this.Require().True(ok)
 		this.Equal(id, guest.GetInstanceID())
 		this.Equal(want, where)
 	} // for
 
-	_, where, ok := eng.locateGuest(99) // 不存在
+	_, where, ok := game.locateGuest(99) // 不存在
 	this.False(ok)
 	this.Equal(ContainerNone, where)
 }
 
 // === 測試輔助(置尾) ===
-
-func (this *SuiteCommandGuest) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
-}

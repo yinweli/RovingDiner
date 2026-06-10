@@ -12,7 +12,7 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的組件與無狀態輔助:免疫計數 / 門檻集合 / 參數取值 / 分組計數與比較 / 引用鎖定取值 / 容器掃描與歸屬 / 技能靜態查詢。
+// SuiteHelp 驗證 help.go 的組件與無狀態輔助:免疫計數 / 門檻集合 / 編號列表 / 累積計數 / 參數取值 / 分組計數與比較 / 引用鎖定取值。
 type SuiteHelp struct {
 	suite.Suite
 }
@@ -294,16 +294,6 @@ func (this *SuiteHelp) TestGroupTotal() {
 	this.False(ok)
 }
 
-func (this *SuiteHelp) TestCountByGroup() {
-	data := buildSheet()
-	card := []*Card{{cardID: 101}, {cardID: 101}, {cardID: 102}, {cardID: 999}} // 999 無靜態資料
-
-	this.Equal(int32(4), countByGroup(card, 0, data)) // group==0 全量(不過濾)
-	this.Equal(int32(2), countByGroup(card, 1, data)) // 群組 1 = 卡 101 兩張
-	this.Equal(int32(1), countByGroup(card, 2, data)) // 群組 2 = 卡 102 一張
-	this.Equal(int32(0), countByGroup(card, 9, data)) // 無此群組(含資料缺失卡牌)
-}
-
 func (this *SuiteHelp) TestCompareOp() {
 	for _, itor := range []struct {
 		op   string
@@ -348,31 +338,4 @@ func (this *SuiteHelp) TestGuestLock() {
 
 	_, ok = guestLock(NewRefCard(&Card{}), pick) // 非顧客引用 → 失敗
 	this.False(ok)
-}
-
-func (this *SuiteHelp) TestInContainer() {
-	card := &Card{instanceID: 5}
-	container := []*Card{{instanceID: 1}, {instanceID: 5}}
-
-	this.True(inContainer(card, container))                  // 同實例編號(不同指標)
-	this.False(inContainer(&Card{instanceID: 9}, container)) // 不在容器
-	this.False(inContainer(card, nil))                       // 空容器
-}
-
-func (this *SuiteHelp) TestOccupiedAmong() {
-	runtime := NewRuntime(0)
-	runtime.Seat[1] = &Guest{}
-	runtime.Seat[3] = &Guest{}
-	eng := &Engine{runtime: runtime}
-
-	this.Equal(int32(2), occupiedAmong(eng, []int32{1, 2, 3})) // 座 1、3 占用,座 2 空
-	this.Equal(int32(0), occupiedAmong(eng, []int32{2, 4}))    // 皆空
-	this.Equal(int32(0), occupiedAmong(eng, nil))              // 空列表
-}
-
-func (this *SuiteHelp) TestCardSkillGroup() {
-	eng := &Engine{data: buildSheet()}
-	this.Equal(int32(3), cardSkillGroup(eng, 103)) // 卡 103 → 技能 301 → 群組 3
-	this.Equal(int32(0), cardSkillGroup(eng, 101)) // 卡 101 無技能（SkillID 0）→ 0
-	this.Equal(int32(0), cardSkillGroup(eng, 999)) // 卡牌資料不存在 → 0
 }

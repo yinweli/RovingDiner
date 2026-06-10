@@ -17,10 +17,10 @@ type SuiteCard struct {
 
 // TestNewCard 驗證 NewCard 載入卡牌資料初始值、bool 欄轉鎖、SkillID 取技能效果列表;資料不存在回 nil。
 func (this *SuiteCard) TestNewCard() {
-	runtime := NewRuntime(0)
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	injectPort(game)
 
-	card := NewCard(eng, 103) // 卡 103：Cost 2、Keep / Seal bool → 鎖、SkillID 301 → 效果列表
+	card := NewCard(game, 103) // 卡 103：Cost 2、Keep / Seal bool → 鎖、SkillID 301 → 效果列表
 	this.Require().NotNil(card)
 	this.Equal(int32(103), card.GetCardID())
 	this.Equal(int32(2), card.GetCost().GetValue())
@@ -30,22 +30,22 @@ func (this *SuiteCard) TestNewCard() {
 	this.Equal([]int32{401, 402}, card.GetEffectID().List()) // SkillID 301 → Skill.EffectID
 	this.NotEqual(InstanceID(0), card.GetInstanceID())       // 配發實例編號
 
-	this.Nil(NewCard(eng, 999)) // 卡牌資料不存在 → nil
+	this.Nil(NewCard(game, 999)) // 卡牌資料不存在 → nil
 }
 
 // TestCopyCard 驗證 CopyCard 淺複製載初始值、深複製複製 source 當前狀態與效果列表;實例編號皆重生。
 func (this *SuiteCard) TestCopyCard() {
-	runtime := NewRuntime(0)
-	source := &Card{instanceID: runtime.NextID(), cardID: 103, cost: NewValue(9, 0), effectID: NewIDList(777)}
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	source := &Card{instanceID: game.NextID(), cardID: 103, cost: NewValue(9, 0), effectID: NewIDList(777)}
+	injectPort(game)
 
-	shallow := CopyCard(eng, source, false) // 淺複製：載卡牌資料初始值（非 source 當前狀態）
+	shallow := CopyCard(game, source, false) // 淺複製：載卡牌資料初始值（非 source 當前狀態）
 	this.Require().NotNil(shallow)
 	this.Equal(int32(2), shallow.GetCost().GetValue())          // 初始費用 2（非 source 的 9）
 	this.Equal([]int32{401, 402}, shallow.GetEffectID().List()) // 技能效果列表
 	this.NotEqual(source.GetInstanceID(), shallow.GetInstanceID())
 
-	deep := CopyCard(eng, source, true) // 深複製：複製 source 當前狀態 + 效果列表
+	deep := CopyCard(game, source, true) // 深複製：複製 source 當前狀態 + 效果列表
 	this.Require().NotNil(deep)
 	this.Equal(int32(9), deep.GetCost().GetValue())             // source 當前費用
 	this.Equal([]int32{777}, deep.GetEffectID().List())         // source 效果列表深複製
@@ -143,12 +143,12 @@ func (this *SuiteCard) TestCardCardifyFree() {
 
 // TestCardMorph 驗證 Morph 變身重設:重配實例編號、換編號、僅載四欄;查無資料回 false 不動。
 func (this *SuiteCard) TestCardMorph() {
-	runtime := NewRuntime(0)
-	eng := this.engine(runtime)
-	card := &Card{instanceID: runtime.NextID(), cardID: 102, cost: NewValue(9, 0), extraRunMin: NewValue(7, 0)}
+	game := NewGame(0, nil, nil, nil, nil)
+	injectPort(game)
+	card := &Card{instanceID: game.NextID(), cardID: 102, cost: NewValue(9, 0), extraRunMin: NewValue(7, 0)}
 	old := card.GetInstanceID()
 
-	this.True(card.Morph(eng, 103))                          // 卡 103：Cost 2、Keep / Seal 鎖、效果 401, 402
+	this.True(card.Morph(game, 103))                         // 卡 103：Cost 2、Keep / Seal 鎖、效果 401, 402
 	this.NotEqual(old, card.GetInstanceID())                 // 重分配實例編號
 	this.Equal(int32(103), card.GetCardID())                 // 換卡牌編號
 	this.Equal(int32(2), card.GetCost().GetValue())          // 載新卡費用
@@ -158,7 +158,7 @@ func (this *SuiteCard) TestCardMorph() {
 	this.Equal(int32(7), card.GetExtraRunMin().GetValue())   // 額外發動次數不在重載四欄 → 保留
 
 	id := card.GetInstanceID()
-	this.False(card.Morph(eng, 999)) // 查無卡牌資料 → false 不動
+	this.False(card.Morph(game, 999)) // 查無卡牌資料 → false 不動
 	this.Equal(id, card.GetInstanceID())
 	this.Equal(int32(103), card.GetCardID())
 }
@@ -198,8 +198,26 @@ func (this *SuiteCard) TestCardListFind() {
 	this.Nil(list.Find(InstanceID(9))) // 未命中 → nil
 }
 
-// === 測試輔助（置尾） ===
+// TestCardListHas 驗證 Has 依實例編號回報牌堆歸屬。
+func (this *SuiteCard) TestCardListHas() {
+	list := CardList{{instanceID: 1}, {instanceID: 5}}
 
-func (this *SuiteCard) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
+	this.True(list.Has(InstanceID(5)))
+	this.False(list.Has(InstanceID(9))) // 不在牌堆
+
+	empty := CardList{}
+	this.False(empty.Has(InstanceID(5))) // 空牌堆
 }
+
+// TestCardListCountGroup 驗證 CountGroup 分組計數:group == 0 全量、資料缺失卡牌不計入任何群組。
+func (this *SuiteCard) TestCardListCountGroup() {
+	data := buildSheet()
+	list := CardList{{cardID: 101}, {cardID: 101}, {cardID: 102}, {cardID: 999}} // 999 無靜態資料
+
+	this.Equal(int32(4), list.CountGroup(0, data)) // group==0 全量(不過濾)
+	this.Equal(int32(2), list.CountGroup(1, data)) // 群組 1 = 卡 101 兩張
+	this.Equal(int32(1), list.CountGroup(2, data)) // 群組 2 = 卡 102 一張
+	this.Equal(int32(0), list.CountGroup(9, data)) // 無此群組(含資料缺失卡牌)
+}
+
+// === 測試輔助（置尾） ===

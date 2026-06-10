@@ -20,11 +20,11 @@ type SuiteEffectTrigger struct {
 func (this *SuiteEffectTrigger) TestFireTrigger() {
 	fired := []int32{}
 	record := func(id int32) EffectCommand {
-		return func(eng *Engine) { fired = append(fired, id) }
+		return func(game *Game) { fired = append(fired, id) }
 	}
 
-	runtime := NewRuntime(0)
-	runtime.Effect = EffectList{
+	game := NewGame(0, nil, nil, nil, nil)
+	game.Effect = EffectList{
 		{instanceID: 1, effectID: 402, stack: 1}, // 觸發、時機符、RunOrder 10
 		{instanceID: 2, effectID: 403, stack: 1}, // 觸發、時機符、RunOrder 20（最先）
 		{instanceID: 3, effectID: 401, stack: 1}, // 觸發但時機不符 → 不入列
@@ -37,11 +37,12 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 		401: {Kind: EffectTrigger, TriggerKind: TriggerCardDraw, Trigger: record(401)},
 		201: {Kind: EffectImmed, TriggerKind: TriggerCardPlay, Trigger: record(201)},
 	}
-	eng := this.engine(runtime, effect)
+	injectPort(game)
+	game.effectData = effect // 白箱覆寫:測試用自訂編譯效果
 
-	fireTrigger(eng, TriggerCardPlay)
+	fireTrigger(game, TriggerCardPlay)
 	this.Equal([]int32{403, 402}, fired) // 作用順序 20 先於 10;時機 / 類型不符與查無資料皆未觸發
-	this.Len(runtime.Effect, 5)          // 觸發後行為預設保留 → 佇列不變
+	this.Len(game.Effect, 5)             // 觸發後行為預設保留 → 佇列不變
 }
 
 func (this *SuiteEffectTrigger) TestFireOne() {
@@ -49,116 +50,116 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 	endRun := 0
 	guest := &Guest{instanceID: 7}
 
-	runtime := NewRuntime(0)
+	game := NewGame(0, nil, nil, nil, nil)
 	target := &Effect{instanceID: 1, effectID: 402, stack: 2, self: NewRefGuest(guest)}
-	runtime.Effect = EffectList{target}
+	game.Effect = EffectList{target}
 	effect := map[int32]effectData{
 		402: {
 			Kind:         EffectTrigger,
 			TriggerKind:  TriggerCardPlay,
 			TriggerAfter: TriggerAfterRemove,
 			Count:        this.expr("3"),
-			Trigger: func(eng *Engine) {
-				this.Equal(guest, eng.self.GetGuest()) // self 綁定為該效果 self
+			Trigger: func(game *Game) {
+				this.Equal(guest, game.self.GetGuest()) // self 綁定為該效果 self
 				count++
 			},
-			End: func(eng *Engine) { endRun++ },
+			End: func(game *Game) { endRun++ },
 		},
 	}
-	eng := this.engine(runtime, effect)
+	this.inject(game, effect)
 
-	fireOne(eng, target)
-	this.Equal(6, count)       // 堆疊層數 2 × 觸發次數 3
-	this.Equal(2, endRun)      // 結束命令 重複 堆疊層數 2 次
-	this.Empty(runtime.Effect) // 觸發後移除 → 出佇列
-	this.Nil(eng.self)         // self 還原（原 nil）
+	fireOne(game, target)
+	this.Equal(6, count)    // 堆疊層數 2 × 觸發次數 3
+	this.Equal(2, endRun)   // 結束命令 重複 堆疊層數 2 次
+	this.Empty(game.Effect) // 觸發後移除 → 出佇列
+	this.Nil(game.self)     // self 還原（原 nil）
 
 	// 觸發條件不成立 → 觸發命令不執行、效果不移除
 	blocked := 0
-	runtimeCond := NewRuntime(0)
+	gameCond := NewGame(0, nil, nil, nil, nil)
 	effectCond := &Effect{instanceID: 1, effectID: 402, stack: 1}
-	runtimeCond.Effect = EffectList{effectCond}
-	engCond := this.engine(runtimeCond, map[int32]effectData{
-		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Cond: this.expr("morale > 5"), Trigger: func(eng *Engine) { blocked++ }},
+	gameCond.Effect = EffectList{effectCond}
+	this.inject(gameCond, map[int32]effectData{
+		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, Cond: this.expr("morale > 5"), Trigger: func(game *Game) { blocked++ }},
 	}) // morale 0 → 條件假
-	fireOne(engCond, effectCond)
+	fireOne(gameCond, effectCond)
 	this.Equal(0, blocked)
-	this.Len(runtimeCond.Effect, 1)
+	this.Len(gameCond.Effect, 1)
 
 	// 觸發次數 = 0 → 該效果中止:即使觸發後行為為移除,也不執行、不移除
-	runtimeStop := NewRuntime(0)
+	gameStop := NewGame(0, nil, nil, nil, nil)
 	effectStop := &Effect{instanceID: 1, effectID: 402, stack: 1}
-	runtimeStop.Effect = EffectList{effectStop}
-	engStop := this.engine(runtimeStop, map[int32]effectData{
-		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, TriggerAfter: TriggerAfterRemove, Count: this.expr("0"), Trigger: func(eng *Engine) { blocked++ }},
+	gameStop.Effect = EffectList{effectStop}
+	this.inject(gameStop, map[int32]effectData{
+		402: {Kind: EffectTrigger, TriggerKind: TriggerCardPlay, TriggerAfter: TriggerAfterRemove, Count: this.expr("0"), Trigger: func(game *Game) { blocked++ }},
 	})
-	fireOne(engStop, effectStop)
+	fireOne(gameStop, effectStop)
 	this.Equal(0, blocked)
-	this.Len(runtimeStop.Effect, 1) // 中止先於移除 → 留佇列
+	this.Len(gameStop.Effect, 1) // 中止先於移除 → 留佇列
 }
 
 func (this *SuiteEffectTrigger) TestCondPass() {
-	eng := this.engine(NewRuntime(0), nil)
+	game := this.inject(NewGame(0, nil, nil, nil, nil), nil)
 
-	this.True(condPass(eng, nil)) // 空欄 → 恆成立
+	this.True(condPass(game, nil)) // 空欄 → 恆成立
 
-	eng.runtime.Game.morale = NewValue(10, 0)
-	this.True(condPass(eng, this.expr("morale > 5"))) // 真
+	game.morale = NewValue(10, 0)
+	this.True(condPass(game, this.expr("morale > 5"))) // 真
 
-	eng.runtime.Game.morale = NewValue(3, 0)
-	this.False(condPass(eng, this.expr("morale > 5"))) // 假
+	game.morale = NewValue(3, 0)
+	this.False(condPass(game, this.expr("morale > 5"))) // 假
 
-	this.False(condPass(eng, this.expr("self.calm"))) // self 未綁 → 評估失敗 → 不成立
-	this.False(condPass(eng, this.expr("'x'")))       // 非真值（text，Truthy ok=false）→ 不成立
+	this.False(condPass(game, this.expr("self.calm"))) // self 未綁 → 評估失敗 → 不成立
+	this.False(condPass(game, this.expr("'x'")))       // 非真值（text，Truthy ok=false）→ 不成立
 }
 
 func (this *SuiteEffectTrigger) TestTriggerCount() {
-	eng := this.engine(NewRuntime(0), nil)
+	game := this.inject(NewGame(0, nil, nil, nil, nil), nil)
 
-	n, ok := triggerCount(eng, nil) // 留空 → 1
+	n, ok := triggerCount(game, nil) // 留空 → 1
 	this.True(ok)
 	this.Equal(int32(1), n)
 
-	n, ok = triggerCount(eng, this.expr("2 + 1"))
+	n, ok = triggerCount(game, this.expr("2 + 1"))
 	this.True(ok)
 	this.Equal(int32(3), n)
 
-	_, ok = triggerCount(eng, this.expr("0")) // = 0 → 中止
+	_, ok = triggerCount(game, this.expr("0")) // = 0 → 中止
 	this.False(ok)
 
-	_, ok = triggerCount(eng, this.expr("3 - 5")) // < 0 → 中止
+	_, ok = triggerCount(game, this.expr("3 - 5")) // < 0 → 中止
 	this.False(ok)
 
-	_, ok = triggerCount(eng, this.expr("self.sate")) // 評估失敗 → 中止
+	_, ok = triggerCount(game, this.expr("self.sate")) // 評估失敗 → 中止
 	this.False(ok)
 
-	_, ok = triggerCount(eng, this.expr("'x'")) // 非數值 → 中止
+	_, ok = triggerCount(game, this.expr("'x'")) // 非數值 → 中止
 	this.False(ok)
 }
 
 func (this *SuiteEffectTrigger) TestRunEffectCommand() {
-	eng := this.engine(NewRuntime(0), nil)
+	game := this.inject(NewGame(0, nil, nil, nil, nil), nil)
 	count := 0
-	command := func(eng *Engine) { count++ }
+	command := func(game *Game) { count++ }
 
-	runEffectCommand(eng, command, 3)
+	runEffectCommand(game, command, 3)
 	this.Equal(3, count)
 
 	count = 0
-	runEffectCommand(eng, nil, 5) // nil 命令 → 整體略過
+	runEffectCommand(game, nil, 5) // nil 命令 → 整體略過
 	this.Equal(0, count)
 
-	runEffectCommand(eng, command, 0) // times <= 0 → 不執行
+	runEffectCommand(game, command, 0) // times <= 0 → 不執行
 	this.Equal(0, count)
 }
 
 // === 測試輔助（置尾） ===
 
-func (this *SuiteEffectTrigger) engine(runtime *Runtime, effect map[int32]effectData) *Engine {
-	eng := NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
-	eng.effect = effect // 白箱覆寫:測試用自訂編譯效果(不經 prepareEffect)
-
-	return eng
+// inject 注入測試替身(injectPort)並以自訂編譯效果覆寫衍生索引(不經 prepareEffect)。
+func (this *SuiteEffectTrigger) inject(game *Game, effect map[int32]effectData) *Game {
+	injectPort(game)
+	game.effectData = effect
+	return game
 }
 
 // expr 解析運算式字串為 *exprs.Expr;語法錯即測試失敗。供觸發條件 / 觸發次數構造。

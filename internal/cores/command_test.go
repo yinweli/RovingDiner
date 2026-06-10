@@ -27,52 +27,49 @@ func (this *SuiteCommand) TestCommandHas() {
 }
 
 func (this *SuiteCommand) TestExecOperatePhaseJump() {
-	runtime := NewRuntime(0)
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	injectPort(game)
 
-	eng.ExecOperate("phaseJump", "none", nil, this.arg("'玩家行動'"))
-	this.Equal(PhasePlayerAction, runtime.Game.GetNextPhase()) // 合法跳轉值 → 設定
+	game.ExecOperate("phaseJump", "none", nil, this.arg("'玩家行動'"))
+	this.Equal(PhasePlayerAction, game.GetNextPhase()) // 合法跳轉值 → 設定
 
-	runtime.Game.nextPhase = PhaseNone
-	eng.ExecOperate("phaseJump", "none", nil, this.arg("'營業開始'")) // 非跳轉合法值 → no-op
-	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
+	game.nextPhase = PhaseNone
+	game.ExecOperate("phaseJump", "none", nil, this.arg("'營業開始'")) // 非跳轉合法值 → no-op
+	this.Equal(PhaseNone, game.GetNextPhase())
 
-	eng.ExecOperate("phaseJump", "none", nil, this.arg("5")) // 非字串 → no-op
-	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
+	game.ExecOperate("phaseJump", "none", nil, this.arg("5")) // 非字串 → no-op
+	this.Equal(PhaseNone, game.GetNextPhase())
 
-	eng.ExecOperate("phaseJump", "none", nil, nil) // 缺參數 → no-op
-	this.Equal(PhaseNone, runtime.Game.GetNextPhase())
+	game.ExecOperate("phaseJump", "none", nil, nil) // 缺參數 → no-op
+	this.Equal(PhaseNone, game.GetNextPhase())
 }
 
 func (this *SuiteCommand) TestExecOperateDeckShuffle() {
-	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{instanceID: 1}, {instanceID: 2}, {instanceID: 3}}
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	game.Deck = []*Card{{instanceID: 1}, {instanceID: 2}, {instanceID: 3}}
+	injectPort(game)
 
-	eng.ExecOperate("deckShuffle", "none", nil, nil)
-	this.Len(runtime.Deck, 3) // 委派 Rander 洗牌(恆等替身:張數保留)
+	game.ExecOperate("deckShuffle", "none", nil, nil)
+	this.Len(game.Deck, 3) // 委派 Rander 洗牌(恆等替身:張數保留)
 }
 
 func (this *SuiteCommand) TestExecOperateNoop() {
-	runtime := NewRuntime(0)
-	runtime.Deck = []*Card{{instanceID: 1}}
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	game.Deck = []*Card{{instanceID: 1}}
+	injectPort(game)
 
-	eng.ExecOperate("nope", "none", nil, nil)                         // 未知命令 → no-op
-	eng.ExecOperate("phaseJump", "nope", nil, nil)                    // 未登錄命令對象 → no-op
-	eng.ExecOperate("deckShuffle", "deckTop", this.arg("1 / 0"), nil) // 命令對象參數評估失敗 → 整動作 no-op
-	eng.ExecOperate("phaseJump", "none", nil, this.arg("1 / 0"))      // 其餘參數評估失敗 → 整動作 no-op
+	game.ExecOperate("nope", "none", nil, nil)                         // 未知命令 → no-op
+	game.ExecOperate("phaseJump", "nope", nil, nil)                    // 未登錄命令對象 → no-op
+	game.ExecOperate("deckShuffle", "deckTop", this.arg("1 / 0"), nil) // 命令對象參數評估失敗 → 整動作 no-op
+	game.ExecOperate("phaseJump", "none", nil, this.arg("1 / 0"))      // 其餘參數評估失敗 → 整動作 no-op
 
-	this.Equal(PhaseNone, runtime.Game.GetNextPhase()) // 全程未變更狀態
-	this.Len(runtime.Deck, 1)
+	this.Equal(PhaseNone, game.GetNextPhase()) // 全程未變更狀態
+	this.Len(game.Deck, 1)
 }
 
 // === 測試輔助(置尾) ===
 
-// engine 組裝測試引擎:注入 runtime、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
-func (this *SuiteCommand) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
-}
+// engine 組裝測試引擎:注入 game、共用 buildSheet 靜態表、決定性 fake Operator / Rander。
 
 // arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數);解析失敗即測試失敗。
 func (this *SuiteCommand) arg(source ...string) (result []*exprs.Expr) {

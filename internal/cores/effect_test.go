@@ -15,14 +15,14 @@ type SuiteEffect struct {
 	suite.Suite
 }
 
-// TestNewEffect 驗證 NewEffect 建構效果實例、結束回合依作用回合（0 整場 / N 期限）;資料不存在回 nil。
+// TestNewEffect 驗證 NewEffect 建構效果實例、結束回合依作用回合（0 整場 / N 期限）、建構即夾堆疊上限;資料不存在回 nil。
 func (this *SuiteEffect) TestNewEffect() {
-	runtime := NewRuntime(0)
-	runtime.Game.round = NewValue(5, 0)
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	game.round = NewValue(5, 0)
+	injectPort(game)
 
 	guest := &Guest{instanceID: 99}
-	effect := NewEffect(eng, 401, NewRefGuest(guest), 3) // RunRound 2 → Expire = 5 + 2 − 1
+	effect := NewEffect(game, 401, NewRefGuest(guest), 3) // RunRound 2 → Expire = 5 + 2 − 1
 	this.Require().NotNil(effect)
 	this.Equal(int32(401), effect.GetEffectID())
 	this.Equal(int32(6), effect.GetExpire())
@@ -30,11 +30,16 @@ func (this *SuiteEffect) TestNewEffect() {
 	this.Equal(guest, effect.GetSelf().GetGuest())
 	this.NotEqual(InstanceID(0), effect.GetInstanceID()) // 配發實例編號
 
-	zero := NewEffect(eng, 402, Ref{}, 1) // RunRound 0 → Expire 0（整場保留）
+	zero := NewEffect(game, 402, Ref{}, 1) // RunRound 0 → Expire 0（整場保留）
 	this.Require().NotNil(zero)
 	this.Equal(int32(0), zero.GetExpire())
 
-	this.Nil(NewEffect(eng, 999, Ref{}, 1)) // 查無效果資料 → nil
+	game.effectData[404] = effectData{StackMax: 2}
+	capped := NewEffect(game, 404, Ref{}, 5) // 建構即依堆疊上限夾制
+	this.Require().NotNil(capped)
+	this.Equal(int32(2), capped.GetStack())
+
+	this.Nil(NewEffect(game, 999, Ref{}, 1)) // 查無效果資料 → nil
 }
 
 // TestEffectGetInstanceID 驗證 GetInstanceID 取回實例編號。
@@ -69,6 +74,19 @@ func (this *SuiteEffect) TestEffectSetExpire() {
 	effect := &Effect{expire: 5}
 	effect.SetExpire(11)
 	this.Equal(int32(11), effect.GetExpire())
+}
+
+// TestEffectRefresh 驗證 Refresh 依作用回合重算結束回合（0 → 整場、N → 當前回合 + N − 1）。
+func (this *SuiteEffect) TestEffectRefresh() {
+	game := NewGame(0, nil, nil, nil, nil)
+	game.round = NewValue(8, 0)
+	effect := &Effect{expire: 6}
+
+	effect.Refresh(game, 3) // 8 + 3 − 1
+	this.Equal(int32(10), effect.GetExpire())
+
+	effect.Refresh(game, 0) // 0 → 整場保留
+	this.Equal(int32(0), effect.GetExpire())
 }
 
 // TestEffectStackAdd 驗證 StackAdd 疊層、上限夾制（0 = 無上限）與實際增量回傳。
@@ -124,25 +142,21 @@ func (this *SuiteEffect) TestEffectListFind() {
 	this.Nil(list.Find(Ref{}, 999))                               // 查無 → nil
 }
 
-// TestEffectSort 驗證 effectSort 依作用順序排序:大者優先、同序效果編號小者優先、查無資料殿後。
-func (this *SuiteEffect) TestEffectSort() {
-	runtime := NewRuntime(0)
-	eng := this.engine(runtime)
+// TestEffectListSort 驗證 Sort 依作用順序排序:大者優先、同序效果編號小者優先、查無資料殿後。
+func (this *SuiteEffect) TestEffectListSort() {
+	game := NewGame(0, nil, nil, nil, nil)
+	injectPort(game)
 
-	effect := []*Effect{
+	effect := EffectList{
 		{instanceID: 1, effectID: 402}, // RunOrder 10
 		{instanceID: 2, effectID: 403}, // RunOrder 20（最大 → 最先）
 		{instanceID: 3, effectID: 999}, // 查無資料 → RunOrder 0（最後）
 		{instanceID: 4, effectID: 401}, // RunOrder 10、同序 EffectID 401 < 402 → 先於 402
 	}
-	effectSort(eng, effect)
+	effect.Sort(game)
 
 	order := []int32{effect[0].GetEffectID(), effect[1].GetEffectID(), effect[2].GetEffectID(), effect[3].GetEffectID()}
 	this.Equal([]int32{403, 401, 402, 999}, order)
 }
 
 // === 測試輔助（置尾） ===
-
-func (this *SuiteEffect) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
-}

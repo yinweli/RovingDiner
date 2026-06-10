@@ -1,5 +1,9 @@
 package cores
 
+import (
+	sheeter "github.com/yinweli/RovingDiner/sheet"
+)
+
 // Card 卡牌實例;對應【營業規格書 | 五、實例結構 | 卡牌（Card）實例】。
 type Card struct {
 	instanceID  InstanceID // 實例唯一識別碼（變身會重分配;改寫入口僅 NewCard / Morph）
@@ -16,15 +20,15 @@ type Card struct {
 }
 
 // NewCard 依卡牌編號實例化新卡（載卡牌資料初始值;bool 欄 → 鎖定計數、SkillID → Skill.EffectID）;資料不存在回 nil。
-func NewCard(eng *Engine, cardID int32) *Card {
-	meta := eng.data.Card.Get(cardID)
+func NewCard(game *Game, cardID int32) *Card {
+	meta := game.data.Card.Get(cardID)
 
 	if meta == nil {
 		return nil
 	} // if
 
 	return &Card{
-		instanceID:  eng.runtime.NextID(),
+		instanceID:  game.NextID(),
 		cardID:      cardID,
 		cost:        NewValue(meta.Cost, 0),
 		extraRunMin: NewValue(meta.ExtraRunMin, 0),
@@ -33,19 +37,19 @@ func NewCard(eng *Engine, cardID int32) *Card {
 		seal:        NewValuel(meta.Seal),
 		playExile:   NewValuel(meta.PlayExile),
 		unplayExile: NewValuel(meta.UnplayExile),
-		effectID:    NewIDList(skillEffect(eng, meta.SkillID)...),
+		effectID:    NewIDList(game.SkillEffect(meta.SkillID)...),
 	}
 }
 
 // CopyCard 複製卡牌：淺複製依 source 的卡牌編號載入卡牌資料初始值、深複製複製 source 當前狀態（效果列表深複製）;
 // 卡牌化來源皆 none、實例編號重生。淺複製於卡牌資料不存在時回 nil。
-func CopyCard(eng *Engine, source *Card, deep bool) *Card {
+func CopyCard(game *Game, source *Card, deep bool) *Card {
 	if deep == false {
-		return NewCard(eng, source.cardID)
+		return NewCard(game, source.cardID)
 	} // if
 
 	return &Card{
-		instanceID:  eng.runtime.NextID(),
+		instanceID:  game.NextID(),
 		cardID:      source.cardID,
 		cost:        source.cost,
 		extraRunMin: source.extraRunMin,
@@ -129,25 +133,25 @@ func (this *Card) CardifyFree() {
 // Morph 變身重設（【營業規格書 | 二十五、操作命令清單 | *Morph】step 4）:重分配實例編號（舊編號失效）、
 // 換卡牌編號、依新卡資料僅載 出牌費用 / 不棄鎖 / 封印鎖 / 實例效果列表;查無卡牌資料回 false 不動。
 // 實例身分的改寫入口僅 NewCard 與此;抽獎 / 事件 / 觸發留 morph 流程。
-func (this *Card) Morph(eng *Engine, cardID int32) bool {
-	meta := eng.data.Card.Get(cardID)
+func (this *Card) Morph(game *Game, cardID int32) bool {
+	meta := game.data.Card.Get(cardID)
 
 	if meta == nil {
 		return false
 	} // if
 
-	this.instanceID = eng.runtime.NextID()
+	this.instanceID = game.NextID()
 	this.cardID = cardID
 	this.cost = NewValue(meta.Cost, 0)
 	this.keep = NewValuel(meta.Keep)
 	this.seal = NewValuel(meta.Seal)
-	this.effectID = NewIDList(skillEffect(eng, meta.SkillID)...)
+	this.effectID = NewIDList(game.SkillEffect(meta.SkillID)...)
 	return true
 }
 
 // CardList 卡牌容器;四牌堆共用（先進後出,新進入者置頂;手牌「玩家檢視序」現行同為前端插入）。
 // 對應【營業規格書 | 六、容器結構】手牌 / 抽牌牌堆 / 棄牌牌堆 / 流放牌堆。
-// 洗牌（要 Rander）與 deckTop auto-shuffle 為 eng 依賴流程,維持自由函式 / selector。
+// 洗牌（要 Rander）與 deckTop auto-shuffle 為 game 依賴流程,維持自由函式 / selector。
 type CardList []*Card
 
 // Push 加入牌堆頂端（前端）。
@@ -177,4 +181,27 @@ func (this *CardList) Find(instanceID InstanceID) *Card {
 	} // for
 
 	return nil
+}
+
+// Has 回報實例編號是否位於本牌堆。供 inHand / inDeck / inDrop / inExile 容器歸屬查詢。
+func (this *CardList) Has(instanceID InstanceID) bool {
+	return this.Find(instanceID) != nil
+}
+
+// CountGroup 計牌堆中卡牌群組編號 == group 的張數;group == 0 回牌堆全量（不過濾）。
+// 群組編號查靜態表,data 由呼叫端帶入（CardList 不持狀態）;資料缺失的卡牌不計入任何群組。
+func (this *CardList) CountGroup(group int32, data *sheeter.Sheeter) (count int32) {
+	if group == 0 {
+		return int32(len(*this))
+	} // if
+
+	for _, itor := range *this {
+		meta := data.Card.Get(itor.cardID)
+
+		if meta != nil && meta.Group == group {
+			count++
+		} // if
+	} // for
+
+	return count
 }

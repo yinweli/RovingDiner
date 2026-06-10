@@ -8,26 +8,26 @@ import (
 // 對命令對象的每位顧客操作免疫群組鎖定計數，或加入行動（非顧客實例該項 no-op；不限容器位置）。
 // 免疫群組編號為命令尾端的 varargs（trailing 參數，逐個套用）。
 
-func commandEffectImmuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneAdd(eng, target, arg, (*Guest).GetEffectImmune)
+func commandEffectImmuneAdd(game *Game, target []InstanceID, arg []exprs.Value) {
+	immuneAdd(game, target, arg, (*Guest).GetEffectImmune)
 }
 
-func commandEffectImmuneDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneDel(eng, target, arg, (*Guest).GetEffectImmune)
+func commandEffectImmuneDel(game *Game, target []InstanceID, arg []exprs.Value) {
+	immuneDel(game, target, arg, (*Guest).GetEffectImmune)
 }
 
-func commandSkillImmuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneAdd(eng, target, arg, (*Guest).GetSkillImmune)
+func commandSkillImmuneAdd(game *Game, target []InstanceID, arg []exprs.Value) {
+	immuneAdd(game, target, arg, (*Guest).GetSkillImmune)
 }
 
-func commandSkillImmuneDel(eng *Engine, target []InstanceID, arg []exprs.Value) {
-	immuneDel(eng, target, arg, (*Guest).GetSkillImmune)
+func commandSkillImmuneDel(game *Game, target []InstanceID, arg []exprs.Value) {
+	immuneDel(game, target, arg, (*Guest).GetSkillImmune)
 }
 
 // immuneAdd 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 + 1；pick 取顧客的免疫計數組件（增減紀律由 Immune 把關）。
-func immuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
+func immuneAdd(game *Game, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
 	for _, itor := range target {
-		guest, _, ok := eng.locateGuest(itor)
+		guest, _, ok := game.locateGuest(itor)
 
 		if ok == false {
 			continue // 非顧客實例 → 該項 no-op
@@ -42,9 +42,9 @@ func immuneAdd(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(gu
 }
 
 // immuneDel 對命令對象每位顧客、每個 varargs 群組編號，其免疫群組鎖定計數 - 1（夾 ≥ 0,由 Immune.Del 把關）。
-func immuneDel(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
+func immuneDel(game *Game, target []InstanceID, arg []exprs.Value, pick func(guest *Guest) *Immune) {
 	for _, itor := range target {
-		guest, _, ok := eng.locateGuest(itor)
+		guest, _, ok := game.locateGuest(itor)
 
 		if ok == false {
 			continue
@@ -60,7 +60,7 @@ func immuneDel(eng *Engine, target []InstanceID, arg []exprs.Value, pick func(gu
 
 // commandTaskAdd 對命令對象每位顧客，將「顧客 + 行動類型 + 技能編號」加入行動佇列尾端（【二十五 | taskAdd】）。
 // 參數：行動類型（0 飽食 / 1 耐心，對齊 TaskKind）、技能編號；任一缺漏 / 非數值整動作 no-op。
-func commandTaskAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
+func commandTaskAdd(game *Game, target []InstanceID, arg []exprs.Value) {
 	kind, ok := argInt(arg)
 
 	if ok == false {
@@ -74,12 +74,12 @@ func commandTaskAdd(eng *Engine, target []InstanceID, arg []exprs.Value) {
 	} // if
 
 	for _, itor := range target {
-		guest, _, found := eng.locateGuest(itor)
+		guest, _, found := game.locateGuest(itor)
 
 		if found == false {
 			continue
 		} // if
 
-		eng.runtime.Action.Push(NewAction(guest, TaskKind(kind), skillID))
+		game.Action.Push(NewAction(guest, TaskKind(kind), skillID))
 	} // for
 }

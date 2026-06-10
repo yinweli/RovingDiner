@@ -17,10 +17,10 @@ type SuiteGuest struct {
 
 // TestNewGuest 驗證 NewGuest 載入顧客數值與封印鎖、飽食值初值 0、免疫表初始化;資料不存在回 nil。
 func (this *SuiteGuest) TestNewGuest() {
-	runtime := NewRuntime(0)
-	eng := this.engine(runtime)
+	game := NewGame(0, nil, nil, nil, nil)
+	injectPort(game)
 
-	guest := NewGuest(eng, 501) // 顧客 501：載數值 + SateSeal bool → 鎖
+	guest := NewGuest(game, 501) // 顧客 501：載數值 + SateSeal bool → 鎖
 	this.Require().NotNil(guest)
 	this.Equal(int32(501), guest.GetGuestID())
 	this.Equal(int32(10), guest.GetScoreMax().GetValue())
@@ -34,7 +34,7 @@ func (this *SuiteGuest) TestNewGuest() {
 	this.Equal(int32(0), guest.GetEffectImmune().Get(1)) // 免疫表初始化（空表）
 	this.NotEqual(InstanceID(0), guest.GetInstanceID())  // 配發實例編號
 
-	this.Nil(NewGuest(eng, 999)) // 顧客資料不存在 → nil
+	this.Nil(NewGuest(game, 999)) // 顧客資料不存在 → nil
 }
 
 // TestGuestGetInstanceID 驗證 GetInstanceID 取回實例編號。
@@ -204,6 +204,15 @@ func (this *SuiteGuest) TestWaitListRemove() {
 	this.Len(list, 1)
 }
 
+// TestWaitListFind 驗證 Find 依實例編號查找、未命中回 nil。
+func (this *SuiteGuest) TestWaitListFind() {
+	guest := &Guest{instanceID: 5}
+	list := WaitList{{instanceID: 1}, guest}
+
+	this.Same(guest, list.Find(InstanceID(5)))
+	this.Nil(list.Find(InstanceID(9))) // 未命中 → nil
+}
+
 // TestSeatListPlace 驗證 Place 成對寫入:設顧客座位編號 + 登記座位。
 func (this *SuiteGuest) TestSeatListPlace() {
 	guest := &Guest{instanceID: 1}
@@ -242,6 +251,17 @@ func (this *SuiteGuest) TestSeatListSorted() {
 	this.Empty(SeatList{}.Sorted())                 // 空列表 → 空集合
 }
 
+// TestSeatListOccupied 驗證 Occupied 計座位編號列表中的占用數。
+func (this *SuiteGuest) TestSeatListOccupied() {
+	seat := SeatList{}
+	seat.Place(1, &Guest{instanceID: 1})
+	seat.Place(3, &Guest{instanceID: 3})
+
+	this.Equal(int32(2), seat.Occupied([]int32{1, 2, 3})) // 座 1、3 占用,座 2 空
+	this.Equal(int32(0), seat.Occupied([]int32{2, 4}))    // 皆空
+	this.Equal(int32(0), seat.Occupied(nil))              // 空列表
+}
+
 // TestGuestListPush 驗證 Push 加入列表尾端。
 func (this *SuiteGuest) TestGuestListPush() {
 	first := &Guest{instanceID: 1}
@@ -268,8 +288,13 @@ func (this *SuiteGuest) TestGuestListRemove() {
 	this.Len(list, 1)
 }
 
-// === 測試輔助（置尾） ===
+// TestGuestListFind 驗證 Find 依實例編號查找、未命中回 nil。
+func (this *SuiteGuest) TestGuestListFind() {
+	guest := &Guest{instanceID: 5}
+	list := GuestList{{instanceID: 1}, guest}
 
-func (this *SuiteGuest) engine(runtime *Runtime) *Engine {
-	return NewEngine(runtime, nil, buildSheet(), fakeOperator{}, fakeRander{}, nil)
+	this.Same(guest, list.Find(InstanceID(5)))
+	this.Nil(list.Find(InstanceID(9))) // 未命中 → nil
 }
+
+// === 測試輔助（置尾） ===

@@ -132,6 +132,30 @@ func (this *Value) Apply(op AssignKind, n float64) bool {
 	return false
 }
 
+// ApplyLockOnly 鎖屬性（純計數封印，數值固定 0）的賦值派發：僅鎖定 / 解鎖；帶值賦值不適用故 no-op（可寫性由 Validate 先擋）。
+func (this *Value) ApplyLockOnly(op AssignKind) bool {
+	switch op {
+	case AssignLock:
+		this.Lock()
+		return true
+
+	case AssignUnlock:
+		return this.Unlock()
+
+	default:
+		return false // 帶值賦值不適用純鎖屬性 → no-op
+	} // switch
+}
+
+// ApplyValueOnly 寫屬性（無鎖定語意，如 round / roundMax，鎖定計數恆 0）的賦值派發：僅帶值賦值；@ # 不適用故 no-op。
+func (this *Value) ApplyValueOnly(op AssignKind, n float64) bool {
+	if op == AssignLock || op == AssignUnlock {
+		return false // 鎖定 / 解鎖不適用寫屬性 → no-op
+	} // if
+
+	return this.Apply(op, n)
+}
+
 // Clamp 夾下限至 low（運算後低於 low 時夾為 low）；夾值政策在詞條、僅護盾 / 格擋 chain。
 func (this *Value) Clamp(low int32) {
 	if this.value < low {

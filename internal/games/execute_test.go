@@ -18,22 +18,20 @@ type SuiteExecute struct {
 }
 
 func (this *SuiteExecute) TestExecuteAssign() {
-	runtime := cores.NewRuntime(0)
-	runtime.Game.GetScore().Set(10)
-	eng := cores.NewEngine(runtime, nil, nil, nil, nil, nil)
+	game := cores.NewGame(0, nil, nil, nil, nil)
+	game.GetScore().Set(10)
 
 	command, err := Parse("score += 5") // Parse → execute → engine.ExecAssign
 	this.Require().NoError(err)
-	execute(eng, command)
-	this.Equal(int32(15), runtime.Game.GetScore().GetValue())
+	execute(game, command)
+	this.Equal(int32(15), game.GetScore().GetValue())
 }
 
 func (this *SuiteExecute) TestExecuteOperate() {
-	runtime := cores.NewRuntime(0)
-	eng := cores.NewEngine(runtime, nil, nil, nil, nil, nil)
+	game := cores.NewGame(0, nil, nil, nil, nil)
 
 	command, err := Parse("phaseJump(none, '玩家行動')") // Parse → execute → engine.ExecOperate(端到端派發)
 	this.Require().NoError(err)
-	execute(eng, command)
-	this.Equal(cores.PhasePlayerAction, runtime.Game.GetNextPhase())
+	execute(game, command)
+	this.Equal(cores.PhasePlayerAction, game.GetNextPhase())
 }

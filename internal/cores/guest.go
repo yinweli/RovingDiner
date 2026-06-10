@@ -30,15 +30,15 @@ type Guest struct {
 
 // NewGuest 依顧客編號實例化新顧客（載顧客資料初始值：Score / ScoreMax / Morale / MoraleMax / Calm / SateMax 數值、封印 bool → 鎖定計數）;
 // Sate 初值 0（顧客資料無此欄、隨服務累積至飽食值離場線）;Hit / Immune 初始化空表。資料不存在回 nil。
-func NewGuest(eng *Engine, guestID int32) *Guest {
-	meta := eng.data.Guest.Get(guestID)
+func NewGuest(game *Game, guestID int32) *Guest {
+	meta := game.data.Guest.Get(guestID)
 
 	if meta == nil {
 		return nil
 	} // if
 
 	return &Guest{
-		instanceID:   eng.runtime.NextID(),
+		instanceID:   game.NextID(),
 		guestID:      guestID,
 		score:        NewValue(meta.Score, 0),
 		scoreMax:     NewValue(meta.ScoreMax, 0),
@@ -192,6 +192,17 @@ func (this *WaitList) Remove(instanceID InstanceID) {
 	*this = result
 }
 
+// Find 依實例編號查找顧客;未命中回 nil。供 locateGuest 掃描排隊佇列。
+func (this *WaitList) Find(instanceID InstanceID) *Guest {
+	for _, itor := range *this {
+		if itor.instanceID == instanceID {
+			return itor
+		} // if
+	} // for
+
+	return nil
+}
+
 // SeatList 座位列表（座位編號 → 顧客;map 就地增刪故值接收器）;對應【營業規格書 | 六、容器結構 | 座位列表】。
 type SeatList map[int32]*Guest
 
@@ -224,6 +235,17 @@ func (this SeatList) Sorted() (result []*Guest) {
 	return result
 }
 
+// Occupied 計座位編號列表中當下有顧客占用的座位數。供 sameSize / nearSize 查同桌 / 鄰桌人數。
+func (this SeatList) Occupied(seatID []int32) (count int32) {
+	for _, itor := range seatID {
+		if this[itor] != nil {
+			count++
+		} // if
+	} // for
+
+	return count
+}
+
 // GuestList 順序無關顧客列表;遊蕩 / 卡牌化列表共用（【營業規格書 | 六、容器結構】）。
 type GuestList []*Guest
 
@@ -243,4 +265,15 @@ func (this *GuestList) Remove(instanceID InstanceID) {
 	} // for
 
 	*this = result
+}
+
+// Find 依實例編號查找顧客;未命中回 nil。供 locateGuest 掃描遊蕩 / 卡牌化列表。
+func (this *GuestList) Find(instanceID InstanceID) *Guest {
+	for _, itor := range *this {
+		if itor.instanceID == instanceID {
+			return itor
+		} // if
+	} // for
+
+	return nil
 }

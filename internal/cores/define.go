@@ -19,7 +19,7 @@ type Rander interface {
 
 // Operator 玩家輸入；對應所有「暫停流程」點。
 type Operator interface {
-	PlayerAction(runtime *Runtime) Action          // 玩家行動：出牌 / 結束
+	PlayerAction(game *Game) Action                // 玩家行動：出牌 / 結束
 	PickGuest(source []*Guest, count int) []*Guest // 新選顧客 / guestPick / nearPick / samePick
 	PickCard(source []*Card, count int) []*Card    // 新選手牌 / *Pick 牌堆類
 	PickDiscard(source []*Card, over int) []*Card  // 手牌上限棄牌
@@ -129,7 +129,7 @@ const (
 )
 
 // EffectCommand 預編譯效果命令的執行器;games 的 compileCommand 把命令字串編成閉包（捕捉 Parse 後 AST + execute 走法 X 分派）、cores 於效果流程呼叫。空命令欄為 nil。
-type EffectCommand func(eng *Engine)
+type EffectCommand func(game *Game)
 
 // EffectKind 效果類型；對應【營業規格書 | 七、效果類型】。
 // （效果實例型別見 instance.go 的 Effect；此 enum 表達其靜態類型，故以 Kind 為後綴避免撞名。）

@@ -5,7 +5,7 @@ import (
 )
 
 // attrWriteFunc 全域屬性詞條的寫入行為:以 engine 為 context、op 為賦值符、n 為已求值的右值(@ # 時忽略)。
-type attrWriteFunc func(eng *Engine, op AssignKind, n float64) bool
+type attrWriteFunc func(game *Game, op AssignKind, n float64) bool
 
 // attrWrite 全域屬性寫入詞彙表(名稱 → 寫入行為);服務屬性修改命令的全域左值。
 // 鍵集僅【營業規格書 | 二十三、屬性清單】主表存取欄為 寫 / 寫鎖 / 鎖 的可寫屬性;唯讀屬性不在此(Validate 據此擋)。
@@ -40,88 +40,88 @@ func HasAttrWrite(name string) bool {
 
 // writeMorale 寫餐廳士氣值;-= 走士氣受損特例(格擋 → 護盾 → morale),其餘為一般寫鎖運算。
 // 屬性修改命令路徑的受損來源取 self 顧客(damageSource);guestExit 等流程改傳離場顧客為來源,直接呼叫 moraleDamage。
-func writeMorale(eng *Engine, op AssignKind, n float64) bool {
+func writeMorale(game *Game, op AssignKind, n float64) bool {
 	if op == AssignSub {
-		return moraleDamage(eng, n, damageSource(eng.self))
+		return moraleDamage(game, n, damageSource(game.self))
 	} // if
 
-	return eng.runtime.Game.GetMorale().Apply(op, n)
+	return game.GetMorale().Apply(op, n)
 }
 
 // writeMoraleMax 寫餐廳士氣上限。
-func writeMoraleMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetMoraleMax().Apply(op, n)
+func writeMoraleMax(game *Game, op AssignKind, n float64) bool {
+	return game.GetMoraleMax().Apply(op, n)
 }
 
 // writeMoraleShield 寫餐廳士氣護盾(下限夾 0)。
-func writeMoraleShield(eng *Engine, op AssignKind, n float64) bool {
-	changed := eng.runtime.Game.GetMoraleShield().Apply(op, n)
-	eng.runtime.Game.GetMoraleShield().Clamp(0)
+func writeMoraleShield(game *Game, op AssignKind, n float64) bool {
+	changed := game.GetMoraleShield().Apply(op, n)
+	game.GetMoraleShield().Clamp(0)
 	return changed
 }
 
 // writeMoraleBlock 寫餐廳士氣格擋(下限夾 0)。
-func writeMoraleBlock(eng *Engine, op AssignKind, n float64) bool {
-	changed := eng.runtime.Game.GetMoraleBlock().Apply(op, n)
-	eng.runtime.Game.GetMoraleBlock().Clamp(0)
+func writeMoraleBlock(game *Game, op AssignKind, n float64) bool {
+	changed := game.GetMoraleBlock().Apply(op, n)
+	game.GetMoraleBlock().Clamp(0)
 	return changed
 }
 
 // writeScore 寫餐廳滿意值。
-func writeScore(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetScore().Apply(op, n)
+func writeScore(game *Game, op AssignKind, n float64) bool {
+	return game.GetScore().Apply(op, n)
 }
 
 // writeEnergy 寫出牌點數。
-func writeEnergy(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetEnergy().Apply(op, n)
+func writeEnergy(game *Game, op AssignKind, n float64) bool {
+	return game.GetEnergy().Apply(op, n)
 }
 
 // writeEnergyMax 寫出牌點數上限。
-func writeEnergyMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetEnergyMax().Apply(op, n)
+func writeEnergyMax(game *Game, op AssignKind, n float64) bool {
+	return game.GetEnergyMax().Apply(op, n)
 }
 
 // writeEnergyKeep 寫出牌點數保留(純鎖屬性,數值固定 0,僅 @ #)。
-func writeEnergyKeep(eng *Engine, op AssignKind, n float64) bool {
-	return writeLockOnly(eng.runtime.Game.GetEnergyKeep(), op)
+func writeEnergyKeep(game *Game, op AssignKind, n float64) bool {
+	return game.GetEnergyKeep().ApplyLockOnly(op)
 }
 
 // writeHandMax 寫手牌張數上限。
-func writeHandMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetHandMax().Apply(op, n)
+func writeHandMax(game *Game, op AssignKind, n float64) bool {
+	return game.GetHandMax().Apply(op, n)
 }
 
 // writeDrawMax 寫補牌張數上限。
-func writeDrawMax(eng *Engine, op AssignKind, n float64) bool {
-	return eng.runtime.Game.GetDrawMax().Apply(op, n)
+func writeDrawMax(game *Game, op AssignKind, n float64) bool {
+	return game.GetDrawMax().Apply(op, n)
 }
 
 // === 回合 ===
 
 // writeRound 寫當前回合數(寫屬性、無鎖定語意)。
-func writeRound(eng *Engine, op AssignKind, n float64) bool {
-	return writeValueOnly(eng.runtime.Game.GetRound(), op, n)
+func writeRound(game *Game, op AssignKind, n float64) bool {
+	return game.GetRound().ApplyValueOnly(op, n)
 }
 
 // writeRoundMax 寫回合上限(寫屬性、無鎖定語意)。
-func writeRoundMax(eng *Engine, op AssignKind, n float64) bool {
-	return writeValueOnly(eng.runtime.Game.GetRoundMax(), op, n)
+func writeRoundMax(game *Game, op AssignKind, n float64) bool {
+	return game.GetRoundMax().ApplyValueOnly(op, n)
 }
 
 // writeRoundLeft 寫剩餘回合(衍生):轉譯為對回合上限的調整(剩餘回合 = N → 回合上限 = 回合 + N),
 // 操作後夾使回合上限 >= 回合(【二十三】roundLeft)。基準取原始 回合上限 - 回合(含可負,使 += N 等同 回合上限 += N),
 // 以暫存 Value 套運算後夾 剩餘 >= 0(等價於 回合上限 >= 回合)再寫回。
-func writeRoundLeft(eng *Engine, op AssignKind, n float64) bool {
-	round := eng.runtime.Game.GetRound().GetValue()
-	left := NewValue(eng.runtime.Game.GetRoundMax().GetValue()-round, 0)
+func writeRoundLeft(game *Game, op AssignKind, n float64) bool {
+	round := game.GetRound().GetValue()
+	left := NewValue(game.GetRoundMax().GetValue()-round, 0)
 
-	if writeValueOnly(&left, op, n) == false {
+	if left.ApplyValueOnly(op, n) == false {
 		return false // @ # 或 /= %= 除 0 → no-op
 	} // if
 
 	left.Clamp(0)
-	return eng.runtime.Game.GetRoundMax().Set(float64(round + left.GetValue()))
+	return game.GetRoundMax().Set(float64(round + left.GetValue()))
 }
 
 // === 餐廳士氣值 -= 特例 ===
@@ -131,32 +131,32 @@ func writeRoundLeft(eng *Engine, op AssignKind, n float64) bool {
 // morale 鎖定時格擋 / 護盾仍消耗、morale 不動、無實際扣減(對齊目前解讀)。
 // N 先四捨五入為整數扣減值,使格擋 / 護盾 / morale 的整數消耗自洽(小數扣減值的捨入時點待規格確認)。
 // 三段消耗皆經守衛寫入、各自鎖定時不消耗:格擋鎖定仍無視本次 N 但不減層、護盾鎖定則殘餘全進 morale、morale 鎖定不扣。
-func moraleDamage(eng *Engine, n float64, source *Guest) bool {
+func moraleDamage(game *Game, n float64, source *Guest) bool {
 	damage := exprs.Round(n)
 	changed := false
 
-	if eng.runtime.Game.GetMoraleBlock().GetValue() > 0 { // 格擋優先:格擋 -= 1(鎖定 → 不減層),本次無視 N
-		return eng.runtime.Game.GetMoraleBlock().Sub(1)
+	if game.GetMoraleBlock().GetValue() > 0 { // 格擋優先:格擋 -= 1(鎖定 → 不減層),本次無視 N
+		return game.GetMoraleBlock().Sub(1)
 	} // if
 
 	if damage > 0 { // 護盾消耗:d = min(N, 護盾) → 護盾 -= d → N -= d(鎖定 → 不消耗、殘餘進 morale)
-		d := min(damage, eng.runtime.Game.GetMoraleShield().GetValue())
+		d := min(damage, game.GetMoraleShield().GetValue())
 
-		if d > 0 && eng.runtime.Game.GetMoraleShield().Sub(float64(d)) {
+		if d > 0 && game.GetMoraleShield().Sub(float64(d)) {
 			damage -= d
 			changed = true
 		} // if
 	} // if
 
-	if damage > 0 && eng.runtime.Game.GetMorale().IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣)
-		before := eng.runtime.Game.GetMorale().GetValue()
-		eng.runtime.Game.GetMorale().Sub(float64(damage))
-		actual := before - eng.runtime.Game.GetMorale().GetValue()
+	if damage > 0 && game.GetMorale().IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣)
+		before := game.GetMorale().GetValue()
+		game.GetMorale().Sub(float64(damage))
+		actual := before - game.GetMorale().GetValue()
 
 		if actual > 0 {
-			eng.runtime.Game.EventDamage(actual, source)
+			game.EventDamage(actual, source)
 			changed = true
-			fireTrigger(eng, TriggerDamage) // 士氣受損時機
+			fireTrigger(game, TriggerDamage) // 士氣受損時機
 		} // if
 	} // if
 

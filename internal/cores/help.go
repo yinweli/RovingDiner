@@ -230,15 +230,15 @@ func argTail(arg []exprs.Value, from int) []exprs.Value {
 
 // 分組計數與比較:卡牌分組計數、累積多重集合查詢、比較運算符。供 attrRead.go 查詢函式型屬性共用。
 
-// groupSize 求容器中卡牌群組編號 == N 的張數(N == 0 回容器全量);包裝 oneInt + countByGroup。
-func groupSize(card []*Card, data *sheeter.Sheeter, arg []exprs.Value) (result exprs.Value, ok bool) {
+// groupSize 求牌堆中卡牌群組編號 == N 的張數(N == 0 回牌堆全量);包裝 oneInt + CardList.CountGroup。
+func groupSize(card CardList, data *sheeter.Sheeter, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
 
 	if valid == false {
 		return exprs.Value{}, false
 	} // if
 
-	return exprs.NewNum(float64(countByGroup(card, n, data))), true
+	return exprs.NewNum(float64(card.CountGroup(n, data))), true
 }
 
 // groupTotal 求分組累積多重集合中 N 的數量(N == 0 回全加總);包裝 oneInt + Tally 查詢。
@@ -254,23 +254,6 @@ func groupTotal(total *Tally, arg []exprs.Value) (result exprs.Value, ok bool) {
 	} // if
 
 	return exprs.NewNum(float64(total.Get(n))), true
-}
-
-// countByGroup 計卡牌容器中卡牌群組編號 == group 的張數;group == 0 回容器全量(不過濾)。
-func countByGroup(card []*Card, group int32, data *sheeter.Sheeter) (count int32) {
-	if group == 0 {
-		return int32(len(card))
-	} // if
-
-	for _, itor := range card {
-		meta := data.Card.Get(itor.GetCardID())
-
-		if meta != nil && meta.Group == group {
-			count++
-		} // if
-	} // for
-
-	return count
 }
 
 // compareOp 以字串運算符比較 a 與 b(對齊【二十七、運算式 | 2】比較運算符);未知運算符回 ok=false。
@@ -320,98 +303,4 @@ func guestLock(ref exprs.Ref, pick func(guest *Guest) int32) (result exprs.Value
 	} // if
 
 	return exprs.NewNum(float64(pick(guest))), true
-}
-
-// 容器掃描與歸屬判定:卡牌定位、座位占用計數。供定位 / 座位查詢型屬性共用。
-
-// inContainer 回報卡牌實例是否位於指定容器(以實例編號比對)。供 inHand / inDeck / inDrop / inExile 容器掃描。
-func inContainer(card *Card, container []*Card) bool {
-	for _, itor := range container {
-		if itor.GetInstanceID() == card.GetInstanceID() {
-			return true
-		} // if
-	} // for
-
-	return false
-}
-
-// occupiedAmong 計座位編號列表中當下有顧客占用的座位數。供 sameSize / nearSize 使用。
-func occupiedAmong(eng *Engine, seatID []int32) (count int32) {
-	for _, itor := range seatID {
-		if eng.runtime.Seat[itor] != nil {
-			count++
-		} // if
-	} // for
-
-	return count
-}
-
-// 屬性寫入:依賦值符與存取等級(寫 / 寫鎖 / 鎖)變更屬性。供 attrWrite.go / attrRefWrite.go 的寫側詞條共用。
-// 對應【營業規格書 | 十七、命令 | 1】賦值符語意與【二十三、屬性清單】存取欄。
-
-// writeLockOnly 鎖屬性(純計數封印,數值固定 0)的寫入:僅鎖定 / 解鎖;帶值賦值不適用故 no-op(可寫性由 Validate 先擋)。
-func writeLockOnly(target *Value, op AssignKind) bool {
-	switch op {
-	case AssignLock:
-		target.Lock()
-		return true
-
-	case AssignUnlock:
-		return target.Unlock()
-
-	default:
-		return false // 帶值賦值不適用純鎖屬性 → no-op
-	} // switch
-}
-
-// writeValueOnly 寫屬性(無鎖定語意,如 round / roundMax,鎖定計數恆 0)的寫入:僅帶值賦值;@ # 不適用故 no-op。
-func writeValueOnly(target *Value, op AssignKind, n float64) bool {
-	if op == AssignLock || op == AssignUnlock {
-		return false // 鎖定 / 解鎖不適用寫屬性 → no-op
-	} // if
-
-	return target.Apply(op, n)
-}
-
-// 切片增刪查:實例切片的定位(以實例編號比對)。供引擎跨容器分派共用。
-
-// findGuest 自顧客切片以實例編號找出顧客;未命中回 nil。供 locateGuest 掃描排隊 / 遊蕩 / 卡牌化列表。
-func findGuest(guest []*Guest, id InstanceID) *Guest {
-	for _, itor := range guest {
-		if itor.GetInstanceID() == id {
-			return itor
-		} // if
-	} // for
-
-	return nil
-}
-
-// 技能靜態查詢:自卡牌經 SkillID 取技能靜態欄位(效果編號列表 / 技能群組編號)。供 newCard 載入實例效果列表、cardMorph 重設、與效果列表啟動的 skillImmune 排除共用。
-
-// skillEffect 取技能的效果編號列表複本(新卡實例效果列表來源 = Card.SkillID → Skill.EffectID);技能不存在回 nil。複製以免共享靜態表切片。供 newCard 載入卡牌實例效果列表、cardMorph 變身後重設效果共用。
-func skillEffect(eng *Engine, skillID int32) []int32 {
-	skill := eng.data.Skill.Get(skillID)
-
-	if skill == nil {
-		return nil
-	} // if
-
-	return append([]int32(nil), skill.EffectID...)
-}
-
-// cardSkillGroup 取卡牌的技能群組編號（卡牌資料.SkillID → Skill.Group）;卡牌 / 技能資料不存在回 0。供 cardRun 啟動效果列表時 skillImmune 排除免疫顧客。
-func cardSkillGroup(eng *Engine, cardID int32) int32 {
-	card := eng.data.Card.Get(cardID)
-
-	if card == nil {
-		return 0
-	} // if
-
-	skill := eng.data.Skill.Get(card.SkillID)
-
-	if skill == nil {
-		return 0
-	} // if
-
-	return skill.Group
 }

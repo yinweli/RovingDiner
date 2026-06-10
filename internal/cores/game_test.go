@@ -4,25 +4,49 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
 func TestSuiteGame(t *testing.T) {
 	suite.Run(t, new(SuiteGame))
 }
 
-// SuiteGame 驗證營業實例(game.go):建構 / 取值 / 階段設定 / 事件成組寫入 / 回合計數歸零。
+// SuiteGame 驗證營業實例(game.go):建構 / 取值 / 階段設定 / 事件成組寫入 / 回合計數歸零,
+// 與驅動引擎面(exprs.Resolver 委派、Lock 後綴路由、命令執行分派);詞條內容逐項驗證見 attrRead_test.go 等。
 type SuiteGame struct {
 	suite.Suite
 }
 
-// TestNewGame 驗證 NewGame 建構空白營業實例:屬性零值、無跳轉階段、累積計數零值可用。
+// TestNewGame 驗證 NewGame 建構營業實例:盤面空白(屬性零值、無跳轉階段、累積計數零值可用、座位 map 就緒、容器空、種子入欄),
+// 注入靜態表與衍生索引、self 不入建構。
 func (this *SuiteGame) TestNewGame() {
-	game := NewGame()
+	game := NewGame(123, buildSheet(), fakeOperator{}, fakeRander{}, nil)
 	this.Require().NotNil(game)
 	this.Equal(int32(0), game.GetMorale().GetValue())
 	this.Equal(PhaseNone, game.GetNextPhase())
 	this.Equal(int32(0), game.GetDrawTotal().Sum())
 	this.Nil(game.GetDamageGuest())
+
+	this.NotNil(game.Seat) // 座位 map 必須可用
+	this.Empty(game.Hand)
+	this.Empty(game.Deck)
+	this.Empty(game.Effect)
+	this.Empty(game.Action)
+	this.Equal(int64(123), game.Seed)
+
+	this.NotNil(game.data)       // 注入靜態表
+	this.NotNil(game.awardData)  // 衍生索引於建構時整理
+	this.NotNil(game.effectData) //
+	this.Nil(game.self)          // self 為 run-state,建構不綁定
+}
+
+// TestGameNextID 驗證 NextID 配發遞增唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。
+func (this *SuiteGame) TestGameNextID() {
+	game := NewGame(0, nil, nil, nil, nil)
+	this.Equal(InstanceID(1), game.NextID())
+	this.Equal(InstanceID(2), game.NextID())
+	this.Equal(InstanceID(3), game.NextID())
 }
 
 // TestGameGetMorale 驗證 GetMorale 取回餐廳士氣值組件（寫入經組件可見）。
@@ -390,4 +414,145 @@ func (this *SuiteGame) TestGameRoundReset() {
 
 	this.Same(card, game.GetDrawLast())              // Last 引用保留
 	this.Equal(int32(1), game.GetDrawTotal().Get(1)) // 整場累積保留
+}
+
+// TestGameSkillEffect 驗證 SkillEffect 取技能效果列表複本(不共享靜態表底層);技能不存在回 nil。
+func (this *SuiteGame) TestGameSkillEffect() {
+	game := NewGame(0, buildSheet(), nil, nil, nil)
+
+	effect := game.SkillEffect(301)
+	this.Equal([]int32{401, 402}, effect)
+
+	effect[0] = 999 // 改複本不影響靜態表
+	this.Equal([]int32{401, 402}, game.SkillEffect(301))
+
+	this.Nil(game.SkillEffect(999)) // 技能不存在 → nil
+}
+
+// TestGameCardSkillGroup 驗證 CardSkillGroup 取卡牌技能群組;卡牌 / 技能資料缺失回 0。
+func (this *SuiteGame) TestGameCardSkillGroup() {
+	game := NewGame(0, buildSheet(), nil, nil, nil)
+	this.Equal(int32(3), game.CardSkillGroup(103)) // 卡 103 → 技能 301 → 群組 3
+	this.Equal(int32(0), game.CardSkillGroup(101)) // 卡 101 無技能（SkillID 0）→ 0
+	this.Equal(int32(0), game.CardSkillGroup(999)) // 卡牌資料不存在 → 0
+}
+
+// TestGameAttr 驗證 Attr 對全域屬性詞彙表的委派與 Lock 後綴路由(只驗分派機制)。
+func (this *SuiteGame) TestGameAttr() {
+	game := NewGame(0, nil, nil, nil, nil)
+	game.morale = NewValue(30, 2)
+
+	// 值表命中
+	value, ok := game.Attr("morale", nil)
+	this.True(ok)
+	this.Equal(float64(30), value.Num())
+
+	// Lock 後綴 → 剝後綴查鎖表
+	value, ok = game.Attr("moraleLock", nil)
+	this.True(ok)
+	this.Equal(float64(2), value.Num())
+
+	// 未知名稱 → 失敗
+	_, ok = game.Attr("nope", nil)
+	this.False(ok)
+
+	// 非鎖屬性的 Lock 後綴 → 失敗(round 為「寫」無鎖,鎖表無此鍵)
+	_, ok = game.Attr("roundLock", nil)
+	this.False(ok)
+}
+
+// TestGameAttrRef 驗證 AttrRef 對引用屬性詞彙表的委派與 Lock 後綴路由。
+func (this *SuiteGame) TestGameAttrRef() {
+	game := NewGame(0, nil, nil, nil, nil)
+	ref := NewRefGuest(&Guest{calm: NewValue(5, 1)})
+
+	// 值表命中
+	value, ok := game.AttrRef(ref, "calm", nil)
+	this.True(ok)
+	this.Equal(float64(5), value.Num())
+
+	// Lock 後綴 → 剝後綴查鎖表
+	value, ok = game.AttrRef(ref, "calmLock", nil)
+	this.True(ok)
+	this.Equal(float64(1), value.Num())
+
+	// 未知名稱 → 失敗
+	_, ok = game.AttrRef(ref, "nope", nil)
+	this.False(ok)
+}
+
+// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值 / 鎖定 / 未知名稱與評估失敗 no-op。
+func (this *SuiteGame) TestGameExecAssignGlobal() {
+	game := NewGame(0, nil, nil, nil, nil)
+	game.score = NewValue(10, 0)
+
+	// 全域帶值賦值;RHS 經 exprs 求值(含內建函式 min,驗證 builtin 注入)
+	this.True(game.ExecAssign("score", "", false, AssignAdd, this.expr("min(5, 8)")))
+	this.Equal(int32(15), game.GetScore().GetValue())
+
+	// @ 鎖定(不帶右值,value 為 nil、不求值)
+	this.True(game.ExecAssign("score", "", false, AssignLock, nil))
+	this.Equal(int32(1), game.GetScore().GetLock())
+
+	// 未知全域屬性 → no-op
+	this.False(game.ExecAssign("nope", "", false, AssignSet, this.expr("1")))
+
+	// RHS 評估失敗(除 0)→ no-op
+	this.False(game.ExecAssign("energy", "", false, AssignSet, this.expr("1 / 0")))
+
+	// RHS 非數值(字串)→ no-op
+	this.False(game.ExecAssign("energy", "", false, AssignSet, this.expr("'text'")))
+}
+
+// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 型別不符 / 未知屬性 / 空物件 no-op。
+func (this *SuiteGame) TestGameExecAssignRef() {
+	card := &Card{instanceID: 1}
+	game := NewGame(0, nil, nil, nil, nil)
+	game.drawLast = card
+
+	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3)
+	this.True(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
+	this.Equal(int32(3), card.GetCost().GetValue())
+
+	// 引用屬性型別不符(卡牌引用寫顧客屬性 calm)→ no-op
+	this.False(game.ExecAssign("drawLast", "calm", true, AssignSet, this.expr("3")))
+
+	// 未知引用屬性 → no-op
+	this.False(game.ExecAssign("drawLast", "nope", true, AssignSet, this.expr("3")))
+
+	// 引用解析為空物件(drawLast 為 nil)→ no-op
+	game.drawLast = nil
+	this.False(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
+}
+
+// TestGameSelectObject 驗證 selectObject 對命令對象詞彙表的分派與未登錄回報。
+func (this *SuiteGame) TestGameSelectObject() {
+	game := NewGame(0, buildSheet(), fakeOperator{}, fakeRander{}, nil)
+	game.drawLast = &Card{instanceID: 7}
+
+	result, ok := game.selectObject("drawLast", nil) // 已登錄 → 派發至詞條
+	this.True(ok)
+	this.Equal([]InstanceID{7}, result)
+
+	_, ok = game.selectObject("nope", nil) // 未登錄命令對象 → ok=false
+	this.False(ok)
+}
+
+// === 測試輔助（置尾） ===
+
+// expr 解析算術式來源為 *exprs.Expr;解析失敗即測試失敗。
+func (this *SuiteGame) expr(source string) *exprs.Expr {
+	result, err := exprs.Parse(source)
+	this.Require().NoError(err)
+	return result
+}
+
+// injectPort 注入測試替身:共用 buildSheet 靜態表、決定性 fake Operator / Rander,並重建衍生索引(等價 NewGame 的注入半部)。
+// 供各 suite 對已佈置狀態的 Game 補注入;全空 Game 直接以 NewGame 帶參建構即可。
+func injectPort(game *Game) {
+	game.data = buildSheet()
+	game.operator = fakeOperator{}
+	game.rander = fakeRander{}
+	game.awardData = prepareAward(game.data)
+	game.effectData = prepareEffect(game.data, nil)
 }

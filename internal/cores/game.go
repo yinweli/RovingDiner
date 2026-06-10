@@ -1,10 +1,24 @@
 package cores
 
-// Game 營業實例；持有全域屬性與事件型狀態。
-// 對應【營業規格書 | 五、實例結構 | 營業（Game）實例】。
+import (
+	"strings"
+
+	"github.com/yinweli/RovingDiner/internal/exprs"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
+)
+
+// Game 營業實例；一場營業的全部：聚合狀態（全域屬性、事件型狀態、容器、流程旗標）+ 驅動引擎。
+// 對應【營業規格書 | 五、實例結構 | 營業（Game）實例】【營業規格書 | 六、容器結構】。
 //
-// 欄位私有：數值屬性經 Get* 取 *Value 組件讀寫（寫入紀律由 Value 把關）；
-// 事件欄位只能經 Event* 方法成組寫入（Last + Count + Total 等從不單獨寫）、Get* 讀取。
+// Game 是唯一真相、持有全部實例與容器（零顯示依賴）；
+// 前端靠事件流 + InstanceID 對照投影畫面，不持有第二份規則狀態。
+// 作為驅動引擎，Game 持兩 port 與靜態表、委派實作 exprs.Resolver（Attr / AttrRef），
+// 對外執行命令（ExecAssign / ExecOperate）；games 僅透過匯出方法操作、經 NewGame 建立。
+// 內建函式註冊表為套件層全域 builtin（同 attrRead 等詞彙表），非 per-instance 狀態，故不入欄位。
+//
+// 欄位紀律：數值屬性私有，經 Get* 取 *Value 組件讀寫（寫入紀律由 Value 把關）；
+// 事件欄位只能經 Event* 方法成組寫入（Last + Count + Total 等從不單獨寫）、Get* 讀取；
+// 容器欄位公開，佇列紀律由各列表型別的方法把關；注入欄位建構時定、self 為 run-state。
 type Game struct {
 	// 餐廳 / 出牌全域數值屬性
 	morale       Value // 餐廳士氣值
@@ -54,11 +68,59 @@ type Game struct {
 	morphCount int32 // 回合變身次數
 	morphOldID int32 // 變身前卡牌編號
 	morphNewID int32 // 變身後卡牌編號
+
+	// 卡牌容器
+	Hand  CardList // 手牌（玩家檢視序）
+	Deck  CardList // 抽牌牌堆（先進後出；新進入者置頂）
+	Drop  CardList // 棄牌牌堆（先進後出；新進入者置頂）
+	Exile CardList // 流放牌堆（先進後出；新進入者置頂）
+
+	// 顧客容器
+	Wait    WaitList  // 排隊佇列（先進先出）
+	Seat    SeatList  // 座位列表（座位編號 -> 顧客）
+	Roam    GuestList // 遊蕩列表（順序無關）
+	Cardify GuestList // 卡牌化列表（順序無關）
+
+	// 效果 / 行動容器
+	Effect EffectList // 效果佇列（處理時依【營業規格書 | 十五、作用順序】排序）
+	Action ActionList // 行動佇列（先進先出）
+
+	// 流程旗標與設置
+	Settling    bool       // 結算旗標；執行結算的重入防護
+	Seed        int64      // 本場 PRNG 種子（執行期狀態，供顯示 / 重現）
+	PrefixSkill []int32    // 前置技能列表（營業開始時逐一啟動）
+	lastID      InstanceID // 實例編號產生器游標
+
+	// 引擎注入與求值脈絡
+	self       *Ref                 // 當前求值脈絡的 self 綁定（run-state，效果流程 save / restore 切換）;nil 代表 self 未固定
+	data       *sheeter.Sheeter     // 靜態表格;查詢函式 / cardGroup / 座位佈局讀取用
+	operator   Operator             // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
+	rander     Rander               // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
+	awardData  map[int32]awardData  // 抽獎衍生索引(群組 → 候選);NewGame 經 prepareAward 內部建、唯讀,供 *Roll / *Morph 用
+	effectData map[int32]effectData // 預編譯效果索引(效果編號 → 編譯形);NewGame 經 prepareEffect 內部建、唯讀,供效果流程查 Kind / 命令 / 條件
 }
 
-// NewGame 建構空白營業實例（屬性零值；四張累積表零值可用、Add 自建）。
-func NewGame() *Game {
-	return &Game{}
+// NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用；不載入任何遊戲資料），
+// 並注入靜態表格 / 玩家輸入與亂數兩 port / 命令編譯器。
+// awardData 與 effectData 於建構時自 data 整理（prepareAward / prepareEffect）；effectData 多吃 compile 原語（命令字串 → 閉包），
+// 因 cores 不能 import games 的命令解析，由 games 經 CompileCommand 注入（無命令資料時可傳 nil）。
+// 初始牌堆 / 排隊 / 前置技能等由組裝層（infra / testdata）填入；self 為求值脈絡 run-state、不入建構。
+func NewGame(seed int64, data *sheeter.Sheeter, operator Operator, rander Rander, compile CompileCommand) *Game {
+	return &Game{
+		Seat:       SeatList{},
+		Seed:       seed,
+		data:       data,
+		operator:   operator,
+		rander:     rander,
+		awardData:  prepareAward(data),
+		effectData: prepareEffect(data, compile),
+	}
+}
+
+// NextID 配發下一個唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。
+func (this *Game) NextID() InstanceID {
+	this.lastID++
+	return this.lastID
 }
 
 // GetMorale 取餐廳士氣值。
@@ -336,3 +398,222 @@ func (this *Game) RoundReset() {
 	this.exileCount = 0
 	this.morphCount = 0
 }
+
+// SkillEffect 取技能的效果編號列表複本（新卡實例效果列表來源 = Card.SkillID → Skill.EffectID）;技能不存在回 nil。
+// 複製以免共享靜態表切片。供 NewCard 載入卡牌實例效果列表、Morph 變身後重設效果共用。
+func (this *Game) SkillEffect(skillID int32) []int32 {
+	skill := this.data.Skill.Get(skillID)
+
+	if skill == nil {
+		return nil
+	} // if
+
+	return append([]int32(nil), skill.EffectID...)
+}
+
+// CardSkillGroup 取卡牌的技能群組編號（卡牌資料.SkillID → Skill.Group）;卡牌 / 技能資料不存在回 0。
+// 供 cardRun 啟動效果列表時 skillImmune 排除免疫顧客。
+func (this *Game) CardSkillGroup(cardID int32) int32 {
+	card := this.data.Card.Get(cardID)
+
+	if card == nil {
+		return 0
+	} // if
+
+	skill := this.data.Skill.Get(card.SkillID)
+
+	if skill == nil {
+		return 0
+	} // if
+
+	return skill.Group
+}
+
+// Attr 委派全域屬性詞彙表,以自身為 context 求值。
+// 先查值表 attrRead;未命中且名稱以 Lock 結尾,剝去後綴改查鎖表 attrLockRead(讀鎖定計數)。
+func (this *Game) Attr(name string, arg []exprs.Value) (result exprs.Value, ok bool) {
+	if read, known := attrRead[name]; known {
+		return read(this, arg)
+	} // if
+
+	if base, found := strings.CutSuffix(name, "Lock"); found {
+		if read, known := attrLockRead[base]; known {
+			return read(this, arg)
+		} // if
+	} // if
+
+	return exprs.Value{}, false
+}
+
+// AttrRef 以引用 ref 為主體委派引用屬性詞彙表。Lock 後綴路由規則同 Attr。
+func (this *Game) AttrRef(ref exprs.Ref, name string, arg []exprs.Value) (result exprs.Value, ok bool) {
+	if read, known := attrRefRead[name]; known {
+		return read(this, ref, arg)
+	} // if
+
+	if base, found := strings.CutSuffix(name, "Lock"); found {
+		if read, known := attrRefLockRead[base]; known {
+			return read(this, ref, arg)
+		} // if
+	} // if
+
+	return exprs.Value{}, false
+}
+
+// ExecAssign 執行屬性修改命令(【營業規格書 | 十七、命令 | 1】);回報是否實際寫入。
+// 帶值賦值先求值右值(評估失敗 / 右值非數值 → no-op);引用左值先解析引用主體(空物件 / 型別不符 / 不存在 → no-op);
+// 再經寫入詞彙表(全域 attrWrite / 引用 attrRefWrite)依賦值符變更狀態。名稱可寫性由 games.Validate 先行檢查。
+func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, value *exprs.Expr) (changed bool) {
+	n := float64(0)
+
+	if op != AssignLock && op != AssignUnlock { // @ # 不帶右值
+		result, ok := value.Eval(this.env())
+
+		if ok == false || result.IsNum() == false {
+			return false // 算術評估失敗 / 右值非數值 → no-op
+		} // if
+
+		n = result.Num()
+	} // if
+
+	if isRef {
+		owner, ok := this.Attr(base, nil)
+
+		if ok == false || owner.IsRef() == false {
+			return false // 引用解析為空物件 / 型別不符 / 不存在 → no-op
+		} // if
+
+		write, known := attrRefWrite[refAttr]
+
+		if known == false {
+			return false
+		} // if
+
+		return write(this, owner.Ref(), op, n)
+	} // if
+
+	write, known := attrWrite[base]
+
+	if known == false {
+		return false
+	} // if
+
+	return write(this, op, n)
+}
+
+// ExecOperate 執行操作命令(【營業規格書 | 十七、命令 | 2】【二十五、操作命令清單】);走法 X:games 持 AST 型別 switch、引擎做分派。
+// 流程:求值命令對象 [...] 參數 → selectObject 解析作用集合 → 求值其餘參數 → 查 command 表 → 對集合 fan-out。
+// **任一參數評估失敗 → 整動作 no-op**(對齊規格);命令對象 / verb 未登錄(Validate 應先擋)亦 no-op。
+// 逐元素的型別 / 位置不符 no-op、空集合整體 no-op 由各 verb 本體處理。
+func (this *Game) ExecOperate(verb, selectorName string, selectorParam, arg []*exprs.Expr) {
+	selectorValue, ok := this.evalAll(selectorParam)
+
+	if ok == false {
+		return // 命令對象參數評估失敗 → 整動作 no-op
+	} // if
+
+	target, known := this.selectObject(selectorName, selectorValue)
+
+	if known == false {
+		return // 命令對象未登錄 → no-op
+	} // if
+
+	argValue, ok := this.evalAll(arg)
+
+	if ok == false {
+		return // 其餘參數評估失敗 → 整動作 no-op
+	} // if
+
+	run, found := command[verb]
+
+	if found == false {
+		return // 未知命令 → no-op
+	} // if
+
+	run(this, target, argValue)
+}
+
+// selectObject 解析命令對象為作用對象集合(【營業規格書 | 二十四、命令對象清單】);ok=false 代表命令對象名稱未登錄。
+// arg 為 [...] 內參數的已求值結果(求值由呼叫端 M9 ExecOperate 負責);selector 自身不碰 exprs。
+// 回身分集 []InstanceID(非具型別實例):M9 verb 自行 locate 取實例 + 查容器位置(位置不符 no-op 本就要查),
+// 使本表保持同構、與 Self / effect 的 InstanceID 身分模型一致。
+func (this *Game) selectObject(name string, arg []exprs.Value) (result []InstanceID, ok bool) {
+	resolve, known := selector[name]
+
+	if known == false {
+		return nil, false
+	} // if
+
+	return resolve(this, arg), true
+}
+
+// evalAll 依序求值一串算術式;任一失敗回 ok=false(供 ExecOperate 套用「任一參數評估失敗 → 整動作 no-op」)。
+func (this *Game) evalAll(expr []*exprs.Expr) (result []exprs.Value, ok bool) {
+	result = make([]exprs.Value, 0, len(expr))
+
+	for _, itor := range expr {
+		value, valid := itor.Eval(this.env())
+
+		if valid == false {
+			return nil, false
+		} // if
+
+		result = append(result, value)
+	} // for
+
+	return result, true
+}
+
+// locateCard 以實例編號自四牌堆找出卡牌及其所在容器;未命中回 (nil, ContainerNone, false)。
+// 供操作命令取實例 + 查容器位置(位置不符 no-op);卡牌僅存在於 手牌 / 抽牌 / 棄牌 / 流放。
+func (this *Game) locateCard(id InstanceID) (card *Card, where ContainerKind, ok bool) {
+	if found := this.Hand.Find(id); found != nil {
+		return found, ContainerHand, true
+	} // if
+
+	if found := this.Deck.Find(id); found != nil {
+		return found, ContainerDeck, true
+	} // if
+
+	if found := this.Drop.Find(id); found != nil {
+		return found, ContainerDrop, true
+	} // if
+
+	if found := this.Exile.Find(id); found != nil {
+		return found, ContainerExile, true
+	} // if
+
+	return nil, ContainerNone, false
+}
+
+// locateGuest 以實例編號自顧客四容器找出顧客及其所在容器;未命中回 (nil, ContainerNone, false)。
+// 供操作命令取顧客實例 + 查容器位置(型別不符 / 位置不符 no-op);顧客存在於 座位 / 排隊 / 遊蕩 / 卡牌化。
+func (this *Game) locateGuest(id InstanceID) (guest *Guest, where ContainerKind, ok bool) {
+	for _, itor := range this.Seat {
+		if itor != nil && itor.GetInstanceID() == id {
+			return itor, ContainerSeat, true
+		} // if
+	} // for
+
+	if found := this.Wait.Find(id); found != nil {
+		return found, ContainerWait, true
+	} // if
+
+	if found := this.Roam.Find(id); found != nil {
+		return found, ContainerRoam, true
+	} // if
+
+	if found := this.Cardify.Find(id); found != nil {
+		return found, ContainerCardify, true
+	} // if
+
+	return nil, ContainerNone, false
+}
+
+// env 組裝求值期環境:以自身為條件對象 Resolver、帶入套件層全域內建函式註冊表 builtin。
+func (this *Game) env() exprs.Env {
+	return exprs.Env{Resolver: this, Builtin: builtin}
+}
+
+// 編譯期確認 Game 滿足 exprs.Resolver(條件對象求值的接縫)。
+var _ exprs.Resolver = (*Game)(nil)
