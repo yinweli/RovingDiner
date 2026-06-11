@@ -21,11 +21,10 @@ type SuiteModel struct {
 	suite.Suite
 }
 
-// TestNewModel 驗證建構: 欄位就位、鏡像 / 日誌 / 組件 / 寬高預算就緒。
+// TestNewModel 驗證建構: 欄位就位、日誌 / 組件 / 寬高預算就緒。
 func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil, testSheet())
 	this.Nil(target.stepper)
-	this.NotNil(target.world)
 	this.NotNil(target.log)
 	this.Len(target.keybar.bind, 2)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
@@ -38,19 +37,19 @@ func (this *SuiteModel) TestModelInit() {
 	this.NotNil(newModel(nil, testSheet()).Init())
 }
 
-// TestModelUpdate 驗證訊息分派: 推進拍同步 Next 收事件摺疊鏡像 + 轉寫日誌並排下一拍, 終局停止推進;
-// 視窗尺寸更新寬高預算; 按鍵查綁定表分派(q / ctrl+c 離開、未綁定鍵不動作)。
+// TestModelUpdate 驗證訊息分派: 推進拍同步 Next 收事件轉寫日誌並排下一拍(盤面直讀引擎、無摺疊),
+// 終局停止推進; 視窗尺寸更新寬高預算; 按鍵查綁定表分派(q / ctrl+c 離開、未綁定鍵不動作)。
 func (this *SuiteModel) TestModelUpdate() {
 	result, cmd := tea.Model(newModel(newStepper(1, 601, tester.BuildSheet()), tester.BuildSheet())).Update(stepMsg{})
-	this.Equal(cores.PhaseGameStart, result.(model).world.phase) // 首拍: 階段事件已摺疊進鏡像
-	this.NotNil(cmd)                                             // 已排下一拍
+	this.Equal(cores.PhaseGameStart, result.(model).stepper.game.GetPhase()) // 首拍: 引擎停在首事件邊界, 直讀即見
+	this.NotNil(cmd)                                                         // 已排下一拍
 
 	for cmd != nil { // 逐拍推進到終局: 停止排拍
 		result, cmd = result.(model).Update(stepMsg{})
 	} // for
 
-	this.NotEmpty(result.(model).log.journal.line) // 事件已轉寫進日誌
-	this.NotZero(result.(model).world.round)       // 鏡像已摺疊整場
+	this.NotEmpty(result.(model).log.journal.line)                  // 事件已轉寫進日誌
+	this.NotZero(result.(model).stepper.game.GetRound().GetValue()) // 引擎已推進整場
 
 	result, cmd = newModel(nil, testSheet()).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)

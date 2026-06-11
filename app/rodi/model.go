@@ -34,13 +34,12 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 
 // model Bubble Tea 殼(M22 alt-screen 換裝, M19 dump 退役): 全畫面 layout——左欄六區堆疊 + 狀態列釘底、
 // 右欄事件日誌與左欄同高、鍵位列橫跨底部全寬; 父層只組合與分配空間(M20 拍板)。
-// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(摺疊鏡像 + 轉寫日誌)、再排下一拍;
-// 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄與日誌標題前綴)。
+// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(轉寫日誌; 盤面組件直讀引擎、不持拷貝)、
+// 再排下一拍; 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄與日誌標題前綴)。
 // Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈,
 // 即 M26 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
 type model struct {
-	stepper *stepper    // 暫停機橋接器
-	world   *mirror     // 世界鏡像(事件摺疊一次、組件唯讀共用)
+	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
 	log     *logPanel   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
 	keybar  keyBar      // 鍵位列(按鍵分派入口 + 底部全寬列)
 	status  statusBar   // 狀態列(左欄釘底)
@@ -52,7 +51,6 @@ type model struct {
 func newModel(stepper *stepper, sheet *sheeter.Sheeter) model {
 	return model{
 		stepper: stepper,
-		world:   newMirror(sheet),
 		log:     newLogPanel(sheet),
 		keybar:  newKeyBar(),
 		status:  statusBar{},
@@ -67,8 +65,9 @@ func (this model) Init() tea.Cmd {
 	return step()
 }
 
-// Update 訊息分派: 推進拍 → 同步 Next 收一筆事件摺疊鏡像 + 轉寫日誌、再排下一拍, 終局停止推進
-// (成敗已由終局 phase 事件投影, 不另動作); 視窗尺寸 → 更新寬高預算; 按鍵 → 查鍵綁定表分派(未綁定不動作)。
+// Update 訊息分派: 推進拍 → 同步 Next 收一筆事件轉寫日誌(盤面不摺疊, 組件直讀引擎)、再排下一拍,
+// 終局停止推進(成敗已由終局 phase 事件入日誌, 不另動作); 視窗尺寸 → 更新寬高預算;
+// 按鍵 → 查鍵綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case stepMsg:
@@ -78,7 +77,6 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 			return this, nil
 		} // if
 
-		this.world.Apply(eventData)
 		this.log.Append(eventData)
 		return this, step()
 
