@@ -40,8 +40,9 @@ func newModel(adapter *adapter, seed int64, stageID int32, dataDir string) model
 }
 
 // Init 起跑：印 header（seed／關卡／資料目錄，供重現與對帳）並開始等第一筆事件。
+// 印行與續等用 tea.Sequence 循序執行（先印完、再等下一筆）：tea.Batch 並發會讓相鄰兩行 Printf 搶序，事件 dump 行序必須保序。
 func (this model) Init() tea.Cmd {
-	return tea.Batch(tea.Printf("營業開始 (seed %v, stage %v, data %v)", this.seed, this.stageID, this.dataDir), waitEvent(this.adapter))
+	return tea.Sequence(tea.Printf("營業開始 (seed %v, stage %v, data %v)", this.seed, this.stageID, this.dataDir), waitEvent(this.adapter))
 }
 
 // Update 訊息分派：事件 → 印行 + 續等；終局 → 記成敗、停止消費；q / ctrl+c → 離開。
@@ -49,7 +50,7 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case eventMsg:
 		this.serial++
-		return this, tea.Batch(tea.Printf("%5d %+v", this.serial, cores.EventData(msg)), waitEvent(this.adapter))
+		return this, tea.Sequence(tea.Printf("%5d %+v", this.serial, cores.EventData(msg)), waitEvent(this.adapter)) // 循序保行序,依 Init 同註
 
 	case doneMsg:
 		this.finish = true

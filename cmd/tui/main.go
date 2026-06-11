@@ -1,37 +1,50 @@
-// 營業 TUI 瘦進入點（【營業實作規格書 | 二、套件結構】）：flag 解析 → 載表 → 組裝後呼叫 app。
+// 營業 TUI 瘦進入點（【營業實作規格書 | 二、套件結構】）：flag 解析 → 載表 → 組裝後呼叫 app；CLI 框架統一用 cobra。
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/yinweli/RovingDiner/app/tui"
 	"github.com/yinweli/RovingDiner/internal/infra"
 )
 
-// main 組裝營業 TUI：-seed 預設 0 = 以當下時間取亂（實際 seed 由 dump 首行印出供重現），
-// 明給非零值即決定性同一局；-stage 查無關卡空盤面照走（M15 寬鬆策略）；-data 指向 Sheeter 生成的資料目錄。
+// main 組裝營業 TUI：--seed 預設 0 = 以當下時間取亂（實際 seed 由 dump 首行印出供重現），
+// 明給非零值即決定性同一局；--stage 查無關卡空盤面照走（M15 寬鬆策略）；--data 指向 Sheeter 生成的資料目錄。
 func main() {
-	seed := flag.Int64("seed", 0, "亂數種子;0 = 以時間取亂")
-	stage := flag.Int("stage", 0, "關卡編號")
-	data := flag.String("data", "sheetdata", "靜態表資料目錄")
-	flag.Parse()
+	var seed int64
+	var stage int32
+	var data string
 
-	if *seed == 0 {
-		*seed = time.Now().UnixNano()
-	} // if
+	command := &cobra.Command{
+		Use:          "tui",
+		Short:        "營業 TUI（debug viewer）",
+		SilenceUsage: true, // 執行期錯誤（載表失敗等）不重印用法,只在旗標解析錯時顯示
+		RunE: func(_ *cobra.Command, _ []string) error {
+			if seed == 0 {
+				seed = time.Now().UnixNano()
+			} // if
 
-	sheet, err := infra.Load(*data)
+			sheet, err := infra.Load(data)
 
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "載表失敗:", err)
-		os.Exit(1)
-	} // if
+			if err != nil {
+				return fmt.Errorf("載表失敗: %w", err)
+			} // if
 
-	if err := tui.Run(*seed, int32(*stage), *data, sheet); err != nil {
-		fmt.Fprintln(os.Stderr, "TUI 執行失敗:", err)
-		os.Exit(1)
+			return tui.Run(seed, stage, data, sheet)
+		},
+	}
+	command.Flags().Int64Var(&seed, "seed", 0, "亂數種子;0 = 以時間取亂")
+	command.Flags().Int32Var(&stage, "stage", 0, "關卡編號")
+	command.Flags().StringVar(&data, "data", "sheetdata", "靜態表資料目錄")
+	command.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		return fmt.Errorf("%v\n%v", err, c.UsageString()) // SilenceUsage 連旗標解析錯也吞用法,這裡補回:解析錯誤帶上用法再回報
+	})
+
+	if command.Execute() != nil {
+		os.Exit(1) // 錯誤訊息已由 cobra 印出
 	} // if
 }
