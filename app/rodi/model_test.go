@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
+	"github.com/yinweli/RovingDiner/internal/tester"
 )
 
 func TestSuiteModel(t *testing.T) {
 	suite.Run(t, new(SuiteModel))
 }
 
-// SuiteModel 驗證 Bubble Tea 殼(model.go): Update 純函式分派、全畫面 layout、最低尺寸守門、waitEvent 等待點。
+// SuiteModel 驗證 Bubble Tea 殼(model.go): Update 純函式分派、全畫面 layout、最低尺寸守門、stepMsg 推進鏈。
 // Run 為組裝入口(需要 TTY), 比照 cmd 瘦組裝不納白箱測試。
 type SuiteModel struct {
 	suite.Suite
@@ -23,7 +24,7 @@ type SuiteModel struct {
 // TestNewModel 驗證建構: 欄位就位、鏡像 / 日誌 / 組件 / 寬高預算就緒。
 func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil, testSheet())
-	this.Nil(target.adapter)
+	this.Nil(target.stepper)
 	this.NotNil(target.world)
 	this.NotNil(target.log)
 	this.Len(target.keybar.bind, 2)
@@ -32,22 +33,24 @@ func (this *SuiteModel) TestNewModel() {
 	this.Equal(minHeight, target.height)
 }
 
-// TestModelInit 驗證起跑 Cmd 存在(首次等待)。
+// TestModelInit 驗證起跑 Cmd 存在(排第一拍)。
 func (this *SuiteModel) TestModelInit() {
 	this.NotNil(newModel(nil, testSheet()).Init())
 }
 
-// TestModelUpdate 驗證訊息分派: 事件摺疊鏡像 + 轉寫日誌並續等; 終局停止消費; 視窗尺寸更新寬高預算;
-// 按鍵查綁定表分派(q / ctrl+c 離開、未綁定鍵不動作)。
+// TestModelUpdate 驗證訊息分派: 推進拍同步 Next 收事件摺疊鏡像 + 轉寫日誌並排下一拍, 終局停止推進;
+// 視窗尺寸更新寬高預算; 按鍵查綁定表分派(q / ctrl+c 離開、未綁定鍵不動作)。
 func (this *SuiteModel) TestModelUpdate() {
-	result, cmd := newModel(nil, testSheet()).Update(eventMsg(cores.EventData{Kind: cores.EventProperty, Round: 2, Attr: "morale", After: 30}))
-	this.Equal(int32(2), result.(model).world.round) // 事件已摺疊進鏡像
-	this.Equal(float64(30), result.(model).world.attr["morale"])
-	this.Equal([]string{"$ 餐廳士氣值 = 0 >> 30"}, result.(model).log.journal.line) // 事件已轉寫進日誌
-	this.NotNil(cmd)
+	result, cmd := tea.Model(newModel(newStepper(1, 601, tester.BuildSheet()), tester.BuildSheet())).Update(stepMsg{})
+	this.Equal(cores.PhaseGameStart, result.(model).world.phase) // 首拍: 階段事件已摺疊進鏡像
+	this.NotNil(cmd)                                             // 已排下一拍
 
-	_, cmd = newModel(nil, testSheet()).Update(doneMsg(true))
-	this.Nil(cmd) // 終局: 停止消費(成敗已由終局 phase 事件投影)
+	for cmd != nil { // 逐拍推進到終局: 停止排拍
+		result, cmd = result.(model).Update(stepMsg{})
+	} // for
+
+	this.NotEmpty(result.(model).log.journal.line) // 事件已轉寫進日誌
+	this.NotZero(result.(model).world.round)       // 鏡像已摺疊整場
 
 	result, cmd = newModel(nil, testSheet()).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
@@ -95,12 +98,7 @@ func (this *SuiteModel) TestModelView() {
 	this.Equal("請放大終端機 (現 100x20, 最低 100x30)", target.View())
 }
 
-// TestWaitEvent 驗證等待點: 事件到回事件訊息、終局到回成敗訊息。
-func (this *SuiteModel) TestWaitEvent() {
-	target := &adapter{event: make(chan cores.EventData, 1), done: make(chan bool, 1)}
-	target.event <- cores.EventData{Kind: cores.EventPhase, Round: 2}
-	this.Equal(eventMsg(cores.EventData{Kind: cores.EventPhase, Round: 2}), waitEvent(target)())
-
-	target.done <- true
-	this.Equal(doneMsg(true), waitEvent(target)())
+// TestStep 驗證排拍 Cmd: 只回推進訊息(不碰引擎)。
+func (this *SuiteModel) TestStep() {
+	this.Equal(stepMsg{}, step()())
 }

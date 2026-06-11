@@ -7,7 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yinweli/RovingDiner/internal/cores"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
@@ -20,11 +19,11 @@ const (
 	minHeight = 30  // 最低支援高
 )
 
-// Run 顯示/操作層對外入口: 組裝橋接器(被動觀看 operator)與 Bubble Tea 殼(alt-screen; M22)後跑到離開。
+// Run 顯示/操作層對外入口: 組裝暫停機(被動觀看 operator)與 Bubble Tea 殼(alt-screen; M22)後跑到離開。
 // seed 由呼叫端先行定案(cmd 對 0 取時間亂數), 並由 cmd 在進 alt-screen 前把 seed / 關卡印進
 // scrollback(退出後仍可見, 供重現與對帳; M22 拍板)。
 func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
-	_, err := tea.NewProgram(newModel(newAdapter(seed, stageID, sheet, passiveOperator{}), sheet), tea.WithAltScreen()).Run()
+	_, err := tea.NewProgram(newModel(newStepper(seed, stageID, sheet), sheet), tea.WithAltScreen()).Run()
 
 	if err != nil {
 		return fmt.Errorf("rodi: %w", err)
@@ -35,11 +34,12 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 
 // model Bubble Tea 殼(M22 alt-screen 換裝, M19 dump 退役): 全畫面 layout——左欄六區堆疊 + 狀態列釘底、
 // 右欄事件日誌與左欄同高、鍵位列橫跨底部全寬; 父層只組合與分配空間(M20 拍板)。
-// 消費採波浪式 Cmd: waitEvent 收一筆 → Update 摺疊鏡像 + 轉寫日誌、再發 waitEvent; 收到終局即停止消費、
-// 等 q 離開(成敗常駐顯示活在狀態列階段欄與日誌標題前綴)——消費節奏全活在 Update 迴圈,
-// 即 M25 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
+// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(摺疊鏡像 + 轉寫日誌)、再排下一拍;
+// 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄與日誌標題前綴)。
+// Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈,
+// 即 M26 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
 type model struct {
-	adapter *adapter    // 引擎橋接器
+	stepper *stepper    // 暫停機橋接器
 	world   *mirror     // 世界鏡像(事件摺疊一次、組件唯讀共用)
 	log     *logPanel   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
 	keybar  keyBar      // 鍵位列(按鍵分派入口 + 底部全寬列)
@@ -49,9 +49,9 @@ type model struct {
 	height  int         // 高度預算(WindowSizeMsg 前用最低高)
 }
 
-func newModel(adapter *adapter, sheet *sheeter.Sheeter) model {
+func newModel(stepper *stepper, sheet *sheeter.Sheeter) model {
 	return model{
-		adapter: adapter,
+		stepper: stepper,
 		world:   newMirror(sheet),
 		log:     newLogPanel(sheet),
 		keybar:  newKeyBar(),
@@ -62,22 +62,25 @@ func newModel(adapter *adapter, sheet *sheeter.Sheeter) model {
 	}
 }
 
-// Init 起跑: 開始等第一筆事件(header 已由 cmd 印於 scrollback, 殼不再印行)。
+// Init 起跑: 排第一拍(header 已由 cmd 印於 scrollback, 殼不再印行)。
 func (this model) Init() tea.Cmd {
-	return waitEvent(this.adapter)
+	return step()
 }
 
-// Update 訊息分派: 事件 → 摺疊鏡像 + 轉寫日誌 + 續等; 終局 → 停止消費(成敗已由終局 phase 事件投影,
-// 不另動作); 視窗尺寸 → 更新寬高預算; 按鍵 → 查鍵綁定表分派(未綁定不動作)。
+// Update 訊息分派: 推進拍 → 同步 Next 收一筆事件摺疊鏡像 + 轉寫日誌、再排下一拍, 終局停止推進
+// (成敗已由終局 phase 事件投影, 不另動作); 視窗尺寸 → 更新寬高預算; 按鍵 → 查鍵綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
-	case eventMsg:
-		this.world.Apply(cores.EventData(msg))
-		this.log.Append(cores.EventData(msg))
-		return this, waitEvent(this.adapter)
+	case stepMsg:
+		eventData, more := this.stepper.Next()
 
-	case doneMsg:
-		return this, nil
+		if more == false {
+			return this, nil
+		} // if
+
+		this.world.Apply(eventData)
+		this.log.Append(eventData)
+		return this, step()
 
 	case tea.WindowSizeMsg:
 		this.width = msg.Width
@@ -117,22 +120,12 @@ func (this model) leftView(width, height int) string {
 	return stack + strings.Repeat("\n", gap+1) + status
 }
 
-// eventMsg 一筆引擎事件抵達(Bubble Tea 訊息殼)。
-type eventMsg cores.EventData
+// stepMsg 推進一拍(Bubble Tea 訊息殼; 不載資料——事件由 Update 內同步 Next 取得)。
+type stepMsg struct{}
 
-// doneMsg 營業跑完(載成敗)。
-type doneMsg bool
-
-// waitEvent 等待下一筆事件或終局的 Cmd: 兩者同一個等待點——done 緩衝 1 且引擎送完所有事件才送終局
-// (adapter 不變式), select 不會在尚有事件未收時撿到終局。
-func waitEvent(adapter *adapter) tea.Cmd {
+// step 排下一拍的 Cmd: 只回推進訊息、不碰引擎(Next 必須留在 Update 內, Cmd 跑在別條 goroutine)。
+func step() tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case eventData := <-adapter.event:
-			return eventMsg(eventData)
-
-		case succ := <-adapter.done:
-			return doneMsg(succ)
-		}
+		return stepMsg{}
 	}
 }
