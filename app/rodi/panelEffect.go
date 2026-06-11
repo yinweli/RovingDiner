@@ -11,14 +11,14 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// effectPanel 效果佇列組件(區 4; 【營業顯示規格書 | 6、畫面規格 | 6.6】): 依作用順序排序(大者優先、
+// panelEffect 效果佇列組件(區 4; 【營業顯示規格書 | 6、畫面規格 | 6.6】): 依作用順序排序(大者優先、
 // 同序效果編號小者優先, 同【營業規格書 | 十五、作用順序】; 排序用本地複本, 不動引擎佇列);
 // 每項 2 行垂直區塊橫向並排——第 1 行 效果識別碼xStack (剩餘回合)(層數 1 省 xN、整場保留顯 永),
 // 第 2 行 self 識別碼 + 類型(觸發 / 常駐); 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-type effectPanel struct{}
+type panelEffect struct{}
 
 // View 渲染標題列(含佇列數) + 2 行; 空佇列兩行留白(高度穩定)。
-func (this effectPanel) View(game *cores.Game, width int) string {
+func (this panelEffect) View(game *cores.Game, width int) string {
 	sorted := append([]*cores.Effect{}, game.Effect...)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		left, right := effectOrder(game.GetSheet(), sorted[i].GetEffectID()), effectOrder(game.GetSheet(), sorted[j].GetEffectID())

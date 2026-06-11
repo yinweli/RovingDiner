@@ -9,17 +9,17 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-func TestSuitePoolPanel(t *testing.T) {
-	suite.Run(t, new(SuitePoolPanel))
+func TestSuitePanelPool(t *testing.T) {
+	suite.Run(t, new(SuitePanelPool))
 }
 
-// SuitePoolPanel 驗證場外組件(poolPanel.go): 三列格式 / 空列留白 / 截斷記號。
-type SuitePoolPanel struct {
+// SuitePanelPool 驗證場外組件(panelPool.go): 三列格式 / 空列留白 / 截斷記號。
+type SuitePanelPool struct {
 	suite.Suite
 }
 
-// TestPoolPanelView 驗證渲染: 排隊 / 遊蕩 / 卡牌化三列(隊頭在左)、空列冒號後留空、超寬補右緣 >。
-func (this *SuitePoolPanel) TestPoolPanelView() {
+// TestPanelPoolView 驗證渲染: 排隊 / 遊蕩 / 卡牌化三列(隊頭在左)、空列冒號後留空、超寬補右緣 >。
+func (this *SuitePanelPool) TestPanelPoolView() {
 	game := testGame()
 	game.Wait.Insert(cores.NewGuest(game, 501))
 	game.Wait.Insert(cores.NewGuest(game, 501))
@@ -30,8 +30,8 @@ func (this *SuitePoolPanel) TestPoolPanelView() {
 		"排隊(2): 501@老饕 501@老饕",
 		"遊蕩(0):",
 		"卡牌化(1): 501@老饕",
-	}, "\n"), poolPanel{}.View(game, 60))
+	}, "\n"), panelPool{}.View(game, 60))
 
-	row := strings.Split(poolPanel{}.View(game, 12), "\n") // 超寬: 補右緣 >
+	row := strings.Split(panelPool{}.View(game, 12), "\n") // 超寬: 補右緣 >
 	this.Equal("排隊(2): 5 >", row[1])
 }

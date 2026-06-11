@@ -8,13 +8,13 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// pilePanel 牌堆組件(區 6; 【營業顯示規格書 | 6、畫面規格 | 6.8】): 抽 / 棄 / 流放三堆各一行、
+// panelPile 牌堆組件(區 6; 【營業顯示規格書 | 6、畫面規格 | 6.8】): 抽 / 棄 / 流放三堆各一行、
 // 常駐列出內容(debug viewer 定位)、堆頂在左; 卡牌識別碼以空白分隔(主畫面省實例段);
 // 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-type pilePanel struct{}
+type panelPile struct{}
 
 // View 渲染標題列 + 3 列。
-func (this pilePanel) View(game *cores.Game, width int) string {
+func (this panelPile) View(game *cores.Game, width int) string {
 	return strings.Join([]string{
 		panelTitle("牌堆", width),
 		truncMark(pileRow(game.GetSheet(), "抽牌堆", game.Deck), width),

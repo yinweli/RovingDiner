@@ -249,7 +249,7 @@ func containerText(kind cores.ContainerKind) string {
 	} // switch
 }
 
-// taskText 行動類型全名(日誌用; 行動區的單字短形另見 actionPanel 的 taskName)。
+// taskText 行動類型全名(日誌用; 行動區的單字短形另見 panelAction 的 taskName)。
 func taskText(task cores.TaskKind) string {
 	switch task {
 	case cores.TaskSate:

@@ -9,19 +9,19 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-func TestSuiteLogPanel(t *testing.T) {
-	suite.Run(t, new(SuiteLogPanel))
+func TestSuitePanelLog(t *testing.T) {
+	suite.Run(t, new(SuitePanelLog))
 }
 
-// SuiteLogPanel 驗證事件日誌組件(logPanel.go): 標題列 / 尾段釘最新 / 底部補空行 / 超寬截斷 / 高度防禦。
+// SuitePanelLog 驗證事件日誌組件(panelLog.go): 標題列 / 尾段釘最新 / 底部補空行 / 超寬截斷 / 高度防禦。
 // 行內容形狀歸 journal_test, 本處只驗組件層的取尾與裁切。
-type SuiteLogPanel struct {
+type SuitePanelLog struct {
 	suite.Suite
 }
 
-// TestLogPanelView 驗證渲染: 標題 + 行歷史、行少底部補空行、行多取尾段、超寬補右緣 >、高度耗盡回空。
-func (this *SuiteLogPanel) TestLogPanelView() {
-	target := newLogPanel(testSheet())
+// TestPanelLogView 驗證渲染: 標題 + 行歷史、行少底部補空行、行多取尾段、超寬補右緣 >、高度耗盡回空。
+func (this *SuitePanelLog) TestPanelLogView() {
+	target := newPanelLog(testSheet())
 	target.Append(cores.EventData{Kind: cores.EventProperty, Attr: "energy", Op: cores.AssignSub, Operand: 2, Before: 10, After: 8})
 	target.Append(cores.EventData{Kind: cores.EventScope, Round: 3, Phase: cores.PhasePlayerAction, Scope: cores.ScopeTrigger, Trigger: cores.TriggerCardPlay})
 

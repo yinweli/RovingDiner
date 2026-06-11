@@ -10,14 +10,14 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// handPanel 手牌組件(區 5; 【營業顯示規格書 | 6、畫面規格 | 6.7】): 每卡 3 行垂直區塊橫向並排——
+// panelHand 手牌組件(區 5; 【營業顯示規格書 | 6、畫面規格 | 6.7】): 每卡 3 行垂直區塊橫向並排——
 // 第 1 行 卡牌識別碼[卡牌化來源] (出牌費用)、第 2 行 flag A(不棄 / 封印)、第 3 行 flag B(出放 / 未放),
 // 命中才顯、未命中留白; 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
 // 出不起 / 封印的卡名行上暗色標記(顏色與排版正交; M22 拍板)。
-type handPanel struct{}
+type panelHand struct{}
 
 // View 渲染標題列(手牌(N/上限)) + 3 行; 空手牌三行留白(高度穩定)。
-func (this handPanel) View(game *cores.Game, width int) string {
+func (this panelHand) View(game *cores.Game, width int) string {
 	row1 := []string{}
 	row2 := []string{}
 	row3 := []string{}

@@ -9,17 +9,17 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-func TestSuiteSeatPanel(t *testing.T) {
-	suite.Run(t, new(SuiteSeatPanel))
+func TestSuitePanelSeat(t *testing.T) {
+	suite.Run(t, new(SuitePanelSeat))
 }
 
-// SuiteSeatPanel 驗證座位組件(seatPanel.go): 桌 strip / 2 行摘要 / 旗標列 / 固定桌欄寬 / 截斷記號。
-type SuiteSeatPanel struct {
+// SuitePanelSeat 驗證座位組件(panelSeat.go): 桌 strip / 2 行摘要 / 旗標列 / 固定桌欄寬 / 截斷記號。
+type SuitePanelSeat struct {
 	suite.Suite
 }
 
-// TestSeatPanelView 驗證渲染: 桌號列 + 桌內 2 座各 2 行、桌欄固定寬 25、空位顯 空、超寬桌號列補右緣 >。
-func (this *SuiteSeatPanel) TestSeatPanelView() {
+// TestPanelSeatView 驗證渲染: 桌號列 + 桌內 2 座各 2 行、桌欄固定寬 25、空位顯 空、超寬桌號列補右緣 >。
+func (this *SuitePanelSeat) TestPanelSeatView() {
 	game := testGame()
 	guest := cores.NewGuest(game, 501)
 	game.Seat.Place(1, guest)
@@ -32,17 +32,17 @@ func (this *SuiteSeatPanel) TestSeatPanelView() {
 		strings.Repeat(" ", 9) + "封  效",
 		"空",
 		"",
-	}, "\n"), seatPanel{}.View(game, 60))
+	}, "\n"), panelSeat{}.View(game, 60))
 
 	guest.GetEffectImmune().Add(5) // 免疫計數 > 0 → 免 點亮(M22 拍板)
-	this.Contains(seatPanel{}.View(game, 60), strings.Repeat(" ", 9)+"封免效")
+	this.Contains(panelSeat{}.View(game, 60), strings.Repeat(" ", 9)+"封免效")
 
-	row := strings.Split(seatPanel{}.View(game, 10), "\n") // 超寬: 桌號列補右緣 >
+	row := strings.Split(panelSeat{}.View(game, 10), "\n") // 超寬: 桌號列補右緣 >
 	this.Equal("桌1"+strings.Repeat(" ", 6)+">", row[1])
 
 	game.Seat[2] = nil // 防禦: 座位表 nil 項 → 顯 空
-	this.Contains(seatPanel{}.View(game, 60), "空")
+	this.Contains(panelSeat{}.View(game, 60), "空")
 
 	game.Effect = nil // 無效果 → 效 槽熄滅(hasEffect 掃完未命中)
-	this.NotContains(seatPanel{}.View(game, 60), "效")
+	this.NotContains(panelSeat{}.View(game, 60), "效")
 }

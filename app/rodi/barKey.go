@@ -16,22 +16,22 @@ type keyBind struct {
 	cmd   tea.Cmd // 按鍵行為
 }
 
-// keyBar 鍵位列組件(【營業顯示規格書 | 6、畫面規格 | 6.11】): 常駐底部、固定 2 行、橫跨全寬、非聚焦;
+// barKey 鍵位列組件(【營業顯示規格書 | 6、畫面規格 | 6.11】): 常駐底部、固定 2 行、橫跨全寬、非聚焦;
 // 誠實列鍵——只列當前真有行為的鍵, 內容隨里程碑成長、M26 收斂成 §6.11 常態全鍵(M20 拍板)。
 // 綁定表為自持 UI 狀態(不讀盤面, View 只吃寬度預算), 父層 Update 經 Find 分派按鍵。
-type keyBar struct {
+type barKey struct {
 	bind []keyBind // 鍵綁定表
 }
 
-func newKeyBar() keyBar {
-	return keyBar{bind: []keyBind{
+func newBarKey() barKey {
+	return barKey{bind: []keyBind{
 		{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},
 		{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
 	}}
 }
 
 // View 渲染固定 2 行(鍵少的行留白, 高度穩定不抖); 同行鍵以空白分隔, 超寬依預算截斷。
-func (this keyBar) View(width int) string {
+func (this barKey) View(width int) string {
 	row1 := []string{}
 	row2 := []string{}
 
@@ -51,7 +51,7 @@ func (this keyBar) View(width int) string {
 }
 
 // Find 依按鍵字串查綁定行為; 未綁定回 nil(父層據此不動作)。
-func (this keyBar) Find(key string) tea.Cmd {
+func (this barKey) Find(key string) tea.Cmd {
 	for _, itor := range this.bind {
 		if itor.key == key {
 			return itor.cmd

@@ -9,13 +9,13 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-// actionPanel 行動佇列組件(區 3; 【營業顯示規格書 | 6、畫面規格 | 6.5】): 先進先出、隊頭在左;
+// panelAction 行動佇列組件(區 3; 【營業顯示規格書 | 6、畫面規格 | 6.5】): 先進先出、隊頭在左;
 // 每項 2 行垂直區塊橫向並排——第 1 行技能識別碼(無實例段)、第 2 行顧客識別碼 + 行動類型標記(飽 / 耐);
 // 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-type actionPanel struct{}
+type panelAction struct{}
 
 // View 渲染標題列(含佇列數) + 2 行; 空佇列兩行留白(高度穩定)。
-func (this actionPanel) View(game *cores.Game, width int) string {
+func (this panelAction) View(game *cores.Game, width int) string {
 	row1 := []string{}
 	row2 := []string{}
 

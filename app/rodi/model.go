@@ -40,9 +40,9 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 // 即 M26 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
 type model struct {
 	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
-	log     *logPanel   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
-	keybar  keyBar      // 鍵位列(按鍵分派入口 + 底部全寬列)
-	status  statusBar   // 狀態列(左欄釘底)
+	log     *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
+	keybar  barKey      // 鍵位列(按鍵分派入口 + 底部全寬列)
+	status  barStatus   // 狀態列(左欄釘底)
 	comp    []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
 	width   int         // 寬度預算(WindowSizeMsg 前用設計寬)
 	height  int         // 高度預算(WindowSizeMsg 前用最低高)
@@ -51,10 +51,10 @@ type model struct {
 func newModel(stepper *stepper, sheet *sheeter.Sheeter) model {
 	return model{
 		stepper: stepper,
-		log:     newLogPanel(sheet),
-		keybar:  newKeyBar(),
-		status:  statusBar{},
-		comp:    []component{seatPanel{}, poolPanel{}, actionPanel{}, effectPanel{}, handPanel{}, pilePanel{}},
+		log:     newPanelLog(sheet),
+		keybar:  newBarKey(),
+		status:  barStatus{},
+		comp:    []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}},
 		width:   minWidth,
 		height:  minHeight,
 	}

@@ -9,17 +9,17 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-func TestSuiteHandPanel(t *testing.T) {
-	suite.Run(t, new(SuiteHandPanel))
+func TestSuitePanelHand(t *testing.T) {
+	suite.Run(t, new(SuitePanelHand))
 }
 
-// SuiteHandPanel 驗證手牌組件(handPanel.go): 3 行卡塊 / cardify 來源段 / 旗標命中才顯 / 截斷記號。
-type SuiteHandPanel struct {
+// SuitePanelHand 驗證手牌組件(panelHand.go): 3 行卡塊 / cardify 來源段 / 旗標命中才顯 / 截斷記號。
+type SuitePanelHand struct {
 	suite.Suite
 }
 
-// TestHandPanelView 驗證渲染: 標題含上限、卡名行帶費用與 cardify 來源、flag A / B 命中才顯、超寬補右緣 >。
-func (this *SuiteHandPanel) TestHandPanelView() {
+// TestPanelHandView 驗證渲染: 標題含上限、卡名行帶費用與 cardify 來源、flag A / B 命中才顯、超寬補右緣 >。
+func (this *SuitePanelHand) TestPanelHandView() {
 	game := testGame()
 	game.GetHandMax().Set(5)
 	game.Hand.Push(cores.NewCard(game, 101))
@@ -35,14 +35,14 @@ func (this *SuiteHandPanel) TestHandPanelView() {
 		"101@上菜[501@老饕] (2)  103@結帳 (1)  101@上菜 (2)",
 		"不棄 封印" + strings.Repeat(" ", 15) + "不棄" + strings.Repeat(" ", 10) + "封印",
 		"",
-	}, "\n"), handPanel{}.View(game, 60)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
+	}, "\n"), panelHand{}.View(game, 60)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
 
-	row := strings.Split(handPanel{}.View(game, 12), "\n") // 超寬: 補右緣 >
+	row := strings.Split(panelHand{}.View(game, 12), "\n") // 超寬: 補右緣 >
 	this.Equal("101@上菜[5 >", row[1])
 }
 
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。
-func (this *SuiteHandPanel) TestHandDim() {
+func (this *SuitePanelHand) TestHandDim() {
 	game := testGame()
 	game.GetEnergy().Set(2)
 	sealed := cores.NewCard(game, 101) // 101: 費用 2、資料封印
@@ -56,7 +56,7 @@ func (this *SuiteHandPanel) TestHandDim() {
 }
 
 // TestHandFlagB 驗證 flag B: 出放 / 未放命中並列。
-func (this *SuiteHandPanel) TestHandFlagB() {
+func (this *SuitePanelHand) TestHandFlagB() {
 	card := cores.NewCard(testGame(), 101)
 	this.Equal("", handFlagB(card))
 

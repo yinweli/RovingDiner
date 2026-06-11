@@ -9,17 +9,17 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-func TestSuiteEffectPanel(t *testing.T) {
-	suite.Run(t, new(SuiteEffectPanel))
+func TestSuitePanelEffect(t *testing.T) {
+	suite.Run(t, new(SuitePanelEffect))
 }
 
-// SuiteEffectPanel 驗證效果佇列組件(effectPanel.go): 作用順序排序 / 層數與剩餘回合 / self 辨型 / 類型標記。
-type SuiteEffectPanel struct {
+// SuitePanelEffect 驗證效果佇列組件(panelEffect.go): 作用順序排序 / 層數與剩餘回合 / self 辨型 / 類型標記。
+type SuitePanelEffect struct {
 	suite.Suite
 }
 
-// TestEffectPanelView 驗證渲染: 作用順序大者優先、層數 1 省 xN、整場保留顯 永、剩餘回合 = 結束回合 - 當前回合。
-func (this *SuiteEffectPanel) TestEffectPanelView() {
+// TestPanelEffectView 驗證渲染: 作用順序大者優先、層數 1 省 xN、整場保留顯 永、剩餘回合 = 結束回合 - 當前回合。
+func (this *SuitePanelEffect) TestPanelEffectView() {
 	game := testGame()
 	game.GetRound().Set(2)
 	guest := cores.NewGuest(game, 501)
@@ -33,20 +33,20 @@ func (this *SuiteEffectPanel) TestEffectPanelView() {
 		"+- 效果佇列(3) " + strings.Repeat("-", 45),
 		"402@護盾 (永)  403@立即 (永)  401@加耐x2 (3)",
 		"空 常駐" + strings.Repeat(" ", 8) + "空 ?" + strings.Repeat(" ", 11) + "501@老饕 觸發",
-	}, "\n"), effectPanel{}.View(game, 60))
+	}, "\n"), panelEffect{}.View(game, 60))
 
-	row := strings.Split(effectPanel{}.View(game, 12), "\n") // 超寬: 補右緣 >
+	row := strings.Split(panelEffect{}.View(game, 12), "\n") // 超寬: 補右緣 >
 	this.Equal("402@護盾 ( >", row[1])
 }
 
 // TestEffectOrder 驗證作用順序查表; 查無回 0。
-func (this *SuiteEffectPanel) TestEffectOrder() {
+func (this *SuitePanelEffect) TestEffectOrder() {
 	this.Equal(int32(9), effectOrder(testSheet(), 402))
 	this.Equal(int32(0), effectOrder(testSheet(), 999))
 }
 
 // TestEffectSelf 驗證 self 主畫面摘要: Ref 自帶辨型(顧客 / 卡牌)、空物件顯 空。
-func (this *SuiteEffectPanel) TestEffectSelf() {
+func (this *SuitePanelEffect) TestEffectSelf() {
 	game := testGame()
 	this.Equal("501@老饕", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.NewRefGuest(cores.NewGuest(game, 501)), 1)))
 	this.Equal("101@上菜", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.NewRefCard(cores.NewCard(game, 101)), 1)))
@@ -54,7 +54,7 @@ func (this *SuiteEffectPanel) TestEffectSelf() {
 }
 
 // TestEffectKindName 驗證類型標記: 觸發 / 常駐; 立即與查無顯 ?。
-func (this *SuiteEffectPanel) TestEffectKindName() {
+func (this *SuitePanelEffect) TestEffectKindName() {
 	this.Equal("觸發", effectKindName(testSheet(), 401))
 	this.Equal("常駐", effectKindName(testSheet(), 402))
 	this.Equal("?", effectKindName(testSheet(), 403)) // 立即不入列

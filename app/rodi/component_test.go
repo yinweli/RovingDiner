@@ -32,7 +32,7 @@ func (this *SuiteComponent) TestEndGameView() {
 	game := games.Build(0, 601, tester.BuildSheet(), tester.FakeOperator{}, nil)
 	games.Loop(game)
 
-	for _, itor := range []component{seatPanel{}, poolPanel{}, actionPanel{}, effectPanel{}, handPanel{}, pilePanel{}, statusBar{}} {
+	for _, itor := range []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}, barStatus{}} {
 		this.NotEmpty(itor.View(game, 100))
 	} // for
 }
