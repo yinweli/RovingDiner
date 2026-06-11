@@ -115,7 +115,7 @@ func (this *SuiteRef) TestAsGuest() {
 	this.False(ok)
 }
 
-// TestRefTarget 驗證 RefTarget 取投影事件對象編號: 卡牌 / 顧客引用回(資料編號, 實例編號)、空引用回零值。
+// TestRefTarget 驗證 RefTarget 取事件對象編號: 卡牌 / 顧客引用回(資料編號, 實例編號)、空引用回零值。
 func (this *SuiteRef) TestRefTarget() {
 	dataID, instanceID := RefTarget(NewRefCard(&Card{cardID: 103, instanceID: 1}))
 	this.Equal(int32(103), dataID)

@@ -88,7 +88,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 		this.Equal(cores.NoneID, record.Event[itor].InstanceID)
 	} // for
 
-	// 開局投影: 設定六鍵 + 點數補滿(索引 0~6)後, 逐實例容器事件依容器序(關卡 601; M21 拍板, 原設置靜默作廢)
+	// 開局事件: 設定六鍵 + 點數補滿(索引 0~6)後, 逐實例容器事件依容器序(關卡 601; M21 拍板, 原設置靜默作廢)
 	opening := []struct {
 		dataID int32
 		to     cores.ContainerKind
@@ -104,7 +104,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 		this.Equal(opening[itor].dataID, event.DataID)
 		this.Equal(cores.ContainerNone, event.From) // 新建直入
 		this.Equal(opening[itor].to, event.To)
-		this.NotEqual(cores.NoneID, event.InstanceID) // 開局投影即帶實例編號, 為鏡像摺疊的地基
+		this.NotEqual(cores.NoneID, event.InstanceID) // 開局事件即帶實例編號, 供消費端對照實例
 	} // for
 
 	prefix := []cores.EventData{}
@@ -122,7 +122,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 		} // if
 	} // for
 
-	this.Equal(len(opening), container) // 容器事件僅開局投影七筆
+	this.Equal(len(opening), container) // 容器事件僅開局七筆
 
 	this.Require().Len(prefix, 1) // 關卡 601 前置技能 301
 	this.Equal(int32(301), prefix[0].SkillID)

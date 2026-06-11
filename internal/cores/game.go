@@ -9,7 +9,7 @@ import (
 // 對應【營業規格書 | 五、實例結構 | 營業（Game）實例】【營業規格書 | 六、容器結構】。
 //
 // Game 是唯一真相、持有全部實例與容器(零顯示依賴);
-// 前端靠事件流 + InstanceID 對照投影畫面, 不持有第二份規則狀態。
+// 前端於停點間直讀盤面(唯讀)、事件流供日誌敘事與步進節拍, 不持有第二份規則狀態。
 // 作為驅動引擎, Game 持遊戲資料與兩 port、委派實作 exprs.Resolver(Attr / AttrRef),
 // 對外執行命令(ExecAssign / ExecOperate); 詞彙行為由 rules 套件經 Register* 裝備。
 //
@@ -208,7 +208,7 @@ func (this *Game) GetRander() Rander {
 	return this.rander
 }
 
-// Emit 發射投影事件: 蓋章座標(當前回合 / 階段)後轉交事件流輸出 port。
+// Emit 發射事件: 蓋章座標(當前回合 / 階段)後轉交事件流輸出 port。
 // 發射點只填事件本體欄位, Round / Phase 由此統一蓋章、不會漏; presenter 建構時已正規化, 免判 nil。
 func (this *Game) Emit(eventData EventData) {
 	eventData.Round = this.round.GetValue()

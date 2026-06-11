@@ -8,8 +8,8 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// journal 事件日誌轉寫器(【營業顯示規格書 | 6、畫面規格 | 6.10】): 把投影事件流逐筆轉寫為日誌行,
-// 行歷史與歸因狀態自持於日誌側、不入世界鏡像(M22 拍板)。行角色看首字: 範圍標題 [ / 操作元 * /
+// journal 事件日誌轉寫器(【營業顯示規格書 | 6、畫面規格 | 6.10】): 把事件流逐筆轉寫為日誌行,
+// 行歷史與歸因狀態自持於日誌側(M22 拍板)。行角色看首字: 範圍標題 [ / 操作元 * /
 // 效果 - / 流程直屬 $ / 效果欄位(欄 2)。歸因狀態機: 範圍標題重置「當前效果」、效果行設定之,
 // 其後的命令行有當前效果掛欄 2、否則為流程直屬行; phase 切換與行動出列不立行
 // (前者階段值併入下一標題前綴、後者緊接的顧客行動標題已承載; M22 拍板)。
@@ -130,7 +130,7 @@ func (this *journal) propertyBody(eventData cores.EventData) string {
 	return body + " " + assignText(eventData.Op) + " " + value + " >> " + numText(eventData.After)
 }
 
-// containerBody 容器命令行本文: 重整(From == To)為洗牌行(全序不印, 順序歸鏡像置換; M22 拍板)、
+// containerBody 容器命令行本文: 重整(From == To)為洗牌行(全序不印, 順序直讀盤面即見; M22 拍板)、
 // 搬移為 <識別碼> >> <去向>(入座帶座位編號、To == None 即離場)。
 func (this *journal) containerBody(eventData cores.EventData) string {
 	if eventData.From == eventData.To {

@@ -1,5 +1,5 @@
 // Package cores 是營業引擎本體: 資料模型與驅動引擎。
-// 資料模型為行為邊界介面 / 投影事件 / 列舉 / 詞彙行為簽名(define.go)、數值與集合原語(value.go / help.go)、
+// 資料模型為行為邊界介面 / 事件 / 列舉 / 詞彙行為簽名(define.go)、數值與集合原語(value.go / help.go)、
 // 引用(ref.go)、實例與容器(card.go / guest.go / effect.go / action.go)、遊戲資料聚合(data.go);
 // 驅動引擎為 game.go: 一場營業的聚合狀態, 委派實作 exprs.Resolver, 持有詞彙表(由 rules 經 Register* 裝備)。
 //

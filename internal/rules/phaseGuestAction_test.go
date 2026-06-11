@@ -63,7 +63,7 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestAction() {
 	this.Equal(2, end)
 }
 
-// TestPhaseGuestActionEmit 驗證顧客行動的事件接線: 逐筆行動先發出列投影(M21 拍板)、再發範圍標題
+// TestPhaseGuestActionEmit 驗證顧客行動的事件接線: 逐筆行動先發出列事件(M21 拍板)、再發範圍標題
 // (操作元 = 顧客 + 技能; 踏站 phase 事件歸 RunPhase)。
 func (this *SuitePhaseGuestAction) TestPhaseGuestActionEmit() {
 	game, record := newGameRecord()

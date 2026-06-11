@@ -59,7 +59,7 @@ func (this *SuiteCommandGuest) TestSkillImmune() {
 	this.Equal(int32(0), guest.GetSkillImmune().Get(9))
 }
 
-// TestImmuneEmit 驗證免疫命令的屬性事件(群組維度投影; M22 拍板): Operand 載群組編號、前後值載該群組計數、夾 0 不動以 Before == After 表達。
+// TestImmuneEmit 驗證免疫命令的屬性事件(群組維度事件; M22 拍板): Operand 載群組編號、前後值載該群組計數、夾 0 不動以 Before == After 表達。
 func (this *SuiteCommandGuest) TestImmuneEmit() {
 	game, record := newGameRecord()
 	guest := cores.NewGuest(game, 501)

@@ -70,7 +70,7 @@ func effectOrder(sheet *sheeter.Sheeter, effectID int32) int32 {
 	return meta.RunOrder
 }
 
-// effectSelf 佇列項 self 的主畫面投影: Ref 自帶辨型(卡牌 / 顧客); 空物件顯「空」。
+// effectSelf 佇列項 self 的主畫面摘要: Ref 自帶辨型(卡牌 / 顧客); 空物件顯「空」。
 func effectSelf(sheet *sheeter.Sheeter, effect *cores.Effect) string {
 	self := effect.GetSelf()
 

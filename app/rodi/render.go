@@ -32,7 +32,7 @@ func truncTo(text string, width int) string {
 }
 
 // truncMark 截斷並於右緣補 > 記號(【營業顯示規格書 | 6、畫面規格 | 6.12】; M21 固定窗只出右緣 >,
-// 左緣 < 與 cursor-follow 隨 M23 游標進場); 未超寬原樣回傳。
+// 左緣 < 與 cursor-follow 隨 M24 游標進場); 未超寬原樣回傳。
 func truncMark(text string, width int) string {
 	if lipgloss.Width(text) <= width {
 		return text

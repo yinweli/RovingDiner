@@ -47,7 +47,7 @@ func immuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, a
 }
 
 // immuneDel 對命令對象每位顧客、每個 varargs 群組編號, 其免疫群組鎖定計數 - 1(夾 ≥ 0, 由 Immune.Del 把關)。
-// 投影同 immuneAdd(Op 為 Sub); 夾 0 不動時照發、Before == After 表達無變化(比照鎖定拒寫; M22 拍板)。
+// 事件形同 immuneAdd(Op 為 Sub); 夾 0 不動時照發、Before == After 表達無變化(比照鎖定拒寫; M22 拍板)。
 func immuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, attr string, pick func(guest *cores.Guest) *cores.Immune) {
 	for _, itor := range target {
 		guest, _, ok := game.LocateGuest(itor)
@@ -91,6 +91,6 @@ func commandTaskAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 
 		action := cores.NewAction(guest, cores.TaskKind(kind), skillID)
 		game.Action.Push(action)
-		emitAction(game, action, true) // 入列投影(M21 拍板)
+		emitAction(game, action, true) // 入列事件(M21 拍板)
 	} // for
 }

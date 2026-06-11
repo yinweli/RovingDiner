@@ -13,7 +13,7 @@ func TestSuiteEmit(t *testing.T) {
 	suite.Run(t, new(SuiteEmit))
 }
 
-// SuiteEmit 驗證投影事件發射輔助(emit.go): 各類事件的欄位組裝與選中清單建構; 發射點接線斷言見各流程測試。
+// SuiteEmit 驗證事件發射輔助(emit.go): 各類事件的欄位組裝與選中清單建構; 發射點接線斷言見各流程測試。
 type SuiteEmit struct {
 	suite.Suite
 }

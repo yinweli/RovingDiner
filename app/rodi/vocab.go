@@ -10,7 +10,7 @@ import (
 // 查無對照退回原文(寬鬆, 比照識別碼查無顯 ?)。
 
 // 免疫詞條鍵(群組維度的 property 事件: Operand 載群組、前後值載該群組計數; M22 拍板):
-// 詞彙對照 / 日誌行文 / 鏡像摺疊三處特判共用。
+// 詞彙對照 / 日誌行文特判共用。
 const (
 	attrEffectImmune = "effectImmune"
 	attrSkillImmune  = "skillImmune"

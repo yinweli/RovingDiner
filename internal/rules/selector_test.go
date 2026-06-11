@@ -292,7 +292,7 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	this.Empty(this.must(deckGe, "deckTop", nil))
 }
 
-// TestSelectDeckTopEmit 驗證 deckTop auto-shuffle 的洗回投影(M21 拍板): 逐卡 Drop → Deck(發射序 = 洗後序)
+// TestSelectDeckTopEmit 驗證 deckTop auto-shuffle 的洗回事件(M21 拍板): 逐卡 Drop → Deck(發射序 = 洗後序)
 // + 一筆重整快照(From == To == Deck、Pick 載全序); 牌堆足夠不洗回 → 不發。
 func (this *SuiteSelector) TestSelectDeckTopEmit() {
 	game, record := newGameRecord()

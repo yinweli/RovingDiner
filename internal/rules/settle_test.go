@@ -114,7 +114,7 @@ func (this *SuiteSettle) TestSettleEmit() {
 	this.Equal([]cores.PickData{{DataID: 101, InstanceID: game.Drop[0].GetInstanceID()}}, pick[0].Pick)
 
 	record.Event = nil
-	hit := cores.NewGuest(game, 501) // 耐心門檻 2^301 命中 → 入列投影(M21 拍板)
+	hit := cores.NewGuest(game, 501) // 耐心門檻 2^301 命中 → 入列事件(M21 拍板)
 	hit.GetCalm().Set(2)
 	game.Seat.Place(3, hit)
 	Settle(game)

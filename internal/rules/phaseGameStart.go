@@ -53,8 +53,8 @@ func buildStage(game *cores.Game) {
 
 	game.PrefixSkill = append([]int32(nil), stage.PrefixSkillID...) // 複本; 不共享靜態表底層
 
-	// 開局投影: 逐實例發容器事件(From None 新建直入, 發射序 = 容器序, 第 1 個 = 頂端 / 隊首;
-	// M21 拍板, 原 M18 設置靜默作廢)。僅投影——設置非命令, 不觸發時機 / 不動事件屬性(不走 placeCard)。
+	// 開局事件: 逐實例發容器事件(From None 新建直入, 發射序 = 容器序, 第 1 個 = 頂端 / 隊首;
+	// M21 拍板, 原 M18 設置靜默作廢)。僅發事件——設置非命令, 不觸發時機 / 不動事件屬性(不走 placeCard)。
 	for _, itor := range game.Hand {
 		emitCardMove(game, itor, cores.ContainerNone, cores.ContainerHand)
 	} // for
@@ -88,7 +88,7 @@ func stageCard(game *cores.Game, cardID []int32) (result cores.CardList) {
 }
 
 // loadSetting 自設定表格載入全域設定初值(【營業規格書 | 四、表格結構 | 設定表格】六鍵)。
-// 流程寫入白名單: 每鍵發一筆屬性事件(開局快照, 事件流自足——鏡像消費端免自查設定表格; M20 拍板)。
+// 流程寫入白名單: 每鍵發一筆屬性事件(開局快照, 事件流自足——日誌消費端免自查設定表格; M20 拍板)。
 func loadSetting(game *cores.Game) {
 	settingLoad(game, "roundMax", game.GetRoundMax(), settingNum(game, "RoundMax"))
 	settingLoad(game, "morale", game.GetMorale(), settingNum(game, "Morale"))

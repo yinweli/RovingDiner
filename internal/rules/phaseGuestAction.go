@@ -18,7 +18,7 @@ func phaseGuestAction(game *cores.Game) cores.PhaseKind {
 		} // if
 
 		action := game.Action.Pop()
-		emitAction(game, action, false)                                                                                                                                                                  // 出列投影(含封印防禦路徑; M21 拍板)
+		emitAction(game, action, false)                                                                                                                                                                  // 出列事件(含封印防禦路徑; M21 拍板)
 		game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: action.GetGuest().GetGuestID(), InstanceID: action.GetGuest().GetInstanceID(), SkillID: action.GetSkillID()}) // 範圍標題: 顧客行動(操作元 = 顧客 + 技能)
 		game.EventTask(action.GetGuest(), action.GetSkillID())                                                                                                                                           // 最後行動顧客 / 技能 / 回合行動次數
 

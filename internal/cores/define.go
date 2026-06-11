@@ -11,7 +11,7 @@ import (
 // 以 reader.Get 查詢; 衍生索引由核心(cores 的 NewData)預建。
 //
 // 核心完全同步、單執行緒、無 channel: 需要玩家輸入時阻塞呼叫 Operator,
-// 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI adapter。
+// 每跑一個單位呼叫 Presenter.Emit。goroutine + channel 只活在 TUI 的 stepper(暫停機橋接)。
 // 三 port 定義於 cores(純資料模型); games 驅動引擎與 infra / TUI 各自實作。
 
 // 詞彙行為的函式型別: rules 各概念檔的行為簽名, 經 Game.Register* 逐詞條裝備。
@@ -69,13 +69,13 @@ type Presenter interface {
 	Emit(eventData EventData) // 一個命令 / 一次觸發 / 一次 phase 切換 / 一個玩家動作 = 一個 EventData
 }
 
-// EventData 核心吐給前端的細粒度投影事件: 單一 struct 以 Kind 分派, 各類只填自己的本體欄位、其餘留零值。
+// EventData 核心吐給前端的細粒度事件: 單一 struct 以 Kind 分派, 各類只填自己的本體欄位、其餘留零值。
 // Round / Phase 為座標欄, 由發射入口 Game.Emit 統一蓋章, 發射點不自帶。
 // 識別碼只帶編號、名稱由前端憑同一份靜態表自查; 凡指涉實例同時帶資料編號 + 實例編號(技能無實例編號只帶資料編號)。
-// 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類;
+// 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】事件分類;
 // 欄位形狀對齊事件日誌行角色(【營業顯示規格書 | 6、畫面規格 | 6.10】)。
 type EventData struct {
-	Kind  EventKind // 投影事件類別
+	Kind  EventKind // 事件類別
 	Round int32     // 座標: 當前回合(Emit 蓋章)
 	Phase PhaseKind // 座標: 當前階段(Emit 蓋章)
 
@@ -137,7 +137,7 @@ type InstanceID int64
 const NoneID InstanceID = 0
 
 // ContainerKind 容器種類; 供 locate 回報實例所在容器、操作命令做「位置不符該項 no-op」判定。
-// 對應【營業規格書 | 六、容器結構】: 卡牌四牌堆 + 顧客四容器。顯示層 EventContainer 投影亦復用本型別(EventData 的 From / To 欄)。
+// 對應【營業規格書 | 六、容器結構】: 卡牌四牌堆 + 顧客四容器。顯示層 EventContainer 事件亦復用本型別(EventData 的 From / To 欄)。
 type ContainerKind int
 
 const (
@@ -152,7 +152,7 @@ const (
 	ContainerCardify                      // 卡牌化列表
 )
 
-// EventKind 投影事件類別; 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類,
+// EventKind 事件類別; 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】事件分類,
 // 與事件日誌行角色對齊(【營業顯示規格書 | 6、畫面規格 | 6.10】); 類內變體由 ScopeKind / EffectStage 欄位表達。
 type EventKind int
 

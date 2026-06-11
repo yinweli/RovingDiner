@@ -82,7 +82,7 @@ func (this *SuiteGame) TestGameGetRander() {
 	this.Equal(fakeRander{}, NewGame(0, 0, nil, nil, fakeRander{}, nil).GetRander())
 }
 
-// TestGameEmit 驗證 Emit 發射投影事件: 統一蓋章座標(當前回合 / 階段)後轉交 presenter, 發射點不自帶;
+// TestGameEmit 驗證 Emit 發射事件: 統一蓋章座標(當前回合 / 階段)後轉交 presenter, 發射點不自帶;
 // presenter nil 由建構正規化為無輸出替身, 發射不爆。
 func (this *SuiteGame) TestGameEmit() {
 	record := &fakePresenter{}

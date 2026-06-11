@@ -4,7 +4,7 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-// 投影事件發射輔助(M18 Emit 接線; 【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】):
+// 事件發射輔助(M18 Emit 接線; 【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】):
 // 流程與效果系統的事件組裝收口, 發射一律經 Game.Emit 蓋章座標(回合 / 階段), 發射點只填本體欄位。
 
 // emitEffect 發射效果事件(日誌效果行): 對象欄載 self 本體(空物件留零值)、效果編號 / 效果實例編號 / 階段為本體欄;
@@ -20,7 +20,7 @@ func emitGuestMove(game *cores.Game, guest *cores.Guest, from, to cores.Containe
 	game.Emit(cores.EventData{Kind: cores.EventContainer, DataID: guest.GetGuestID(), InstanceID: guest.GetInstanceID(), From: from, To: to, SeatID: seatID})
 }
 
-// emitCardMove 發射卡牌容器搬移事件(placeCard 收口與開局投影 / 洗回投影共用; M21 拍板):
+// emitCardMove 發射卡牌容器搬移事件(placeCard 收口與開局 / 洗回事件共用; M21 拍板):
 // 已綁卡牌化來源者帶語境欄(來源顧客資料 + 實例編號, 比照 SeatID 先例), 供前端標注 cardify 卡。
 func emitCardMove(game *cores.Game, card *cores.Card, from, to cores.ContainerKind) {
 	eventData := cores.EventData{Kind: cores.EventContainer, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), From: from, To: to}

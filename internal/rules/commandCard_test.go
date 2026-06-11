@@ -57,7 +57,7 @@ func (this *SuiteCommandCard) TestCardCostNoop() {
 	this.Equal(int32(3), card.GetCost().GetValue())
 }
 
-// TestCardCostEmit 驗證費用命令的屬性事件(數值型操作命令投影; M21 拍板): 逐卡包前後值、鎖定拒寫以 Before == After 表達。
+// TestCardCostEmit 驗證費用命令的屬性事件(數值型操作命令事件; M21 拍板): 逐卡包前後值、鎖定拒寫以 Before == After 表達。
 func (this *SuiteCommandCard) TestCardCostEmit() {
 	game, record := newGameRecord()
 	card := cores.NewCard(game, 101)

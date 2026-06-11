@@ -45,7 +45,7 @@ func (this *SuiteEffectPanel) TestEffectOrder() {
 	this.Equal(int32(0), effectOrder(testSheet(), 999))
 }
 
-// TestEffectSelf 驗證 self 主畫面投影: Ref 自帶辨型(顧客 / 卡牌)、空物件顯 空。
+// TestEffectSelf 驗證 self 主畫面摘要: Ref 自帶辨型(顧客 / 卡牌)、空物件顯 空。
 func (this *SuiteEffectPanel) TestEffectSelf() {
 	game := testGame()
 	this.Equal("501@老饕", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.NewRefGuest(cores.NewGuest(game, 501)), 1)))

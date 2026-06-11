@@ -97,7 +97,7 @@ func hitSate(game *cores.Game) {
 				itor.GetSateHit().Add(threshold.Value)
 				action := cores.NewAction(itor, cores.TaskSate, threshold.SkillID)
 				game.Action.Push(action)
-				emitAction(game, action, true) // 入列投影(M21 拍板)
+				emitAction(game, action, true) // 入列事件(M21 拍板)
 			} // if
 		} // for
 	} // for
@@ -131,7 +131,7 @@ func hitCalm(game *cores.Game) {
 				itor.GetCalmHit().Add(threshold.Value)
 				action := cores.NewAction(itor, cores.TaskCalm, threshold.SkillID)
 				game.Action.Push(action)
-				emitAction(game, action, true) // 入列投影(M21 拍板)
+				emitAction(game, action, true) // 入列事件(M21 拍板)
 			} // if
 		} // for
 	} // for

@@ -20,7 +20,7 @@ type SuiteIdent struct {
 // TestIdentCard 驗證卡牌識別碼: 完整三段、NoneID 省實例段、查無資料名稱顯 ?。
 func (this *SuiteIdent) TestIdentCard() {
 	this.Equal("101@上菜#7", identCard(testSheet(), 101, 7))
-	this.Equal("101@上菜", identCard(testSheet(), 101, cores.NoneID)) // 主畫面投影省實例段
+	this.Equal("101@上菜", identCard(testSheet(), 101, cores.NoneID)) // 主畫面省實例段
 	this.Equal("999@?#7", identCard(testSheet(), 999, 7))           // 查無資料
 }
 

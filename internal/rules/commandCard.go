@@ -22,7 +22,7 @@ func commandCardCostSet(game *cores.Game, target []cores.InstanceID, arg []exprs
 }
 
 // cardCost 對命令對象每張卡牌套用賦值符於出牌費用(寫鎖 / 捨入 / 夾下限 0); N 缺漏 / 非數值整動作 no-op。
-// 數值型操作命令投影(M21 拍板): 逐卡比照 ExecAssign 收口包前後值發屬性事件, 鎖定拒寫以 Before == After 表達。
+// 數值型操作命令事件(M21 拍板): 逐卡比照 ExecAssign 收口包前後值發屬性事件, 鎖定拒寫以 Before == After 表達。
 func cardCost(game *cores.Game, target []cores.InstanceID, op cores.AssignKind, arg []exprs.Value) {
 	n, ok := argNum(arg)
 
