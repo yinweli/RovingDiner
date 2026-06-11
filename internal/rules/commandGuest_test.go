@@ -59,6 +59,22 @@ func (this *SuiteCommandGuest) TestSkillImmune() {
 	this.Equal(int32(0), guest.GetSkillImmune().Get(9))
 }
 
+// TestImmuneEmit 驗證免疫命令的屬性事件(群組維度投影; M22 拍板): Operand 載群組編號、前後值載該群組計數、夾 0 不動以 Before == After 表達。
+func (this *SuiteCommandGuest) TestImmuneEmit() {
+	game, record := newGameRecord()
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(1, guest)
+	id := []cores.InstanceID{guest.GetInstanceID()}
+
+	commandEffectImmuneAdd(game, id, nums(5))
+	this.Require().Len(record.Event, 1)
+	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: guest.GetInstanceID(), Attr: "effectImmune", Op: cores.AssignAdd, Operand: 5, Before: 0, After: 1}, record.Event[0])
+
+	commandSkillImmuneDel(game, id, nums(9)) // 夾 0 不動 → Before == After、Op 為 Sub
+	this.Require().Len(record.Event, 2)
+	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: guest.GetInstanceID(), Attr: "skillImmune", Op: cores.AssignSub, Operand: 9, Before: 0, After: 0}, record.Event[1])
+}
+
 func (this *SuiteCommandGuest) TestTaskAdd() {
 	game := newGame()
 	guest := cores.NewGuest(game, 501)

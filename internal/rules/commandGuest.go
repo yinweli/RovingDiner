@@ -10,23 +10,24 @@ import (
 // 免疫群組編號為命令尾端的 varargs(trailing 參數, 逐個套用)。
 
 func commandEffectImmuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
-	immuneAdd(game, target, arg, (*cores.Guest).GetEffectImmune)
+	immuneAdd(game, target, arg, "effectImmune", (*cores.Guest).GetEffectImmune)
 }
 
 func commandEffectImmuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
-	immuneDel(game, target, arg, (*cores.Guest).GetEffectImmune)
+	immuneDel(game, target, arg, "effectImmune", (*cores.Guest).GetEffectImmune)
 }
 
 func commandSkillImmuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
-	immuneAdd(game, target, arg, (*cores.Guest).GetSkillImmune)
+	immuneAdd(game, target, arg, "skillImmune", (*cores.Guest).GetSkillImmune)
 }
 
 func commandSkillImmuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
-	immuneDel(game, target, arg, (*cores.Guest).GetSkillImmune)
+	immuneDel(game, target, arg, "skillImmune", (*cores.Guest).GetSkillImmune)
 }
 
 // immuneAdd 對命令對象每位顧客、每個 varargs 群組編號, 其免疫群組鎖定計數 + 1; pick 取顧客的免疫計數組件(增減紀律由 Immune 把關)。
-func immuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, pick func(guest *cores.Guest) *cores.Immune) {
+// 每次套用發一筆 property 事件: Operand 載群組編號(維度鍵重用右值欄)、前後值載該群組計數(M22 拍板)。
+func immuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, attr string, pick func(guest *cores.Guest) *cores.Immune) {
 	for _, itor := range target {
 		guest, _, ok := game.LocateGuest(itor)
 
@@ -36,14 +37,18 @@ func immuneAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, p
 
 		for _, value := range arg {
 			if value.IsNum() {
-				pick(guest).Add(int32(value.Num()))
+				group := int32(value.Num())
+				before := pick(guest).Get(group)
+				pick(guest).Add(group)
+				emitProperty(game, guest.GetGuestID(), guest.GetInstanceID(), attr, cores.AssignAdd, float64(group), float64(before), float64(pick(guest).Get(group)))
 			} // if
 		} // for
 	} // for
 }
 
 // immuneDel 對命令對象每位顧客、每個 varargs 群組編號, 其免疫群組鎖定計數 - 1(夾 ≥ 0, 由 Immune.Del 把關)。
-func immuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, pick func(guest *cores.Guest) *cores.Immune) {
+// 投影同 immuneAdd(Op 為 Sub); 夾 0 不動時照發、Before == After 表達無變化(比照鎖定拒寫; M22 拍板)。
+func immuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, attr string, pick func(guest *cores.Guest) *cores.Immune) {
 	for _, itor := range target {
 		guest, _, ok := game.LocateGuest(itor)
 
@@ -53,7 +58,10 @@ func immuneDel(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, p
 
 		for _, value := range arg {
 			if value.IsNum() {
-				pick(guest).Del(int32(value.Num()))
+				group := int32(value.Num())
+				before := pick(guest).Get(group)
+				pick(guest).Del(group)
+				emitProperty(game, guest.GetGuestID(), guest.GetInstanceID(), attr, cores.AssignSub, float64(group), float64(before), float64(pick(guest).Get(group)))
 			} // if
 		} // for
 	} // for
