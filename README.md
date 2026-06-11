@@ -21,7 +21,7 @@
 1. **核心零 I/O、零框架依賴**：`game` 核心只依賴介面，不碰終端機、goroutine 或全域時間／亂數。
 2. **決定性**：同 `seed` + 同玩家輸入 = 同一局，所有隨機來源共用單一注入的 seeded PRNG，作為回歸測試與 bug 重現的基礎。
 3. **yield-per-unit 事件流**：核心每跑一個單位（一個命令／觸發／phase 切換／玩家動作）就吐一個事件；快速／慢速／步進只是同一條事件流的不同消費速率。
-4. **可移植子集明確**：`expr` + `game` + instance 模型 + `defines` 可移植到 C#，`infra`、`app/tui` 為 Go-only 基礎設施。
+4. **可移植子集明確**：`expr` + `game` + instance 模型 + `defines` 可移植到 C#，`infra`、`app/rodi` 為 Go-only 基礎設施。
 
 ## 顯示／操作層
 

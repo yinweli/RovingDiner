@@ -454,11 +454,11 @@ a.ref:hover {
 ```text
 RovingDiner/
 ├─ cmd/                       瘦進入點：flag 解析 + 組裝後呼叫 app
-│  ├─ tui/                  TUI main.go（seed、replay 檔）
-│  └─ check/                企劃驗證器 main.go
+│  ├─ rodi/                 TUI main.go（seed、replay 檔）
+│  └─ roditool/             企劃驗證器 main.go
 ├─ app/                       應用本體（消費同一核心）
-│  ├─ tui/                  Bubble Tea Model/Update/View + engine adapter
-│  └─ check/                企劃驗證器實作（CLI＋Effect 表掃描器）
+│  ├─ rodi/                 Bubble Tea Model/Update/View + engine adapter
+│  └─ roditool/             企劃驗證器實作（單筆檢查 CLI＋表單檢查掃描器）
 ├─ internal/
 │  ├─ infra/                sheet 載入（組裝 *sheeter.Sheeter）、PRNG 來源——Go-only 基礎設施
 │  ├─ exprs/                運算式引擎：lexer → parser → AST → evaluator；game-agnostic、可單獨測
@@ -503,7 +503,7 @@ RovingDiner/
 ├─ sheet/ sheetdata/ gamedata/    （已存在，沿用既有 Sheeter pipeline）
 ```
 
-- `cmd/` 保持瘦（只有 main + flag + 組裝）；應用本體放 `app/{tui,check}`，所以 `cmd` 不會肥。此分法對齊 DiceBattle-server（`cmd/` 瘦進入點、`app/` 應用本體）。
+- `cmd/` 保持瘦（只有 main + flag + 組裝）；應用本體放 `app/{rodi,roditool}`（app 子目錄名跟著 cmd 子目錄名走），所以 `cmd` 不會肥。此分法對齊 DiceBattle-server（`cmd/` 瘦進入點、`app/` 應用本體）。
 - 命令（verb）與命令對象（作用對象解析）分屬 rules 的 `command.go` 與 `selector.go`：兩者執行時雖一起出現，但屬不同關注點。**命令對象刻意不叫 `target`**，以免與 營業規格書【八、目標類型】的「目標類型(TargetKind)」撞名。
   - 命名定為 `selector`（非保留字，可同時當檔名與識別碼 `Selector` / `selectorGuest`）。語意是「用篩／抽／查／切各種方式產出作用對象集合」，比 `filter` 廣（`filter` 已是 營業規格書【二十四、命令對象清單】命令對象內部「卡牌編號篩選」的子術語，且 `deckTop` 會 mutate，不符 filter 唯讀語意）。
 
@@ -650,7 +650,7 @@ Bubble Tea 的 Elm loop。步進＝`Presenter.Emit` 在 channel 上阻塞，等�
 
 ## 五、顯示／操作層（TUI，Go-only）
 
-`app/tui`（本體）+ `cmd/tui`（瘦進入點），Bubble Tea + Lip Gloss + Bubbles，照顯示規格書 §4~§7。只做三件事：
+`app/rodi`（本體）+ `cmd/rodi`（瘦進入點），Bubble Tea + Lip Gloss + Bubbles，照顯示規格書 §4~§7。只做三件事：
 
 1. 實作 `Operator`（鍵盤 → 選取／動作）、`Presenter`（EventData → 事件日誌 + 盤面渲染）。
 2. 跑背景 goroutine 驅動核心，channel 橋接。
@@ -753,14 +753,14 @@ M0–M16 已完成（核心線達成，進度見 `PROGRESS.md`）。M12 後的�
 17. **M16 執行結算** *(provisional)*：結算旗標重入防護 + 終止判定 + `games.Run` 驅動迴圈 → 跑通第一局（scripted Operator，無 TUI）。
 18. **M17 事件流合約** *(provisional)*：`EventKind`／`EventData` 欄位定案 + `Presenter` 參數接入（`NewGame`／`games.Run` + 全呼叫點掃掠）+ `tester` 事件流錄製器。
 19. **M18 Emit 接線** *(provisional)*：phase／trigger／instance／container／property／選取紀錄全引擎接上（每單位一次同步 `Emit`）。
-20. **M19 TUI 殼＋橋接** *(provisional)*：`app/tui` + `cmd/tui`、背景 goroutine／channel 橋接、`-seed`／`-stage` flags；先以純文字 dump 證明端到端通。
+20. **M19 TUI 殼＋橋接** *(provisional)*：`app/rodi` + `cmd/rodi`、背景 goroutine／channel 橋接、`-seed`／`-stage` flags；先以純文字 dump 證明端到端通。
 21. **M20 渲染地基** *(provisional)*：組件化 layout——顯示規格書 §6 的 8 區與鍵位列各為**獨立組件**（自持渲染、不共享內部狀態），父層 layout 只組合與分配空間、新增介面＝新掛組件；CJK 寬度政策（顯示規格書 §4）與識別碼格式（顯示規格書 §5）為共用渲染工具；本站以**狀態列（區 7）＋鍵位列**兩個最簡組件驗證框架成立。
 22. **M21 六區組件** *(provisional)*：座位／場外／行動區／效果區／手牌／牌堆逐區掛上既成框架（顯示規格書 §6）。
 23. **M22 事件日誌** *(provisional)*：行角色（`[ * - $`）／範圍標題／命令行格式（顯示規格書 §6.10）；日誌區（區 8）同為獨立組件。
 24. **M23 互動與 modal** *(provisional)*：切區／游標／檢視 modal（顯示規格書 §7.1–7.3、§7.6）。
 25. **M24 選取＋Operator** *(provisional)*：選取模式 + `PlayerAction`／`Pick*` 鍵盤實作 + 引擎暫停橋接（顯示規格書 §7.4）。
 26. **M25 速率** *(provisional)*：快／慢／步進、`[Space]` 循環、步進＝`Emit` 阻塞（顯示規格書 §3）。
-27. **M26 企劃驗證器** *(provisional)*：單筆 CLI + Effect 表掃描器 + arity 校驗 + `HasObjectRef` + `task`／CI；置 golden 前——golden 需真實劇本資料，填表前先有驗證器把關。詳見【附錄：企劃驗證器】。
+27. **M26 企劃驗證器** *(provisional)*：單筆檢查 CLI + 表單檢查（全表參照／編碼／文法）+ arity 校驗 + `HasObjectRef` + `task`／CI；置 golden 前——golden 需真實劇本資料，填表前先有驗證器把關。詳見【附錄：企劃驗證器】。
 28. **M27 conformance golden** *(provisional)*：scripted 局 + 事件流錄製 golden 比對、決定性 CI。
 
 > 核心線＝M0–M16（exprs + 全部命令 + 效果 + 流程）。**做到 M16、能用測試腳本跑通第一局,就達成「核心與顯示解耦」這個首要目標**；M17 起為後疊的消費端（M17–M18 事件流收口仍寫在核心套件，M19 起才是 TUI 外部程式）。
@@ -791,31 +791,46 @@ M0–M16 已完成（核心線達成，進度見 `PROGRESS.md`）。M12 後的�
 - ✅ **目錄結構**：`cmd/{tui,check}`（瘦進入點）+ `app/{tui,check}`（應用本體）+ `internal/{infra,exprs,cores,rules,games,tester}`（`infra` 為 Go-only 基礎設施、`tester` 為跨包測試基建，`exprs`／`cores`／`rules`／`games` 為核心四包）。`cmd` 不會肥。
 - ✅ **命令 vs 命令對象分檔**：rules 的 `command.go`（verb）與 `selector.go`（作用對象解析）拆開。
 - ✅ **Award／Effect 資料**：已生成／已修正（見第八節）。
-- ✅ **企劃輔助工具＝運算式／命令驗證器**：單筆輸入 + Effect 表掃描共用同一引擎；6 欄位中 4 個命令欄位是命令文法、需命令解析器（M5）。**地基（共用帶位置錯誤型別）入 M5 驗收；工具本體為 M5 後置、非 gating 的支線**（可與效果系統 M10 起並行），不先出只驗運算式的半套。原「帶參數求值 + 運算過程」工具不做。詳見【附錄：企劃驗證器】。
+- ✅ **企劃輔助工具＝企劃驗證器**：單筆檢查 + 表單檢查共用同一引擎；Effect 表 6 個文字欄位中 4 個命令欄位是命令文法、需命令解析器（M5）。**地基（共用帶位置錯誤型別）入 M5 驗收；工具本體為 M5 後置、非 gating 的支線**（可與效果系統 M10 起並行），不先出只驗運算式的半套。原「帶參數求值 + 運算過程」工具不做。詳見【附錄：企劃驗證器】。
 
 ---
 
 ## 附錄：企劃驗證器
 
-給**企劃（非工程）**在不跑遊戲下，檢查自己填的運算式／命令欄位有無語法錯誤的 Go-only 開發工具。是掛在命令解析（M5）後面的工具支線，非核心線里程碑（排程詳見第九節「工具支線」）。
+給**企劃（非工程）**在不跑遊戲下，檢查自己填的表格欄位有無錯誤的 Go-only 開發工具。是掛在命令解析（M5）後面的工具支線，非核心線里程碑（排程詳見第九節「工具支線」）。
 
 **兩個工具＝同一引擎的兩種輸入模式**：
 
-- **單筆檢查**：企劃貼一段內容、選欄位種類 → 回報帶位置的中文錯誤。
-- **表單掃描**：掃 Effect 表的運算式／命令欄位 → 輸出 檔／列／欄 + 位置錯誤；可掛進 `task`／CI 與 `task lint` 並跑。
+- **單筆檢查**：企劃貼一段內容、選欄位種類（運算式／命令／門檻配對）→ 回報帶位置的中文錯誤。
+- **表單檢查**：讀 `sheetdata/` 的 json（與引擎同路徑 `infra.Load`）逐表逐欄檢查 → 輸出 表／列（編號）／欄 + 錯誤；可掛進 `task`／CI 與 `task lint` 並跑。
 
-**6 欄位分兩種文法，依欄位分派驗證**（這是整套的關鍵約束）：
+**三種文法，依欄位種類分派驗證**（這是整套的關鍵約束）：
 
-| 欄位                                            | 文法                                 | 驗證來源                           |
-|:------------------------------------------------|:-------------------------------------|:-----------------------------------|
-| 觸發條件 `TriggerCond`、觸發次數 `TriggerCount` | 運算式                               | `exprs.Parse`（已有）              |
-| 立即／觸發／啟動／結束命令 `Command*`           | 命令（verb + 命令對象 + 內嵌運算式） | 命令解析器（M5，`games/parse.go`） |
+| 欄位                                                   | 文法                                 | 驗證來源                                      |
+|:-------------------------------------------------------|:-------------------------------------|:----------------------------------------------|
+| 觸發條件 `TriggerCond`、觸發次數 `TriggerCount`        | 運算式                               | `exprs.Parse`（已有）＋ Validate              |
+| 立即／觸發／啟動／結束命令 `Command*`                  | 命令（verb + 命令對象 + 內嵌運算式） | 命令解析器（M5，`games/parse.go`）＋ Validate |
+| 顧客 `SateSkillID`／`CalmSkillID`（`門檻值^技能編號`） | 門檻配對                             | 格式檢查（兩段皆數字）＋ 技能編號參照         |
+
+**「語法正確」＝ Parse ＋ Validate**：文法解析之外，含詞彙查名（屬性／動詞／命令對象）、命令對象參數數量校驗、引用基底合法性（`HasObjectRef`）——只做 Parse 會漏 `morale2 -= 1` 這類詞彙錯。
+
+**表單檢查的逐表項目**——通則：參照欄 `0`／空＝未指派，合法、跳過該筆；非 0 編號必須存在於目標表；字串欄空＝未填，合法（Sheeter 空字串欄生成的 `[""]` 視為空）。編碼欄的數字對照以營業規格書【四、表格結構】為準：
+
+| 表      | 檢查項目                                                                                                                           |
+|:--------|:-----------------------------------------------------------------------------------------------------------------------------------|
+| award   | `CardID` → card.ID                                                                                                                |
+| card    | `SkillID` → skill.ID（`0`＝無技能）                                                                                               |
+| effect  | `Kind`／`TargetKind`／`TriggerAfter`／`StackTime` 編碼範圍；`TriggerKind` 非空時 ∈ 觸發時機英文名稱；運算式／命令欄依上表文法驗證 |
+| guest   | `SateSkillID`／`CalmSkillID` 門檻配對（依上表文法驗證）                                                                            |
+| setting | `RoundMax`／`Morale`／`MoraleMax`／`EnergyMax`／`HandMax`／`DrawMax` 六鍵存在且值為數字                                            |
+| skill   | `EffectID` → effect.ID                                                                                                            |
+| stage   | `HandID`／`DeckID`／`DropID`／`ExileID` → card.ID；`WaitID` → guest.ID；`PrefixSkillID` → skill.ID                              |
 
 **工程決策**：
 
 - **地基入 M5、工具本體為 M5 後置支線**：4／6 欄位是命令文法，命令解析器正是 M5 的核心產出。M5 驗收即要求命令解析器重用共用錯誤型別、吐友善位置錯誤（地基）；工具本體（CLI＋掃描器＋`task`／CI）依賴 M5 完成，作為非 gating 支線、可與效果系統（M10 起）並行。不先出「只驗運算式」的半套——半套掃描會讓命令欄位默默跳過，企劃看到「全部通過」會誤判命令欄也驗過了，比沒有更糟。
 - **錯誤對企劃友善**：帶位置（「第 N 字附近」）、中文白話、去工程術語。`exprs` 與命令解析器**共用同一「帶位置錯誤」型別**，兩種文法的錯誤格式一致。
-- **放置**：文法／錯誤型別等能力在核心（`exprs`／`games`）；前端（CLI／REPL／掃描器）是 Go-only，掛 `cmd/` + `task`。
+- **放置**：文法／錯誤型別等能力在核心（`exprs`／`games`）；前端（CLI／REPL／掃描器）是 Go-only，掛 `cmd/roditool` + `task`。
 - **不做帶參數求值 + 運算過程**：輸入 UX 難規劃，企劃用 營業規格書 + AI 可達等效，暫不納入。
 
 **錯誤地基（已完成）**：`exprs` 的 `token` 已帶位置欄位、lexer／parser 錯誤改吐「第 N 字附近」中文白話、去掉 `expr:` 內部前綴；並已立 `exprs.SyntaxError`（`Pos`＋`Msg`）作為 `exprs` 與未來命令解析器共用的帶位置錯誤型別。M5 命令解析器（`parse.go`）直接重用此型別；名稱合法性另由自由 `Validate` 查詞彙表 keys（M6 詞條到位後生效）。
