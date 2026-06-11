@@ -66,4 +66,4 @@ task install    # 安裝開發工具（golangci-lint、sheeter、markdownlint、
 
 ## 開發狀態
 
-營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流（行合約＋全引擎發射點＋行歷史 golden 常駐）已收口。TUI debug viewer 進行中：殼＋橋接、渲染地基、六區盤面與事件日誌（alt-screen 全畫面、行角色上色）已落地，並完成暫停機重構（引擎逐拍交棒推進、盤面停點直讀、世界鏡像退役）與日誌流換軌（引擎直出最終日誌行、journal 行合成退役）；互動與速率控制後續疊上，其後為企劃驗證器與 conformance golden 測試。里程碑進度詳見 `PROGRESS.md`。
+營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流已收口。TUI debug viewer 的被動觀看（alt-screen 全畫面盤面與事件日誌、停點直讀）已落地；後續依序為速率控制、互動與 modal、選取與鍵盤 Operator、企劃驗證器與 conformance golden。進度詳見 `PROGRESS.md`。
