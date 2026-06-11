@@ -7,8 +7,8 @@
 ## 現況
 
 - **架構已定案**(實作規格書 §一~§四):核心四包依賴 `games → rules → cores → exprs` 一條直線,`internal/infra` 基礎設施、`internal/tester` 跨包測試基建;TUI = `app/rodi`(停點直讀 + 交棒 stepper)+ `cmd/rodi` 瘦進入點。
-- **M0–M24 已落地,M25(速率)起未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
-- **剩餘站序已重排並凍結**(2026-06-11 拍板;速率提前——零依賴,且步進/慢速可輔助互動站的開發驗證):M25 速率 → M26 互動與 modal → M27 選取＋Operator → M28 企劃驗證器 → M29 conformance golden;細目以實作規格書【九】為準,再插站不改號。
+- **M0–M25 已落地,M26(互動與 modal)起未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
+- **剩餘站序已凍結**(2026-06-11 拍板):M26 互動與 modal → M27 選取＋Operator → M28 企劃驗證器 → M29 conformance golden;細目以實作規格書【九】為準,再插站不改號。
 
 ## 里程碑進度
 
@@ -21,7 +21,7 @@
 | M19–M22 | ✅   | TUI 被動觀看(殼/渲染地基/六區/事件日誌)    |
 | M23     | ✅   | 暫停機重構(交棒 stepper+盤面直讀)          |
 | M24     | ✅   | 日誌流換軌(行組 Emit+發射台+golden 常駐)   |
-| M25     | ⬜   | 速率(快/慢/步進) *(prov)*                  |
+| M25     | ✅   | 速率(快/慢/步進排拍+世代驗章)              |
 | M26     | ⬜   | 互動與 modal *(prov)*                      |
 | M27     | ⬜   | 選取＋Operator *(prov)*                    |
 | M28     | ⬜   | 企劃驗證器 *(prov)*                        |
