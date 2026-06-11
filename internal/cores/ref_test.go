@@ -115,6 +115,21 @@ func (this *SuiteRef) TestAsGuest() {
 	this.False(ok)
 }
 
+// TestRefTarget 驗證 RefTarget 取投影事件對象編號:卡牌 / 顧客引用回(資料編號, 實例編號)、空引用回零值。
+func (this *SuiteRef) TestRefTarget() {
+	dataID, instanceID := RefTarget(NewRefCard(&Card{cardID: 103, instanceID: 1}))
+	this.Equal(int32(103), dataID)
+	this.Equal(InstanceID(1), instanceID)
+
+	dataID, instanceID = RefTarget(NewRefGuest(&Guest{guestID: 501, instanceID: 4}))
+	this.Equal(int32(501), dataID)
+	this.Equal(InstanceID(4), instanceID)
+
+	dataID, instanceID = RefTarget(Ref{}) // 空引用 → 零值
+	this.Equal(int32(0), dataID)
+	this.Equal(NoneID, instanceID)
+}
+
 // foreignRef 測試用外來引用(非 cores.Ref 的 exprs.Ref 實作);驗證型別斷言不符分支。
 type foreignRef struct{}
 

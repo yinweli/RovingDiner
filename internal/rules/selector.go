@@ -168,7 +168,7 @@ func selectGuestPick(game *cores.Game, arg []exprs.Value) (result []cores.Instan
 		return nil
 	} // if
 
-	return pickGuest(game, game.Seat.Sorted(), n)
+	return pickGuest(game, game.Seat.Sorted(), n, "guestPick")
 }
 
 // selectGuestRand 系統從在座顧客隨機選最多 N 位。
@@ -197,7 +197,7 @@ func selectGuestWait(game *cores.Game, arg []exprs.Value) (result []cores.Instan
 
 // selectNearPick 暫停流程,玩家選 1 在座顧客,再取其鄰桌(不含自身與同桌)。
 func selectNearPick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	anchor := pickGuestOne(game, game.Seat.Sorted())
+	anchor := pickGuestOne(game, game.Seat.Sorted(), "nearPick")
 
 	if anchor == nil {
 		return nil
@@ -219,7 +219,7 @@ func selectNearRand(game *cores.Game, arg []exprs.Value) (result []cores.Instanc
 
 // selectSamePick 暫停流程,玩家選 1 在座顧客,再取其同桌(含自身)。
 func selectSamePick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	anchor := pickGuestOne(game, game.Seat.Sorted())
+	anchor := pickGuestOne(game, game.Seat.Sorted(), "samePick")
 
 	if anchor == nil {
 		return nil
@@ -248,7 +248,7 @@ func selectHandAll(game *cores.Game, arg []exprs.Value) (result []cores.Instance
 
 // selectHandPick 暫停流程,玩家從手牌(依編號 filter 後)挑最多 N 張。
 func selectHandPick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	return containerPick(game, game.Hand, arg)
+	return containerPick(game, game.Hand, arg, "handPick")
 }
 
 // selectHandRand 系統從手牌(依編號 filter 後)隨機選最多 N 張。
@@ -263,7 +263,7 @@ func selectDeckAll(game *cores.Game, arg []exprs.Value) (result []cores.Instance
 
 // selectDeckPick 暫停流程,玩家從抽牌牌堆(依編號 filter 後)挑最多 N 張。
 func selectDeckPick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	return containerPick(game, game.Deck, arg)
+	return containerPick(game, game.Deck, arg, "deckPick")
 }
 
 // selectDeckRand 系統從抽牌牌堆(依編號 filter 後)隨機選最多 N 張。
@@ -296,7 +296,7 @@ func selectDropAll(game *cores.Game, arg []exprs.Value) (result []cores.Instance
 
 // selectDropPick 暫停流程,玩家從棄牌牌堆(依編號 filter 後)挑最多 N 張。
 func selectDropPick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	return containerPick(game, game.Drop, arg)
+	return containerPick(game, game.Drop, arg, "dropPick")
 }
 
 // selectDropRand 系統從棄牌牌堆(依編號 filter 後)隨機選最多 N 張。
@@ -322,7 +322,7 @@ func selectExileAll(game *cores.Game, arg []exprs.Value) (result []cores.Instanc
 
 // selectExilePick 暫停流程,玩家從流放牌堆(依編號 filter 後)挑最多 N 張。
 func selectExilePick(game *cores.Game, arg []exprs.Value) (result []cores.InstanceID) {
-	return containerPick(game, game.Exile, arg)
+	return containerPick(game, game.Exile, arg, "exilePick")
 }
 
 // selectExileRand 系統從流放牌堆(依編號 filter 後)隨機選最多 N 張。
@@ -343,15 +343,15 @@ func containerAll(card []*cores.Card, arg []exprs.Value) (result []cores.Instanc
 	return cardIDs(filterCardID(card, cardID))
 }
 
-// containerPick 暫停流程,玩家從卡牌容器(依編號 filter 後)挑最多 N 張(arg 為 N、卡牌編號)。
-func containerPick(game *cores.Game, card []*cores.Card, arg []exprs.Value) (result []cores.InstanceID) {
+// containerPick 暫停流程,玩家從卡牌容器(依編號 filter 後)挑最多 N 張(arg 為 N、卡牌編號);source 為詞條鍵(玩家輸入紀錄用)。
+func containerPick(game *cores.Game, card []*cores.Card, arg []exprs.Value, source string) (result []cores.InstanceID) {
 	n, cardID, ok := twoInt(arg)
 
 	if ok == false {
 		return nil
 	} // if
 
-	return pickCard(game, filterCardID(card, cardID), n)
+	return pickCard(game, filterCardID(card, cardID), n, source)
 }
 
 // containerRand 系統從卡牌容器(依編號 filter 後)隨機選最多 N 張(arg 為 N、卡牌編號)。
@@ -466,7 +466,8 @@ func sameOf(game *cores.Game, guest *cores.Guest) (result []*cores.Guest) {
 }
 
 // pickCard 套用 Pick 的 N 規則於卡牌候選:N <= 0 空集合;候選 <= N 退化取全部(不彈介面);否則委由 Operator 暫停玩家挑 N 張。
-func pickCard(game *cores.Game, card []*cores.Card, n int32) (result []cores.InstanceID) {
+// 真選取發玩家輸入紀錄(source 為命令對象詞條鍵;退化全取不經 Operator 不記;M18 拍板)。
+func pickCard(game *cores.Game, card []*cores.Card, n int32, source string) (result []cores.InstanceID) {
 	if n <= 0 { // N = 0 空集合;N < 0 對 Pick 視為空集合
 		return nil
 	} // if
@@ -475,11 +476,13 @@ func pickCard(game *cores.Game, card []*cores.Card, n int32) (result []cores.Ins
 		return cardIDs(card)
 	} // if
 
-	return cardIDs(game.GetOperator().PickCard(card, int(n)))
+	chosen := game.GetOperator().PickCard(card, int(n))
+	emitSelect(game, source, 0, cardPickData(chosen))
+	return cardIDs(chosen)
 }
 
-// pickGuest 套用 Pick 的 N 規則於顧客候選;規則同 pickCard。
-func pickGuest(game *cores.Game, guest []*cores.Guest, n int32) (result []cores.InstanceID) {
+// pickGuest 套用 Pick 的 N 規則於顧客候選;規則同 pickCard(含真選取的玩家輸入紀錄)。
+func pickGuest(game *cores.Game, guest []*cores.Guest, n int32, source string) (result []cores.InstanceID) {
 	if n <= 0 {
 		return nil
 	} // if
@@ -488,11 +491,14 @@ func pickGuest(game *cores.Game, guest []*cores.Guest, n int32) (result []cores.
 		return guestIDs(guest)
 	} // if
 
-	return guestIDs(game.GetOperator().PickGuest(guest, int(n)))
+	chosen := game.GetOperator().PickGuest(guest, int(n))
+	emitSelect(game, source, 0, guestPickData(chosen))
+	return guestIDs(chosen)
 }
 
 // pickGuestOne 取單一錨點顧客(near / samePick 用):空候選回 nil、單一候選退化直取(不彈介面)、否則 Operator 挑 1。
-func pickGuestOne(game *cores.Game, guest []*cores.Guest) (result *cores.Guest) {
+// 真選取發玩家輸入紀錄(規則同 pickCard)。
+func pickGuestOne(game *cores.Game, guest []*cores.Guest, source string) (result *cores.Guest) {
 	if len(guest) == 0 {
 		return nil
 	} // if
@@ -502,6 +508,7 @@ func pickGuestOne(game *cores.Game, guest []*cores.Guest) (result *cores.Guest) 
 	} // if
 
 	chosen := game.GetOperator().PickGuest(guest, 1)
+	emitSelect(game, source, 0, guestPickData(chosen))
 
 	if len(chosen) == 0 {
 		return nil

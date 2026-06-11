@@ -208,29 +208,44 @@ func removeCard(game *cores.Game, source cores.ContainerKind, card *cores.Card) 
 	} // switch
 }
 
-// placeCard 把卡牌加入 dest 牌堆頂端（前端），並依目的設事件與 system 觸發（進抽牌牌堆無事件）。
-func placeCard(game *cores.Game, dest cores.ContainerKind, card *cores.Card) {
+// placeCard 把卡牌加入 dest 牌堆頂端（前端），並依目的設事件與 system 觸發（進抽牌牌堆無事件屬性與觸發）。
+// 卡牌容器事件的單點收口（M18 拍板）:from 由呼叫端供給（剛移出的來源牌堆;新建直入傳 ContainerNone）,
+// 入容器後、事件屬性與觸發前發射（消費端見事件時盤面已就位）。
+func placeCard(game *cores.Game, from, dest cores.ContainerKind, card *cores.Card) {
 	switch dest {
 	case cores.ContainerHand:
 		game.Hand.Push(card)
-		game.EventDraw(card, cardGroup(game, card))
-		fireTrigger(game, cores.TriggerCardDraw) // 卡牌進手牌觸發
 
 	case cores.ContainerDeck:
 		game.Deck.Push(card)
 
 	case cores.ContainerDrop:
 		game.Drop.Push(card)
+
+	case cores.ContainerExile:
+		game.Exile.Push(card)
+
+	default:
+		return // 不可達：placeCard 僅以四牌堆 dest 呼叫
+	} // switch
+
+	game.Emit(cores.EventData{Kind: cores.EventContainer, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), From: from, To: dest})
+
+	switch dest {
+	case cores.ContainerHand:
+		game.EventDraw(card, cardGroup(game, card))
+		fireTrigger(game, cores.TriggerCardDraw) // 卡牌進手牌觸發
+
+	case cores.ContainerDrop:
 		game.EventDrop(card, cardGroup(game, card))
 		fireTrigger(game, cores.TriggerCardDrop) // 卡牌進棄牌牌堆觸發
 
 	case cores.ContainerExile:
-		game.Exile.Push(card)
 		game.EventExile(card, cardGroup(game, card))
 		fireTrigger(game, cores.TriggerCardExile) // 卡牌進流放牌堆觸發
 
 	default:
-		// 不可達：placeCard 僅以四牌堆 dest 呼叫
+		// 進抽牌牌堆:無事件屬性與觸發
 	} // switch
 }
 
@@ -306,12 +321,15 @@ func retireEffect(game *cores.Game, effect *cores.Effect) {
 }
 
 // runEffectEnd 以效果自身 self 綁定執行結束命令 times 次(綁定逐層 save / restore;退場與 effectDel 退層共用)。
+// 效果事件:結束 階段於此發(推進 / 清理 / effectClear 經 retireEffect、effectDel 退層皆收口於此;
+// 觸發後移除路徑因 self 已綁定、由 fireOne 自發)。
 func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32) {
 	self := effect.GetSelf()
 	restore := game.SetSelf(&self)
 
 	defer restore()
 
+	emitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageEnd)
 	runEffectExec(game, end, times)
 }
 

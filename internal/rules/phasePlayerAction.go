@@ -17,7 +17,7 @@ func phasePlayerAction(game *cores.Game) cores.PhaseKind {
 
 		card := game.Deck[0] // 頂端 = index 0（M8 約定）
 		removeCard(game, cores.ContainerDeck, card)
-		placeCard(game, cores.ContainerHand, card) // 設抽牌事件 + cardDraw 觸發
+		placeCard(game, cores.ContainerDeck, cores.ContainerHand, card) // 設抽牌事件 + cardDraw 觸發
 	} // for
 
 	fireTrigger(game, cores.TriggerUserStart) // 玩家開始觸發
@@ -57,8 +57,12 @@ func playCard(game *cores.Game, card *cores.Card) {
 		return // 點數不足 → 不執行出牌
 	} // if
 
+	game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopePlay, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), SkillID: cardSkill(game, card.GetCardID())}) // 範圍標題:玩家出牌（操作元 = 卡牌 + 技能）
+
+	before := float64(game.GetEnergy().GetValue())
 	game.GetEnergy().Sub(float64(card.GetCost().GetValue())) // 出牌耗能（鎖定 → 不扣、照出牌）
-	game.EventPlay(card, cardGroup(game, card))              // 最後出牌 / 回合張數 / 整場累積
+	emitProperty(game, 0, cores.NoneID, "energy", cores.AssignSub, float64(card.GetCost().GetValue()), before, float64(game.GetEnergy().GetValue()))
+	game.EventPlay(card, cardGroup(game, card)) // 最後出牌 / 回合張數 / 整場累積
 	extra := extraCount(game, card)
 
 	for itor := int32(0); itor <= extra; itor++ { // 重複 (1 + 額外次數) 次
@@ -79,7 +83,7 @@ func playCard(game *cores.Game, card *cores.Card) {
 
 		if now != dest {
 			removeCard(game, now, card)
-			placeCard(game, dest, card)
+			placeCard(game, now, dest, card)
 		} // if
 	} // if
 
@@ -104,10 +108,12 @@ func extraCount(game *cores.Game, card *cores.Card) int32 {
 	return result
 }
 
-// playerEnd 玩家結束流程（【營業規格書 | 十九、核心流程 | 3. 玩家行動階段】玩家結束 case）:觸發 userEnd →
-// 剩餘手牌處理（未出牌流放 → 流放、不棄留手、其餘棄置）→ 依下一階段分派（回合結束 / 預設顧客行動,皆清除跳轉）。
+// playerEnd 玩家結束流程（【營業規格書 | 十九、核心流程 | 3. 玩家行動階段】玩家結束 case）:發手動結束範圍標題
+// （階段跳轉路徑亦視為玩家結束、照發）→ 觸發 userEnd → 剩餘手牌處理（未出牌流放 → 流放、不棄留手、其餘棄置）→
+// 依下一階段分派（回合結束 / 預設顧客行動,皆清除跳轉）。
 func playerEnd(game *cores.Game) cores.PhaseKind {
-	fireTrigger(game, cores.TriggerUserEnd) // 玩家結束觸發
+	game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeManual}) // 範圍標題:手動結束（流程,無操作元）
+	fireTrigger(game, cores.TriggerUserEnd)                                      // 玩家結束觸發
 
 	for _, itor := range append(cores.CardList{}, game.Hand...) { // 快照:處理本身與觸發效果都會搬動手牌
 		if _, where, ok := game.LocateCard(itor.GetInstanceID()); ok == false || where != cores.ContainerHand {
@@ -116,13 +122,13 @@ func playerEnd(game *cores.Game) cores.PhaseKind {
 
 		if itor.GetUnplayExile().IsLock() {
 			removeCard(game, cores.ContainerHand, itor)
-			placeCard(game, cores.ContainerExile, itor) // 未出牌流放
+			placeCard(game, cores.ContainerHand, cores.ContainerExile, itor) // 未出牌流放
 			continue
 		} // if
 
 		if itor.GetKeep().IsLock() == false {
 			removeCard(game, cores.ContainerHand, itor)
-			placeCard(game, cores.ContainerDrop, itor) // 棄置;不棄卡牌留手牌
+			placeCard(game, cores.ContainerHand, cores.ContainerDrop, itor) // 棄置;不棄卡牌留手牌
 		} // if
 	} // for
 

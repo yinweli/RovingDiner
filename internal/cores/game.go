@@ -572,10 +572,43 @@ func (this *Game) AttrRef(ref exprs.Ref, name string, arg []exprs.Value) (result
 	return exprs.Value{}, false
 }
 
+// attrNum 讀全域屬性的屬性事件前後值（ExecAssign 收口用）:@ / # 改讀鎖定計數（Lock 全名讀鍵）;
+// 查無詞條 / 非數值回 0（無鎖屬性的鎖定變更前後值即留零值）。
+func (this *Game) attrNum(name string, op AssignKind) float64 {
+	if op == AssignLock || op == AssignUnlock {
+		name += "Lock"
+	} // if
+
+	result, ok := this.Attr(name, nil)
+
+	if ok == false || result.IsNum() == false {
+		return 0
+	} // if
+
+	return result.Num()
+}
+
+// attrRefNum 讀引用屬性的屬性事件前後值（ExecAssign 收口用）;規則同 attrNum。
+func (this *Game) attrRefNum(ref exprs.Ref, name string, op AssignKind) float64 {
+	if op == AssignLock || op == AssignUnlock {
+		name += "Lock"
+	} // if
+
+	result, ok := this.AttrRef(ref, name, nil)
+
+	if ok == false || result.IsNum() == false {
+		return 0
+	} // if
+
+	return result.Num()
+}
+
 // ExecAssign 執行屬性修改命令(【營業規格書 | 十七、命令 | 1】);回報是否實際寫入。
 // 帶值賦值先求值右值(評估失敗 / 右值非數值 → no-op);引用左值先解析引用主體(空物件 / 型別不符 / 不存在 → no-op),
 // 主體為凍結中顧客一律 no-op(屬性凍結;【營業規格書 | 二十一、流程補充 | 凍結語意】);
 // 再經寫入詞彙表(全域 attrWrite / 引用 attrRefWrite)依賦值符變更狀態。名稱可寫性由 games.Validate 先行檢查。
+// 屬性事件於此收口:進了寫入詞條就發、沒進就不發(閘門前夭折無事件;鎖定拒寫以 Before == After 表達;M18 拍板),
+// 前後值經讀詞條取得、@ / # 載鎖定計數,引用左值帶對象編號、全域留零值。
 func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, value *exprs.Expr) (changed bool) {
 	n := float64(0)
 
@@ -606,7 +639,11 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 			return false
 		} // if
 
-		return write(this, owner.Ref(), op, n)
+		dataID, instanceID := RefTarget(owner.Ref())
+		before := this.attrRefNum(owner.Ref(), refAttr, op)
+		changed = write(this, owner.Ref(), op, n)
+		this.Emit(EventData{Kind: EventProperty, DataID: dataID, InstanceID: instanceID, Attr: refAttr, Op: op, Operand: n, Before: before, After: this.attrRefNum(owner.Ref(), refAttr, op)})
+		return changed
 	} // if
 
 	write, known := this.attrWrite[base]
@@ -615,7 +652,10 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 		return false
 	} // if
 
-	return write(this, op, n)
+	before := this.attrNum(base, op)
+	changed = write(this, op, n)
+	this.Emit(EventData{Kind: EventProperty, Attr: base, Op: op, Operand: n, Before: before, After: this.attrNum(base, op)})
+	return changed
 }
 
 // ExecOperate 執行操作命令(【營業規格書 | 十七、命令 | 2】【二十五、操作命令清單】);走法 X:games 持 AST 型別 switch、引擎做分派。

@@ -68,7 +68,7 @@ func moveCards(game *cores.Game, target []cores.InstanceID, source, dest cores.C
 		} // if
 
 		removeCard(game, source, card)
-		placeCard(game, dest, card)
+		placeCard(game, source, dest, card)
 	} // for
 
 	if shuffle {

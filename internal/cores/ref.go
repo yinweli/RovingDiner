@@ -87,3 +87,17 @@ func AsGuest(ref exprs.Ref) (guest *Guest, ok bool) {
 
 	return value.guest, true
 }
+
+// RefTarget 自引用取投影事件的對象編號（資料編號 + 實例編號;【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】）;
+// 非卡牌 / 顧客引用回零值。屬性事件（ExecAssign 收口）與效果事件（self 對象欄）共用。
+func RefTarget(ref exprs.Ref) (dataID int32, instanceID InstanceID) {
+	if card, ok := AsCard(ref); ok {
+		return card.GetCardID(), card.GetInstanceID()
+	} // if
+
+	if guest, ok := AsGuest(ref); ok {
+		return guest.GetGuestID(), guest.GetInstanceID()
+	} // if
+
+	return 0, NoneID
+}

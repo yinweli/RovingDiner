@@ -38,6 +38,18 @@ func (this *SuitePhase) TestRunPhase() {
 		bad.Effect.Push(cores.NewEffect(bad, 901, cores.Ref{}, 1))
 		RunPhase(bad, cores.PhaseRoundEnd)
 	})
+
+	// 踏站接線:已知階段先 SetPhase 再發 phase 切換事件（座標即新階段）;PhaseNone 不踏站不發（M18）
+	wired, record := newGameRecord()
+	RunPhase(wired, cores.PhaseGameStart)
+	this.Equal(cores.PhaseGameStart, wired.GetPhase())
+	this.Require().NotEmpty(record.Event)
+	this.Equal(cores.EventPhase, record.Event[0].Kind)
+	this.Equal(cores.PhaseGameStart, record.Event[0].Phase)
+
+	count := len(record.Event)
+	RunPhase(wired, cores.PhaseNone)
+	this.Len(record.Event, count) // 停機 → 無事件
 }
 
 // TestEnergyFill 驗證 energyFill 點數補滿:低於上限補至上限、高於上限保留、鎖定不補。
@@ -63,4 +75,12 @@ func (this *SuitePhase) TestSkillGroup() {
 	game := newGame()
 	this.Equal(int32(3), skillGroup(game, 301))
 	this.Equal(int32(0), skillGroup(game, 999)) // 技能資料缺失 → 0
+}
+
+// TestCardSkill 驗證 cardSkill 取卡牌技能編號（玩家出牌範圍事件的技能操作元）;卡牌資料缺失回 0。
+func (this *SuitePhase) TestCardSkill() {
+	game := newGame()
+	this.Equal(int32(301), cardSkill(game, 103))
+	this.Equal(int32(0), cardSkill(game, 101)) // 卡 101 無技能 → 0
+	this.Equal(int32(0), cardSkill(game, 999)) // 卡牌資料缺失 → 0
 }

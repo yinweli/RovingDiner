@@ -18,7 +18,8 @@ func phaseGuestAction(game *cores.Game) cores.PhaseKind {
 		} // if
 
 		action := game.Action.Pop()
-		game.EventTask(action.GetGuest(), action.GetSkillID()) // 最後行動顧客 / 技能 / 回合行動次數
+		game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: action.GetGuest().GetGuestID(), InstanceID: action.GetGuest().GetInstanceID(), SkillID: action.GetSkillID()}) // 範圍標題:顧客行動（操作元 = 顧客 + 技能）
+		game.EventTask(action.GetGuest(), action.GetSkillID())                                                                                                                                           // 最後行動顧客 / 技能 / 回合行動次數
 
 		if sealTask(action) == false {
 			runEffectList(game, game.SkillEffect(action.GetSkillID()), skillGroup(game, action.GetSkillID())) // 啟動技能:顧客行動技能

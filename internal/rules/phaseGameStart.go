@@ -21,7 +21,8 @@ func phaseGameStart(game *cores.Game) cores.PhaseKind {
 	buildStage(game)
 
 	for _, itor := range game.PrefixSkill {
-		runEffectList(game, game.SkillEffect(itor), skillGroup(game, itor)) // 啟動技能:該技能
+		game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopePrefix, SkillID: itor}) // 範圍標題:前置技能（操作元 = 技能）
+		runEffectList(game, game.SkillEffect(itor), skillGroup(game, itor))                         // 啟動技能:該技能
 	} // for
 
 	fireTrigger(game, cores.TriggerGameStart) // 營業開始觸發

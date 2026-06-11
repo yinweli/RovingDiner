@@ -77,6 +77,43 @@ func (this *SuiteSettle) TestSettle() {
 	this.True(game.Settling)
 }
 
+// TestSettleEmit 驗證執行結算的事件接線:無事結算（settleBusy 全不中）靜默不發題;有事結算先發範圍標題;
+// 手牌上限棄牌發玩家輸入紀錄（流程名 discardOver）。
+func (this *SuiteSettle) TestSettleEmit() {
+	game, record := newGameRecord()
+	game.GetRoundMax().Set(99)
+	game.GetMorale().Set(30)
+	game.GetHandMax().Set(2)
+	game.Seat.Place(1, cores.NewGuest(game, 502)) // 高耐心、無門檻
+	game.Seat.Place(2, cores.NewGuest(game, 502)) // 第二位:離場後仍有人在座,擋全場清空
+
+	Settle(game) // 無事結算 → 靜默,不發題不立旗標
+	this.Empty(record.Event)
+	this.False(game.Settling)
+
+	angry := game.Seat[1]
+	angry.GetCalm().Set(0) // 生氣離場線 → 有事
+	Settle(game)
+	this.Require().NotEmpty(record.Event)
+	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeSettle}, record.Event[0]) // 範圍標題先行
+	this.Nil(game.Seat[1])
+
+	record.Event = nil
+	game.Hand = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 101), cores.NewCard(game, 103)} // 3 > 上限 2 → 棄 1
+	Settle(game)
+	pick := []cores.EventData{}
+
+	for itor := range record.Event {
+		if record.Event[itor].Kind == cores.EventSelect {
+			pick = append(pick, record.Event[itor])
+		} // if
+	} // for
+
+	this.Require().Len(pick, 1) // 玩家輸入紀錄:流程名 + 選中清單
+	this.Equal("discardOver", pick[0].Source)
+	this.Equal([]cores.PickData{{DataID: 101, InstanceID: game.Drop[0].GetInstanceID()}}, pick[0].Pick)
+}
+
 // TestJudgeEnd 驗證終止判定:失敗(回合上限 / 士氣歸零,失敗優先)與成功(全場清空)以哨兵跳出、命中前清旗標;未命中無事。
 func (this *SuiteSettle) TestJudgeEnd() {
 	game := newGame()

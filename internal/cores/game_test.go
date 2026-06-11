@@ -578,12 +578,20 @@ func (this *SuiteGame) TestGameAttrRef() {
 	this.False(ok)
 }
 
-// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值（含 builtin 注入）/ 鎖定 / 未知名稱與評估失敗 no-op。
+// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值（含 builtin 注入）/ 鎖定 / 未知名稱與評估失敗 no-op;
+// 屬性事件收口——進了寫入詞條就發（前後值經讀詞條、@ 載鎖定計數）、閘門前夭折無事件（M18 拍板）。
 func (this *SuiteGame) TestGameExecAssignGlobal() {
-	game := NewGame(0, 0, nil, nil, nil, nil)
+	record := &fakePresenter{}
+	game := NewGame(0, 0, nil, nil, nil, record)
 	game.score = NewValue(10, 0)
 	game.RegisterAttrWrite("score", func(game *Game, op AssignKind, n float64) bool {
 		return game.GetScore().Apply(op, n)
+	})
+	game.RegisterAttrRead("score", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
+		return exprs.NewNum(float64(game.GetScore().GetValue())), true
+	})
+	game.RegisterAttrRead("scoreLock", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
+		return exprs.NewNum(float64(game.GetScore().GetLock())), true
 	})
 	game.RegisterBuiltin("seven", func(arg []exprs.Value) (result exprs.Value, ok bool) {
 		return exprs.NewNum(7), true
@@ -592,28 +600,55 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 	// 全域帶值賦值;RHS 經 exprs 求值(內建函式 seven 驗證 builtin 裝備經 Env 帶入)
 	this.True(game.ExecAssign("score", "", false, AssignAdd, this.expr("seven()")))
 	this.Equal(int32(17), game.GetScore().GetValue())
+	this.Require().Len(record.event, 1) // 屬性事件:詞條鍵 + 賦值符 + 右值 + 前後值,全域對象欄零值
+	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignAdd, Operand: 7, Before: 10, After: 17}, record.event[0])
 
-	// @ 鎖定(不帶右值,value 為 nil、不求值)
+	// @ 鎖定(不帶右值,value 為 nil、不求值);事件前後值載鎖定計數(Lock 全名讀鍵)
 	this.True(game.ExecAssign("score", "", false, AssignLock, nil))
 	this.Equal(int32(1), game.GetScore().GetLock())
+	this.Require().Len(record.event, 2)
+	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignLock, Before: 0, After: 1}, record.event[1])
 
-	// 未知全域屬性 → no-op
+	// 鎖定拒寫仍發事件,以 Before == After 表達(M18 拍板)
+	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("99")))
+	this.Require().Len(record.event, 3)
+	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignSet, Operand: 99, Before: 17, After: 17}, record.event[2])
+
+	// 無讀詞條的可寫屬性 → 事件前後值留零值(進了寫入詞條照發)
+	game.RegisterAttrWrite("silent", func(game *Game, op AssignKind, n float64) bool { return true })
+	this.True(game.ExecAssign("silent", "", false, AssignSet, this.expr("1")))
+	this.Require().Len(record.event, 4)
+	this.Equal(EventData{Kind: EventProperty, Attr: "silent", Op: AssignSet, Operand: 1}, record.event[3])
+
+	// 未知全域屬性 → no-op、無事件
 	this.False(game.ExecAssign("nope", "", false, AssignSet, this.expr("1")))
 
-	// RHS 評估失敗(除 0)→ no-op
+	// RHS 評估失敗(除 0)→ no-op、無事件
 	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("1 / 0")))
 
-	// RHS 非數值(字串)→ no-op
+	// RHS 非數值(字串)→ no-op、無事件
 	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("'text'")))
+	this.Len(record.event, 4) // 閘門前夭折三式皆無事件
 }
 
-// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op。
+// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op;
+// 屬性事件帶對象編號（資料編號 + 實例編號）,@ 無 Lock 讀詞條時前後值留零值。
 func (this *SuiteGame) TestGameExecAssignRef() {
-	card := &Card{instanceID: 1}
-	game := NewGame(0, 0, nil, nil, nil, nil)
+	record := &fakePresenter{}
+	card := &Card{instanceID: 1, cardID: 103}
+	game := NewGame(0, 0, nil, nil, nil, record)
 	game.drawLast = card
 	game.RegisterAttrRead("drawLast", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 		return NewRefCard(game.GetDrawLast()).Value(), true
+	})
+	game.RegisterAttrRefRead("cost", func(game *Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
+		target, valid := AsCard(ref)
+
+		if valid == false {
+			return exprs.Value{}, false
+		} // if
+
+		return exprs.NewNum(float64(target.GetCost().GetValue())), true
 	})
 	game.RegisterAttrRefWrite("cost", func(game *Game, ref exprs.Ref, op AssignKind, n float64) bool {
 		target, valid := AsCard(ref)
@@ -625,12 +660,20 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 		return target.GetCost().Apply(op, n)
 	})
 
-	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3)
+	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3);事件帶對象編號與前後值
 	this.True(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
 	this.Equal(int32(3), card.GetCost().GetValue())
+	this.Require().Len(record.event, 1)
+	this.Equal(EventData{Kind: EventProperty, DataID: 103, InstanceID: 1, Attr: "cost", Op: AssignSet, Operand: 3, Before: 0, After: 3}, record.event[0])
 
-	// 未知引用屬性 → no-op
+	// @ 鎖定:無 costLock 讀詞條 → 事件前後值留零值(進了寫入詞條照發)
+	this.True(game.ExecAssign("drawLast", "cost", true, AssignLock, nil))
+	this.Require().Len(record.event, 2)
+	this.Equal(EventData{Kind: EventProperty, DataID: 103, InstanceID: 1, Attr: "cost", Op: AssignLock, Before: 0, After: 0}, record.event[1])
+
+	// 未知引用屬性 → no-op、無事件
 	this.False(game.ExecAssign("drawLast", "nope", true, AssignSet, this.expr("3")))
+	this.Len(record.event, 2)
 
 	// 引用解析為空物件(drawLast 為 nil → 引用 Value 為 none)→ no-op
 	game.drawLast = nil

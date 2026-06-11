@@ -63,6 +63,18 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestAction() {
 	this.Equal(2, end)
 }
 
+// TestPhaseGuestActionEmit 驗證顧客行動的事件接線:逐筆行動發範圍標題（操作元 = 顧客 + 技能;踏站 phase 事件歸 RunPhase）。
+func (this *SuitePhaseGuestAction) TestPhaseGuestActionEmit() {
+	game, record := newGameRecord()
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(1, guest)
+	game.Action.Push(cores.NewAction(guest, cores.TaskCalm, 301))
+
+	phaseGuestAction(game)
+	this.Require().NotEmpty(record.Event)
+	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: 501, InstanceID: guest.GetInstanceID(), SkillID: 301}, record.Event[0])
+}
+
 // TestSealTask 驗證行動封印閘門:飽食 / 耐心各查對應封印鎖、越界行動類型視為封印。
 func (this *SuitePhaseGuestAction) TestSealTask() {
 	game := newGame()

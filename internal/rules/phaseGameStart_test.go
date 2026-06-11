@@ -62,6 +62,28 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(1, fired) // 營業開始觸發
 }
 
+// TestPhaseGameStartEmit 驗證營業開始的事件接線:前置技能發範圍標題（操作元 = 技能）;開局建置（設置）靜默無容器 / 實例事件。
+func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
+	record := &tester.RecordPresenter{}
+	game := cores.NewGame(0, 601, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{}, record)
+	Register(game)
+	phaseGameStart(game)
+
+	prefix := []cores.EventData{}
+
+	for itor := range record.Event {
+		this.NotEqual(cores.EventContainer, record.Event[itor].Kind) // 設置靜默:開局建置不發容器事件
+		this.NotEqual(cores.EventInstance, record.Event[itor].Kind)
+
+		if record.Event[itor].Kind == cores.EventScope && record.Event[itor].Scope == cores.ScopePrefix {
+			prefix = append(prefix, record.Event[itor])
+		} // if
+	} // for
+
+	this.Require().Len(prefix, 1) // 關卡 601 前置技能 301
+	this.Equal(int32(301), prefix[0].SkillID)
+}
+
 // TestBuildStage 驗證開局建置:五容器順序語意（第 1 個 = 頂端 / 隊首）、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。
 func (this *SuitePhaseGameStart) TestBuildStage() {
 	data := tester.BuildData()

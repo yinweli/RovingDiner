@@ -5,16 +5,17 @@ import (
 )
 
 // effectStack 套用 [堆疊處理]（【營業規格書 | 二十、獨立流程 | 堆疊處理】）:把效果以 self 加入效果佇列,或對佇列既有同份疊層。
-// override > 0 為 effectRun 命令指定的增量;否則用效果堆疊層數（0 / 1 → 1）。回實際增加層數（供常駐 啟動命令判斷）。
-func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (added int32) {
+// override > 0 為 effectRun 命令指定的增量;否則用效果堆疊層數（0 / 1 → 1）。回佇列實例與實際增加層數（供常駐 啟動命令判斷）。
+// 效果事件:新建入列 / 既有實際增層發 加入;免疫 / 堆疊滿（增層 0）不發（無事不發;M18）。
+func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (effect *cores.Effect, added int32) {
 	meta, ok := game.EffectData(effectID)
 
 	if ok == false {
-		return 0 // 查無編譯資料 → no-op（防禦）
+		return nil, 0 // 查無編譯資料 → no-op（防禦）
 	} // if
 
 	if self.GetGuest() != nil && self.GetGuest().GetEffectImmune().Get(meta.Group) > 0 {
-		return 0 // 顧客免疫該效果群組 → 不建立 / 不堆疊 / 不執行啟動命令
+		return nil, 0 // 顧客免疫該效果群組 → 不建立 / 不堆疊 / 不執行啟動命令
 	} // if
 
 	add := override
@@ -26,16 +27,22 @@ func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (ad
 	existing := game.Effect.Find(self, effectID)
 
 	if existing == nil {
-		effect := cores.NewEffect(game, effectID, self, add) // 建構即依堆疊上限夾制
+		effect = cores.NewEffect(game, effectID, self, add) // 建構即依堆疊上限夾制
 		game.Effect.Push(effect)
-		return effect.GetStack()
+		emitEffect(game, effectID, effect.GetInstanceID(), self, cores.EffectStageJoin)
+		added = effect.GetStack()
+		return effect, added
 	} // if
 
 	added = existing.StackAdd(add, meta.StackMax)
+
+	if added > 0 {
+		emitEffect(game, effectID, existing.GetInstanceID(), self, cores.EffectStageJoin)
+	} // if
 
 	if meta.StackTime == cores.StackTimeRefresh {
 		existing.Refresh(game, meta.RunRound) // 刷新時重算結束回合（不變則維持原值）
 	} // if
 
-	return added
+	return existing, added
 }

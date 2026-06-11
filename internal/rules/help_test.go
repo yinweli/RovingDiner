@@ -219,13 +219,13 @@ func (this *SuiteHelp) TestPlaceCard() {
 	game := newGame()
 	card := cores.NewCard(game, 101)
 
-	placeCard(game, cores.ContainerNone, card) // 非四牌堆 → default no-op、不改任何牌堆
+	placeCard(game, cores.ContainerNone, cores.ContainerNone, card) // 非四牌堆 → default no-op、不改任何牌堆
 	this.Empty(game.Hand)
 	this.Empty(game.Deck)
 	this.Empty(game.Drop)
 	this.Empty(game.Exile)
 
-	placeCard(game, cores.ContainerDeck, card) // 進抽牌牌堆:無事件
+	placeCard(game, cores.ContainerNone, cores.ContainerDeck, card) // 進抽牌牌堆:無事件屬性與觸發
 	this.Equal(cores.CardList{card}, game.Deck)
 	this.Nil(game.GetDrawLast())
 }
@@ -246,13 +246,29 @@ func (this *SuiteHelp) TestPlaceCardTrigger() {
 		game.Effect.Push(cores.NewEffect(game, itor, cores.Ref{}, 1))
 	} // for
 
-	placeCard(game, cores.ContainerHand, cores.NewCard(game, 101))  // 進手牌 → cardDraw
-	placeCard(game, cores.ContainerDrop, cores.NewCard(game, 101))  // 進棄牌牌堆 → cardDrop
-	placeCard(game, cores.ContainerExile, cores.NewCard(game, 101)) // 進流放牌堆 → cardExile
+	placeCard(game, cores.ContainerNone, cores.ContainerHand, cores.NewCard(game, 101))  // 進手牌 → cardDraw
+	placeCard(game, cores.ContainerNone, cores.ContainerDrop, cores.NewCard(game, 101))  // 進棄牌牌堆 → cardDrop
+	placeCard(game, cores.ContainerNone, cores.ContainerExile, cores.NewCard(game, 101)) // 進流放牌堆 → cardExile
 
 	this.True(fired[cores.TriggerCardDraw])
 	this.True(fired[cores.TriggerCardDrop])
 	this.True(fired[cores.TriggerCardExile])
+}
+
+// TestPlaceCardEmit 驗證 placeCard 的容器事件收口:新建直入 From == None、搬移帶來源,進抽牌牌堆亦發（無事件屬性與觸發仍有容器事件）。
+func (this *SuiteHelp) TestPlaceCardEmit() {
+	game, record := newGameRecord()
+	card := cores.NewCard(game, 101)
+
+	placeCard(game, cores.ContainerNone, cores.ContainerDeck, card) // 新建直入抽牌牌堆
+	this.Require().Len(record.Event, 1)
+	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 101, InstanceID: card.GetInstanceID(), From: cores.ContainerNone, To: cores.ContainerDeck}, record.Event[0])
+
+	removeCard(game, cores.ContainerDeck, card)
+	placeCard(game, cores.ContainerDeck, cores.ContainerHand, card) // 搬移:抽牌 → 手牌
+	this.Require().Len(record.Event, 2)
+	this.Equal(cores.ContainerDeck, record.Event[1].From)
+	this.Equal(cores.ContainerHand, record.Event[1].To)
 }
 
 func (this *SuiteHelp) TestDamageSource() {

@@ -148,7 +148,7 @@ const (
 type EventKind int
 
 const (
-	EventInstance  EventKind = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）；前端生成 / 回收 View
+	EventInstance  EventKind = iota // 實例建立 / 銷毀；僅載位置不變的身分變更（morph 銷毀舊 + 建立新），一般生滅由 EventContainer 的 From / To == ContainerNone 表達、效果生滅由 EventEffect 的 加入 / 結束 表達，皆不雙發（M18 拍板）
 	EventContainer                  // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化；日誌容器類命令行
 	EventProperty                   // 屬性變化（前後值）；日誌屬性類命令行
 	EventScope                      // 範圍起點（頂層單位）；日誌範圍標題 + 操作元

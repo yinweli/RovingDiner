@@ -118,6 +118,22 @@ func (this *SuiteSelector) TestSelectGuestPick() {
 	this.Empty(this.must(game, "guestPick", nil))                                           // 缺參數 → 空集合
 }
 
+// TestSelectGuestPickEmit 驗證命令對象真選取的玩家輸入紀錄:交 Operator 才發（來源 = 詞條鍵）、退化全取不記（M18 拍板）。
+func (this *SuiteSelector) TestSelectGuestPickEmit() {
+	game, record := newGameDataRecord(tester.BuildData())
+	g1, _, _ := seatGuest(game)
+
+	this.must(game, "guestPick", nums(1)) // 候選 3 > 1 → 真選取
+	this.Require().Len(record.Event, 1)
+	this.Equal(cores.EventSelect, record.Event[0].Kind)
+	this.Equal("guestPick", record.Event[0].Source)
+	this.Equal([]cores.PickData{{DataID: g1.GetGuestID(), InstanceID: g1.GetInstanceID()}}, record.Event[0].Pick)
+
+	record.Event = nil
+	this.must(game, "guestPick", nums(5)) // 退化全取 → 不記
+	this.Empty(record.Event)
+}
+
 func (this *SuiteSelector) TestSelectGuestRand() {
 	game := newGame()
 	g1, g2, g3 := seatGuest(game)

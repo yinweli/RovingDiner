@@ -54,3 +54,16 @@ func newGameData(data *cores.Data) *cores.Game {
 	Register(game)
 	return game
 }
+
+// newGameRecord 組裝全裝備測試營業 + 事件流錄製器(M18 事件接線斷言用)。
+func newGameRecord() (game *cores.Game, record *tester.RecordPresenter) {
+	return newGameDataRecord(tester.BuildData())
+}
+
+// newGameDataRecord 以指定遊戲資料組裝全裝備測試營業 + 事件流錄製器。
+func newGameDataRecord(data *cores.Data) (game *cores.Game, record *tester.RecordPresenter) {
+	record = &tester.RecordPresenter{}
+	game = cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{}, record)
+	Register(game)
+	return game, record
+}

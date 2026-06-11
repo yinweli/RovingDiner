@@ -33,7 +33,9 @@ func commandCardRun(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 				continue // 點數不足 → no-op
 			} // if
 
+			before := float64(game.GetEnergy().GetValue())
 			game.GetEnergy().Sub(float64(card.GetCost().GetValue())) // 出牌耗能(鎖定 → 不扣、照出牌)
+			emitProperty(game, 0, cores.NoneID, "energy", cores.AssignSub, float64(card.GetCost().GetValue()), before, float64(game.GetEnergy().GetValue()))
 		} // if
 
 		game.EventPlay(card, cardGroup(game, card))                                           // §二十五 step4 列 最後出牌 / 回合張數;整場累積出牌於此補（與其他 *Total 一致）
@@ -43,7 +45,7 @@ func commandCardRun(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 		if toDrop {
 			if _, now, found := game.LocateCard(itor); found && now != cores.ContainerDrop {
 				removeCard(game, now, card)
-				placeCard(game, cores.ContainerDrop, card) // 進棄牌牌堆（設 dropLast 等 + M11 cardDrop 觸發）
+				placeCard(game, now, cores.ContainerDrop, card) // 進棄牌牌堆（設 dropLast 等 + M11 cardDrop 觸發）
 			} // if
 		} // if
 
@@ -92,11 +94,15 @@ func morph(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, where
 		} // if
 
 		oldID := card.GetCardID()
+		oldInstance := card.GetInstanceID()
 
 		if card.Morph(game, newID) == false {
 			continue // 變身後卡牌資料不存在 → 跳過（防禦）
 		} // if
 
+		// 實例事件:morph 為位置不變的身分變更（EventInstance 唯一真身;M18 拍板）,銷毀舊 + 建立新兩發、無容器事件。
+		game.Emit(cores.EventData{Kind: cores.EventInstance, DataID: oldID, InstanceID: oldInstance, Alive: false})
+		game.Emit(cores.EventData{Kind: cores.EventInstance, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), Alive: true})
 		cleanupEffect(game, cores.NewRefCard(card)) // 5. 清理舊實例編號殘留效果（同卡引用 IsSame 比當下編號 → 變身前綁定者全中）
 		game.EventMorph(card, oldID, newID)
 		fireTrigger(game, cores.TriggerCardMorph) // 卡牌變身觸發
@@ -125,11 +131,12 @@ func commandCardify(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 			continue // 卡牌資料不存在 → 該項 no-op
 		} // if
 
-		game.Seat.Remove(guest)                     // 1. 自座位列表移除
-		game.Cardify.Push(guest)                    // 2. 加入卡牌化列表
-		guest.SetFreeze(game.GetRound().GetValue()) // 3. 凍結起始回合
-		card.CardifyBind(guest)                     // 5+6. 綁卡牌化來源 + 不棄卡牌鎖定 + 1
-		placeCard(game, cores.ContainerHand, card)  // 7. 加入手牌
+		game.Seat.Remove(guest)  // 1. 自座位列表移除
+		game.Cardify.Push(guest) // 2. 加入卡牌化列表
+		emitGuestMove(game, guest, cores.ContainerSeat, cores.ContainerCardify, 0)
+		guest.SetFreeze(game.GetRound().GetValue())                     // 3. 凍結起始回合
+		card.CardifyBind(guest)                                         // 5+6. 綁卡牌化來源 + 不棄卡牌鎖定 + 1
+		placeCard(game, cores.ContainerNone, cores.ContainerHand, card) // 7. 加入手牌（新建直入）
 	} // for
 }
 
@@ -187,6 +194,7 @@ func commandGuestReturn(game *cores.Game, target []cores.InstanceID, arg []exprs
 
 		game.Roam.Remove(guest.GetInstanceID()) // 2. 有空位 → 回座
 		game.Seat.Place(seatID, guest)
+		emitGuestMove(game, guest, cores.ContainerRoam, cores.ContainerSeat, seatID)
 	} // for
 }
 
@@ -202,6 +210,7 @@ func commandGuestRoam(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 
 		game.Seat.Remove(guest)
 		game.Roam.Push(guest)
+		emitGuestMove(game, guest, cores.ContainerSeat, cores.ContainerRoam, 0)
 		guest.RoamLock() // 自動鎖
 	} // for
 }
@@ -229,6 +238,7 @@ func guestSeatOne(game *cores.Game) bool {
 
 	guest := game.Wait.Pop() // 彈出隊首
 	game.Seat.Place(seatID, guest)
+	emitGuestMove(game, guest, cores.ContainerWait, cores.ContainerSeat, seatID)
 
 	game.EventSeat(guest)
 	fireTrigger(game, cores.TriggerGuestSeat) // 顧客入座觸發
@@ -252,6 +262,7 @@ func restoreOne(game *cores.Game, card *cores.Card) {
 	guest := card.GetCardify()
 	game.Cardify.Remove(guest.GetInstanceID()) // 2. 自卡牌化列表移除
 	game.Seat.Place(seatID, guest)             // 3. 加入座位列表（隨機空位）
+	emitGuestMove(game, guest, cores.ContainerCardify, cores.ContainerSeat, seatID)
 
 	for _, effect := range game.Effect { // 4. 調整其效果結束回合（補回凍結期間）
 		if effect.GetSelf().GetGuest() == guest && effect.GetExpire() > 0 {
@@ -264,6 +275,7 @@ func restoreOne(game *cores.Game, card *cores.Card) {
 }
 
 // guestExitOne 對單一顧客執行 guestExit 處理流程（供 commandGuestExit 與 guestReturn 無座位分支共用）。
+// 流程寫入白名單:給滿意值 / 扣士氣 於呼叫點包前後值發屬性事件（moraleDamage 本身不發,格擋 / 護盾消耗鏈不發;M18 拍板）。
 func guestExitOne(game *cores.Game, guest *cores.Guest, where cores.ContainerKind, giveScore, dropMorale bool) {
 	game.EventExit(guest)                   // 1. 離場事件（離場座位取自當下 seatID,故在容器移除前）
 	fireTrigger(game, cores.TriggerExitAny) // 2. 顧客離場時機
@@ -276,16 +288,21 @@ func guestExitOne(game *cores.Game, guest *cores.Guest, where cores.ContainerKin
 		fireTrigger(game, cores.TriggerExitCalm) // 4. 生氣離場時機（扣士氣前）
 	} // if
 
-	removeGuestContainer(game, where, guest)      // 5. 自所在容器移除
+	removeGuestContainer(game, where, guest) // 5. 自所在容器移除
+	emitGuestMove(game, guest, where, cores.ContainerNone, 0)
 	fireTrigger(game, cores.TriggerExitDone)      // 6. 顧客離場後時機
 	cleanupEffect(game, cores.NewRefGuest(guest)) // 7. 清理離場顧客殘留效果
 
 	if giveScore {
+		before := float64(game.GetScore().GetValue())
 		game.GetScore().Add(float64(guest.GetScore().GetValue())) // 8. 給滿意值(鎖定 → 不給)
+		emitProperty(game, 0, cores.NoneID, "score", cores.AssignAdd, float64(guest.GetScore().GetValue()), before, float64(game.GetScore().GetValue()))
 	} // if
 
 	if dropMorale {
+		before := float64(game.GetMorale().GetValue())
 		moraleDamage(game, float64(guest.GetMorale().GetValue()), guest) // 9. 扣士氣（morale -= 特例,以離場顧客為來源）
+		emitProperty(game, 0, cores.NoneID, "morale", cores.AssignSub, float64(guest.GetMorale().GetValue()), before, float64(game.GetMorale().GetValue()))
 	} // if
 }
 
