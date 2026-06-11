@@ -12,12 +12,22 @@ import (
 )
 
 // 畫面尺寸常數(【營業顯示規格書 | 8、終端機尺寸與 flex】): 以 ~100 欄為主要設計寬度——
-// 右欄事件日誌固定 30 欄、左欄主畫面吃剩餘(終端機更寬時 flex 全給左欄, 座位可視更多桌);
-// 低於最低支援尺寸顯提示、不硬塞。
+// 最低尺寸時左欄 70(座位 2 桌硬需求)/ 日誌 30; 餘寬先給日誌長到上限、之後才全給左欄
+// (M26 拍板: 日誌不斷尾優先於多視一桌); 低於最低支援尺寸顯提示、不硬塞。
 const (
-	logWidth  = 30  // 右欄事件日誌固定寬
-	minWidth  = 100 // 最低支援寬
-	minHeight = 30  // 最低支援高
+	logWidthMin = 30  // 右欄事件日誌寬度地板(最低尺寸時)
+	logWidthMax = 50  // 右欄事件日誌寬度上限(M26 拍板)
+	minWidth    = 100 // 最低支援寬
+	minHeight   = 30  // 最低支援高
+)
+
+// 聚焦區索引(【營業顯示規格書 | 7、互動規格 | 7.1】8 區循環; M26 拍板循環序 = 規格列序):
+// 0..5 對應 comp 堆疊順序(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆), 狀態列與事件日誌為專屬掛點接末;
+// 起始聚焦 = 座位(0)且恆有聚焦區(不設無聚焦態)。鍵位列非聚焦元件, 不入循環。
+const (
+	focusStatus = 6 // 狀態列
+	focusLog    = 7 // 事件日誌
+	focusCount  = 8 // 循環模數
 )
 
 // Run 顯示/操作層對外入口: 組裝暫停機(被動觀看 operator)與 Bubble Tea 殼(alt-screen; M22)後跑到離開。
@@ -48,6 +58,7 @@ type model struct {
 	comp    []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
 	mode    mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
 	gen     int         // 排拍世代(切模式 +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
+	focus   int         // 聚焦區索引(model 持有的跨組件 UI 狀態; Tab 經 tabMsg 循環 8 區, 聚焦高亮據此)
 	width   int         // 寬度預算(WindowSizeMsg 前用設計寬)
 	height  int         // 高度預算(WindowSizeMsg 前用最低高)
 }
@@ -73,7 +84,8 @@ func (this model) Init() tea.Cmd {
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
 // 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
-// 防呆自然 no-op); 視窗尺寸 → 更新寬高預算; 按鍵 → 查鍵綁定表分派(未綁定不動作)。
+// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 視窗尺寸 → 更新寬高預算;
+// 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
@@ -100,42 +112,75 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		this.gen++
 		return this, this.tick()
 
+	case tabMsg:
+		this.focus = (this.focus + msg.delta + focusCount) % focusCount
+		return this, nil
+
 	case tea.WindowSizeMsg:
 		this.width = msg.Width
 		this.height = msg.Height
 		return this, nil
 
 	case tea.KeyMsg:
-		return this, this.keybar.Find(msg.String())
+		return this, this.keybar.Find(this.keymode(), msg.String())
 	} // switch
 
 	return this, nil
 }
 
 // View 全畫面組合: 低於最低尺寸守門(顯提示不硬塞; 【營業顯示規格書 | 8、終端機尺寸與 flex】);
-// 左右兩欄水平拼接(左欄寬 = 總寬 - 日誌欄寬、日誌與左欄同高)、鍵位列收尾, 共 height 行。
+// 日誌寬 = 總寬扣左欄基準後夾在地板與上限間(餘寬先給日誌、到頂才給左欄; M26 拍板),
+// 左右兩欄水平拼接(日誌與左欄同高)、父層補全寬底框列(M26 R1.5)、鍵位列收尾, 共 height 行;
+// 聚焦日誌時其標題列高亮(左欄聚焦歸 leftView)。
 func (this model) View() string {
 	if this.width < minWidth || this.height < minHeight {
 		return fmt.Sprintf("請放大終端機 (現 %vx%v, 最低 %vx%v)", this.width, this.height, minWidth, minHeight)
 	} // if
 
-	body := this.height - 2 // 鍵位列固定 2 行
-	left := this.leftView(this.width-logWidth, body)
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, this.log.View(logWidth, body)) + "\n" + this.keybar.View(this.width)
+	logw := this.width - (minWidth - logWidthMin) // 守門後必 >= 地板(寬 100 → 30), 不需下限 clamp
+
+	if logw > logWidthMax {
+		logw = logWidthMax
+	} // if
+
+	body := this.height - 3 // 鍵位列固定 2 行 + 底框列 1 行
+	left := this.leftView(this.width-logw, body)
+	logview := this.log.View(logw, body)
+
+	if this.focus == focusLog {
+		logview = focusView(logview)
+	} // if
+
+	bottom := "+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+"
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width)
 }
 
-// leftView 左欄主畫面(共 height 行): 六區堆疊 + 留白墊高 + 狀態列釘底(【營業顯示規格書 | 6、畫面規格 | 6.2】
-// 置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。盤面直讀暫停機的營業實例(停點間引擎必停)。
+// leftView 左欄主畫面(共 height 行): 六區堆疊 + 帶框空行墊高(格線不開洞; M26 R1.5)+ 狀態列釘底
+// (【營業顯示規格書 | 6、畫面規格 | 6.2】置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。
+// 盤面直讀暫停機的營業實例(停點間引擎必停)。聚焦六區之一時該組件標題列高亮(經 composeView)、
+// 聚焦狀態列時其標題列高亮。
 func (this model) leftView(width, height int) string {
-	stack := composeView(this.stepper.game, width, this.comp)
+	stack := composeView(this.stepper.game, width, this.comp, this.focus)
 	status := this.status.View(this.stepper.game, this.mode, width)
+
+	if this.focus == focusStatus {
+		status = focusView(status)
+	} // if
+
 	gap := height - strings.Count(stack, "\n") - strings.Count(status, "\n") - 2
 
 	if gap < 0 {
 		gap = 0
 	} // if
 
-	return stack + strings.Repeat("\n", gap+1) + status
+	row := []string{stack}
+
+	for i := 0; i < gap; i++ {
+		row = append(row, boxRow("", width))
+	} // for
+
+	row = append(row, status)
+	return strings.Join(row, "\n")
 }
 
 // advance 推一拍: 同步 Next 收行組入日誌(盤面組件直讀引擎、不持拷貝); 終局回 false(呼叫端據此停止排拍)。
@@ -162,6 +207,12 @@ func (this model) tick() tea.Cmd {
 	})
 }
 
+// keymode 當前鍵盤模式(三模式框架; M26 R1 立框架): modal 堆疊非空 = modal 態(R3 起)、
+// 選取等待 = 選取模式(M27 起), 目前恆為常態——模式由 model 狀態導出、不另存欄位, 後站只補來源。
+func (this model) keymode() keyMode {
+	return keyModeNormal
+}
+
 // tickMsg 自動排拍訊息(快/慢模式 timer 投遞; 不載行組資料——行組由 Update 內同步 Next 取得)。
 type tickMsg struct {
 	gen int // 排出當下的世代(與 model.gen 不符 = 切模式前的在途舊拍, 丟棄)
@@ -184,5 +235,17 @@ type cycleMsg struct{}
 func cycle() tea.Cmd {
 	return func() tea.Msg {
 		return cycleMsg{}
+	}
+}
+
+// tabMsg 切區訊息(Tab/Shift+Tab 鍵投遞): 聚焦索引循環移動。
+type tabMsg struct {
+	delta int // 移動方向(+1 正向 / -1 反向; 模數迴繞)
+}
+
+// tab 排切區訊息的 Cmd(Tab/Shift+Tab 鍵綁定)。
+func tab(delta int) tea.Cmd {
+	return func() tea.Msg {
+		return tabMsg{delta: delta}
 	}
 }

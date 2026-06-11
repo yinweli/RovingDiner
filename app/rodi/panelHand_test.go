@@ -31,14 +31,14 @@ func (this *SuitePanelHand) TestPanelHandView() {
 	game.Hand.Push(bound)
 
 	this.Equal(strings.Join([]string{ // 手牌序 = 新進入者在前: [綁定卡 103 101]
-		"+- 手牌(3/5) " + strings.Repeat("-", 47),
-		"101@上菜[501@老饕] (2)  103@結帳 (1)  101@上菜 (2)",
-		"不棄 封印" + strings.Repeat(" ", 15) + "不棄" + strings.Repeat(" ", 10) + "封印",
-		"",
+		"+- 手牌(3/5) " + strings.Repeat("-", 46) + "+",
+		"| " + padTo("101@上菜[501@老饕] (2)  103@結帳 (1)  101@上菜 (2)", 56) + " |",
+		"| " + padTo("不棄 封印"+strings.Repeat(" ", 15)+"不棄"+strings.Repeat(" ", 10)+"封印", 56) + " |",
+		"| " + padTo("", 56) + " |",
 	}, "\n"), panelHand{}.View(game, 60)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
 
-	row := strings.Split(panelHand{}.View(game, 12), "\n") // 超寬: 補右緣 >
-	this.Equal("101@上菜[5 >", row[1])
+	row := strings.Split(panelHand{}.View(game, 12), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	this.Equal("| 101@上 > |", row[1])
 }
 
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。

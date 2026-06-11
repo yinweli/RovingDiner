@@ -26,19 +26,19 @@ func (this *SuitePanelSeat) TestPanelSeatView() {
 	game.Effect.Push(cores.NewEffect(game, 401, cores.NewRefGuest(guest), 1))
 
 	this.Equal(strings.Join([]string{ // 顧客 501: 封(資料 SateSeal)+ 效(佇列效果)命中、免 留白
-		"+- 座位 " + strings.Repeat("-", 52),
-		"桌1" + strings.Repeat(" ", 24) + "桌2",
-		"501@老饕 飽0耐3" + strings.Repeat(" ", 12) + "空",
-		strings.Repeat(" ", 9) + "封  效",
-		"空",
-		"",
+		"+- 座位 " + strings.Repeat("-", 51) + "+",
+		"| " + padTo("桌1"+strings.Repeat(" ", 24)+"桌2", 56) + " |",
+		"| " + padTo("501@老饕 飽0耐3"+strings.Repeat(" ", 12)+"空", 56) + " |",
+		"| " + padTo(strings.Repeat(" ", 9)+"封  效", 56) + " |",
+		"| " + padTo("空", 56) + " |",
+		"| " + padTo("", 56) + " |",
 	}, "\n"), panelSeat{}.View(game, 60))
 
 	guest.GetEffectImmune().Add(5) // 免疫計數 > 0 → 免 點亮(M22 拍板)
 	this.Contains(panelSeat{}.View(game, 60), strings.Repeat(" ", 9)+"封免效")
 
-	row := strings.Split(panelSeat{}.View(game, 10), "\n") // 超寬: 桌號列補右緣 >
-	this.Equal("桌1"+strings.Repeat(" ", 6)+">", row[1])
+	row := strings.Split(panelSeat{}.View(game, 10), "\n") // 超寬: 內容寬 6、桌號列 > 站最後內容格
+	this.Equal("| 桌1  > |", row[1])
 
 	game.Seat[2] = nil // 防禦: 座位表 nil 項 → 顯 空
 	this.Contains(panelSeat{}.View(game, 60), "空")

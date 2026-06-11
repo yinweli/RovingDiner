@@ -21,15 +21,16 @@ type SuiteModel struct {
 	suite.Suite
 }
 
-// TestNewModel 驗證建構: 欄位就位、日誌 / 組件 / 寬高預算就緒、初始模式快速。
+// TestNewModel 驗證建構: 欄位就位、日誌 / 組件 / 寬高預算就緒、初始模式快速、起始聚焦座位(0)。
 func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind, 4)
+	this.Len(target.keybar.bind[keyModeNormal], 6)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
 	this.Equal(modeFast, target.mode)
 	this.Equal(0, target.gen)
+	this.Equal(0, target.focus)
 	this.Equal(minWidth, target.width)
 	this.Equal(minHeight, target.height)
 }
@@ -40,8 +41,8 @@ func (this *SuiteModel) TestModelInit() {
 }
 
 // TestModelUpdate 驗證訊息分派: timer 拍驗章後推進並排下一拍(盤面直讀引擎、無摺疊), 過期世代丟棄斷鏈,
-// 終局停止排拍; 步進拍只在步進模式推一拍且不排拍; 模式循環換模式 + 世代 +1;
-// 視窗尺寸更新寬高預算; 按鍵查綁定表分派(space / n / q / ctrl+c、未綁定鍵不動作)。
+// 終局停止排拍; 步進拍只在步進模式推一拍且不排拍; 模式循環換模式 + 世代 +1; 切區循環移動(雙向迴繞);
+// 視窗尺寸更新寬高預算; 按鍵查當前鍵盤模式綁定表分派(tab / space / n / q / ctrl+c、未綁定鍵不動作)。
 func (this *SuiteModel) TestModelUpdate() {
 	result, cmd := tea.Model(newModel(newStepper(1, 601, tester.BuildSheet()))).Update(tickMsg{})
 	this.Equal(cores.PhaseGameStart, result.(model).stepper.game.GetPhase()) // 首拍: 引擎停在首事件邊界, 直讀即見
@@ -87,10 +88,31 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Equal(3, result.(model).gen)
 	this.NotNil(cmd)
 
+	result, cmd = tea.Model(newModel(nil)).Update(tabMsg{delta: 1}) // 正向切區: 座位 → 場外
+	this.Equal(1, result.(model).focus)
+	this.Nil(cmd)
+
+	result, _ = result.(model).Update(tabMsg{delta: -1}) // 反向切回
+	this.Equal(0, result.(model).focus)
+
+	result, _ = result.(model).Update(tabMsg{delta: -1}) // 反向自 0 迴繞到事件日誌(末區)
+	this.Equal(focusLog, result.(model).focus)
+
+	result, _ = result.(model).Update(tabMsg{delta: 1}) // 正向自末區迴繞回座位
+	this.Equal(0, result.(model).focus)
+
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
 	this.Equal(40, result.(model).height)
 	this.Nil(cmd)
+
+	_, cmd = newModel(nil).Update(tea.KeyMsg{Type: tea.KeyTab})
+	this.NotNil(cmd)
+	this.Equal(tabMsg{delta: 1}, cmd())
+
+	_, cmd = newModel(nil).Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+	this.NotNil(cmd)
+	this.Equal(tabMsg{delta: -1}, cmd())
 
 	_, cmd = newModel(nil).Update(tea.KeyMsg{Type: tea.KeySpace})
 	this.NotNil(cmd)
@@ -115,23 +137,40 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Nil(cmd)
 }
 
-// TestModelView 驗證全畫面 layout: 共 height 行、左欄六區與日誌同列起頭、狀態列釘底、鍵位列收尾;
-// 低於最低尺寸守門顯提示。盤面直讀暫停機(未推進 = 開局前空白盤面, 守門與排版不受內容影響)。
+// TestModelView 驗證全畫面 layout: 共 height 行、左欄六區與日誌同列起頭、狀態列釘底、底框列、鍵位列收尾、
+// 日誌寬 flex(餘寬先給日誌到上限); 低於最低尺寸守門顯提示。盤面直讀暫停機(未推進 = 開局前空白盤面,
+// 守門與排版不受內容影響)。
 func (this *SuiteModel) TestModelView() {
 	target := newModel(newStepper(1, 601, tester.BuildSheet()))
 	row := strings.Split(target.View(), "\n")
 	this.Len(row, minHeight) // 預設 100x30 → 滿版 30 行
 	this.Contains(row[0], "+- 座位")
-	this.Contains(row[0], "+- 事件日誌")         // 右欄與左欄同列起頭
-	this.Contains(row[minHeight-3], "快速")    // 狀態列釘底(鍵位列上方)
-	this.Contains(row[minHeight-1], "[Q]離開") // 鍵位列固定 2 行, 現有鍵全在第 2 行(第 1 行留白)
+	this.Contains(row[0], "- 事件日誌")                                                           // 右欄與左欄同列起頭(接縫版標題無左端 +)
+	this.Contains(row[minHeight-4], "快速")                                                     // 狀態列釘底(底框列上方)
+	this.Equal("+"+strings.Repeat("-", 68)+"+"+strings.Repeat("-", 29)+"+", row[minHeight-3]) // 父層全寬底框列(左欄 70 + 日誌 30)
+	this.Contains(row[minHeight-1], "[Q]離開")                                                  // 鍵位列固定 2 行
 
-	target.height = 40 // 更高: 留白墊在六區與狀態列之間, 狀態列仍釘底
+	target.height = 40 // 更高: 帶框空行墊在六區與狀態列之間(格線不開洞), 狀態列仍釘底
 	row = strings.Split(target.View(), "\n")
 	this.Len(row, 40)
-	this.Contains(row[37], "快速")
+	this.Contains(row[36], "快速")
+	this.Equal(boxRow("", 70)+boxRowSeam("", 30), row[30]) // gap 帶框空行 + 同列的日誌接縫空行
 
-	this.Len(strings.Split(target.leftView(70, 5), "\n"), 26) // 內容超高(防禦): 留白歸零、不裁內容
+	target.width = 130 // 更寬: 餘寬先給日誌(130-70 = 60 → 上限 50), 之後才給左欄(80)
+	row = strings.Split(target.View(), "\n")
+	this.Equal("+"+strings.Repeat("-", 78)+"+"+strings.Repeat("-", 49)+"+", row[37])
+	target.width = minWidth
+
+	target.focus = focusStatus // 聚焦狀態列 / 日誌: 高亮純上色(無 TTY 渲染原文), 版面與內容不變
+	row = strings.Split(target.View(), "\n")
+	this.Contains(row[34], "+- 狀態列")
+
+	target.focus = focusLog
+	row = strings.Split(target.View(), "\n")
+	this.Contains(row[0], "- 事件日誌")
+	target.focus = 0
+
+	this.Len(strings.Split(target.leftView(70, 5), "\n"), 27) // 內容超高(防禦): 留白歸零、不裁內容
 
 	target.width = 80 // 低於最低尺寸 → 守門提示
 	this.Equal("請放大終端機 (現 80x40, 最低 100x30)", target.View())
@@ -156,6 +195,11 @@ func (this *SuiteModel) TestModelTick() {
 	this.Nil(target.tick())
 }
 
+// TestModelKeymode 驗證鍵盤模式導出: R1 恆為常態(modal 堆疊與選取等待後站才有來源)。
+func (this *SuiteModel) TestModelKeymode() {
+	this.Equal(keyModeNormal, newModel(nil).keymode())
+}
+
 // TestStep 驗證步進訊息 Cmd: 只回推進訊息(不碰引擎)。
 func (this *SuiteModel) TestStep() {
 	this.Equal(stepMsg{}, step()())
@@ -164,4 +208,10 @@ func (this *SuiteModel) TestStep() {
 // TestCycle 驗證模式循環訊息 Cmd: 只回循環訊息(模式切換活在 Update)。
 func (this *SuiteModel) TestCycle() {
 	this.Equal(cycleMsg{}, cycle()())
+}
+
+// TestTab 驗證切區訊息 Cmd: 載移動方向(聚焦移動活在 Update)。
+func (this *SuiteModel) TestTab() {
+	this.Equal(tabMsg{delta: 1}, tab(1)())
+	this.Equal(tabMsg{delta: -1}, tab(-1)())
 }

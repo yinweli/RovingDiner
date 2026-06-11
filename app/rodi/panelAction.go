@@ -29,8 +29,8 @@ func (this panelAction) View(game *cores.Game, width int) string {
 
 	return strings.Join([]string{
 		panelTitle(fmt.Sprintf("行動佇列(%v)", len(game.Action)), width),
-		truncMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
-		truncTo(strings.TrimRight(strings.Join(row2, "  "), " "), width),
+		boxMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
+		boxTrunc(strings.TrimRight(strings.Join(row2, "  "), " "), width),
 	}, "\n")
 }
 

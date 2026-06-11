@@ -47,10 +47,10 @@ func (this panelSeat) View(game *cores.Game, width int) string {
 		} // for
 	} // for
 
-	text := []string{panelTitle("座位", width), truncMark(strings.TrimRight(row[0], " "), width)}
+	text := []string{panelTitle("座位", width), boxMark(strings.TrimRight(row[0], " "), width)}
 
 	for _, itor := range row[1:] {
-		text = append(text, truncTo(strings.TrimRight(itor, " "), width))
+		text = append(text, boxTrunc(strings.TrimRight(itor, " "), width))
 	} // for
 
 	return strings.Join(text, "\n")

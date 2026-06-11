@@ -26,12 +26,12 @@ func (this *SuitePanelPile) TestPanelPileView() {
 	game.Drop.Push(cores.NewCard(game, 101))
 
 	this.Equal(strings.Join([]string{ // 牌堆序 = 新進入者置頂: 抽 [103 101]
-		"+- 牌堆 " + strings.Repeat("-", 52),
-		"抽牌堆(2): 103@結帳 101@上菜",
-		"棄牌堆(1): 101@上菜",
-		"流放堆(0):",
+		"+- 牌堆 " + strings.Repeat("-", 51) + "+",
+		"| " + padTo("抽牌堆(2): 103@結帳 101@上菜", 56) + " |",
+		"| " + padTo("棄牌堆(1): 101@上菜", 56) + " |",
+		"| " + padTo("流放堆(0):", 56) + " |",
 	}, "\n"), panelPile{}.View(game, 60))
 
-	row := strings.Split(panelPile{}.View(game, 14), "\n") // 超寬: 補右緣 >
-	this.Equal("抽牌堆(2): 1 >", row[1])
+	row := strings.Split(panelPile{}.View(game, 14), "\n") // 超寬: 內容寬 10、> 站最後內容格
+	this.Equal("| 抽牌堆(2 > |", row[1])
 }

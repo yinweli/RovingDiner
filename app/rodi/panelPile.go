@@ -17,9 +17,9 @@ type panelPile struct{}
 func (this panelPile) View(game *cores.Game, width int) string {
 	return strings.Join([]string{
 		panelTitle("牌堆", width),
-		truncMark(pileRow(game.GetSheet(), "抽牌堆", game.Deck), width),
-		truncMark(pileRow(game.GetSheet(), "棄牌堆", game.Drop), width),
-		truncMark(pileRow(game.GetSheet(), "流放堆", game.Exile), width),
+		boxMark(pileRow(game.GetSheet(), "抽牌堆", game.Deck), width),
+		boxMark(pileRow(game.GetSheet(), "棄牌堆", game.Drop), width),
+		boxMark(pileRow(game.GetSheet(), "流放堆", game.Exile), width),
 	}, "\n")
 }
 

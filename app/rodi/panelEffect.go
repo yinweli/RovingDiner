@@ -54,8 +54,8 @@ func (this panelEffect) View(game *cores.Game, width int) string {
 
 	return strings.Join([]string{
 		panelTitle(fmt.Sprintf("效果佇列(%v)", len(game.Effect)), width),
-		truncMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
-		truncTo(strings.TrimRight(strings.Join(row2, "  "), " "), width),
+		boxMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
+		boxTrunc(strings.TrimRight(strings.Join(row2, "  "), " "), width),
 	}, "\n")
 }
 

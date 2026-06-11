@@ -17,9 +17,9 @@ type panelPool struct{}
 func (this panelPool) View(game *cores.Game, width int) string {
 	return strings.Join([]string{
 		panelTitle("場外", width),
-		truncMark(poolRow(game.GetSheet(), "排隊", game.Wait), width),
-		truncMark(poolRow(game.GetSheet(), "遊蕩", game.Roam), width),
-		truncMark(poolRow(game.GetSheet(), "卡牌化", game.Cardify), width),
+		boxMark(poolRow(game.GetSheet(), "排隊", game.Wait), width),
+		boxMark(poolRow(game.GetSheet(), "遊蕩", game.Roam), width),
+		boxMark(poolRow(game.GetSheet(), "卡牌化", game.Cardify), width),
 	}, "\n")
 }
 

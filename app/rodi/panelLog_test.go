@@ -31,18 +31,18 @@ func (this *SuitePanelLog) TestPanelLogView() {
 	target.Append("$ 出牌點數 -= 2 >> 8")
 	target.Append("[R3 玩家行動] 時機:玩家出牌")
 
-	this.Equal(strings.Join([]string{ // 行少: 底部補空行至滿高
-		"+- 事件日誌 " + strings.Repeat("-", 18),
-		"$ 出牌點數 -= 2 >> 8",
-		"[R3 玩家行動] 時機:玩家出牌",
-		"",
-		"",
+	this.Equal(strings.Join([]string{ // 行少時底部補帶框空行至滿高, 接縫版無左框(左緣由左欄中線供應)
+		"- 事件日誌 " + strings.Repeat("-", 18) + "+",
+		" " + padTo("$ 出牌點數 -= 2 >> 8", 27) + " |",
+		" " + padTo("[R3 玩家行動] 時機:玩家出牌", 27) + " |",
+		" " + padTo("", 27) + " |",
+		" " + padTo("", 27) + " |",
 	}, "\n"), target.View(30, 5))
 
-	this.Equal("+- 事件日誌 "+strings.Repeat("-", 18)+"\n[R3 玩家行動] 時機:玩家出牌", target.View(30, 2)) // 行多: 取尾段釘最新
+	this.Equal("- 事件日誌 "+strings.Repeat("-", 18)+"+\n"+" "+padTo("[R3 玩家行動] 時機:玩家出牌", 27)+" |", target.View(30, 2)) // 行多: 取尾段釘最新
 
-	row := strings.Split(target.View(12, 3), "\n") // 超寬: 截斷補右緣 >
-	this.Equal("$ 出牌點數 >", row[1])
+	row := strings.Split(target.View(12, 3), "\n") // 超寬: 內容寬 9、> 站最後內容格
+	this.Equal(" $ 出牌  > |", row[1])
 
 	this.Equal("", target.View(30, 0)) // 高度耗盡(防禦)
 }

@@ -14,12 +14,19 @@ type component interface {
 }
 
 // composeView 父層組合: 依掛載順序逐組件渲染、換行堆疊; 父層只組合與分配空間——M20 只發寬度預算,
-// 高度分配與最低尺寸守門隨 alt-screen 收進 M22(M20 拍板)。
-func composeView(game *cores.Game, width int, comp []component) string {
+// 高度分配與最低尺寸守門隨 alt-screen 收進 M22(M20 拍板); M26 R1 加聚焦高亮——focus 命中掛載索引時
+// 該組件標題列反白(聚焦屬區層級歸父層上色, 組件不知聚焦; 範圍外如 -1 或狀態列 / 日誌索引即全不高亮)。
+func composeView(game *cores.Game, width int, comp []component, focus int) string {
 	view := []string{}
 
-	for _, itor := range comp {
-		view = append(view, itor.View(game, width))
+	for index, itor := range comp {
+		render := itor.View(game, width)
+
+		if index == focus {
+			render = focusView(render)
+		} // if
+
+		view = append(view, render)
 	} // for
 
 	return strings.Join(view, "\n")

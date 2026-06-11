@@ -30,13 +30,13 @@ func (this *SuitePanelEffect) TestPanelEffectView() {
 	game.Effect.Push(cores.NewEffect(game, 403, cores.Ref{}, 1))
 
 	this.Equal(strings.Join([]string{ // 作用順序 9 > 5 排前; 同序 402 < 403 編號小者優先
-		"+- 效果佇列(3) " + strings.Repeat("-", 45),
-		"402@護盾 (永)  403@立即 (永)  401@加耐x2 (3)",
-		"空 常駐" + strings.Repeat(" ", 8) + "空 ?" + strings.Repeat(" ", 11) + "501@老饕 觸發",
+		"+- 效果佇列(3) " + strings.Repeat("-", 44) + "+",
+		"| " + padTo("402@護盾 (永)  403@立即 (永)  401@加耐x2 (3)", 56) + " |",
+		"| " + padTo("空 常駐"+strings.Repeat(" ", 8)+"空 ?"+strings.Repeat(" ", 11)+"501@老饕 觸發", 56) + " |",
 	}, "\n"), panelEffect{}.View(game, 60))
 
-	row := strings.Split(panelEffect{}.View(game, 12), "\n") // 超寬: 補右緣 >
-	this.Equal("402@護盾 ( >", row[1])
+	row := strings.Split(panelEffect{}.View(game, 12), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	this.Equal("| 402@護 > |", row[1])
 }
 
 // TestEffectOrder 驗證作用順序查表; 查無回 0。

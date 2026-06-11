@@ -26,12 +26,12 @@ func (this *SuitePanelPool) TestPanelPoolView() {
 	game.Cardify.Push(cores.NewGuest(game, 501))
 
 	this.Equal(strings.Join([]string{
-		"+- 場外 " + strings.Repeat("-", 52),
-		"排隊(2): 501@老饕 501@老饕",
-		"遊蕩(0):",
-		"卡牌化(1): 501@老饕",
+		"+- 場外 " + strings.Repeat("-", 51) + "+",
+		"| " + padTo("排隊(2): 501@老饕 501@老饕", 56) + " |",
+		"| " + padTo("遊蕩(0):", 56) + " |",
+		"| " + padTo("卡牌化(1): 501@老饕", 56) + " |",
 	}, "\n"), panelPool{}.View(game, 60))
 
-	row := strings.Split(panelPool{}.View(game, 12), "\n") // 超寬: 補右緣 >
-	this.Equal("排隊(2): 5 >", row[1])
+	row := strings.Split(panelPool{}.View(game, 12), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	this.Equal("| 排隊(2 > |", row[1])
 }

@@ -41,11 +41,39 @@ func (this *SuiteRender) TestTruncMark() {
 	this.Equal("ab", truncMark("abcdef", 2)) // 過窄(防禦) → 純截斷
 }
 
-// TestPanelTitle 驗證面板標題列: 標題前後留 1 空白、餘寬補橫線、超寬截斷。
+// TestPanelTitle 驗證面板標題列: 標題前後留 1 空白、餘寬補橫線、收尾 +、超寬截斷。
 func (this *SuiteRender) TestPanelTitle() {
-	this.Equal("+- 座位 ----", panelTitle("座位", 12))
-	this.Equal("+- 座位 ", panelTitle("座位", 8)) // 餘寬 0 → 不補線
-	this.Equal("+- 座", panelTitle("座位", 6))   // 超寬截斷
+	this.Equal("+- 座位 ---+", panelTitle("座位", 12))
+	this.Equal("+- 座位+", panelTitle("座位", 8)) // 餘寬 0 → 不補線(防禦; 實際區寬不會這麼窄)
+	this.Equal("+- 座+", panelTitle("座位", 6))  // 超寬截斷
+}
+
+// TestPanelTitleSeam 驗證接縫版標題列: 無左端 +(由左欄中線供應)、其餘同 panelTitle。
+func (this *SuiteRender) TestPanelTitleSeam() {
+	this.Equal("- 事件日誌 -+", panelTitleSeam("事件日誌", 13))
+}
+
+// TestBoxRow 驗證帶框內容行: 內容補白至內容寬(區寬 - 4)後包框與 cell padding。
+func (this *SuiteRender) TestBoxRow() {
+	this.Equal("| abc    |", boxRow("abc", 10))
+	this.Equal("|  |", boxRow("", 4)) // 空內容: 框與 padding 仍在(墊高行用)
+}
+
+// TestBoxMark 驗證帶框截斷行(> 版): 超寬截至內容寬、> 站最後內容格(padding 與框保留)。
+func (this *SuiteRender) TestBoxMark() {
+	this.Equal("| abc    |", boxMark("abc", 10))
+	this.Equal("| abcd > |", boxMark("abcdefgh", 10))
+}
+
+// TestBoxTrunc 驗證帶框截斷行(純版): 超寬截至內容寬、不補記號。
+func (this *SuiteRender) TestBoxTrunc() {
+	this.Equal("| abc    |", boxTrunc("abc", 10))
+	this.Equal("| abcdef |", boxTrunc("abcdefgh", 10))
+}
+
+// TestBoxRowSeam 驗證接縫版帶框內容行: 無左框(左緣由左欄中線供應)、內容寬 = 區寬 - 3。
+func (this *SuiteRender) TestBoxRowSeam() {
+	this.Equal(" abc     |", boxRowSeam("abc", 10))
 }
 
 // TestNum 驗證整數屬性值轉字串。

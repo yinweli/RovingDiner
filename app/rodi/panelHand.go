@@ -40,9 +40,9 @@ func (this panelHand) View(game *cores.Game, width int) string {
 
 	return strings.Join([]string{
 		panelTitle(fmt.Sprintf("手牌(%v/%v)", len(game.Hand), num(game.GetHandMax().GetValue())), width),
-		truncMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
-		truncTo(strings.TrimRight(strings.Join(row2, "  "), " "), width),
-		truncTo(strings.TrimRight(strings.Join(row3, "  "), " "), width),
+		boxMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
+		boxTrunc(strings.TrimRight(strings.Join(row2, "  "), " "), width),
+		boxTrunc(strings.TrimRight(strings.Join(row3, "  "), " "), width),
 	}, "\n")
 }
 
