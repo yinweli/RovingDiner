@@ -9,8 +9,8 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// Run 顯示／操作層對外入口：組裝橋接器（被動觀看 operator）與 Bubble Tea 殼後跑到離開。
-// seed 由呼叫端先行定案（cmd 對 0 取時間亂數），本層只負責驅動與消費。
+// Run 顯示/操作層對外入口: 組裝橋接器(被動觀看 operator)與 Bubble Tea 殼後跑到離開。
+// seed 由呼叫端先行定案(cmd 對 0 取時間亂數), 本層只負責驅動與消費。
 func Run(seed int64, stageID int32, dataDir string, sheet *sheeter.Sheeter) error {
 	_, err := tea.NewProgram(newModel(newAdapter(seed, stageID, sheet, passiveOperator{}), seed, stageID, dataDir)).Run()
 
@@ -21,16 +21,16 @@ func Run(seed int64, stageID int32, dataDir string, sheet *sheeter.Sheeter) erro
 	return nil
 }
 
-// model Bubble Tea 殼（M19 純文字 dump）：事件逐行印進終端機 scrollback（tea.Printf，一事件一行
-// 「序號 + %+v 原始欄位」，零格式化投資——事件日誌格式由 M22 整套重做），View 只渲染一行狀態 footer。
-// 消費採波浪式 Cmd：waitEvent 收一筆 → Update 印行並再發 waitEvent；收到終局即停止消費、等 q 離開——
-// 消費節奏全活在 Update 迴圈，即 M25 速率的掛點（【營業顯示規格書 | 3、事件流的消費：速率與步進】）。
+// model Bubble Tea 殼(M19 純文字 dump): 事件逐行印進終端機 scrollback(tea.Printf, 一事件一行
+// 「序號 + %+v 原始欄位」, 零格式化投資——事件日誌格式由 M22 整套重做), View 只渲染一行狀態 footer。
+// 消費採波浪式 Cmd: waitEvent 收一筆 → Update 印行並再發 waitEvent; 收到終局即停止消費、等 q 離開——
+// 消費節奏全活在 Update 迴圈, 即 M25 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
 type model struct {
 	adapter *adapter // 引擎橋接器
-	seed    int64    // 本場 seed（顯示用）
-	stageID int32    // 關卡編號（顯示用）
-	dataDir string   // 靜態表目錄（顯示用）
-	serial  int      // 已收事件序號（dump 行前綴）
+	seed    int64    // 本場 seed(顯示用)
+	stageID int32    // 關卡編號(顯示用)
+	dataDir string   // 靜態表目錄(顯示用)
+	serial  int      // 已收事件序號(dump 行前綴)
 	finish  bool     // 營業已跑完
 	succ    bool     // 終局成敗
 }
@@ -39,18 +39,18 @@ func newModel(adapter *adapter, seed int64, stageID int32, dataDir string) model
 	return model{adapter: adapter, seed: seed, stageID: stageID, dataDir: dataDir}
 }
 
-// Init 起跑：印 header（seed／關卡／資料目錄，供重現與對帳）並開始等第一筆事件。
-// 印行與續等用 tea.Sequence 循序執行（先印完、再等下一筆）：tea.Batch 並發會讓相鄰兩行 Printf 搶序，事件 dump 行序必須保序。
+// Init 起跑: 印 header(seed/關卡/資料目錄, 供重現與對帳)並開始等第一筆事件。
+// 印行與續等用 tea.Sequence 循序執行(先印完、再等下一筆): tea.Batch 並發會讓相鄰兩行 Printf 搶序, 事件 dump 行序必須保序。
 func (this model) Init() tea.Cmd {
 	return tea.Sequence(tea.Printf("營業開始 (seed %v, stage %v, data %v)", this.seed, this.stageID, this.dataDir), waitEvent(this.adapter))
 }
 
-// Update 訊息分派：事件 → 印行 + 續等；終局 → 記成敗、停止消費；q / ctrl+c → 離開。
+// Update 訊息分派: 事件 → 印行 + 續等; 終局 → 記成敗、停止消費; q / ctrl+c → 離開。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case eventMsg:
 		this.serial++
-		return this, tea.Sequence(tea.Printf("%5d %+v", this.serial, cores.EventData(msg)), waitEvent(this.adapter)) // 循序保行序,依 Init 同註
+		return this, tea.Sequence(tea.Printf("%5d %+v", this.serial, cores.EventData(msg)), waitEvent(this.adapter)) // 循序保行序, 依 Init 同註
 
 	case doneMsg:
 		this.finish = true
@@ -66,8 +66,8 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	return this, nil
 }
 
-// View 一行狀態 footer：跑動中／終局成敗；事件本文已印進 scrollback、不歸 View 管。
-// 終局不自動退出（留人看尾巴），等 q。
+// View 一行狀態 footer: 跑動中/終局成敗; 事件本文已印進 scrollback、不歸 View 管。
+// 終局不自動退出(留人看尾巴), 等 q。
 func (this model) View() string {
 	if this.finish {
 		state := "失敗"
@@ -76,20 +76,20 @@ func (this model) View() string {
 			state = "成功"
 		} // if
 
-		return fmt.Sprintf("營業結束:%v (seed %v, stage %v) [q 離開]\n", state, this.seed, this.stageID)
+		return fmt.Sprintf("營業結束: %v (seed %v, stage %v) [q 離開]\n", state, this.seed, this.stageID)
 	} // if
 
 	return fmt.Sprintf("營業中... (seed %v, stage %v) [q 離開]\n", this.seed, this.stageID)
 }
 
-// eventMsg 一筆引擎事件抵達（Bubble Tea 訊息殼）。
+// eventMsg 一筆引擎事件抵達(Bubble Tea 訊息殼)。
 type eventMsg cores.EventData
 
-// doneMsg 營業跑完（載成敗）。
+// doneMsg 營業跑完(載成敗)。
 type doneMsg bool
 
-// waitEvent 等待下一筆事件或終局的 Cmd：兩者同一個等待點——done 緩衝 1 且引擎送完所有事件才送終局
-// （adapter 不變式），select 不會在尚有事件未收時撿到終局。
+// waitEvent 等待下一筆事件或終局的 Cmd: 兩者同一個等待點——done 緩衝 1 且引擎送完所有事件才送終局
+// (adapter 不變式), select 不會在尚有事件未收時撿到終局。
 func waitEvent(adapter *adapter) tea.Cmd {
 	return func() tea.Msg {
 		select {

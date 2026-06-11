@@ -14,8 +14,8 @@ func TestSuiteCommandEffect(t *testing.T) {
 	suite.Run(t, new(SuiteCommandEffect))
 }
 
-// SuiteCommandEffect 驗證效果佇列命令(commandEffect.go:effectClear / effectDel / effectRun);
-// 經 ExecOperate 真實入口測:none 全域掃描 vs 篩空 no-op、群組 / 同份比對、退層與出佇列、依類型派發與 N override。
+// SuiteCommandEffect 驗證效果佇列命令(commandEffect.go: effectClear / effectDel / effectRun);
+// 經 ExecOperate 真實入口測: none 全域掃描 vs 篩空 no-op、群組 / 同份比對、退層與出佇列、依類型派發與 N override。
 type SuiteCommandEffect struct {
 	suite.Suite
 }
@@ -50,7 +50,7 @@ func (this *SuiteCommandEffect) TestCommandEffectClear() {
 	this.Len(game.Effect, 4)
 
 	ended = nil
-	game.ExecOperate("effectClear", "none", nil, this.arg("6", "0")) // none → 全域掃描;指定 0 不命中群組 0
+	game.ExecOperate("effectClear", "none", nil, this.arg("6", "0")) // none → 全域掃描; 指定 0 不命中群組 0
 	this.Equal([]int32{902}, ended)
 	this.Len(game.Effect, 3)
 
@@ -71,7 +71,7 @@ func (this *SuiteCommandEffect) TestCommandEffectClear() {
 	this.Len(game.Effect, 3)
 
 	ended = nil
-	game.Seat.Remove(seated) // 對象篩空（非 none）→ 整體 no-op,非全域掃描
+	game.Seat.Remove(seated) // 對象篩空(非 none)→ 整體 no-op, 非全域掃描
 	game.ExecOperate("effectClear", "guestAll", nil, this.arg("7"))
 	this.Empty(ended)
 	this.Len(game.Effect, 3)
@@ -106,7 +106,7 @@ func (this *SuiteCommandEffect) TestCommandEffectDel() {
 	game.ExecOperate("effectDel", "guestAll", nil, this.arg("901", "0")) // N <= 0 → no-op
 	game.ExecOperate("effectDel", "guestAll", nil, this.arg("901"))      // 缺 N → no-op
 	game.ExecOperate("effectDel", "guestAll", nil, this.arg("999", "1")) // 查無編譯資料 → no-op
-	commandEffectDel(game, []cores.InstanceID{99999}, nums(901, 1))      // 實例不存在 → 該項 no-op（白箱）
+	commandEffectDel(game, []cores.InstanceID{99999}, nums(901, 1))      // 實例不存在 → 該項 no-op(白箱)
 	this.Empty(ended)
 }
 
@@ -125,29 +125,29 @@ func (this *SuiteCommandEffect) TestCommandEffectRun() {
 	data.SetEffect(902, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerCardPlay, Stack: 1})
 	data.SetEffect(903, cores.EffectData{Kind: cores.EffectPersist, Stack: 2, Start: func(game *cores.Game) { started = append(started, 903) }})
 
-	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("901", "5")) // 立即:忽略 N、條件過即跑一次,不入佇列
+	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("901", "5")) // 立即: 忽略 N、條件過即跑一次, 不入佇列
 	this.Equal(1, immed)
 	this.Empty(game.Effect)
 
-	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("902", "3")) // 觸發:N > 0 覆寫本次增加層數
+	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("902", "3")) // 觸發: N > 0 覆寫本次增加層數
 	this.Require().Len(game.Effect, 1)
 	this.Equal(int32(3), game.Effect[0].GetStack())
 	this.Equal(card, game.Effect[0].GetSelf().GetCard())
 
-	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("903", "0")) // 常駐:N = 0 → 用效果堆疊層數 2;啟動命令 × 2
+	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("903", "0")) // 常駐: N = 0 → 用效果堆疊層數 2; 啟動命令 × 2
 	this.Equal([]int32{903, 903}, started)
 	this.Len(game.Effect, 2)
 
 	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("999", "1")) // 查無編譯資料 → no-op
 	game.ExecOperate("effectRun", "handAll", this.arg("0"), this.arg("901"))      // 缺 N → no-op
-	commandEffectRun(game, []cores.InstanceID{99999}, nums(901, 1))               // 實例不存在 → 該項 no-op（白箱）
+	commandEffectRun(game, []cores.InstanceID{99999}, nums(901, 1))               // 實例不存在 → 該項 no-op(白箱)
 	this.Equal(1, immed)
 	this.Len(game.Effect, 2)
 }
 
 // === 測試輔助(置尾) ===
 
-// arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數);解析失敗即測試失敗。
+// arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數); 解析失敗即測試失敗。
 func (this *SuiteCommandEffect) arg(source ...string) (result []*exprs.Expr) {
 	for _, itor := range source {
 		expr, err := exprs.Parse(itor)

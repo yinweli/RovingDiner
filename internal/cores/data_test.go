@@ -13,12 +13,12 @@ func TestSuiteData(t *testing.T) {
 	suite.Run(t, new(SuiteData))
 }
 
-// SuiteData 驗證遊戲資料(data.go):聚合建構 / 原始表與預編譯效果存取 / 衍生索引整理（含寬鬆跳過）。
+// SuiteData 驗證遊戲資料(data.go): 聚合建構 / 原始表與預編譯效果存取 / 衍生索引整理(含寬鬆跳過)。
 type SuiteData struct {
 	suite.Suite
 }
 
-// TestNewData 驗證 NewData 聚合原始表並整理衍生索引;sheet nil → 空表空索引。
+// TestNewData 驗證 NewData 聚合原始表並整理衍生索引; sheet nil → 空表空索引。
 func (this *SuiteData) TestNewData() {
 	sheet := buildSheet()
 	data := NewData(sheet, nil)
@@ -63,7 +63,7 @@ func (this *SuiteData) TestDataGetEffect() {
 	this.False(ok)
 }
 
-// TestDataSetEffect 驗證 SetEffect 組裝期補登 / 覆寫預編譯效果（測試注入自訂閉包用）。
+// TestDataSetEffect 驗證 SetEffect 組裝期補登 / 覆寫預編譯效果(測試注入自訂閉包用)。
 func (this *SuiteData) TestDataSetEffect() {
 	data := NewData(nil, nil)
 
@@ -77,7 +77,7 @@ func (this *SuiteData) TestDataSetEffect() {
 	this.Equal(int32(5), meta.Group)
 }
 
-// TestDataGetGuest 驗證 GetGuest 查顧客門檻配對、查無回 ok=false（即無門檻）。
+// TestDataGetGuest 驗證 GetGuest 查顧客門檻配對、查無回 ok=false(即無門檻)。
 func (this *SuiteData) TestDataGetGuest() {
 	sheet := &sheeter.Sheeter{}
 	sheet.Guest.Data = map[int32]*sheeter.Guest{
@@ -157,12 +157,12 @@ func (this *SuiteData) TestPrepareEffect() {
 	this.Empty(prepareEffect(nil, stub)) // data nil → 空
 }
 
-// TestPrepareGuest 驗證顧客門檻衍生索引:解析「門檻值^技能編號」、飽食升序 / 耐心降序、壞格式跳過該筆、無門檻不建項。
+// TestPrepareGuest 驗證顧客門檻衍生索引: 解析「門檻值^技能編號」、飽食升序 / 耐心降序、壞格式跳過該筆、無門檻不建項。
 func (this *SuiteData) TestPrepareGuest() {
 	data := &sheeter.Sheeter{}
 	data.Guest.Data = map[int32]*sheeter.Guest{
 		501: {ID: 501, SateSkillID: []string{"9^301", "6^302"}, CalmSkillID: []string{"1^303", "2^304"}},
-		502: {ID: 502, SateSkillID: []string{"x^1", "2^y", "3", "4^5^6"}}, // 全壞格式（非數字 / 缺 ^ / 多段）→ 不建項
+		502: {ID: 502, SateSkillID: []string{"x^1", "2^y", "3", "4^5^6"}}, // 全壞格式(非數字 / 缺 ^ / 多段)→ 不建項
 		503: {ID: 503, CalmSkillID: []string{"bad", "5^301"}},             // 壞筆跳過、好筆保留
 		504: {ID: 504},                                                    // 無門檻 → 不建項
 	}
@@ -178,10 +178,10 @@ func (this *SuiteData) TestPrepareGuest() {
 	this.Empty(prepareGuest(nil)) // data nil → 空
 }
 
-// === 測試輔助（置尾） ===
+// === 測試輔助(置尾) ===
 
-// buildSheet 組裝測試用 in-memory 靜態表;與 tester.BuildSheet 同內容的 cores 白箱測試私有複本
-// （cores 的同套件測試不能 import tester——tester import cores 會成環）。
+// buildSheet 組裝測試用 in-memory 靜態表; 與 tester.BuildSheet 同內容的 cores 白箱測試私有複本
+// (cores 的同套件測試不能 import tester——tester import cores 會成環)。
 func buildSheet() *sheeter.Sheeter {
 	data := &sheeter.Sheeter{}
 	data.Seat.Data = map[int32]*sheeter.Seat{
@@ -196,18 +196,18 @@ func buildSheet() *sheeter.Sheeter {
 	}
 	data.Effect.Data = map[int32]*sheeter.Effect{
 		201: {ID: 201, Group: 5},
-		401: {ID: 401, Group: 5, RunOrder: 10, RunRound: 2}, // RunRound>0 → Expire = 建立回合 + 1；RunOrder 10
-		402: {ID: 402, Group: 5, RunOrder: 10, RunRound: 0}, // RunRound 0 → Expire 0；與 401 同序、EffectID 402 > 401
+		401: {ID: 401, Group: 5, RunOrder: 10, RunRound: 2}, // RunRound>0 → Expire = 建立回合 + 1; RunOrder 10
+		402: {ID: 402, Group: 5, RunOrder: 10, RunRound: 0}, // RunRound 0 → Expire 0; 與 401 同序、EffectID 402 > 401
 		403: {ID: 403, Group: 6, RunOrder: 20, RunRound: 1}, // RunOrder 20 最大 → 排序最先
 	}
 	data.Skill.Data = map[int32]*sheeter.Skill{
-		301: {ID: 301, Group: 3, EffectID: []int32{401, 402}}, // 卡 103 的技能（群組 3）效果列表
+		301: {ID: 301, Group: 3, EffectID: []int32{401, 402}}, // 卡 103 的技能(群組 3)效果列表
 	}
 	data.Award.Data = map[int32]*sheeter.Award{
-		1: {ID: 1, Group: 7, CardID: 101, Weight: 3}, // 群組 7：候選 101(w3) / 102(w1)
+		1: {ID: 1, Group: 7, CardID: 101, Weight: 3}, // 群組 7:候選 101(w3) / 102(w1)
 		2: {ID: 2, Group: 7, CardID: 102, Weight: 1},
-		3: {ID: 3, Group: 8, CardID: 101, Weight: 0}, // 群組 8：權重 0 → roll no-op
-		4: {ID: 4, Group: 9, CardID: 999, Weight: 1}, // 群組 9：抽中編號 999 無卡牌資料 → 跳過該張
+		3: {ID: 3, Group: 8, CardID: 101, Weight: 0}, // 群組 8:權重 0 → roll no-op
+		4: {ID: 4, Group: 9, CardID: 999, Weight: 1}, // 群組 9:抽中編號 999 無卡牌資料 → 跳過該張
 	}
 	data.Guest.Data = map[int32]*sheeter.Guest{
 		501: {ID: 501, Score: 0, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 12, SateSeal: true},

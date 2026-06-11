@@ -13,7 +13,7 @@ func TestSuiteCommandMove(t *testing.T) {
 	suite.Run(t, new(SuiteCommandMove))
 }
 
-// SuiteCommandMove 驗證容器搬移命令(commandMove.go):12 個 *To* 移動、位置不符 / 不存在 no-op、洗牌參數、事件(*Last / Count / Total)。
+// SuiteCommandMove 驗證容器搬移命令(commandMove.go): 12 個 *To* 移動、位置不符 / 不存在 no-op、洗牌參數、事件(*Last / Count / Total)。
 type SuiteCommandMove struct {
 	suite.Suite
 }
@@ -109,11 +109,11 @@ func (this *SuiteCommandMove) TestMoveToExile() {
 func (this *SuiteCommandMove) TestMovePositionMismatch() {
 	game := newGame()
 	card := cores.NewCard(game, 101)
-	game.Hand.Push(card) // 卡在手牌,但 deckToHand 期望源為抽牌牌堆
+	game.Hand.Push(card) // 卡在手牌, 但 deckToHand 期望源為抽牌牌堆
 
 	commandDeckToHand(game, []cores.InstanceID{card.GetInstanceID()}, nil)
 
-	this.Equal(cores.CardList{card}, game.Hand) // 位置不符 → no-op,仍在手牌
+	this.Equal(cores.CardList{card}, game.Hand) // 位置不符 → no-op, 仍在手牌
 	this.Nil(game.GetDrawLast())
 }
 
@@ -133,10 +133,10 @@ func (this *SuiteCommandMove) TestMoveShuffle() {
 	game.Deck.Push(move)
 	game.Deck.Push(cores.NewCard(game, 101))
 
-	commandDeckToHand(game, []cores.InstanceID{move.GetInstanceID()}, []exprs.Value{exprs.NewBool(true)}) // 洗牌=true:移後洗抽牌牌堆
+	commandDeckToHand(game, []cores.InstanceID{move.GetInstanceID()}, []exprs.Value{exprs.NewBool(true)}) // 洗牌=true: 移後洗抽牌牌堆
 
 	this.Len(game.Hand, 1)
-	this.Len(game.Deck, 1) // 另一張留抽牌牌堆(恆等替身:張數保留)
+	this.Len(game.Deck, 1) // 另一張留抽牌牌堆(恆等替身: 張數保留)
 }
 
 func (this *SuiteCommandMove) TestMoveCardGroup() {

@@ -12,7 +12,7 @@ func TestSuiteAttrWrite(t *testing.T) {
 	suite.Run(t, new(SuiteAttrWrite))
 }
 
-// SuiteAttrWrite 驗證全域屬性寫入詞彙表(attrWrite.go):寫鎖各賦值符 / Lock>0 no-op、護盾 / 格擋夾 0、
+// SuiteAttrWrite 驗證全域屬性寫入詞彙表(attrWrite.go): 寫鎖各賦值符 / Lock>0 no-op、護盾 / 格擋夾 0、
 // 純鎖屬性、round / roundMax / roundLeft 衍生、morale -= 特例(格擋 / 護盾 / morale / 鎖定 / 受損欄位 / 來源)。
 type SuiteAttrWrite struct {
 	suite.Suite
@@ -25,7 +25,7 @@ func (this *SuiteAttrWrite) TestAttrWriteValue() {
 	this.Equal(int32(10), game.GetScore().GetValue())
 	this.True(writeScore(game, cores.AssignAdd, 5)) // += 加
 	this.Equal(int32(15), game.GetScore().GetValue())
-	this.True(writeScore(game, cores.AssignSub, 3)) // -= 減(score 無特例,走一般)
+	this.True(writeScore(game, cores.AssignSub, 3)) // -= 減(score 無特例, 走一般)
 	this.Equal(int32(12), game.GetScore().GetValue())
 	this.True(writeScore(game, cores.AssignMul, 2)) // *= 乘
 	this.Equal(int32(24), game.GetScore().GetValue())
@@ -160,7 +160,7 @@ func (this *SuiteAttrWrite) TestAttrWriteMoraleDamageBlockLocked() {
 	game.GetMoraleBlock().Set(2)
 	game.GetMoraleBlock().Lock()
 
-	this.False(writeMorale(game, cores.AssignSub, 8)) // 格擋鎖定:仍無視 N、但不減層 → 無變更
+	this.False(writeMorale(game, cores.AssignSub, 8)) // 格擋鎖定: 仍無視 N、但不減層 → 無變更
 	this.Equal(int32(2), game.GetMoraleBlock().GetValue())
 	this.Equal(int32(20), game.GetMorale().GetValue())
 	this.Equal(int32(0), game.GetDamageValue())
@@ -183,7 +183,7 @@ func (this *SuiteAttrWrite) TestAttrWriteMoraleDamageShieldLocked() {
 	game.GetMoraleShield().Set(5)
 	game.GetMoraleShield().Lock()
 
-	this.True(writeMorale(game, cores.AssignSub, 3)) // 護盾鎖定:不消耗、殘餘全進 morale → 20 - 3 = 17
+	this.True(writeMorale(game, cores.AssignSub, 3)) // 護盾鎖定: 不消耗、殘餘全進 morale → 20 - 3 = 17
 	this.Equal(int32(5), game.GetMoraleShield().GetValue())
 	this.Equal(int32(17), game.GetMorale().GetValue())
 	this.Equal(int32(3), game.GetDamageValue())
@@ -210,7 +210,7 @@ func (this *SuiteAttrWrite) TestAttrWriteMoraleDamageLocked() {
 	game.GetMorale().Lock()
 	game.GetMoraleShield().Set(2)
 
-	this.True(writeMorale(game, cores.AssignSub, 6)) // morale 鎖定:護盾仍消耗(2→0),morale 不動、無受損
+	this.True(writeMorale(game, cores.AssignSub, 6)) // morale 鎖定: 護盾仍消耗(2→0), morale 不動、無受損
 	this.Equal(int32(0), game.GetMoraleShield().GetValue())
 	this.Equal(int32(20), game.GetMorale().GetValue())
 	this.Equal(int32(0), game.GetDamageValue())

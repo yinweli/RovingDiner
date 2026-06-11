@@ -12,7 +12,7 @@ func TestSuiteBuiltin(t *testing.T) {
 	suite.Run(t, new(SuiteBuiltin))
 }
 
-// SuiteBuiltin 驗證內建函式註冊表(builtin.go):min / max 摺疊、參數不足 / 非數值失敗。
+// SuiteBuiltin 驗證內建函式註冊表(builtin.go): min / max 摺疊、參數不足 / 非數值失敗。
 type SuiteBuiltin struct {
 	suite.Suite
 }

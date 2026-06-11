@@ -4,14 +4,14 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-// effectStack 套用 [堆疊處理]（【營業規格書 | 二十、獨立流程 | 堆疊處理】）:把效果以 self 加入效果佇列,或對佇列既有同份疊層。
-// override > 0 為 effectRun 命令指定的增量;否則用效果堆疊層數（0 / 1 → 1）。回佇列實例與實際增加層數（供常駐 啟動命令判斷）。
-// 效果事件:新建入列 / 既有實際增層發 加入;免疫 / 堆疊滿（增層 0）不發（無事不發;M18）。
+// effectStack 套用 [堆疊處理](【營業規格書 | 二十、獨立流程 | 堆疊處理】): 把效果以 self 加入效果佇列, 或對佇列既有同份疊層。
+// override > 0 為 effectRun 命令指定的增量; 否則用效果堆疊層數(0 / 1 → 1)。回佇列實例與實際增加層數(供常駐 啟動命令判斷)。
+// 效果事件: 新建入列 / 既有實際增層發 加入; 免疫 / 堆疊滿(增層 0)不發(無事不發; M18)。
 func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (effect *cores.Effect, added int32) {
 	meta, ok := game.EffectData(effectID)
 
 	if ok == false {
-		return nil, 0 // 查無編譯資料 → no-op（防禦）
+		return nil, 0 // 查無編譯資料 → no-op(防禦)
 	} // if
 
 	if self.GetGuest() != nil && self.GetGuest().GetEffectImmune().Get(meta.Group) > 0 {
@@ -41,7 +41,7 @@ func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (ef
 	} // if
 
 	if meta.StackTime == cores.StackTimeRefresh {
-		existing.Refresh(game, meta.RunRound) // 刷新時重算結束回合（不變則維持原值）
+		existing.Refresh(game, meta.RunRound) // 刷新時重算結束回合, 不變則維持原值
 	} // if
 
 	return existing, added

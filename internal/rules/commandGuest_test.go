@@ -13,7 +13,7 @@ func TestSuiteCommandGuest(t *testing.T) {
 	suite.Run(t, new(SuiteCommandGuest))
 }
 
-// SuiteCommandGuest 驗證顧客免疫 / 行動命令(commandGuest.go):effectImmune± / skillImmune±(varargs、夾 ≥0)、taskAdd。
+// SuiteCommandGuest 驗證顧客免疫 / 行動命令(commandGuest.go): effectImmune± / skillImmune±(varargs、夾 ≥0)、taskAdd。
 type SuiteCommandGuest struct {
 	suite.Suite
 }
@@ -34,14 +34,14 @@ func (this *SuiteCommandGuest) TestEffectImmune() {
 	commandEffectImmuneAdd(game, id, []exprs.Value{exprs.NewText("x")}) // 非數值 → 略過
 	this.Equal(int32(2), guest.GetEffectImmune().Get(5))
 
-	commandEffectImmuneDel(game, id, nums(5, 5, 5)) // 群組 5：2 → 1 → 0 → 夾 0
+	commandEffectImmuneDel(game, id, nums(5, 5, 5)) // 群組 5:2 → 1 → 0 → 夾 0
 	this.Equal(int32(0), guest.GetEffectImmune().Get(5))
 
 	commandEffectImmuneDel(game, id, []exprs.Value{exprs.NewText("x"), exprs.NewNum(7)}) // 非數值略過、群組 7 -1
 	this.Equal(int32(1), guest.GetEffectImmune().Get(7))
 
-	commandEffectImmuneAdd(game, []cores.InstanceID{99}, nums(5)) // 非顧客實例 → no-op（Add）
-	commandEffectImmuneDel(game, []cores.InstanceID{99}, nums(7)) // 非顧客實例 → no-op（Del）
+	commandEffectImmuneAdd(game, []cores.InstanceID{99}, nums(5)) // 非顧客實例 → no-op(Add)
+	commandEffectImmuneDel(game, []cores.InstanceID{99}, nums(7)) // 非顧客實例 → no-op(Del)
 	this.Equal(int32(0), guest.GetEffectImmune().Get(5))
 	this.Equal(int32(1), guest.GetEffectImmune().Get(7))
 }

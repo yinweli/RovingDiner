@@ -10,7 +10,7 @@ func TestSuiteAction(t *testing.T) {
 	suite.Run(t, new(SuiteAction))
 }
 
-// SuiteAction 驗證行動實例與行動佇列(action.go):三元組建構 / 取值,佇列尾入 / 首出。
+// SuiteAction 驗證行動實例與行動佇列(action.go): 三元組建構 / 取值, 佇列尾入 / 首出。
 type SuiteAction struct {
 	suite.Suite
 }

@@ -5,10 +5,10 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrRead 全域屬性值讀取詞彙表(名稱 → 讀取行為);服務 exprs.Resolver。
-// 涵蓋【營業規格書 | 二十三、屬性清單】主表:純值 / 容器大小 / 衍生 / 物件引用 / 查詢函式。
-// 鎖定計數(Lock 後綴)另置 attrLockRead,由 Game.Attr 剝後綴路由。
-// 每一詞條對應一個獨立的 read* 函式(便於逐條單元測試);本表僅作名稱 → 行為的索引。
+// attrRead 全域屬性值讀取詞彙表(名稱 → 讀取行為); 服務 exprs.Resolver。
+// 涵蓋【營業規格書 | 二十三、屬性清單】主表: 純值 / 容器大小 / 衍生 / 物件引用 / 查詢函式。
+// 鎖定計數(Lock 後綴)另置 attrLockRead, 由 Game.Attr 剝後綴路由。
+// 每一詞條對應一個獨立的 read* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
 var attrRead = map[string]cores.AttrReadFunc{
 	// 餐廳 / 出牌全域數值屬性
 	"morale":       readMorale,
@@ -42,7 +42,7 @@ var attrRead = map[string]cores.AttrReadFunc{
 	"taskSkill":    readTaskSkill,
 	"taskCount":    readTaskCount,
 
-	// 卡牌事件:回合計數 / 最後引用 / 變身編號
+	// 卡牌事件: 回合計數 / 最後引用 / 變身編號
 	"drawLast":   readDrawLast,
 	"drawCount":  readDrawCount,
 	"dropLast":   readDropLast,
@@ -71,23 +71,23 @@ var attrRead = map[string]cores.AttrReadFunc{
 	"seatLeft":  readSeatLeft,
 	"tableSize": readTableSize,
 
-	// 查詢函式:桌次
+	// 查詢函式: 桌次
 	"tableGuest": readTableGuest,
 	"tableCount": readTableCount,
 
-	// 查詢函式:各牌堆 / 手牌的卡牌群組張數
+	// 查詢函式: 各牌堆 / 手牌的卡牌群組張數
 	"handSize":  readHandSize,
 	"deckSize":  readDeckSize,
 	"dropSize":  readDropSize,
 	"exileSize": readExileSize,
 
-	// 查詢函式:整場累積分組張數
+	// 查詢函式: 整場累積分組張數
 	"drawTotal":  readDrawTotal,
 	"dropTotal":  readDropTotal,
 	"playTotal":  readPlayTotal,
 	"exileTotal": readExileTotal,
 
-	// 鎖定計數讀取（Lock 全名詞條;僅【二十三】存取欄為「寫鎖 / 鎖」的屬性）
+	// 鎖定計數讀取(Lock 全名詞條; 僅【二十三】存取欄為「寫鎖 / 鎖」的屬性)
 	"moraleLock":       readMoraleLock,
 	"moraleMaxLock":    readMoraleMaxLock,
 	"moraleShieldLock": readMoraleShieldLock,
@@ -169,7 +169,7 @@ func readRoundMax(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok b
 	return exprs.NewNum(float64(game.GetRoundMax().GetValue())), true
 }
 
-// readRoundLeft 讀剩餘回合數(上限 - 當前,夾 0)。
+// readRoundLeft 讀剩餘回合數(上限 - 當前, 夾 0)。
 func readRoundLeft(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	return exprs.NewNum(float64(max(int32(0), game.GetRoundMax().GetValue()-game.GetRound().GetValue()))), true
 }
@@ -228,7 +228,7 @@ func readTaskCount(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok 
 	return exprs.NewNum(float64(game.GetTaskCount())), true
 }
 
-// === 卡牌事件:回合計數 / 最後引用 / 變身編號 ===
+// === 卡牌事件: 回合計數 / 最後引用 / 變身編號 ===
 
 // readDrawLast 讀最後抽到的卡牌引用。
 func readDrawLast(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -324,7 +324,7 @@ func readGuestSize(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok 
 	return exprs.NewNum(float64(len(game.Seat) + len(game.Wait) + len(game.Roam) + len(game.Cardify))), true
 }
 
-// readSelf 讀 self:綁定顧客 / 卡牌回引用、綁定空物件回 none、未固定(nil)回失敗。
+// readSelf 讀 self: 綁定顧客 / 卡牌回引用、綁定空物件回 none、未固定(nil)回失敗。
 // 對應【營業規格書 | 二十七、運算式 | 7】「self 未固定」與「綁定空物件」兩態之別。
 func readSelf(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	if game.GetSelf() == nil {
@@ -336,7 +336,7 @@ func readSelf(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool)
 
 // === 靜態座位佈局衍生 ===
 
-// readSeatLeft 讀剩餘空座位數(座位總數 - 已占用,夾 0)。
+// readSeatLeft 讀剩餘空座位數(座位總數 - 已占用, 夾 0)。
 func readSeatLeft(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 	total := int32(len(game.GetSheet().Seat.Keys()))
 	return exprs.NewNum(float64(max(int32(0), total-int32(len(game.Seat))))), true
@@ -357,7 +357,7 @@ func readTableSize(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok 
 	return exprs.NewNum(float64(len(table))), true
 }
 
-// === 查詢函式:桌次 ===
+// === 查詢函式: 桌次 ===
 
 // readTableGuest 讀桌次 N 的入座顧客數(N == 0 不命中任何桌次)。
 func readTableGuest(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -431,7 +431,7 @@ func readTableCount(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok
 	return exprs.NewNum(float64(count)), true
 }
 
-// === 查詢函式:各牌堆 / 手牌的卡牌群組張數 ===
+// === 查詢函式: 各牌堆 / 手牌的卡牌群組張數 ===
 
 // readHandSize 讀手牌中卡牌群組 N 的張數(N == 0 回全量)。
 func readHandSize(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -453,7 +453,7 @@ func readExileSize(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok 
 	return groupSize(game.Exile, game.GetSheet(), arg)
 }
 
-// === 查詢函式:整場累積分組張數 ===
+// === 查詢函式: 整場累積分組張數 ===
 
 // readDrawTotal 讀整場抽牌累積中群組 N 的張數(N == 0 回全加總)。
 func readDrawTotal(game *cores.Game, arg []exprs.Value) (result exprs.Value, ok bool) {

@@ -22,7 +22,7 @@ func (this *SuiteValue) TestNewValue() {
 	this.Equal(int32(2), v.GetLock())
 }
 
-// TestNewValueLock 驗證 NewValueLock 以 bool 旗標建構鎖屬性初值（true → 計數 1、false → 0，數值固定 0）。
+// TestNewValueLock 驗證 NewValueLock 以 bool 旗標建構鎖屬性初值(true → 計數 1、false → 0, 數值固定 0)。
 func (this *SuiteValue) TestNewValueLock() {
 	on := NewValueLock(true)
 	this.Equal(int32(0), on.GetValue())
@@ -54,7 +54,7 @@ func (this *SuiteValue) TestValueIsLock() {
 	this.True(one.IsLock()) // 鎖定一層
 
 	many := NewValue(9, 3)
-	this.True(many.IsLock()) // 鎖定多層；數值不影響鎖定判定
+	this.True(many.IsLock()) // 鎖定多層, 數值不影響鎖定判定
 
 	neg := NewValue(0, -1)
 	this.False(neg.IsLock()) // 計數非正不算鎖定
@@ -173,7 +173,7 @@ func (this *SuiteValue) TestValueApply() {
 	this.False(v.Apply(AssignKind(99), 0)) // 未知賦值符 → default no-op
 }
 
-// TestValueApplyLockOnly 驗證 ApplyLockOnly 純鎖屬性派發:僅 @ # 生效、帶值賦值 no-op。
+// TestValueApplyLockOnly 驗證 ApplyLockOnly 純鎖屬性派發: 僅 @ # 生效、帶值賦值 no-op。
 func (this *SuiteValue) TestValueApplyLockOnly() {
 	v := NewValue(0, 0)
 
@@ -189,7 +189,7 @@ func (this *SuiteValue) TestValueApplyLockOnly() {
 	this.Equal(int32(0), v.GetValue())
 }
 
-// TestValueApplyValueOnly 驗證 ApplyValueOnly 寫屬性派發:僅帶值賦值生效、@ # no-op。
+// TestValueApplyValueOnly 驗證 ApplyValueOnly 寫屬性派發: 僅帶值賦值生效、@ # no-op。
 func (this *SuiteValue) TestValueApplyValueOnly() {
 	v := NewValue(4, 0)
 

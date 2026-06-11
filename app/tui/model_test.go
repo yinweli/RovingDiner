@@ -13,13 +13,13 @@ func TestSuiteModel(t *testing.T) {
 	suite.Run(t, new(SuiteModel))
 }
 
-// SuiteModel 驗證 Bubble Tea 殼（model.go）：Update 純函式分派、View footer、waitEvent 等待點。
-// Run 為組裝入口（需要 TTY），比照 cmd 瘦組裝不納白箱測試。
+// SuiteModel 驗證 Bubble Tea 殼(model.go): Update 純函式分派、View footer、waitEvent 等待點。
+// Run 為組裝入口(需要 TTY), 比照 cmd 瘦組裝不納白箱測試。
 type SuiteModel struct {
 	suite.Suite
 }
 
-// TestNewModel 驗證建構：欄位就位、計數歸零。
+// TestNewModel 驗證建構: 欄位就位、計數歸零。
 func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil, 7, 601, "sheetdata")
 	this.Nil(target.adapter)
@@ -30,12 +30,12 @@ func (this *SuiteModel) TestNewModel() {
 	this.False(target.finish)
 }
 
-// TestModelInit 驗證起跑 Cmd 存在（header + 首次等待）。
+// TestModelInit 驗證起跑 Cmd 存在(header + 首次等待)。
 func (this *SuiteModel) TestModelInit() {
 	this.NotNil(newModel(nil, 1, 601, "sheetdata").Init())
 }
 
-// TestModelUpdate 驗證訊息分派：事件遞增序號並續等；終局記成敗、停止消費；q / ctrl+c 離開、其他鍵不動作。
+// TestModelUpdate 驗證訊息分派: 事件遞增序號並續等; 終局記成敗、停止消費; q / ctrl+c 離開、其他鍵不動作。
 func (this *SuiteModel) TestModelUpdate() {
 	result, cmd := newModel(nil, 1, 601, "sheetdata").Update(eventMsg(cores.EventData{Kind: cores.EventPhase}))
 	this.Equal(1, result.(model).serial)
@@ -63,7 +63,7 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Nil(cmd)
 }
 
-// TestModelView 驗證 footer：跑動中顯營業中、終局顯成敗，事件本文不歸 View 管。
+// TestModelView 驗證 footer: 跑動中顯營業中、終局顯成敗, 事件本文不歸 View 管。
 func (this *SuiteModel) TestModelView() {
 	target := newModel(nil, 7, 601, "sheetdata")
 	this.Contains(target.View(), "營業中")
@@ -77,7 +77,7 @@ func (this *SuiteModel) TestModelView() {
 	this.Contains(target.View(), "失敗")
 }
 
-// TestWaitEvent 驗證等待點：事件到回事件訊息、終局到回成敗訊息。
+// TestWaitEvent 驗證等待點: 事件到回事件訊息、終局到回成敗訊息。
 func (this *SuiteModel) TestWaitEvent() {
 	target := &adapter{event: make(chan cores.EventData, 1), done: make(chan bool, 1)}
 	target.event <- cores.EventData{Kind: cores.EventPhase, Round: 2}

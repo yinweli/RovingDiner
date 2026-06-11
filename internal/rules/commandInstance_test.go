@@ -14,7 +14,7 @@ func TestSuiteCommandInstance(t *testing.T) {
 	suite.Run(t, new(SuiteCommandInstance))
 }
 
-// SuiteCommandInstance 驗證實例化命令(commandInstance.go):*Add / *Roll / *Copy / *Clone / guestSpawn / waitAdd 與 newCard / newGuest / award 抽獎。
+// SuiteCommandInstance 驗證實例化命令(commandInstance.go): *Add / *Roll / *Copy / *Clone / guestSpawn / waitAdd 與 newCard / newGuest / award 抽獎。
 type SuiteCommandInstance struct {
 	suite.Suite
 }
@@ -75,13 +75,13 @@ func (this *SuiteCommandInstance) TestCardCopy() {
 	game.Hand = cores.CardList{source}
 	id := []cores.InstanceID{source.GetInstanceID()}
 
-	commandHandCopy(game, id, nums(1)) // 淺複製:載卡牌資料初始值
+	commandHandCopy(game, id, nums(1)) // 淺複製: 載卡牌資料初始值
 	this.Require().Len(game.Hand, 2)
 	shallow := game.Hand[0]
 	this.Equal(int32(2), shallow.GetCost().GetValue())          // 初始費用 2(非 source 當前 9)
 	this.Equal([]int32{401, 402}, shallow.GetEffectID().List()) // 技能效果列表
 
-	// deck 變體:洗牌參數於 index 1、附加效果自 index 2
+	// deck 變體: 洗牌參數於 index 1、附加效果自 index 2
 	game.Deck = nil
 	commandDeckCopy(game, id, []exprs.Value{exprs.NewNum(1), exprs.NewBool(true), exprs.NewNum(888)})
 	this.Require().Len(game.Deck, 1)
@@ -144,7 +144,7 @@ func (this *SuiteCommandInstance) TestGuestSpawn() {
 	this.Equal(int32(12), guest.GetSateMax().GetValue()) // 飽食值離場線取自顧客資料
 	this.Equal(int32(0), guest.GetSate().GetValue())     // 飽食值初值 0
 	this.Equal(int32(1), guest.GetSate().GetLock())      // 自動鎖 +1
-	this.Equal(int32(1), guest.GetCalmSeal().GetLock())  // sheet false → 0,自動鎖 +1
+	this.Equal(int32(1), guest.GetCalmSeal().GetLock())  // sheet false → 0, 自動鎖 +1
 
 	commandGuestSpawn(game, nil, nums(501, 2)) // 座位 2(buildSheet 存在且空)→ 入座
 	this.Require().NotNil(game.Seat[2])
@@ -183,7 +183,7 @@ func (this *SuiteCommandInstance) TestWaitAdd() {
 
 // === 測試輔助(置尾) ===
 
-// sourceCard 建構複製來源卡牌(卡 103):費用改 9、實例效果列表替換為指定編號(覆蓋技能載入的 401, 402)。
+// sourceCard 建構複製來源卡牌(卡 103): 費用改 9、實例效果列表替換為指定編號(覆蓋技能載入的 401, 402)。
 func sourceCard(game *cores.Game, effectID int32) *cores.Card {
 	source := cores.NewCard(game, 103)
 	source.GetCost().Set(9)

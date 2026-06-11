@@ -11,8 +11,8 @@ func TestSuiteParser(t *testing.T) {
 	suite.Run(t, new(SuiteParser))
 }
 
-// SuiteParser 驗證遞迴下降解析:三元、邏輯、比較、加減 / 乘除、一元負號、字面值 / 括號 / 識別子 / 函式 / 引用,
-// 以及優先序 / 結合性與語法錯誤(含出錯位置)。測試順序對齊 parser.go 由外而內的遞迴下降宣告序;樹形以 S-運算式字串比對。
+// SuiteParser 驗證遞迴下降解析: 三元、邏輯、比較、加減 / 乘除、一元負號、字面值 / 括號 / 識別子 / 函式 / 引用,
+// 以及優先序 / 結合性與語法錯誤(含出錯位置)。測試順序對齊 parser.go 由外而內的遞迴下降宣告序; 樹形以 S-運算式字串比對。
 type SuiteParser struct {
 	suite.Suite
 }
@@ -115,8 +115,8 @@ func (this *SuiteParser) TestParseError() {
 
 func (this *SuiteParser) TestParseErrorPosition() {
 	this.Equal(0, this.errorPos(""))    // EOF 在位置 0
-	this.Equal(2, this.errorPos("(1"))  // 缺 ) ,停在 EOF(長度 2)
-	this.Equal(3, this.errorPos("1 +")) // 缺右運算元,停在 EOF
+	this.Equal(2, this.errorPos("(1"))  // 缺 ) , 停在 EOF(長度 2)
+	this.Equal(3, this.errorPos("1 +")) // 缺右運算元, 停在 EOF
 }
 
 // ast 解析 source 並回傳其 AST 的 S-運算式字串(解析失敗即 fail 測試)。
@@ -135,7 +135,7 @@ func (this *SuiteParser) errorPos(source string) int {
 	return syntaxError.Pos
 }
 
-// astString 把 AST 節點轉成 S-運算式字串,便於樹形比對。
+// astString 把 AST 節點轉成 S-運算式字串, 便於樹形比對。
 func astString(n node) string {
 	switch n := n.(type) {
 	case nodeLiteral:

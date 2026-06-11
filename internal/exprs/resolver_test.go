@@ -10,8 +10,8 @@ func TestSuiteResolver(t *testing.T) {
 	suite.Run(t, new(SuiteResolver))
 }
 
-// SuiteResolver 驗證 exprs↔games 接縫:條件對象經 Resolver(Attr / AttrRef)解析、
-// 內建函式經 Builtin 註冊表分派(優先於查詢函式),以及各種解析失敗與 self / none 守衛。
+// SuiteResolver 驗證 exprs↔games 接縫: 條件對象經 Resolver(Attr / AttrRef)解析、
+// 內建函式經 Builtin 註冊表分派(優先於查詢函式), 以及各種解析失敗與 self / none 守衛。
 type SuiteResolver struct {
 	suite.Suite
 }
@@ -63,7 +63,7 @@ func (this *SuiteResolver) TestEvalCallBuiltinFail() {
 }
 
 func (this *SuiteResolver) TestEvalCallQuery() {
-	// argCount 為測試用查詢函式,回傳參數個數,藉此驗證參數有確實傳入 Resolver
+	// argCount 為測試用查詢函式, 回傳參數個數, 藉此驗證參數有確實傳入 Resolver
 	env := Env{Resolver: &stubResolver{}}
 
 	value, ok := this.eval("argCount('>=', 2)", env)
@@ -72,7 +72,7 @@ func (this *SuiteResolver) TestEvalCallQuery() {
 }
 
 func (this *SuiteResolver) TestEvalCallPrecedence() {
-	// 同名時內建函式優先於查詢函式:Resolver 不認得 min(Attr 會失敗),仍應走內建而成功
+	// 同名時內建函式優先於查詢函式: Resolver 不認得 min(Attr 會失敗), 仍應走內建而成功
 	env := Env{Resolver: &stubResolver{attr: map[string]Value{}}, Builtin: stubBuiltin()}
 
 	value, ok := this.eval("min(2, 5)", env)
@@ -122,7 +122,7 @@ func (this *SuiteResolver) TestEvalObjectCompare() {
 		"other": NewRef(stubRef{id: 2}),
 		"empty": NewNone(),
 	}}}
-	this.True(this.boolean("self == alias", env))  // 比實例編號:同
+	this.True(this.boolean("self == alias", env))  // 比實例編號: 同
 	this.False(this.boolean("self == other", env)) // 不同實例
 	this.True(this.boolean("self != other", env))
 	this.True(this.boolean("self != empty", env)) // 引用 != 空物件
@@ -132,7 +132,7 @@ func (this *SuiteResolver) TestEvalObjectCompare() {
 }
 
 func (this *SuiteResolver) TestEvalSelfGuard() {
-	// self 為空物件:守衛 self != none 為假 → AND 短路、不評估 self.calm,整體為假(不失敗)
+	// self 為空物件: 守衛 self != none 為假 → AND 短路、不評估 self.calm, 整體為假(不失敗)
 	envNone := Env{Resolver: &stubResolver{attr: map[string]Value{"self": NewNone()}}}
 	this.False(this.boolean("self != none AND self.calm > 5", envNone))
 
@@ -151,7 +151,7 @@ func (this *SuiteResolver) eval(source string, env Env) (result Value, ok bool) 
 	return expr.Eval(env)
 }
 
-// boolean 求值並斷言為成功的布林值,回傳其布林值。
+// boolean 求值並斷言為成功的布林值, 回傳其布林值。
 func (this *SuiteResolver) boolean(source string, env Env) bool {
 	value, ok := this.eval(source, env)
 	this.Require().True(ok, source)
@@ -165,7 +165,7 @@ func (this *SuiteResolver) ok(source string, env Env) bool {
 	return ok
 }
 
-// stubRef 測試用物件引用,以 id 代表實例編號(IsSame 比 id)。
+// stubRef 測試用物件引用, 以 id 代表實例編號(IsSame 比 id)。
 type stubRef struct {
 	id int
 }
@@ -175,8 +175,8 @@ func (this stubRef) IsSame(other Ref) bool {
 	return ok && this.id == stub.id
 }
 
-// stubResolver 測試用 Resolver:attr 以名稱查主表、refAttr 以「引用 id + 屬性名」查子表;
-// 名稱 argCount 視為查詢函式,回傳傳入的參數個數(便於驗證參數確實送達)。
+// stubResolver 測試用 Resolver: attr 以名稱查主表、refAttr 以「引用 id + 屬性名」查子表;
+// 名稱 argCount 視為查詢函式, 回傳傳入的參數個數(便於驗證參數確實送達)。
 type stubResolver struct {
 	attr    map[string]Value
 	refAttr map[int]map[string]Value
@@ -220,7 +220,7 @@ func stubBuiltin() map[string]Builtin {
 	}
 }
 
-// stubFold 以 pick 摺疊參數;少於 2 個或任一非數值即失敗。
+// stubFold 以 pick 摺疊參數; 少於 2 個或任一非數值即失敗。
 func stubFold(pick func(a, b float64) float64) Builtin {
 	return func(arg []Value) (result Value, ok bool) {
 		if len(arg) < 2 {

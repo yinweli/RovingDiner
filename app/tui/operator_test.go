@@ -12,7 +12,7 @@ func TestSuiteOperator(t *testing.T) {
 	suite.Run(t, new(SuiteOperator))
 }
 
-// SuiteOperator 驗證被動觀看替身（operator.go）：永不出牌、選取一律取候選前綴。
+// SuiteOperator 驗證被動觀看替身(operator.go): 永不出牌、選取一律取候選前綴。
 type SuiteOperator struct {
 	suite.Suite
 }

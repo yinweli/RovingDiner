@@ -13,13 +13,13 @@ func TestSuitePhasePlayerAction(t *testing.T) {
 	suite.Run(t, new(SuitePhasePlayerAction))
 }
 
-// SuitePhasePlayerAction 驗證玩家行動階段（phasePlayerAction.go）:補牌迴圈 / 玩家事件主迴圈 / 出牌（playCard）/
-// 額外次數（extraCount）/ 玩家結束（playerEnd）。
+// SuitePhasePlayerAction 驗證玩家行動階段(phasePlayerAction.go): 補牌迴圈 / 玩家事件主迴圈 / 出牌(playCard)/
+// 額外次數(extraCount)/ 玩家結束(playerEnd)。
 type SuitePhasePlayerAction struct {
 	suite.Suite
 }
 
-// TestPhasePlayerAction 驗證補牌（含棄牌堆洗回）與「封印不出 → 出牌 → 用盡結束」的完整事件序列。
+// TestPhasePlayerAction 驗證補牌(含棄牌堆洗回)與「封印不出 → 出牌 → 用盡結束」的完整事件序列。
 func (this *SuitePhasePlayerAction) TestPhasePlayerAction() {
 	count := 0
 	op := &playOperator{}
@@ -38,21 +38,21 @@ func (this *SuitePhasePlayerAction) TestPhasePlayerAction() {
 	play.GetSeal().Unlock()          // 解封使其可出
 	sealed := cores.NewCard(game, 103)
 	game.Hand = cores.CardList{play, sealed}
-	op.play = []*cores.Card{sealed, play} // 封印卡不執行出牌（迴圈續問）→ 出 play → 用盡 nil 結束
+	op.play = []*cores.Card{sealed, play} // 封印卡不執行出牌(迴圈續問)→ 出 play → 用盡 nil 結束
 
 	this.Equal(cores.PhaseGuestAction, phasePlayerAction(game)) // 無跳轉 → 顧客行動
-	this.Equal(int32(4), game.GetDrawCount())                   // 補 4 張至上限 6（抽牌堆 3 + 棄牌堆洗回 1）
+	this.Equal(int32(4), game.GetDrawCount())                   // 補 4 張至上限 6(抽牌堆 3 + 棄牌堆洗回 1)
 	this.Equal(int32(3), game.GetEnergy().GetValue())           // 5 - 出牌費用 2
-	this.Equal(2, count)                                        // 實例效果列表 401 / 402 各一次（額外次數 0）
+	this.Equal(2, count)                                        // 實例效果列表 401 / 402 各一次(額外次數 0)
 	this.Equal(int32(1), game.GetPlayCount())
 	this.Equal(play, game.GetPlayLast())
-	this.Len(game.Hand, 1) // 玩家結束:不棄（sealed）留手、其餘棄置
+	this.Len(game.Hand, 1) // 玩家結束: 不棄(sealed)留手、其餘棄置
 	this.Same(sealed, game.Hand[0])
 	this.Empty(game.Deck)
 	this.Len(game.Drop, 5) // 出牌 1 + 棄置 4
 }
 
-// TestPhasePlayerActionJump 驗證主迴圈頂的階段跳轉視為玩家結束（userStart / userEnd 各觸發一次,不問 Operator）。
+// TestPhasePlayerActionJump 驗證主迴圈頂的階段跳轉視為玩家結束(userStart / userEnd 各觸發一次, 不問 Operator)。
 func (this *SuitePhasePlayerAction) TestPhasePlayerActionJump() {
 	start := 0
 	end := 0
@@ -75,7 +75,7 @@ func (this *SuitePhasePlayerAction) TestPhasePlayerActionJump() {
 	this.Equal(2, end)
 }
 
-// TestPlayCard 驗證出牌閘門（非手牌 / 封印 / 卡牌化無空位 / 點數不足）、成功路徑與流放路由、卡牌化自動還原、效果搬卡防禦。
+// TestPlayCard 驗證出牌閘門(非手牌 / 封印 / 卡牌化無空位 / 點數不足)、成功路徑與流放路由、卡牌化自動還原、效果搬卡防禦。
 func (this *SuitePhasePlayerAction) TestPlayCard() {
 	count := 0
 	fired := 0
@@ -87,12 +87,12 @@ func (this *SuitePhasePlayerAction) TestPlayCard() {
 	game.Effect.Push(cores.NewEffect(game, 901, cores.Ref{}, 1))
 
 	stray := cores.NewCard(game, 101)
-	playCard(game, stray) // 防禦:不在任何牌堆 → 不執行出牌
+	playCard(game, stray) // 防禦: 不在任何牌堆 → 不執行出牌
 	this.Equal(int32(0), game.GetPlayCount())
 
 	deckCard := cores.NewCard(game, 101)
 	game.Deck = cores.CardList{deckCard}
-	playCard(game, deckCard) // 位於抽牌牌堆（非手牌）→ 不執行出牌
+	playCard(game, deckCard) // 位於抽牌牌堆(非手牌)→ 不執行出牌
 	this.Equal(int32(0), game.GetPlayCount())
 
 	sealed := cores.NewCard(game, 103)
@@ -108,7 +108,7 @@ func (this *SuitePhasePlayerAction) TestPlayCard() {
 	this.Equal(int32(0), game.GetPlayCount())
 
 	game.GetEnergy().Set(5)
-	playCard(game, play) // 成功:扣點、效果、進棄牌堆、cardPlay 觸發
+	playCard(game, play) // 成功: 扣點、效果、進棄牌堆、cardPlay 觸發
 	this.Equal(int32(3), game.GetEnergy().GetValue())
 	this.Equal(2, count)
 	this.Equal(int32(1), game.GetPlayCount())
@@ -125,7 +125,7 @@ func (this *SuitePhasePlayerAction) TestPlayCard() {
 	vanish.GetEffectID().Add(902)
 	data.SetEffect(902, cores.EffectData{Kind: cores.EffectImmed, Immed: func(game *cores.Game) { game.Hand.Remove(vanish.GetInstanceID()) }})
 	game.Hand.Push(vanish)
-	playCard(game, vanish) // 效果把本卡移出牌堆 → 路由略過（重新定位防禦）
+	playCard(game, vanish) // 效果把本卡移出牌堆 → 路由略過(重新定位防禦)
 	this.Equal(vanish, game.GetPlayLast())
 	this.False(game.Drop.Has(vanish.GetInstanceID()))
 
@@ -149,7 +149,7 @@ func (this *SuitePhasePlayerAction) TestPlayCard() {
 	this.True(game.Drop.Has(bind.GetInstanceID()))
 }
 
-// TestPlayCardEmit 驗證玩家出牌的事件接線:範圍標題（操作元 = 卡牌 + 技能）先行、出牌耗能屬性事件接續（流程寫入白名單）。
+// TestPlayCardEmit 驗證玩家出牌的事件接線: 範圍標題(操作元 = 卡牌 + 技能)先行、出牌耗能屬性事件接續(流程寫入白名單)。
 func (this *SuitePhasePlayerAction) TestPlayCardEmit() {
 	game, record := newGameRecord()
 	card := cores.NewCard(game, 103) // 費用 2、技能 301
@@ -169,7 +169,7 @@ func (this *SuitePhasePlayerAction) TestPlayCardEmit() {
 	this.Empty(record.Event)
 }
 
-// TestPlayerEndEmit 驗證玩家結束的事件接線:手動結束範圍標題先行（流程,無操作元;階段跳轉路徑亦發）。
+// TestPlayerEndEmit 驗證玩家結束的事件接線: 手動結束範圍標題先行(流程, 無操作元; 階段跳轉路徑亦發)。
 func (this *SuitePhasePlayerAction) TestPlayerEndEmit() {
 	game, record := newGameRecord()
 	playerEnd(game)
@@ -177,7 +177,7 @@ func (this *SuitePhasePlayerAction) TestPlayerEndEmit() {
 	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeManual}, record.Event[0])
 }
 
-// TestExtraCount 驗證額外發動次數:Intn 取下限 / 帶位移、下限 > 上限與上限 < 0 為 0、負結果視為 0。
+// TestExtraCount 驗證額外發動次數: Intn 取下限 / 帶位移、下限 > 上限與上限 < 0 為 0、負結果視為 0。
 func (this *SuitePhasePlayerAction) TestExtraCount() {
 	game := newGame() // FakeRander Intn 恆 0
 	card := cores.NewCard(game, 101)
@@ -198,10 +198,10 @@ func (this *SuitePhasePlayerAction) TestExtraCount() {
 	this.Equal(int32(0), extraCount(game, card)) // 上限 < 0 → 0
 
 	card.GetExtraRunMax().Set(0)
-	this.Equal(int32(0), extraCount(game, card)) // [-3, 0] 取得 -3 → 視為 0（防禦）
+	this.Equal(int32(0), extraCount(game, card)) // [-3, 0] 取得 -3 → 視為 0(防禦)
 }
 
-// TestPlayerEnd 驗證玩家結束:userEnd 觸發、剩餘手牌三路處理（流放 / 留手 / 棄置）、觸發搬卡防禦、下一階段分派。
+// TestPlayerEnd 驗證玩家結束: userEnd 觸發、剩餘手牌三路處理(流放 / 留手 / 棄置)、觸發搬卡防禦、下一階段分派。
 func (this *SuitePhasePlayerAction) TestPlayerEnd() {
 	end := 0
 	data := tester.BuildData()
@@ -233,9 +233,9 @@ func (this *SuitePhasePlayerAction) TestPlayerEnd() {
 	this.Equal(cores.PhaseNone, game.GetNextPhase())
 }
 
-// === 測試輔助（置尾） ===
+// === 測試輔助(置尾) ===
 
-// playOperator 出牌腳本替身:PlayerAction 依序回傳 play 佇列的卡、用盡回 nil（玩家結束）;其餘輸入沿用 FakeOperator。
+// playOperator 出牌腳本替身: PlayerAction 依序回傳 play 佇列的卡、用盡回 nil(玩家結束); 其餘輸入沿用 FakeOperator。
 type playOperator struct {
 	tester.FakeOperator
 	play []*cores.Card

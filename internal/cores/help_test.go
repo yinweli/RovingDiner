@@ -10,7 +10,7 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的組件:免疫計數 / 門檻集合 / 編號列表 / 累積計數。
+// SuiteHelp 驗證 help.go 的組件: 免疫計數 / 門檻集合 / 編號列表 / 累積計數。
 type SuiteHelp struct {
 	suite.Suite
 }
@@ -42,7 +42,7 @@ func (this *SuiteHelp) TestImmuneDel() {
 	this.Equal(int32(0), immune.Get(5))
 
 	zero := Immune{}
-	zero.Del(9) // 零值（nil 表）→ 視為 0,不爆
+	zero.Del(9) // 零值(nil 表)→ 視為 0, 不爆
 	this.Equal(int32(0), zero.Get(9))
 }
 
@@ -76,7 +76,7 @@ func (this *SuiteHelp) TestHitIsHit() {
 	this.False(hit.IsHit(20)) // 未標記 → false
 
 	zero := Hit{}
-	this.False(zero.IsHit(10)) // 零值（nil 表）→ false,不爆
+	this.False(zero.IsHit(10)) // 零值(nil 表)→ false, 不爆
 }
 
 // TestHitCount 驗證 Count 已觸發數量。
@@ -88,7 +88,7 @@ func (this *SuiteHelp) TestHitCount() {
 	this.Equal(int32(0), zero.Count()) // 零值 → 0
 }
 
-// TestNewIDList 驗證 NewIDList 複製輸入建構（不共享底層）。
+// TestNewIDList 驗證 NewIDList 複製輸入建構(不共享底層)。
 func (this *SuiteHelp) TestNewIDList() {
 	source := []int32{1, 2}
 	list := NewIDList(source...)
@@ -100,7 +100,7 @@ func (this *SuiteHelp) TestNewIDList() {
 	this.Empty(empty.List())
 }
 
-// TestIDListAdd 驗證 Add 尾端加入（可變參數、零值可用、允許重複）。
+// TestIDListAdd 驗證 Add 尾端加入(可變參數、零值可用、允許重複)。
 func (this *SuiteHelp) TestIDListAdd() {
 	list := IDList{} // 零值可用
 
@@ -138,7 +138,7 @@ func (this *SuiteHelp) TestIDListCount() {
 	this.Equal(int32(0), list.Count(9)) // 無命中 → 0
 }
 
-// TestIDListList 驗證 List 取底層編號列表（保持加入順序）。
+// TestIDListList 驗證 List 取底層編號列表(保持加入順序)。
 func (this *SuiteHelp) TestIDListList() {
 	list := NewIDList(3, 1, 2)
 	this.Equal([]int32{3, 1, 2}, list.List())
@@ -154,7 +154,7 @@ func (this *SuiteHelp) TestNewTally() {
 	this.Equal(int32(0), total.Sum())
 }
 
-// TestTallyAdd 驗證 Add 對群組數量 +1;零值未建表時自建。
+// TestTallyAdd 驗證 Add 對群組數量 +1; 零值未建表時自建。
 func (this *SuiteHelp) TestTallyAdd() {
 	total := Tally{} // 零值可用
 
@@ -172,7 +172,7 @@ func (this *SuiteHelp) TestTallyGet() {
 	this.Equal(int32(0), total.Get(9)) // 無鍵 → 0
 }
 
-// TestTallySum 驗證 Sum 全群組加總;零值回 0。
+// TestTallySum 驗證 Sum 全群組加總; 零值回 0。
 func (this *SuiteHelp) TestTallySum() {
 	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
 	this.Equal(int32(8), total.Sum())
@@ -181,7 +181,7 @@ func (this *SuiteHelp) TestTallySum() {
 	this.Equal(int32(0), zero.Sum()) // 零值 → 0
 }
 
-// TestTallyReset 驗證 Reset 清空全部計數（清空後可繼續累計）。
+// TestTallyReset 驗證 Reset 清空全部計數(清空後可繼續累計)。
 func (this *SuiteHelp) TestTallyReset() {
 	total := Tally{count: map[int32]int32{1: 3, 2: 5}}
 

@@ -10,8 +10,8 @@ func TestSuiteEval(t *testing.T) {
 	suite.Run(t, new(SuiteEval))
 }
 
-// SuiteEval 驗證求值語意:字面值、否定、邏輯短路、算術(含除 0 / 取餘 0)、大小 / 相等比較(含跨型別失敗)、
-// 三元惰性求值、優先序,以及評估失敗以 ok == false 表達。測試順序對齊 eval.go 的 dispatch(節點型別序)。
+// SuiteEval 驗證求值語意: 字面值、否定、邏輯短路、算術(含除 0 / 取餘 0)、大小 / 相等比較(含跨型別失敗)、
+// 三元惰性求值、優先序, 以及評估失敗以 ok == false 表達。測試順序對齊 eval.go 的 dispatch(節點型別序)。
 type SuiteEval struct {
 	suite.Suite
 }
@@ -51,22 +51,22 @@ func (this *SuiteEval) TestEvalLogical() {
 
 func (this *SuiteEval) TestEvalLogicalTruthyFail() {
 	this.fail("'a' AND true") // 左側無真假判定
-	this.fail("true AND 'a'") // 右側無真假判定,左真才評估右側
+	this.fail("true AND 'a'") // 右側無真假判定, 左真才評估右側
 	this.fail("none OR false")
 }
 
 func (this *SuiteEval) TestEvalLogicalShortCircuit() {
-	this.False(this.boolean("false AND (1 / 0)")) // AND 左假,右不評估,無除 0 失敗
-	this.True(this.boolean("true OR (1 / 0)"))    // OR 左真,右不評估
-	this.fail("true AND (1 / 0)")                 // 左真,右被評估 → 除 0 失敗
-	this.fail("false OR (1 / 0)")                 // 左假,右被評估 → 除 0 失敗
+	this.False(this.boolean("false AND (1 / 0)")) // AND 左假, 右不評估, 無除 0 失敗
+	this.True(this.boolean("true OR (1 / 0)"))    // OR 左真, 右不評估
+	this.fail("true AND (1 / 0)")                 // 左真, 右被評估 → 除 0 失敗
+	this.fail("false OR (1 / 0)")                 // 左假, 右被評估 → 除 0 失敗
 	this.fail("(1 / 0) AND true")                 // 左運算元評估失敗 → 整體失敗
 }
 
 func (this *SuiteEval) TestEvalArith() {
 	this.Equal(3.0, this.num("1 + 2"))
 	this.Equal(7.0, this.num("2 * 3 + 1"))
-	this.Equal(2.5, this.num("10 / 4")) // 中間值可為小數,不四捨五入
+	this.Equal(2.5, this.num("10 / 4")) // 中間值可為小數, 不四捨五入
 	this.Equal(1.0, this.num("10 % 3"))
 	this.Equal(-3.0, this.num("2 - 5"))
 	this.Equal(-5.0, this.num("-(2 + 3)"))
@@ -136,14 +136,14 @@ func (this *SuiteEval) TestEvalPrecedence() {
 	this.True(this.boolean("true OR false AND false")) // AND 緊於 OR → OR(true, false)
 }
 
-// eval 解析並求值 source(解析失敗即 fail 測試);回傳求值結果與是否成功。
+// eval 解析並求值 source(解析失敗即 fail 測試); 回傳求值結果與是否成功。
 func (this *SuiteEval) eval(source string) (result Value, ok bool) {
 	expr, err := Parse(source)
 	this.Require().NoError(err, source)
 	return expr.Eval(Env{})
 }
 
-// num 求值 source 並斷言為成功的數值,回傳其數值。
+// num 求值 source 並斷言為成功的數值, 回傳其數值。
 func (this *SuiteEval) num(source string) float64 {
 	value, ok := this.eval(source)
 	this.Require().True(ok, source)
@@ -151,7 +151,7 @@ func (this *SuiteEval) num(source string) float64 {
 	return value.Num()
 }
 
-// boolean 求值 source 並斷言為成功的布林值,回傳其布林值。
+// boolean 求值 source 並斷言為成功的布林值, 回傳其布林值。
 func (this *SuiteEval) boolean(source string) bool {
 	value, ok := this.eval(source)
 	this.Require().True(ok, source)

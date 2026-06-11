@@ -14,7 +14,7 @@ func TestSuiteSelector(t *testing.T) {
 	suite.Run(t, new(SuiteSelector))
 }
 
-// SuiteSelector 驗證命令對象詞彙表(selector.go):登錄查詢、無對象 / self / 事件單例 / 座位群 / 鄰桌同桌 / 容器 filter / N 規則 / deckTop auto-shuffle。
+// SuiteSelector 驗證命令對象詞彙表(selector.go): 登錄查詢、無對象 / self / 事件單例 / 座位群 / 鄰桌同桌 / 容器 filter / N 規則 / deckTop auto-shuffle。
 // Pick 用 tester.FakeOperator(取候選前綴)、Rand 用 tester.FakeRander(恆等洗牌 + Intn 固定)以求決定性。
 type SuiteSelector struct {
 	suite.Suite
@@ -58,7 +58,7 @@ func (this *SuiteSelector) TestSelectSelfNearSame() {
 	near := cores.NewRefGuest(g1)
 	game.SetSelf(&near)
 	this.Equal(guestIDs([]*cores.Guest{g3}), this.must(game, "selfNear", nil))     // g1(座1)鄰桌 = 座3 = g3
-	this.Equal(guestIDs([]*cores.Guest{g1, g2}), this.must(game, "selfSame", nil)) // g1 同桌 = 座1,2 = g1,g2
+	this.Equal(guestIDs([]*cores.Guest{g1, g2}), this.must(game, "selfSame", nil)) // g1 同桌 = 座1,2 = g1, g2
 
 	card := cores.NewRefCard(cores.NewCard(game, 101)) // self 非顧客 → 空集合
 	game.SetSelf(&card)
@@ -118,7 +118,7 @@ func (this *SuiteSelector) TestSelectGuestPick() {
 	this.Empty(this.must(game, "guestPick", nil))                                           // 缺參數 → 空集合
 }
 
-// TestSelectGuestPickEmit 驗證命令對象真選取的玩家輸入紀錄:交 Operator 才發（來源 = 詞條鍵）、退化全取不記（M18 拍板）。
+// TestSelectGuestPickEmit 驗證命令對象真選取的玩家輸入紀錄: 交 Operator 才發(來源 = 詞條鍵)、退化全取不記(M18 拍板)。
 func (this *SuiteSelector) TestSelectGuestPickEmit() {
 	game, record := newGameDataRecord(tester.BuildData())
 	g1, _, _ := seatGuest(game)
@@ -165,23 +165,23 @@ func (this *SuiteSelector) TestSelectNearSame() {
 
 	this.Equal(guestIDs([]*cores.Guest{g3}), this.must(game, "nearPick", nil))     // Operator 選 g1(座1)→ 鄰桌座3 = g3
 	this.Equal(guestIDs([]*cores.Guest{g3}), this.must(game, "nearRand", nil))     // Rander 選首位 g1 → 鄰桌 g3
-	this.Equal(guestIDs([]*cores.Guest{g1, g2}), this.must(game, "samePick", nil)) // g1 同桌 = g1,g2
+	this.Equal(guestIDs([]*cores.Guest{g1, g2}), this.must(game, "samePick", nil)) // g1 同桌 = g1, g2
 	this.Equal(guestIDs([]*cores.Guest{g1, g2}), this.must(game, "sameRand", nil))
 
-	// 空座位:無錨點可選 → 空集合(pickGuestOne / randGuestOne 的空候選分支)
+	// 空座位: 無錨點可選 → 空集合(pickGuestOne / randGuestOne 的空候選分支)
 	noSeat := newGame()
 	this.Empty(this.must(noSeat, "nearPick", nil))
 	this.Empty(this.must(noSeat, "nearRand", nil))
 	this.Empty(this.must(noSeat, "samePick", nil))
 	this.Empty(this.must(noSeat, "sameRand", nil))
 
-	// 單一在座顧客:pickGuestOne 退化直取(len==1)→ g2 同桌(座1,2)= g2
+	// 單一在座顧客: pickGuestOne 退化直取(len==1)→ g2 同桌(座1,2)= g2
 	one := newGame()
 	alone := cores.NewGuest(one, 501)
 	one.Seat.Place(2, alone)
 	this.Equal(guestIDs([]*cores.Guest{alone}), this.must(one, "samePick", nil))
 
-	// Operator 回空(防禦):候選 > 1 但選不出 → 空集合(pickGuestOne 的 chosen 空分支)
+	// Operator 回空(防禦): 候選 > 1 但選不出 → 空集合(pickGuestOne 的 chosen 空分支)
 	emptyPick := cores.NewGame(0, 0, tester.BuildData(), tester.FakeOperator{EmptyPick: true}, tester.FakeRander{}, nil)
 	Register(emptyPick)
 	seatGuest(emptyPick)
@@ -255,7 +255,7 @@ func (this *SuiteSelector) TestSelectContainerRand() {
 }
 
 func (this *SuiteSelector) TestSelectDeckTop() {
-	// deck >= N:取頂端(前端)N,不洗牌
+	// deck >= N: 取頂端(前端)N, 不洗牌
 	deckGe := newGame()
 	d1 := cores.NewCard(deckGe, 101)
 	d2 := cores.NewCard(deckGe, 101)
@@ -264,7 +264,7 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	this.Equal(cardIDs([]*cores.Card{d1, d2}), this.must(deckGe, "deckTop", nums(2)))
 	this.Len(deckGe.Drop, 1) // 牌堆足夠 → 未洗牌移動
 
-	// deck < N 且 deck+drop >= N:洗棄牌移至牌堆底端再取頂端 N
+	// deck < N 且 deck+drop >= N: 洗棄牌移至牌堆底端再取頂端 N
 	deckShort := newGame()
 	s1 := cores.NewCard(deckShort, 101)
 	s4 := cores.NewCard(deckShort, 101)
@@ -273,7 +273,7 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	this.Equal(cardIDs([]*cores.Card{s1, s4}), this.must(deckShort, "deckTop", nums(2))) // 原牌堆 s1 在頂、洗入的 s4 接其後
 	this.Empty(deckShort.Drop)                                                           // 棄牌已全數移入
 
-	// deck+drop < N:洗棄牌移入後取全部
+	// deck+drop < N: 洗棄牌移入後取全部
 	deckTiny := newGame()
 	t1 := cores.NewCard(deckTiny, 101)
 	t4 := cores.NewCard(deckTiny, 101)
@@ -281,7 +281,7 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	deckTiny.Drop = cores.CardList{t4}
 	this.Equal(cardIDs([]*cores.Card{t1, t4}), this.must(deckTiny, "deckTop", nums(5)))
 
-	// deck < N 但棄牌為空:不洗牌、取全部
+	// deck < N 但棄牌為空: 不洗牌、取全部
 	deckNoDrop := newGame()
 	n1 := cores.NewCard(deckNoDrop, 101)
 	deckNoDrop.Deck = cores.CardList{n1}
@@ -305,14 +305,14 @@ func (this *SuiteSelector) TestSelectDropTop() {
 
 // === 測試輔助(置尾) ===
 
-// must 自詞彙表取出命令對象詞條並斷言已登錄,派發回作用對象集合(聚焦於結果斷言)。
+// must 自詞彙表取出命令對象詞條並斷言已登錄, 派發回作用對象集合(聚焦於結果斷言)。
 func (this *SuiteSelector) must(game *cores.Game, name string, arg []exprs.Value) (result []cores.InstanceID) {
 	resolve, ok := selector[name]
 	this.Require().True(ok, name)
 	return resolve(game, arg)
 }
 
-// seatGuest 對營業實例佈置 3 位在座顧客(座1=g1 / 座2=g2 / 座3=g3;桌1=座1,2、桌2=座3,對齊迷你表座位佈局)。
+// seatGuest 對營業實例佈置 3 位在座顧客(座1=g1 / 座2=g2 / 座3=g3; 桌1=座1,2、桌2=座3, 對齊迷你表座位佈局)。
 func seatGuest(game *cores.Game) (g1, g2, g3 *cores.Guest) {
 	g1 = cores.NewGuest(game, 501)
 	g2 = cores.NewGuest(game, 501)

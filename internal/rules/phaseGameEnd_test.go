@@ -13,7 +13,7 @@ func TestSuitePhaseGameEnd(t *testing.T) {
 	suite.Run(t, new(SuitePhaseGameEnd))
 }
 
-// SuitePhaseGameEnd 驗證終止階段（phaseGameEnd.go）:gameSucc / gameFail 觸發與 PhaseNone 停機訊號。
+// SuitePhaseGameEnd 驗證終止階段(phaseGameEnd.go): gameSucc / gameFail 觸發與 PhaseNone 停機訊號。
 type SuitePhaseGameEnd struct {
 	suite.Suite
 }

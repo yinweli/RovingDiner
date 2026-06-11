@@ -4,13 +4,13 @@ import (
 	"math"
 )
 
-// evaluator 走訪 AST 求值;條件對象 / 函式經 env(Resolver + 內建函式註冊表)解析,
+// evaluator 走訪 AST 求值; 條件對象 / 函式經 env(Resolver + 內建函式註冊表)解析,
 // env 於 Eval 時帶入、無全域可變狀態。
 type evaluator struct {
 	env Env
 }
 
-// eval 依節點型別分派求值;回傳值與是否成功(ok == false 為評估失敗)。
+// eval 依節點型別分派求值; 回傳值與是否成功(ok == false 為評估失敗)。
 func (this *evaluator) eval(n node) (result Value, ok bool) {
 	switch n := n.(type) {
 	case nodeLiteral:
@@ -39,7 +39,7 @@ func (this *evaluator) eval(n node) (result Value, ok bool) {
 	} // switch
 }
 
-// evalUnary 求值一元運算:負號僅適用數值;否定先取真假判定再反轉。
+// evalUnary 求值一元運算: 負號僅適用數值; 否定先取真假判定再反轉。
 func (this *evaluator) evalUnary(n nodeUnary) (result Value, ok bool) {
 	operand, okOperand := this.eval(n.operand)
 
@@ -69,7 +69,7 @@ func (this *evaluator) evalUnary(n nodeUnary) (result Value, ok bool) {
 	} // switch
 }
 
-// evalBinary 求值二元運算;AND / OR 走短路求值,其餘先評估兩運算元再分派。
+// evalBinary 求值二元運算; AND / OR 走短路求值, 其餘先評估兩運算元再分派。
 func (this *evaluator) evalBinary(n nodeBinary) (result Value, ok bool) {
 	if n.op == tokenAnd || n.op == tokenOr {
 		return this.evalLogical(n)
@@ -102,8 +102,8 @@ func (this *evaluator) evalBinary(n nodeBinary) (result Value, ok bool) {
 	} // switch
 }
 
-// evalLogical 求值邏輯且 / 或,採短路:AND 左假即假、OR 左真即真,皆不評估右運算元
-// (對齊【營業實作規格書 | 九、里程碑建議 | M3】短路設計;真假判定見 Value.Truthy)。
+// evalLogical 求值邏輯且 / 或, 採短路: AND 左假即假、OR 左真即真, 皆不評估右運算元
+// (對齊【營業實作規格書 | 九、里程碑建議 | M3】短路設計; 真假判定見 Value.Truthy)。
 func (this *evaluator) evalLogical(n nodeBinary) (result Value, ok bool) {
 	lhs, okLhs := this.eval(n.lhs)
 
@@ -140,7 +140,7 @@ func (this *evaluator) evalLogical(n nodeBinary) (result Value, ok bool) {
 	return NewBool(right), true
 }
 
-// evalTernary 求值三元:條件失敗則整個三元失敗、兩分支皆不評估;條件成功只評估被選分支
+// evalTernary 求值三元: 條件失敗則整個三元失敗、兩分支皆不評估; 條件成功只評估被選分支
 // (對齊【營業規格書 | 二十七、運算式 | 7】三元條件失敗)。
 func (this *evaluator) evalTernary(n nodeTernary) (result Value, ok bool) {
 	cond, okCond := this.eval(n.cond)
@@ -162,7 +162,7 @@ func (this *evaluator) evalTernary(n nodeTernary) (result Value, ok bool) {
 	return this.eval(n.els)
 }
 
-// evalIdent 求值無括號條件對象(全域屬性 / 物件引用 / self),交由 Resolver.Attr 解析。
+// evalIdent 求值無括號條件對象(全域屬性 / 物件引用 / self), 交由 Resolver.Attr 解析。
 func (this *evaluator) evalIdent(n nodeIdent) (result Value, ok bool) {
 	if this.env.Resolver == nil {
 		return Value{}, false
@@ -171,7 +171,7 @@ func (this *evaluator) evalIdent(n nodeIdent) (result Value, ok bool) {
 	return this.env.Resolver.Attr(n.name, nil)
 }
 
-// evalCall 求值函式呼叫:先評估參數,再以名稱查內建函式註冊表;未命中則視為 Resolver 查詢函式。
+// evalCall 求值函式呼叫: 先評估參數, 再以名稱查內建函式註冊表; 未命中則視為 Resolver 查詢函式。
 // 內建函式優先於查詢函式(對齊【營業規格書 | 二十六、內建函式清單】與【二十三、屬性清單】查詢函式之區隔)。
 func (this *evaluator) evalCall(n nodeCall) (result Value, ok bool) {
 	arg, okArg := this.evalArgs(n.arg)
@@ -191,8 +191,8 @@ func (this *evaluator) evalCall(n nodeCall) (result Value, ok bool) {
 	return this.env.Resolver.Attr(n.name, arg)
 }
 
-// evalRef 求值引用屬性 / 引用查詢函式:先以 Resolver.Attr 解析引用主體,主體須為物件引用
-// (空物件 / 型別不符 → 失敗,對齊【營業規格書 | 二十七、運算式 | 5】),再以 Resolver.AttrRef 取子屬性。
+// evalRef 求值引用屬性 / 引用查詢函式: 先以 Resolver.Attr 解析引用主體, 主體須為物件引用
+// (空物件 / 型別不符 → 失敗, 對齊【營業規格書 | 二十七、運算式 | 5】), 再以 Resolver.AttrRef 取子屬性。
 func (this *evaluator) evalRef(n nodeRef) (result Value, ok bool) {
 	if this.env.Resolver == nil {
 		return Value{}, false
@@ -217,7 +217,7 @@ func (this *evaluator) evalRef(n nodeRef) (result Value, ok bool) {
 	return this.env.Resolver.AttrRef(base.Ref(), n.attr, arg)
 }
 
-// evalArgs 逐一求值參數;任一參數評估失敗則整體失敗。
+// evalArgs 逐一求值參數; 任一參數評估失敗則整體失敗。
 func (this *evaluator) evalArgs(arg []node) (result []Value, ok bool) {
 	result = make([]Value, 0, len(arg))
 
@@ -234,7 +234,7 @@ func (this *evaluator) evalArgs(arg []node) (result []Value, ok bool) {
 	return result, true
 }
 
-// evalArith 求值算術運算;非數值運算元或 除 0 / 取餘 0 皆評估失敗
+// evalArith 求值算術運算; 非數值運算元或 除 0 / 取餘 0 皆評估失敗
 // (對齊【營業規格書 | 二十七、運算式 | 7】)。
 func evalArith(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	if lhs.IsNum() == false || rhs.IsNum() == false {
@@ -273,7 +273,7 @@ func evalArith(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	} // switch
 }
 
-// evalOrder 求值大小比較(< > <= >=);僅數值對數值合法,其餘評估失敗
+// evalOrder 求值大小比較(< > <= >=); 僅數值對數值合法, 其餘評估失敗
 // (字串 / 布林 / 空物件無大小順序)。
 func evalOrder(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	if lhs.IsNum() == false || rhs.IsNum() == false {
@@ -301,7 +301,7 @@ func evalOrder(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	} // switch
 }
 
-// evalEqual 求值相等比較(== !=);依 valueEqual 判定,跨型別評估失敗。
+// evalEqual 求值相等比較(== !=); 依 valueEqual 判定, 跨型別評估失敗。
 func evalEqual(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	equal, okEqual := valueEqual(lhs, rhs)
 
@@ -316,8 +316,8 @@ func evalEqual(op tokenKind, lhs, rhs Value) (result Value, ok bool) {
 	return NewBool(equal), true
 }
 
-// valueEqual 依【營業規格書 | 二十七、運算式 | 2、7】判定相等:同型別才可比,
-// 跨型別評估失敗;空物件只與空物件相等(M4 起物件引用比實例編號)。
+// valueEqual 依【營業規格書 | 二十七、運算式 | 2、7】判定相等: 同型別才可比,
+// 跨型別評估失敗; 空物件只與空物件相等(M4 起物件引用比實例編號)。
 func valueEqual(lhs, rhs Value) (result, ok bool) {
 	switch {
 	case lhs.IsNum() && rhs.IsNum():
@@ -337,7 +337,7 @@ func valueEqual(lhs, rhs Value) (result, ok bool) {
 	} // switch
 }
 
-// objectEqual 判定兩個物件值(空物件 / 物件引用)是否相等:空物件只與空物件相等、
+// objectEqual 判定兩個物件值(空物件 / 物件引用)是否相等: 空物件只與空物件相等、
 // 兩引用比實例編號、一空一非空為不等(對齊【營業規格書 | 二十七、運算式 | 2】)。
 func objectEqual(lhs, rhs Value) (result bool) {
 	if lhs.IsNone() && rhs.IsNone() {

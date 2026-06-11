@@ -13,7 +13,7 @@ func TestSuitePhaseGuestAction(t *testing.T) {
 	suite.Run(t, new(SuitePhaseGuestAction))
 }
 
-// SuitePhaseGuestAction 驗證顧客行動階段（phaseGuestAction.go）:佇列消費 / 行動事件 / 封印閘門（sealTask）/ 技能啟動 / 觸發收尾。
+// SuitePhaseGuestAction 驗證顧客行動階段(phaseGuestAction.go): 佇列消費 / 行動事件 / 封印閘門(sealTask)/ 技能啟動 / 觸發收尾。
 type SuitePhaseGuestAction struct {
 	suite.Suite
 }
@@ -38,23 +38,23 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestAction() {
 	sateGuest := cores.NewGuest(game, 501)
 	sateGuest.GetSateSeal().Unlock()       // 解除顧客資料的預設封印 → 飽食行動可啟動
 	calmGuest := cores.NewGuest(game, 501) // calmSeal 未鎖 → 耐心行動可啟動
-	sealGuest := cores.NewGuest(game, 501) // sateSeal 鎖（資料預設）→ 跳過啟動
+	sealGuest := cores.NewGuest(game, 501) // sateSeal 鎖(資料預設)→ 跳過啟動
 	game.Action.Push(cores.NewAction(sateGuest, cores.TaskSate, 301))
 	game.Action.Push(cores.NewAction(calmGuest, cores.TaskCalm, 301))
 	game.Action.Push(cores.NewAction(sealGuest, cores.TaskSate, 301))
-	game.Action.Push(cores.NewAction(sealGuest, cores.TaskKind(9), 301)) // 越界行動類型 → 跳過啟動（防禦）
+	game.Action.Push(cores.NewAction(sealGuest, cores.TaskKind(9), 301)) // 越界行動類型 → 跳過啟動(防禦)
 
 	this.Equal(cores.PhaseRoundEnd, phaseGuestAction(game))
 	this.Equal(1, start)
 	this.Equal(1, end)
-	this.Equal(4, task)  // 每筆行動觸發一次（含跳過啟動者）
+	this.Equal(4, task)  // 每筆行動觸發一次, 含跳過啟動者
 	this.Equal(4, count) // 僅前兩筆啟動技能 301:2 筆 × 效果 401 / 402
 	this.Empty(game.Action)
 	this.Equal(int32(4), game.GetTaskCount()) // 行動事件每筆都設
 	this.Same(sealGuest, game.GetTaskGuest())
 	this.Equal(int32(301), game.GetTaskSkill())
 
-	// 跳轉回合結束 → 立即收尾,行動不消費
+	// 跳轉回合結束 → 立即收尾, 行動不消費
 	game.Action.Push(cores.NewAction(calmGuest, cores.TaskCalm, 301))
 	game.SetNextPhase(cores.PhaseRoundEnd)
 	this.Equal(cores.PhaseRoundEnd, phaseGuestAction(game))
@@ -63,7 +63,7 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestAction() {
 	this.Equal(2, end)
 }
 
-// TestPhaseGuestActionEmit 驗證顧客行動的事件接線:逐筆行動發範圍標題（操作元 = 顧客 + 技能;踏站 phase 事件歸 RunPhase）。
+// TestPhaseGuestActionEmit 驗證顧客行動的事件接線: 逐筆行動發範圍標題(操作元 = 顧客 + 技能; 踏站 phase 事件歸 RunPhase)。
 func (this *SuitePhaseGuestAction) TestPhaseGuestActionEmit() {
 	game, record := newGameRecord()
 	guest := cores.NewGuest(game, 501)
@@ -75,10 +75,10 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestActionEmit() {
 	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: 501, InstanceID: guest.GetInstanceID(), SkillID: 301}, record.Event[0])
 }
 
-// TestSealTask 驗證行動封印閘門:飽食 / 耐心各查對應封印鎖、越界行動類型視為封印。
+// TestSealTask 驗證行動封印閘門: 飽食 / 耐心各查對應封印鎖、越界行動類型視為封印。
 func (this *SuitePhaseGuestAction) TestSealTask() {
 	game := newGame()
-	guest := cores.NewGuest(game, 501) // sateSeal 鎖（資料預設）、calmSeal 未鎖
+	guest := cores.NewGuest(game, 501) // sateSeal 鎖(資料預設)、calmSeal 未鎖
 
 	this.True(sealTask(cores.NewAction(guest, cores.TaskSate, 301))) // 封印飽食 → 跳過
 	guest.GetSateSeal().Unlock()
@@ -88,5 +88,5 @@ func (this *SuitePhaseGuestAction) TestSealTask() {
 	guest.GetCalmSeal().Lock()
 	this.True(sealTask(cores.NewAction(guest, cores.TaskCalm, 301))) // 封印耐心 → 跳過
 
-	this.True(sealTask(cores.NewAction(guest, cores.TaskKind(9), 301))) // 越界 → 視為封印（防禦）
+	this.True(sealTask(cores.NewAction(guest, cores.TaskKind(9), 301))) // 越界 → 視為封印(防禦)
 }

@@ -10,8 +10,8 @@ func TestSuiteNode(t *testing.T) {
 	suite.Run(t, new(SuiteNode))
 }
 
-// SuiteNode 驗證 AST 節點(node.go):各節點型別直接建構後經 evaluator 求值,確認其形狀
-// 正確驅動求值(與 parser_test 的「字串→AST」不同角度);條件對象 / 函式節點以 stub 接縫求值。
+// SuiteNode 驗證 AST 節點(node.go): 各節點型別直接建構後經 evaluator 求值, 確認其形狀
+// 正確驅動求值(與 parser_test 的「字串→AST」不同角度); 條件對象 / 函式節點以 stub 接縫求值。
 type SuiteNode struct {
 	suite.Suite
 }
@@ -53,7 +53,7 @@ func (this *SuiteNode) TestNodeRef() {
 	this.Equal(7.0, this.eval(nodeRef{name: "self", attr: "calm"}, env).Num())
 }
 
-// eval 將節點包成 Expr 後求值並斷言成功,回傳結果值。
+// eval 將節點包成 Expr 後求值並斷言成功, 回傳結果值。
 func (this *SuiteNode) eval(n node, env Env) Value {
 	expr := &Expr{root: n}
 	value, ok := expr.Eval(env)

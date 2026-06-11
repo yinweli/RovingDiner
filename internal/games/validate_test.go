@@ -11,7 +11,7 @@ func TestSuiteValidate(t *testing.T) {
 }
 
 // SuiteValidate 驗證命令語言詞彙表的 Validate(validate.go)逐名查全域表。
-// 操作命令詞彙表 M8 / M9 前為空故 verb 一律未知;屬性修改命令查左值可寫性(M7 生效)。
+// 操作命令詞彙表 M8 / M9 前為空故 verb 一律未知; 屬性修改命令查左值可寫性(M7 生效)。
 type SuiteValidate struct {
 	suite.Suite
 }
@@ -39,7 +39,7 @@ func (this *SuiteValidate) TestValidateAssign() {
 	this.Error(Validate(this.parse("drawLast.cardID = 1")))
 }
 
-// parse 解析命令來源為 Command;解析失敗即測試失敗(供 Validate 斷言聚焦於語意檢查)。
+// parse 解析命令來源為 Command; 解析失敗即測試失敗(供 Validate 斷言聚焦於語意檢查)。
 func (this *SuiteValidate) parse(source string) Command {
 	command, err := Parse(source)
 	this.Require().NoError(err)

@@ -10,12 +10,12 @@ func TestSuiteEffect(t *testing.T) {
 	suite.Run(t, new(SuiteEffect))
 }
 
-// SuiteEffect 驗證效果實例與效果佇列(effect.go):建構 / 取值 / 結束回合與堆疊寫入,佇列入列 / 移除 / 同份查找 / 作用順序排序。
+// SuiteEffect 驗證效果實例與效果佇列(effect.go): 建構 / 取值 / 結束回合與堆疊寫入, 佇列入列 / 移除 / 同份查找 / 作用順序排序。
 type SuiteEffect struct {
 	suite.Suite
 }
 
-// TestNewEffect 驗證 NewEffect 建構效果實例、結束回合依作用回合（0 整場 / N 期限）、建構即夾堆疊上限;資料不存在回 nil。
+// TestNewEffect 驗證 NewEffect 建構效果實例、結束回合依作用回合(0 整場 / N 期限)、建構即夾堆疊上限; 資料不存在回 nil。
 func (this *SuiteEffect) TestNewEffect() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 	game.round = NewValue(5, 0)
@@ -29,7 +29,7 @@ func (this *SuiteEffect) TestNewEffect() {
 	this.Equal(guest, effect.GetSelf().GetGuest())
 	this.NotEqual(InstanceID(0), effect.GetInstanceID()) // 配發實例編號
 
-	zero := NewEffect(game, 402, Ref{}, 1) // RunRound 0 → Expire 0（整場保留）
+	zero := NewEffect(game, 402, Ref{}, 1) // RunRound 0 → Expire 0(整場保留)
 	this.Require().NotNil(zero)
 	this.Equal(int32(0), zero.GetExpire())
 
@@ -75,7 +75,7 @@ func (this *SuiteEffect) TestEffectSetExpire() {
 	this.Equal(int32(11), effect.GetExpire())
 }
 
-// TestEffectRefresh 驗證 Refresh 依作用回合重算結束回合（0 → 整場、N → 當前回合 + N − 1）。
+// TestEffectRefresh 驗證 Refresh 依作用回合重算結束回合(0 → 整場、N → 當前回合 + N − 1)。
 func (this *SuiteEffect) TestEffectRefresh() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 	game.round = NewValue(8, 0)
@@ -88,7 +88,7 @@ func (this *SuiteEffect) TestEffectRefresh() {
 	this.Equal(int32(0), effect.GetExpire())
 }
 
-// TestEffectStackAdd 驗證 StackAdd 疊層、上限夾制（0 = 無上限）與實際增量回傳。
+// TestEffectStackAdd 驗證 StackAdd 疊層、上限夾制(0 = 無上限)與實際增量回傳。
 func (this *SuiteEffect) TestEffectStackAdd() {
 	effect := &Effect{stack: 2}
 
@@ -113,7 +113,7 @@ func (this *SuiteEffect) TestEffectStackSub() {
 	this.Equal(int32(0), effect.GetStack())
 
 	this.Equal(int32(0), effect.StackSub(1)) // 已歸 0 → 不扣
-	this.Equal(int32(0), effect.StackSub(0)) // 非正數 → 不扣（防禦）
+	this.Equal(int32(0), effect.StackSub(0)) // 非正數 → 不扣(防禦)
 	this.Equal(int32(0), effect.GetStack())
 }
 
@@ -142,7 +142,7 @@ func (this *SuiteEffect) TestEffectListRemove() {
 	this.Len(list, 1)
 }
 
-// TestEffectListFind 驗證 Find 同份查找:效果編號同 && self 同,空物件 self 彼此相同。
+// TestEffectListFind 驗證 Find 同份查找: 效果編號同 && self 同, 空物件 self 彼此相同。
 func (this *SuiteEffect) TestEffectListFind() {
 	guest := &Guest{instanceID: 11}
 	bound := &Effect{instanceID: 1, effectID: 401, self: NewRefGuest(guest)}
@@ -156,14 +156,14 @@ func (this *SuiteEffect) TestEffectListFind() {
 	this.Nil(list.Find(Ref{}, 999))                               // 查無 → nil
 }
 
-// TestEffectListSort 驗證 Sort 依作用順序排序:大者優先、同序效果編號小者優先、查無資料殿後。
+// TestEffectListSort 驗證 Sort 依作用順序排序: 大者優先、同序效果編號小者優先、查無資料殿後。
 func (this *SuiteEffect) TestEffectListSort() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 
 	effect := EffectList{
 		{instanceID: 1, effectID: 402}, // RunOrder 10
-		{instanceID: 2, effectID: 403}, // RunOrder 20（最大 → 最先）
-		{instanceID: 3, effectID: 999}, // 查無資料 → RunOrder 0（最後）
+		{instanceID: 2, effectID: 403}, // RunOrder 20(最大 → 最先)
+		{instanceID: 3, effectID: 999}, // 查無資料 → RunOrder 0(最後)
 		{instanceID: 4, effectID: 401}, // RunOrder 10、同序 EffectID 401 < 402 → 先於 402
 	}
 	effect.Sort(game)
@@ -172,4 +172,4 @@ func (this *SuiteEffect) TestEffectListSort() {
 	this.Equal([]int32{403, 401, 402, 999}, order)
 }
 
-// === 測試輔助（置尾） ===
+// === 測試輔助(置尾) ===

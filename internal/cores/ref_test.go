@@ -12,7 +12,7 @@ func TestSuiteRef(t *testing.T) {
 	suite.Run(t, new(SuiteRef))
 }
 
-// SuiteRef 驗證實例引用(ref.go):建構 / 取值 / 空物件與同一性判定 / 運算式值編碼,與 asCard / asGuest 解碼。
+// SuiteRef 驗證實例引用(ref.go): 建構 / 取值 / 空物件與同一性判定 / 運算式值編碼, 與 asCard / asGuest 解碼。
 type SuiteRef struct {
 	suite.Suite
 }
@@ -52,7 +52,7 @@ func (this *SuiteRef) TestRefIsNone() {
 	this.False(NewRefGuest(&Guest{}).IsNone())
 }
 
-// TestRefIsSame 驗證 IsSame 同一性:同型別比實例編號、空物件彼此相等、跨型別 / 外來引用不相等。
+// TestRefIsSame 驗證 IsSame 同一性: 同型別比實例編號、空物件彼此相等、跨型別 / 外來引用不相等。
 func (this *SuiteRef) TestRefIsSame() {
 	card1 := NewRefCard(&Card{instanceID: 1})
 	card2 := NewRefCard(&Card{instanceID: 2})
@@ -69,7 +69,7 @@ func (this *SuiteRef) TestRefIsSame() {
 	this.False(card1.IsSame(foreignRef{})) // 非本引擎引用 → 型別斷言不符
 }
 
-// TestRefValue 驗證 Value 編碼:空物件 → none、卡牌 / 顧客 → 物件引用。
+// TestRefValue 驗證 Value 編碼: 空物件 → none、卡牌 / 顧客 → 物件引用。
 func (this *SuiteRef) TestRefValue() {
 	this.True(Ref{}.Value().IsNone()) // 空物件 → none
 	this.True(NewRefCard(nil).Value().IsNone())
@@ -85,7 +85,7 @@ func (this *SuiteRef) TestRefValue() {
 	this.True(guest.IsSame(value.Ref()))
 }
 
-// TestAsCard 驗證 asCard 解碼:卡牌引用拆回實例、非卡牌引用 / 外來引用失敗。
+// TestAsCard 驗證 asCard 解碼: 卡牌引用拆回實例、非卡牌引用 / 外來引用失敗。
 func (this *SuiteRef) TestAsCard() {
 	card := &Card{instanceID: 3}
 
@@ -100,7 +100,7 @@ func (this *SuiteRef) TestAsCard() {
 	this.False(ok)
 }
 
-// TestAsGuest 驗證 asGuest 解碼:顧客引用拆回實例、非顧客引用 / 外來引用失敗。
+// TestAsGuest 驗證 asGuest 解碼: 顧客引用拆回實例、非顧客引用 / 外來引用失敗。
 func (this *SuiteRef) TestAsGuest() {
 	guest := &Guest{instanceID: 4}
 
@@ -115,7 +115,7 @@ func (this *SuiteRef) TestAsGuest() {
 	this.False(ok)
 }
 
-// TestRefTarget 驗證 RefTarget 取投影事件對象編號:卡牌 / 顧客引用回(資料編號, 實例編號)、空引用回零值。
+// TestRefTarget 驗證 RefTarget 取投影事件對象編號: 卡牌 / 顧客引用回(資料編號, 實例編號)、空引用回零值。
 func (this *SuiteRef) TestRefTarget() {
 	dataID, instanceID := RefTarget(NewRefCard(&Card{cardID: 103, instanceID: 1}))
 	this.Equal(int32(103), dataID)
@@ -130,7 +130,7 @@ func (this *SuiteRef) TestRefTarget() {
 	this.Equal(NoneID, instanceID)
 }
 
-// foreignRef 測試用外來引用(非 cores.Ref 的 exprs.Ref 實作);驗證型別斷言不符分支。
+// foreignRef 測試用外來引用(非 cores.Ref 的 exprs.Ref 實作); 驗證型別斷言不符分支。
 type foreignRef struct{}
 
 func (this foreignRef) IsSame(other exprs.Ref) bool {

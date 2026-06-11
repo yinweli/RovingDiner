@@ -5,10 +5,10 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrRefRead 引用屬性值讀取詞彙表(名稱 → 讀取行為);服務 exprs.Resolver 的 AttrRef。
-// 涵蓋【營業規格書 | 二十三、屬性清單】卡牌引用屬性 / 顧客引用屬性兩子表;型別不符的引用回 ok=false。
+// attrRefRead 引用屬性值讀取詞彙表(名稱 → 讀取行為); 服務 exprs.Resolver 的 AttrRef。
+// 涵蓋【營業規格書 | 二十三、屬性清單】卡牌引用屬性 / 顧客引用屬性兩子表; 型別不符的引用回 ok=false。
 // effectStack / effectGroup 卡牌、顧客共用同一詞條(以 Ref.IsSame 比對所屬對象)。
-// 每一詞條對應一個獨立的 readRef* 函式(便於逐條單元測試);本表僅作名稱 → 行為的索引。
+// 每一詞條對應一個獨立的 readRef* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
 var attrRefRead = map[string]cores.AttrRefReadFunc{
 	// 卡牌引用屬性
 	"cardID":      readRefCardID,
@@ -51,7 +51,7 @@ var attrRefRead = map[string]cores.AttrRefReadFunc{
 	"effectStack": readRefEffectStack,
 	"effectGroup": readRefEffectGroup,
 
-	// 鎖定計數讀取（Lock 全名詞條;僅【二十三】子表存取欄為「寫鎖 / 鎖」的屬性）
+	// 鎖定計數讀取(Lock 全名詞條; 僅【二十三】子表存取欄為「寫鎖 / 鎖」的屬性)
 	"costLock":        readRefCostLock,
 	"extraRunMinLock": readRefExtraRunMinLock,
 	"extraRunMaxLock": readRefExtraRunMaxLock,
@@ -116,7 +116,7 @@ func readRefExtraRunMax(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (res
 	return exprs.NewNum(float64(card.GetExtraRunMax().GetValue())), true
 }
 
-// readRefCardSeal 讀卡牌的封印值(恆 0,僅供鎖定承載)。
+// readRefCardSeal 讀卡牌的封印值(恆 0, 僅供鎖定承載)。
 func readRefCardSeal(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := cores.AsCard(ref)
 
@@ -127,7 +127,7 @@ func readRefCardSeal(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result
 	return exprs.NewNum(float64(card.GetSeal().GetValue())), true
 }
 
-// readRefKeep 讀卡牌的保留值(恆 0,僅供鎖定承載)。
+// readRefKeep 讀卡牌的保留值(恆 0, 僅供鎖定承載)。
 func readRefKeep(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := cores.AsCard(ref)
 
@@ -138,7 +138,7 @@ func readRefKeep(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exp
 	return exprs.NewNum(float64(card.GetKeep().GetValue())), true
 }
 
-// readRefPlayExile 讀卡牌的出牌流放值(恆 0,僅供鎖定承載)。
+// readRefPlayExile 讀卡牌的出牌流放值(恆 0, 僅供鎖定承載)。
 func readRefPlayExile(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := cores.AsCard(ref)
 
@@ -149,7 +149,7 @@ func readRefPlayExile(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (resul
 	return exprs.NewNum(float64(card.GetPlayExile().GetValue())), true
 }
 
-// readRefUnplayExile 讀卡牌的未出牌流放值(恆 0,僅供鎖定承載)。
+// readRefUnplayExile 讀卡牌的未出牌流放值(恆 0, 僅供鎖定承載)。
 func readRefUnplayExile(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := cores.AsCard(ref)
 
@@ -171,7 +171,7 @@ func readRefCardify(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result 
 	return cores.NewRefGuest(card.GetCardify()).Value(), true
 }
 
-// readRefCardGroup 讀卡牌的群組編號(自靜態表;資料不存在回失敗)。
+// readRefCardGroup 讀卡牌的群組編號(自靜態表; 資料不存在回失敗)。
 func readRefCardGroup(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	card, ok := cores.AsCard(ref)
 
@@ -330,7 +330,7 @@ func readRefScoreMax(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result
 	return exprs.NewNum(float64(guest.GetScoreMax().GetValue())), true
 }
 
-// readRefSateSeal 讀顧客的封印飽食值(恆 0,僅供鎖定承載)。
+// readRefSateSeal 讀顧客的封印飽食值(恆 0, 僅供鎖定承載)。
 func readRefSateSeal(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := cores.AsGuest(ref)
 
@@ -341,7 +341,7 @@ func readRefSateSeal(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result
 	return exprs.NewNum(float64(guest.GetSateSeal().GetValue())), true
 }
 
-// readRefCalmSeal 讀顧客的封印耐心值(恆 0,僅供鎖定承載)。
+// readRefCalmSeal 讀顧客的封印耐心值(恆 0, 僅供鎖定承載)。
 func readRefCalmSeal(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := cores.AsGuest(ref)
 
@@ -439,7 +439,7 @@ func readRefSkillImmune(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (res
 	return exprs.NewNum(float64(guest.GetSkillImmune().Get(n))), true
 }
 
-// readRefSameSize 讀顧客同桌占用座位數(非入座回 0;含自身語意依座位表)。
+// readRefSameSize 讀顧客同桌占用座位數(非入座回 0; 含自身語意依座位表)。
 func readRefSameSize(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	guest, ok := cores.AsGuest(ref)
 
@@ -491,7 +491,7 @@ func readRefEffectStack(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (res
 	return exprs.NewNum(float64(stack)), true
 }
 
-// readRefEffectGroup 讀效果佇列中 self == ref 且效果群組 == N 的項目數(不加層;N == 0 不命中)。
+// readRefEffectGroup 讀效果佇列中 self == ref 且效果群組 == N 的項目數(不加層; N == 0 不命中)。
 func readRefEffectGroup(game *cores.Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 	n, valid := oneInt(arg)
 

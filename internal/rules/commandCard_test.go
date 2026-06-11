@@ -13,7 +13,7 @@ func TestSuiteCommandCard(t *testing.T) {
 	suite.Run(t, new(SuiteCommandCard))
 }
 
-// SuiteCommandCard 驗證卡牌屬性命令(commandCard.go):cardCost*(寫鎖 / 捨入 / 夾 0)、cardEffect*(增 / 刪一 / 刪全)。
+// SuiteCommandCard 驗證卡牌屬性命令(commandCard.go): cardCost*(寫鎖 / 捨入 / 夾 0)、cardEffect*(增 / 刪一 / 刪全)。
 type SuiteCommandCard struct {
 	suite.Suite
 }

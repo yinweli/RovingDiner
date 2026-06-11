@@ -14,8 +14,8 @@ func TestSuiteCommand(t *testing.T) {
 	suite.Run(t, new(SuiteCommand))
 }
 
-// SuiteCommand 驗證操作命令派發(Game.ExecOperate)、登錄查詢(HasCommand)與 bootstrap 詞條(command.go:phaseJump / deckShuffle)。
-// 經 ExecOperate 真實入口測:求值失敗 / 未登錄 → 整動作 no-op;phaseJump 階段合法性;deckShuffle 委派 Rander。
+// SuiteCommand 驗證操作命令派發(Game.ExecOperate)、登錄查詢(HasCommand)與 bootstrap 詞條(command.go: phaseJump / deckShuffle)。
+// 經 ExecOperate 真實入口測: 求值失敗 / 未登錄 → 整動作 no-op; phaseJump 階段合法性; deckShuffle 委派 Rander。
 type SuiteCommand struct {
 	suite.Suite
 }
@@ -53,7 +53,7 @@ func (this *SuiteCommand) TestExecOperateDeckShuffle() {
 	game.Deck = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 101), cores.NewCard(game, 101)}
 
 	game.ExecOperate("deckShuffle", "none", nil, nil)
-	this.Len(game.Deck, 3) // 委派 Rander 洗牌(恆等替身:張數保留)
+	this.Len(game.Deck, 3) // 委派 Rander 洗牌(恆等替身: 張數保留)
 }
 
 func (this *SuiteCommand) TestExecOperateNoop() {
@@ -71,7 +71,7 @@ func (this *SuiteCommand) TestExecOperateNoop() {
 
 // === 測試輔助(置尾) ===
 
-// arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數);解析失敗即測試失敗。
+// arg 把多個來源各解析為 *exprs.Expr(模擬 parser 產出的命令參數); 解析失敗即測試失敗。
 func (this *SuiteCommand) arg(source ...string) (result []*exprs.Expr) {
 	for _, itor := range source {
 		expr, err := exprs.Parse(itor)

@@ -13,13 +13,13 @@ func TestSuiteGame(t *testing.T) {
 	suite.Run(t, new(SuiteGame))
 }
 
-// SuiteGame 驗證營業實例(game.go):建構 / 取值 / 階段設定 / 事件成組寫入 / 回合計數歸零,
-// 與驅動引擎面(exprs.Resolver 委派、Lock 後綴路由、命令執行分派);詞條內容逐項驗證見 attrRead_test.go 等。
+// SuiteGame 驗證營業實例(game.go): 建構 / 取值 / 階段設定 / 事件成組寫入 / 回合計數歸零,
+// 與驅動引擎面(exprs.Resolver 委派、Lock 後綴路由、命令執行分派); 詞條內容逐項驗證見 attrRead_test.go 等。
 type SuiteGame struct {
 	suite.Suite
 }
 
-// TestNewGame 驗證 NewGame 建構營業實例:盤面空白(屬性零值、無跳轉階段、累積計數零值可用、座位 map 就緒、容器空、身分入欄),
+// TestNewGame 驗證 NewGame 建構營業實例: 盤面空白(屬性零值、無跳轉階段、累積計數零值可用、座位 map 就緒、容器空、身分入欄),
 // 注入靜態表與衍生索引、self 不入建構。
 func (this *SuiteGame) TestNewGame() {
 	sheet := buildSheet()
@@ -39,13 +39,13 @@ func (this *SuiteGame) TestNewGame() {
 	this.Equal(int32(5), game.StageID)
 
 	this.Same(sheet, game.GetSheet()) // 注入遊戲資料
-	this.Nil(game.GetSelf())          // self 為 run-state,建構不綁定
+	this.Nil(game.GetSelf())          // self 為 run-state, 建構不綁定
 
-	empty := NewGame(0, 0, nil, nil, nil, nil) // data nil → 補空殼,查詢不爆
+	empty := NewGame(0, 0, nil, nil, nil, nil) // data nil → 補空殼, 查詢不爆
 	this.Nil(empty.GetSheet())
 }
 
-// TestGameNextID 驗證 NextID 配發遞增唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。
+// TestGameNextID 驗證 NextID 配發遞增唯一實例編號(卡牌 / 顧客 / 效果共用同一序列)。
 func (this *SuiteGame) TestGameNextID() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	this.Equal(InstanceID(1), game.NextID())
@@ -53,7 +53,7 @@ func (this *SuiteGame) TestGameNextID() {
 	this.Equal(InstanceID(3), game.NextID())
 }
 
-// TestGameSetSelf 驗證 SetSelf 成對寫門:綁定 + 還原函式逐層退棧（結算重入安全）。
+// TestGameSetSelf 驗證 SetSelf 成對寫門: 綁定 + 還原函式逐層退棧(結算重入安全)。
 func (this *SuiteGame) TestGameSetSelf() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	outer := NewRefGuest(&Guest{instanceID: 1})
@@ -82,8 +82,8 @@ func (this *SuiteGame) TestGameGetRander() {
 	this.Equal(fakeRander{}, NewGame(0, 0, nil, nil, fakeRander{}, nil).GetRander())
 }
 
-// TestGameEmit 驗證 Emit 發射投影事件:統一蓋章座標(當前回合 / 階段)後轉交 presenter,發射點不自帶;
-// presenter nil 由建構正規化為無輸出替身,發射不爆。
+// TestGameEmit 驗證 Emit 發射投影事件: 統一蓋章座標(當前回合 / 階段)後轉交 presenter, 發射點不自帶;
+// presenter nil 由建構正規化為無輸出替身, 發射不爆。
 func (this *SuiteGame) TestGameEmit() {
 	record := &fakePresenter{}
 	game := NewGame(0, 0, nil, nil, nil, record)
@@ -93,13 +93,13 @@ func (this *SuiteGame) TestGameEmit() {
 	this.Require().Len(record.event, 1)
 	this.Equal(EventScope, record.event[0].Kind)
 	this.Equal(ScopeSettle, record.event[0].Scope)
-	this.Equal(int32(3), record.event[0].Round) // 座標由 Emit 蓋章,發射點未填
+	this.Equal(int32(3), record.event[0].Round) // 座標由 Emit 蓋章, 發射點未填
 	this.Equal(PhaseRoundStart, record.event[0].Phase)
 
-	NewGame(0, 0, nil, nil, nil, nil).Emit(EventData{}) // presenter nil → 無輸出替身,不爆
+	NewGame(0, 0, nil, nil, nil, nil).Emit(EventData{}) // presenter nil → 無輸出替身, 不爆
 }
 
-// TestGameGetMorale 驗證 GetMorale 取回餐廳士氣值組件（寫入經組件可見）。
+// TestGameGetMorale 驗證 GetMorale 取回餐廳士氣值組件(寫入經組件可見)。
 func (this *SuiteGame) TestGameGetMorale() {
 	game := &Game{morale: NewValue(25, 0)}
 	this.Equal(int32(25), game.GetMorale().GetValue())
@@ -138,7 +138,7 @@ func (this *SuiteGame) TestGameGetEnergyMax() {
 	this.Equal(int32(6), (&Game{energyMax: NewValue(6, 0)}).GetEnergyMax().GetValue())
 }
 
-// TestGameGetEnergyKeep 驗證 GetEnergyKeep 取回出牌點數保留（純鎖屬性,狀態於鎖定計數）。
+// TestGameGetEnergyKeep 驗證 GetEnergyKeep 取回出牌點數保留(純鎖屬性, 狀態於鎖定計數)。
 func (this *SuiteGame) TestGameGetEnergyKeep() {
 	this.Equal(int32(1), (&Game{energyKeep: NewValue(0, 1)}).GetEnergyKeep().GetLock())
 }
@@ -153,7 +153,7 @@ func (this *SuiteGame) TestGameGetDrawMax() {
 	this.Equal(int32(5), (&Game{drawMax: NewValue(5, 0)}).GetDrawMax().GetValue())
 }
 
-// TestGameGetPhase 驗證 GetPhase / SetPhase 當前階段存取（未踏站前為 PhaseNone）。
+// TestGameGetPhase 驗證 GetPhase / SetPhase 當前階段存取(未踏站前為 PhaseNone)。
 func (this *SuiteGame) TestGameGetPhase() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	this.Equal(PhaseNone, game.GetPhase())
@@ -162,13 +162,13 @@ func (this *SuiteGame) TestGameGetPhase() {
 	this.Equal(PhaseGuestAction, game.GetPhase())
 }
 
-// TestGameGetNextPhase 驗證 GetNextPhase 取回下一階段（無跳轉目標為 PhaseNone）。
+// TestGameGetNextPhase 驗證 GetNextPhase 取回下一階段(無跳轉目標為 PhaseNone)。
 func (this *SuiteGame) TestGameGetNextPhase() {
 	this.Equal(PhaseNone, (&Game{}).GetNextPhase())
 	this.Equal(PhasePlayerAction, (&Game{phaseNext: PhasePlayerAction}).GetNextPhase())
 }
 
-// TestGameSetNextPhase 驗證 SetNextPhase 設下一階段（含清回 PhaseNone）。
+// TestGameSetNextPhase 驗證 SetNextPhase 設下一階段(含清回 PhaseNone)。
 func (this *SuiteGame) TestGameSetNextPhase() {
 	game := &Game{}
 
@@ -194,7 +194,7 @@ func (this *SuiteGame) TestGameGetDamageValue() {
 	this.Equal(int32(6), (&Game{damageValue: 6}).GetDamageValue())
 }
 
-// TestGameGetDamageGuest 驗證 GetDamageGuest 取回士氣受損顧客（無來源回 nil）。
+// TestGameGetDamageGuest 驗證 GetDamageGuest 取回士氣受損顧客(無來源回 nil)。
 func (this *SuiteGame) TestGameGetDamageGuest() {
 	guest := &Guest{instanceID: 9}
 	this.Same(guest, (&Game{damageGuest: guest}).GetDamageGuest())
@@ -255,7 +255,7 @@ func (this *SuiteGame) TestGameGetDrawCount() {
 	this.Equal(int32(2), (&Game{drawCount: 2}).GetDrawCount())
 }
 
-// TestGameGetDrawTotal 驗證 GetDrawTotal 取回累積抽牌計數組件（零值可用、寫入經組件可見）。
+// TestGameGetDrawTotal 驗證 GetDrawTotal 取回累積抽牌計數組件(零值可用、寫入經組件可見)。
 func (this *SuiteGame) TestGameGetDrawTotal() {
 	game := &Game{}
 	game.GetDrawTotal().Add(1)
@@ -337,7 +337,7 @@ func (this *SuiteGame) TestGameGetMorphNewID() {
 	this.Equal(int32(200), (&Game{morphNewID: 200}).GetMorphNewID())
 }
 
-// TestGameEventDamage 驗證 EventDamage 成組設置受損值 + 來源顧客（含覆寫前次）。
+// TestGameEventDamage 驗證 EventDamage 成組設置受損值 + 來源顧客(含覆寫前次)。
 func (this *SuiteGame) TestGameEventDamage() {
 	guest := &Guest{instanceID: 9}
 	game := &Game{}
@@ -363,7 +363,7 @@ func (this *SuiteGame) TestGameEventSeat() {
 	this.Equal(int32(2), game.GetSeatCount())
 }
 
-// TestGameEventExit 驗證 EventExit 成組設置最後離場 + 離場座位（取當下 seatID）+ 回合離場人數累加。
+// TestGameEventExit 驗證 EventExit 成組設置最後離場 + 離場座位(取當下 seatID)+ 回合離場人數累加。
 func (this *SuiteGame) TestGameEventExit() {
 	seated := &Guest{instanceID: 1, seatID: 2}
 	game := &Game{}
@@ -373,7 +373,7 @@ func (this *SuiteGame) TestGameEventExit() {
 	this.Equal(int32(2), game.GetExitLastSeat())
 	this.Equal(int32(1), game.GetExitCount())
 
-	roam := &Guest{instanceID: 3} // 自遊蕩列表離場（seatID 0）→ 離場座位 0
+	roam := &Guest{instanceID: 3} // 自遊蕩列表離場(seatID 0)→ 離場座位 0
 	game.EventExit(roam)
 	this.Same(roam, game.GetExitLast())
 	this.Equal(int32(0), game.GetExitLastSeat())
@@ -447,7 +447,7 @@ func (this *SuiteGame) TestGameEventMorph() {
 	this.Equal(int32(1), game.GetMorphCount())
 }
 
-// TestGameRoundReset 驗證 RoundReset 歸零全部回合計數;Last 引用與整場累積保留。
+// TestGameRoundReset 驗證 RoundReset 歸零全部回合計數; Last 引用與整場累積保留。
 func (this *SuiteGame) TestGameRoundReset() {
 	guest := &Guest{instanceID: 9, seatID: 1}
 	card := &Card{instanceID: 1}
@@ -475,7 +475,7 @@ func (this *SuiteGame) TestGameRoundReset() {
 	this.Equal(int32(1), game.GetDrawTotal().Get(1)) // 整場累積保留
 }
 
-// TestGameSkillEffect 驗證 SkillEffect 取技能效果列表複本(不共享靜態表底層);技能不存在回 nil。
+// TestGameSkillEffect 驗證 SkillEffect 取技能效果列表複本(不共享靜態表底層); 技能不存在回 nil。
 func (this *SuiteGame) TestGameSkillEffect() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 
@@ -488,15 +488,15 @@ func (this *SuiteGame) TestGameSkillEffect() {
 	this.Nil(game.SkillEffect(999)) // 技能不存在 → nil
 }
 
-// TestGameCardSkillGroup 驗證 CardSkillGroup 取卡牌技能群組;卡牌 / 技能資料缺失回 0。
+// TestGameCardSkillGroup 驗證 CardSkillGroup 取卡牌技能群組; 卡牌 / 技能資料缺失回 0。
 func (this *SuiteGame) TestGameCardSkillGroup() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 	this.Equal(int32(3), game.CardSkillGroup(103)) // 卡 103 → 技能 301 → 群組 3
-	this.Equal(int32(0), game.CardSkillGroup(101)) // 卡 101 無技能（SkillID 0）→ 0
+	this.Equal(int32(0), game.CardSkillGroup(101)) // 卡 101 無技能(SkillID 0)→ 0
 	this.Equal(int32(0), game.CardSkillGroup(999)) // 卡牌資料不存在 → 0
 }
 
-// TestGameEffectData 驗證 EffectData 委派遊戲資料查預編譯效果;查無回 ok=false。
+// TestGameEffectData 驗證 EffectData 委派遊戲資料查預編譯效果; 查無回 ok=false。
 func (this *SuiteGame) TestGameEffectData() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 
@@ -508,7 +508,7 @@ func (this *SuiteGame) TestGameEffectData() {
 	this.False(ok)
 }
 
-// TestGameGuestData 驗證 GuestData 委派遊戲資料查顧客門檻;查無回 ok=false（即無門檻）。
+// TestGameGuestData 驗證 GuestData 委派遊戲資料查顧客門檻; 查無回 ok=false(即無門檻)。
 func (this *SuiteGame) TestGameGuestData() {
 	sheet := &sheeter.Sheeter{}
 	sheet.Guest.Data = map[int32]*sheeter.Guest{
@@ -524,7 +524,7 @@ func (this *SuiteGame) TestGameGuestData() {
 	this.False(ok)
 }
 
-// TestGameRollCard 驗證 RollCard 對抽獎群組 weighted random 抽卡牌編號;群組不存在 / 總權重 0 回 ok=false。
+// TestGameRollCard 驗證 RollCard 對抽獎群組 weighted random 抽卡牌編號; 群組不存在 / 總權重 0 回 ok=false。
 func (this *SuiteGame) TestGameRollCard() {
 	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, fakeRander{}, nil)
 
@@ -539,7 +539,7 @@ func (this *SuiteGame) TestGameRollCard() {
 	this.False(ok)
 }
 
-// TestGameAttr 驗證 Attr 對全域屬性詞彙表的單查分派(裝備經 RegisterAttrRead;只驗分派機制,真詞條驗證歸 rules)。
+// TestGameAttr 驗證 Attr 對全域屬性詞彙表的單查分派(裝備經 RegisterAttrRead; 只驗分派機制, 真詞條驗證歸 rules)。
 func (this *SuiteGame) TestGameAttr() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterAttrRead("fake", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -578,8 +578,8 @@ func (this *SuiteGame) TestGameAttrRef() {
 	this.False(ok)
 }
 
-// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值（含 builtin 注入）/ 鎖定 / 未知名稱與評估失敗 no-op;
-// 屬性事件收口——進了寫入詞條就發（前後值經讀詞條、@ 載鎖定計數）、閘門前夭折無事件（M18 拍板）。
+// TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑: 帶值賦值求值(含 builtin 注入)/ 鎖定 / 未知名稱與評估失敗 no-op;
+// 屬性事件收口——進了寫入詞條就發(前後值經讀詞條、@ 載鎖定計數)、閘門前夭折無事件(M18 拍板)。
 func (this *SuiteGame) TestGameExecAssignGlobal() {
 	record := &fakePresenter{}
 	game := NewGame(0, 0, nil, nil, nil, record)
@@ -597,19 +597,19 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 		return exprs.NewNum(7), true
 	})
 
-	// 全域帶值賦值;RHS 經 exprs 求值(內建函式 seven 驗證 builtin 裝備經 Env 帶入)
+	// 全域帶值賦值; RHS 經 exprs 求值(內建函式 seven 驗證 builtin 裝備經 Env 帶入)
 	this.True(game.ExecAssign("score", "", false, AssignAdd, this.expr("seven()")))
 	this.Equal(int32(17), game.GetScore().GetValue())
-	this.Require().Len(record.event, 1) // 屬性事件:詞條鍵 + 賦值符 + 右值 + 前後值,全域對象欄零值
+	this.Require().Len(record.event, 1) // 屬性事件: 詞條鍵 + 賦值符 + 右值 + 前後值, 全域對象欄零值
 	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignAdd, Operand: 7, Before: 10, After: 17}, record.event[0])
 
-	// @ 鎖定(不帶右值,value 為 nil、不求值);事件前後值載鎖定計數(Lock 全名讀鍵)
+	// @ 鎖定(不帶右值, value 為 nil、不求值); 事件前後值載鎖定計數(Lock 全名讀鍵)
 	this.True(game.ExecAssign("score", "", false, AssignLock, nil))
 	this.Equal(int32(1), game.GetScore().GetLock())
 	this.Require().Len(record.event, 2)
 	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignLock, Before: 0, After: 1}, record.event[1])
 
-	// 鎖定拒寫仍發事件,以 Before == After 表達(M18 拍板)
+	// 鎖定拒寫仍發事件, 以 Before == After 表達(M18 拍板)
 	this.False(game.ExecAssign("score", "", false, AssignSet, this.expr("99")))
 	this.Require().Len(record.event, 3)
 	this.Equal(EventData{Kind: EventProperty, Attr: "score", Op: AssignSet, Operand: 99, Before: 17, After: 17}, record.event[2])
@@ -631,8 +631,8 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 	this.Len(record.event, 4) // 閘門前夭折三式皆無事件
 }
 
-// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op;
-// 屬性事件帶對象編號（資料編號 + 實例編號）,@ 無 Lock 讀詞條時前後值留零值。
+// TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑: 引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op;
+// 屬性事件帶對象編號(資料編號 + 實例編號), @ 無 Lock 讀詞條時前後值留零值。
 func (this *SuiteGame) TestGameExecAssignRef() {
 	record := &fakePresenter{}
 	card := &Card{instanceID: 1, cardID: 103}
@@ -660,13 +660,13 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 		return target.GetCost().Apply(op, n)
 	})
 
-	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3);事件帶對象編號與前後值
+	// 引用左值寫入(最後抽出卡牌的出牌費用設為 3); 事件帶對象編號與前後值
 	this.True(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
 	this.Equal(int32(3), card.GetCost().GetValue())
 	this.Require().Len(record.event, 1)
 	this.Equal(EventData{Kind: EventProperty, DataID: 103, InstanceID: 1, Attr: "cost", Op: AssignSet, Operand: 3, Before: 0, After: 3}, record.event[0])
 
-	// @ 鎖定:無 costLock 讀詞條 → 事件前後值留零值(進了寫入詞條照發)
+	// @ 鎖定: 無 costLock 讀詞條 → 事件前後值留零值(進了寫入詞條照發)
 	this.True(game.ExecAssign("drawLast", "cost", true, AssignLock, nil))
 	this.Require().Len(record.event, 2)
 	this.Equal(EventData{Kind: EventProperty, DataID: 103, InstanceID: 1, Attr: "cost", Op: AssignLock, Before: 0, After: 0}, record.event[1])
@@ -679,7 +679,7 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 	game.drawLast = nil
 	this.False(game.ExecAssign("drawLast", "cost", true, AssignSet, this.expr("3")))
 
-	// 屬性凍結:寫入主體為凍結中(卡牌化列表)顧客 → no-op;移出卡牌化列表(解凍)後寫入恢復
+	// 屬性凍結: 寫入主體為凍結中(卡牌化列表)顧客 → no-op; 移出卡牌化列表(解凍)後寫入恢復
 	guest := &Guest{instanceID: 2}
 	game.Cardify = GuestList{guest}
 	game.RegisterAttrRead("exitLast", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -703,7 +703,7 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 	this.Equal(int32(3), guest.GetCalm().GetValue())
 }
 
-// TestGameExecOperate 驗證 ExecOperate 分派:求值命令對象參數 → 解析作用集合 → 求值參數 → 查表 fan-out;
+// TestGameExecOperate 驗證 ExecOperate 分派: 求值命令對象參數 → 解析作用集合 → 求值參數 → 查表 fan-out;
 // 任一參數評估失敗 / 名稱未登錄 → 整動作 no-op(evalAll 順帶覆蓋)。
 func (this *SuiteGame) TestGameExecOperate() {
 	run := []InstanceID{}
@@ -724,7 +724,7 @@ func (this *SuiteGame) TestGameExecOperate() {
 	game.ExecOperate("record", "fake", []*exprs.Expr{this.expr("1")}, []*exprs.Expr{this.expr("1 / 0")}) // 參數評估失敗 → no-op
 	this.Equal([]InstanceID{7}, run)
 
-	// none / 篩空正規化:none → target nil(全域掃描記號)、其他命令對象篩空 → 非 nil 空切片
+	// none / 篩空正規化: none → target nil(全域掃描記號)、其他命令對象篩空 → 非 nil 空切片
 	got := []InstanceID{}
 	game.RegisterSelector(SelectorNone, func(game *Game, arg []exprs.Value) (result []InstanceID) {
 		return nil
@@ -759,7 +759,7 @@ func (this *SuiteGame) TestGameSelectObject() {
 	this.False(ok)
 }
 
-// TestGameLocateCard 驗證 LocateCard 自四牌堆定位卡牌與所在容器;未命中回 ContainerNone。
+// TestGameLocateCard 驗證 LocateCard 自四牌堆定位卡牌與所在容器; 未命中回 ContainerNone。
 func (this *SuiteGame) TestGameLocateCard() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Hand = CardList{{instanceID: 1}}
@@ -782,7 +782,7 @@ func (this *SuiteGame) TestGameLocateCard() {
 	this.False(ok)
 }
 
-// TestGameLocateGuest 驗證 LocateGuest 自顧客四容器定位顧客與所在容器;未命中回 ContainerNone。
+// TestGameLocateGuest 驗證 LocateGuest 自顧客四容器定位顧客與所在容器; 未命中回 ContainerNone。
 func (this *SuiteGame) TestGameLocateGuest() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Seat.Place(1, &Guest{instanceID: 1})
@@ -805,11 +805,11 @@ func (this *SuiteGame) TestGameLocateGuest() {
 	this.False(ok)
 }
 
-// TestGameIsFrozen 驗證 IsFrozen 以卡牌化列表成員身分判凍結（freeze 欄位不參與判定）。
+// TestGameIsFrozen 驗證 IsFrozen 以卡牌化列表成員身分判凍結(freeze 欄位不參與判定)。
 func (this *SuiteGame) TestGameIsFrozen() {
 	frozen := &Guest{instanceID: 1}
 	free := &Guest{instanceID: 2}
-	free.SetFreeze(3) // freeze 殘值不影響判定（僅作解凍補回錨點）
+	free.SetFreeze(3) // freeze 殘值不影響判定(僅作解凍補回錨點)
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Cardify = GuestList{frozen}
 
@@ -817,7 +817,7 @@ func (this *SuiteGame) TestGameIsFrozen() {
 	this.False(game.IsFrozen(free))
 }
 
-// TestGameEnv 驗證 Env 組裝求值期環境:自身為 Resolver、帶入裝備的內建函式。
+// TestGameEnv 驗證 Env 組裝求值期環境: 自身為 Resolver、帶入裝備的內建函式。
 func (this *SuiteGame) TestGameEnv() {
 	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterBuiltin("seven", func(arg []exprs.Value) (result exprs.Value, ok bool) {
@@ -829,16 +829,16 @@ func (this *SuiteGame) TestGameEnv() {
 	this.Contains(env.Builtin, "seven")
 }
 
-// === 測試輔助（置尾） ===
+// === 測試輔助(置尾) ===
 
-// expr 解析算術式來源為 *exprs.Expr;解析失敗即測試失敗。
+// expr 解析算術式來源為 *exprs.Expr; 解析失敗即測試失敗。
 func (this *SuiteGame) expr(source string) *exprs.Expr {
 	result, err := exprs.Parse(source)
 	this.Require().NoError(err)
 	return result
 }
 
-// fakeOperator 玩家輸入空替身(cores 白箱測試私有;rules / games 用 tester.FakeOperator)。
+// fakeOperator 玩家輸入空替身(cores 白箱測試私有; rules / games 用 tester.FakeOperator)。
 type fakeOperator struct{}
 
 func (this fakeOperator) PlayerAction(game *Game) *Card {
@@ -857,7 +857,7 @@ func (this fakeOperator) PickDiscard(source []*Card, over int) []*Card {
 	return nil
 }
 
-// fakeRander 決定性亂數空替身(cores 白箱測試私有;rules / games 用 tester.FakeRander)。
+// fakeRander 決定性亂數空替身(cores 白箱測試私有; rules / games 用 tester.FakeRander)。
 type fakeRander struct{}
 
 func (this fakeRander) Intn(n int) int {
@@ -871,7 +871,7 @@ func (this fakeRander) Weighted(weight []int32) int {
 	return 0
 }
 
-// fakePresenter 事件流錄製替身(cores 白箱測試私有;rules / games 用 tester.RecordPresenter)。
+// fakePresenter 事件流錄製替身(cores 白箱測試私有; rules / games 用 tester.RecordPresenter)。
 type fakePresenter struct {
 	event []EventData
 }

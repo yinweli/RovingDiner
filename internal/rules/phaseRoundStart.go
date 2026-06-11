@@ -4,8 +4,8 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
-// phaseRoundStart 回合開始階段（【營業規格書 | 十九、核心流程 | 2. 回合開始階段】）:回合 +1、回合計數歸零 → 觸發 roundReady →
-// 點數補滿 → 觸發 roundStart → 排隊入座迴圈（有空位且有人排隊,逐位入座）→ 依下一階段分派（顧客行動 / 回合結束 / 預設玩家行動,皆清除跳轉）。
+// phaseRoundStart 回合開始階段(【營業規格書 | 十九、核心流程 | 2. 回合開始階段】): 回合 +1、回合計數歸零 → 觸發 roundReady →
+// 點數補滿 → 觸發 roundStart → 排隊入座迴圈(有空位且有人排隊, 逐位入座)→ 依下一階段分派(顧客行動 / 回合結束 / 預設玩家行動, 皆清除跳轉)。
 func phaseRoundStart(game *cores.Game) cores.PhaseKind {
 	game.GetRound().Add(1)
 	game.RoundReset()

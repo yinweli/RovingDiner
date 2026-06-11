@@ -14,7 +14,7 @@ func TestSuiteHelp(t *testing.T) {
 	suite.Run(t, new(SuiteHelp))
 }
 
-// SuiteHelp 驗證 help.go 的無狀態輔助:參數取值 / 分組計數與比較 / 引用鎖定取值。
+// SuiteHelp 驗證 help.go 的無狀態輔助: 參數取值 / 分組計數與比較 / 引用鎖定取值。
 type SuiteHelp struct {
 	suite.Suite
 }
@@ -95,7 +95,7 @@ func (this *SuiteHelp) TestArgBool() {
 	this.False(argBool([]exprs.Value{exprs.NewBool(false)}))
 	this.False(argBool(nil))                            // 缺漏
 	this.False(argBool([]exprs.Value{exprs.NewNum(1)})) // 非布林
-	// 讀第 k 個參數由呼叫端傳 arg[k:]:此處讀 index 1(copy / clone 的洗牌位於 index 1)
+	// 讀第 k 個參數由呼叫端傳 arg[k:]: 此處讀 index 1(copy / clone 的洗牌位於 index 1)
 	this.True(argBool([]exprs.Value{exprs.NewNum(1), exprs.NewBool(true)}[1:]))
 }
 
@@ -225,7 +225,7 @@ func (this *SuiteHelp) TestPlaceCard() {
 	this.Empty(game.Drop)
 	this.Empty(game.Exile)
 
-	placeCard(game, cores.ContainerNone, cores.ContainerDeck, card) // 進抽牌牌堆:無事件屬性與觸發
+	placeCard(game, cores.ContainerNone, cores.ContainerDeck, card) // 進抽牌牌堆: 無事件屬性與觸發
 	this.Equal(cores.CardList{card}, game.Deck)
 	this.Nil(game.GetDrawLast())
 }
@@ -255,7 +255,7 @@ func (this *SuiteHelp) TestPlaceCardTrigger() {
 	this.True(fired[cores.TriggerCardExile])
 }
 
-// TestPlaceCardEmit 驗證 placeCard 的容器事件收口:新建直入 From == None、搬移帶來源,進抽牌牌堆亦發（無事件屬性與觸發仍有容器事件）。
+// TestPlaceCardEmit 驗證 placeCard 的容器事件收口: 新建直入 From == None、搬移帶來源, 進抽牌牌堆亦發(無事件屬性與觸發仍有容器事件)。
 func (this *SuiteHelp) TestPlaceCardEmit() {
 	game, record := newGameRecord()
 	card := cores.NewCard(game, 101)
@@ -265,7 +265,7 @@ func (this *SuiteHelp) TestPlaceCardEmit() {
 	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 101, InstanceID: card.GetInstanceID(), From: cores.ContainerNone, To: cores.ContainerDeck}, record.Event[0])
 
 	removeCard(game, cores.ContainerDeck, card)
-	placeCard(game, cores.ContainerDeck, cores.ContainerHand, card) // 搬移:抽牌 → 手牌
+	placeCard(game, cores.ContainerDeck, cores.ContainerHand, card) // 搬移: 抽牌 → 手牌
 	this.Require().Len(record.Event, 2)
 	this.Equal(cores.ContainerDeck, record.Event[1].From)
 	this.Equal(cores.ContainerHand, record.Event[1].To)

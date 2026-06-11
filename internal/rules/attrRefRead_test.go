@@ -15,7 +15,7 @@ func TestSuiteAttrRefRead(t *testing.T) {
 	suite.Run(t, new(SuiteAttrRefRead))
 }
 
-// SuiteAttrRefRead 驗證引用屬性讀取詞彙表(attrRefRead.go):卡牌 / 顧客引用屬性、鎖、共用 effect 查詢、型別不符。
+// SuiteAttrRefRead 驗證引用屬性讀取詞彙表(attrRefRead.go): 卡牌 / 顧客引用屬性、鎖、共用 effect 查詢、型別不符。
 type SuiteAttrRefRead struct {
 	suite.Suite
 }
@@ -210,7 +210,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
 	game := newGame()
-	wrong := cores.NewRefGuest(&cores.Guest{}) // 以顧客引用問卡牌屬性,全應失敗
+	wrong := cores.NewRefGuest(&cores.Guest{}) // 以顧客引用問卡牌屬性, 全應失敗
 
 	for _, name := range []string{
 		"cardID", "cost", "extraRunMin", "extraRunMax", "cardSeal", "keep",
@@ -224,7 +224,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadCardTypeMismatch() {
 
 func (this *SuiteAttrRefRead) TestAttrRefReadGuestTypeMismatch() {
 	game := newGame()
-	wrong := cores.NewRefCard(&cores.Card{}) // 以卡牌引用問顧客屬性,全應失敗
+	wrong := cores.NewRefCard(&cores.Card{}) // 以卡牌引用問顧客屬性, 全應失敗
 
 	for _, name := range []string{
 		"calm", "sate", "sateMax", "morale", "moraleMax", "score", "scoreMax",
@@ -236,7 +236,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestTypeMismatch() {
 	} // for
 }
 
-// num 取引用屬性求值結果的數字;斷言命中且為數值。
+// num 取引用屬性求值結果的數字; 斷言命中且為數值。
 func (this *SuiteAttrRefRead) num(game *cores.Game, ref exprs.Ref, name string, arg ...exprs.Value) float64 {
 	value, ok := game.AttrRef(ref, name, arg)
 	this.Require().True(ok)
@@ -244,7 +244,7 @@ func (this *SuiteAttrRefRead) num(game *cores.Game, ref exprs.Ref, name string, 
 	return value.Num()
 }
 
-// flag 取引用屬性求值結果的布林;斷言命中且為布林。
+// flag 取引用屬性求值結果的布林; 斷言命中且為布林。
 func (this *SuiteAttrRefRead) flag(game *cores.Game, ref exprs.Ref, name string) bool {
 	value, ok := game.AttrRef(ref, name, nil)
 	this.Require().True(ok)
@@ -252,15 +252,15 @@ func (this *SuiteAttrRefRead) flag(game *cores.Game, ref exprs.Ref, name string)
 	return value.Bool()
 }
 
-// lock 對屬性組件鎖定 n 次（公開介面佈置鎖定計數）。
+// lock 對屬性組件鎖定 n 次(公開介面佈置鎖定計數)。
 func lock(value *cores.Value, n int32) {
 	for i := int32(0); i < n; i++ {
 		value.Lock()
 	} // for
 }
 
-// strayCard 以獨立迷你表建構主表沒有的卡牌（製造「卡牌資料不存在」的查詢對象）;
-// 實例編號自獨立序列錯開（自 1000 起）,避免與呼叫端 Game 的編號相撞。
+// strayCard 以獨立迷你表建構主表沒有的卡牌(製造「卡牌資料不存在」的查詢對象);
+// 實例編號自獨立序列錯開(自 1000 起), 避免與呼叫端 Game 的編號相撞。
 func strayCard(cardID int32) *cores.Card {
 	sheet := &sheeter.Sheeter{}
 	sheet.Card.Data = map[int32]*sheeter.Card{cardID: {ID: cardID}}

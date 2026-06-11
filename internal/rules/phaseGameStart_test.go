@@ -14,7 +14,7 @@ func TestSuitePhaseGameStart(t *testing.T) {
 	suite.Run(t, new(SuitePhaseGameStart))
 }
 
-// SuitePhaseGameStart 驗證營業開始階段（phaseGameStart.go）:設定載入 / 歸零設置 / 累積表清空 / 開局建置（buildStage）/
+// SuitePhaseGameStart 驗證營業開始階段(phaseGameStart.go): 設定載入 / 歸零設置 / 累積表清空 / 開局建置(buildStage)/
 // 前置技能 / gameStart 觸發。
 type SuitePhaseGameStart struct {
 	suite.Suite
@@ -54,7 +54,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(int32(0), game.GetPlayTotal().Sum())
 	this.Equal(int32(0), game.GetExileTotal().Sum())
 
-	this.Len(game.Hand, 1) // 開局建置（關卡 601）
+	this.Len(game.Hand, 1) // 開局建置(關卡 601)
 	this.Len(game.Deck, 2)
 	this.Len(game.Wait, 2)
 	this.Equal([]int32{301}, game.PrefixSkill)
@@ -62,7 +62,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(1, fired) // 營業開始觸發
 }
 
-// TestPhaseGameStartEmit 驗證營業開始的事件接線:前置技能發範圍標題（操作元 = 技能）;開局建置（設置）靜默無容器 / 實例事件。
+// TestPhaseGameStartEmit 驗證營業開始的事件接線: 前置技能發範圍標題(操作元 = 技能); 開局建置(設置)靜默無容器 / 實例事件。
 func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	record := &tester.RecordPresenter{}
 	game := cores.NewGame(0, 601, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{}, record)
@@ -72,7 +72,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	prefix := []cores.EventData{}
 
 	for itor := range record.Event {
-		this.NotEqual(cores.EventContainer, record.Event[itor].Kind) // 設置靜默:開局建置不發容器事件
+		this.NotEqual(cores.EventContainer, record.Event[itor].Kind) // 設置靜默: 開局建置不發容器事件
 		this.NotEqual(cores.EventInstance, record.Event[itor].Kind)
 
 		if record.Event[itor].Kind == cores.EventScope && record.Event[itor].Scope == cores.ScopePrefix {
@@ -84,7 +84,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	this.Equal(int32(301), prefix[0].SkillID)
 }
 
-// TestBuildStage 驗證開局建置:五容器順序語意（第 1 個 = 頂端 / 隊首）、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。
+// TestBuildStage 驗證開局建置: 五容器順序語意(第 1 個 = 頂端 / 隊首)、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。
 func (this *SuitePhaseGameStart) TestBuildStage() {
 	data := tester.BuildData()
 	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{}, nil)
@@ -103,7 +103,7 @@ func (this *SuitePhaseGameStart) TestBuildStage() {
 	this.Equal(int32(501), game.Wait[0].GetGuestID())
 	this.Equal([]int32{301}, game.PrefixSkill)
 
-	this.Equal(int32(0), game.GetDrawCount()) // 設置非命令:不觸發 / 不動事件屬性
+	this.Equal(int32(0), game.GetDrawCount()) // 設置非命令: 不觸發 / 不動事件屬性
 	this.Nil(game.GetDrawLast())
 	this.Nil(game.GetDropLast())
 	this.Nil(game.GetExileLast())
@@ -113,7 +113,7 @@ func (this *SuitePhaseGameStart) TestBuildStage() {
 	this.Empty(bad.Hand)
 	this.Empty(bad.Deck)
 	this.Empty(bad.Wait)
-	this.Equal([]int32{999}, bad.PrefixSkill) // 技能編號原樣（查無由啟動端防禦）
+	this.Equal([]int32{999}, bad.PrefixSkill) // 技能編號原樣, 查無由啟動端防禦
 
 	none := cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{}, nil) // 查無關卡 → 空盤面照走
 	buildStage(none)
@@ -121,7 +121,7 @@ func (this *SuitePhaseGameStart) TestBuildStage() {
 	this.Nil(none.PrefixSkill)
 }
 
-// TestSettingNum 驗證 settingNum 讀數字設定值;缺鍵 / 空值 / 非數字回 0。
+// TestSettingNum 驗證 settingNum 讀數字設定值; 缺鍵 / 空值 / 非數字回 0。
 func (this *SuitePhaseGameStart) TestSettingNum() {
 	game := newGame()
 	game.GetSheet().Setting.Data["Empty"] = &sheeter.Setting{ID: "Empty"}

@@ -14,7 +14,7 @@ func TestSuiteEffectTrigger(t *testing.T) {
 	suite.Run(t, new(SuiteEffectTrigger))
 }
 
-// SuiteEffectTrigger 驗證觸發時機流程（effectTrigger.go）:篩選 / 排序 / 凍結跳過 / 觸發條件 / 觸發次數 / 觸發後行為 / self 綁定。
+// SuiteEffectTrigger 驗證觸發時機流程(effectTrigger.go): 篩選 / 排序 / 凍結跳過 / 觸發條件 / 觸發次數 / 觸發後行為 / self 綁定。
 type SuiteEffectTrigger struct {
 	suite.Suite
 }
@@ -46,11 +46,11 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 	game.Effect.Push(cores.NewEffect(game, 904, cores.NewRefGuest(frozen), 1))
 
 	fireTrigger(game, cores.TriggerCardPlay)
-	this.Equal([]int32{903, 902}, fired) // 作用順序 20 先於 10;時機 / 類型不符、凍結中未觸發
+	this.Equal([]int32{903, 902}, fired) // 作用順序 20 先於 10; 時機 / 類型不符、凍結中未觸發
 	this.Len(game.Effect, 6)             // 觸發後行為預設保留 → 佇列不變
 }
 
-// TestFireTriggerEmit 驗證觸發時機的事件接線:空名單不發題、非空發範圍標題 + 各效果階段事件（觸發 / 條件不成立 / 結束）。
+// TestFireTriggerEmit 驗證觸發時機的事件接線: 空名單不發題、非空發範圍標題 + 各效果階段事件(觸發 / 條件不成立 / 結束)。
 func (this *SuiteEffectTrigger) TestFireTriggerEmit() {
 	data := tester.BuildData()
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundStart})
@@ -70,7 +70,7 @@ func (this *SuiteEffectTrigger) TestFireTriggerEmit() {
 	cond, err := exprs.Parse("0") // 恆不成立
 	this.Require().Nil(err)
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundStart, Cond: cond})
-	fireTrigger(game, cores.TriggerRoundStart) // 條件不成立 → 仍發題,效果行為條件不成立階段
+	fireTrigger(game, cores.TriggerRoundStart) // 條件不成立 → 仍發題, 效果行為條件不成立階段
 	this.Require().Len(record.Event, 2)
 	this.Equal(cores.EffectStageCondFail, record.Event[1].Stage)
 
@@ -108,7 +108,7 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 	this.Equal(6, count)     // 堆疊層數 2 × 觸發次數 3
 	this.Equal(2, endRun)    // 結束命令 重複 堆疊層數 2 次
 	this.Empty(game.Effect)  // 觸發後移除 → 出佇列
-	this.Nil(game.GetSelf()) // self 還原（原 nil）
+	this.Nil(game.GetSelf()) // self 還原(原 nil)
 
 	// 觸發條件不成立 → 觸發命令不執行、效果不移除
 	blocked := 0
@@ -121,7 +121,7 @@ func (this *SuiteEffectTrigger) TestFireOne() {
 	this.Equal(0, blocked)
 	this.Len(gameCond.Effect, 1)
 
-	// 觸發次數 = 0 → 該效果中止:即使觸發後行為為移除,也不執行、不移除
+	// 觸發次數 = 0 → 該效果中止: 即使觸發後行為為移除, 也不執行、不移除
 	stopData := tester.BuildData()
 	stopData.SetEffect(902, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerCardPlay, TriggerAfter: cores.TriggerAfterRemove, Count: this.expr("0"), Trigger: func(game *cores.Game) { blocked++ }})
 	gameStop := newGameData(stopData)
@@ -144,7 +144,7 @@ func (this *SuiteEffectTrigger) TestCondPass() {
 	this.False(condPass(game, this.expr("morale > 5"))) // 假
 
 	this.False(condPass(game, this.expr("self.calm"))) // self 未綁 → 評估失敗 → 不成立
-	this.False(condPass(game, this.expr("'x'")))       // 非真值（text，Truthy ok=false）→ 不成立
+	this.False(condPass(game, this.expr("'x'")))       // 非真值(text, Truthy ok=false)→ 不成立
 }
 
 func (this *SuiteEffectTrigger) TestTriggerCount() {
@@ -171,7 +171,7 @@ func (this *SuiteEffectTrigger) TestTriggerCount() {
 	this.False(ok)
 }
 
-// TestRunEffectExec 驗證 runEffectExec 連續執行命令 times 次;nil 命令整體略過、times <= 0 不執行。
+// TestRunEffectExec 驗證 runEffectExec 連續執行命令 times 次; nil 命令整體略過、times <= 0 不執行。
 func (this *SuiteEffectTrigger) TestRunEffectExec() {
 	game := newGame()
 	count := 0
@@ -188,9 +188,9 @@ func (this *SuiteEffectTrigger) TestRunEffectExec() {
 	this.Equal(0, count)
 }
 
-// === 測試輔助（置尾） ===
+// === 測試輔助(置尾) ===
 
-// expr 解析運算式字串為 *exprs.Expr;語法錯即測試失敗。供觸發條件 / 觸發次數構造。
+// expr 解析運算式字串為 *exprs.Expr; 語法錯即測試失敗。供觸發條件 / 觸發次數構造。
 func (this *SuiteEffectTrigger) expr(source string) *exprs.Expr {
 	result, err := exprs.Parse(source)
 	this.Require().NoError(err)

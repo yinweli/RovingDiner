@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// lex 把運算式原始字串切成 token 序列(尾端必附 tokenEOF);遇非法字元 / 未結束字串 / 無效數字回傳錯誤。
-// 以 rune 切片掃描,字串字面值內可含 CJK;識別子僅限 ASCII 英數底線。
+// lex 把運算式原始字串切成 token 序列(尾端必附 tokenEOF); 遇非法字元 / 未結束字串 / 無效數字回傳錯誤。
+// 以 rune 切片掃描, 字串字面值內可含 CJK; 識別子僅限 ASCII 英數底線。
 func lex(source string) (result []token, err error) {
 	char := []rune(source)
 	size := len(char)
@@ -69,7 +69,7 @@ func lex(source string) (result []token, err error) {
 	return result, nil
 }
 
-// lexNum 掃描整數 / 小數字面值;小數點後須緊接數字才視為小數部分(對齊【營業規格書 | 二十七、運算式 | 4】)。
+// lexNum 掃描整數 / 小數字面值; 小數點後須緊接數字才視為小數部分(對齊【營業規格書 | 二十七、運算式 | 4】)。
 func lexNum(char []rune, start int) (result token, width int, err error) {
 	size := len(char)
 	i := start
@@ -90,13 +90,13 @@ func lexNum(char []rune, start int) (result token, width int, err error) {
 	number, errParse := strconv.ParseFloat(text, 64)
 
 	if errParse != nil {
-		return token{}, 0, newError(start, "無效的數字："+text)
+		return token{}, 0, newError(start, "無效的數字:"+text)
 	} // if
 
 	return token{kind: tokenNum, text: text, num: number}, i - start, nil
 }
 
-// lexText 掃描單引號字串字面值;未遇結尾單引號則回傳錯誤。
+// lexText 掃描單引號字串字面值; 未遇結尾單引號則回傳錯誤。
 func lexText(char []rune, start int) (result token, width int, err error) {
 	size := len(char)
 	i := start + 1 // 跳過開頭單引號
@@ -106,14 +106,14 @@ func lexText(char []rune, start int) (result token, width int, err error) {
 	} // for
 
 	if i >= size {
-		return token{}, 0, newError(start, "字串未結束,缺少結尾單引號 '")
+		return token{}, 0, newError(start, "字串未結束, 缺少結尾單引號 '")
 	} // if
 
 	text := string(char[start+1 : i])
 	return token{kind: tokenText, text: text}, i - start + 1, nil // +1 涵蓋結尾單引號
 }
 
-// lexOperator 掃描運算符 / 標點;處理 <= >= == != 等雙字元符號,單獨的 '=' 視為非法(賦值不屬於運算式)。
+// lexOperator 掃描運算符 / 標點; 處理 <= >= == != 等雙字元符號, 單獨的 '=' 視為非法(賦值不屬於運算式)。
 func lexOperator(char []rune, i int) (result token, width int, err error) {
 	c := char[i]
 	next := rune(0)
@@ -185,11 +185,11 @@ func lexOperator(char []rune, i int) (result token, width int, err error) {
 		return token{kind: tokenNot, text: "!"}, 1, nil
 
 	default:
-		return token{}, 0, newError(i, "不認得的字元："+string(c))
+		return token{}, 0, newError(i, "不認得的字元:"+string(c))
 	} // switch
 }
 
-// identToken 把識別子文字轉成對應 token;AND / OR / true / false / none 不區分大小寫,其餘為 tokenIdent。
+// identToken 把識別子文字轉成對應 token; AND / OR / true / false / none 不區分大小寫, 其餘為 tokenIdent。
 func identToken(text string) token {
 	switch strings.ToLower(text) {
 	case "and":
@@ -225,13 +225,13 @@ func isIdentPart(c rune) bool {
 // token 是詞法分析產出的最小單位。
 type token struct {
 	kind tokenKind
-	text string  // 原始文字(供錯誤訊息;識別子 / 字串則為其內容)
+	text string  // 原始文字(供錯誤訊息; 識別子 / 字串則為其內容)
 	num  float64 // tokenNum 的數值
 	flag bool    // tokenBool 的值
-	pos  int     // 在來源字串的 rune 起始索引(0 起算;供錯誤定位)
+	pos  int     // 在來源字串的 rune 起始索引(0 起算; 供錯誤定位)
 }
 
-// tokenKind 是 token 的種類,對齊【營業規格書 | 二十七、運算式 | 2】運算符與【營業規格書 | 二十七、運算式 | 4】字面值。
+// tokenKind 是 token 的種類, 對齊【營業規格書 | 二十七、運算式 | 2】運算符與【營業規格書 | 二十七、運算式 | 4】字面值。
 type tokenKind int8
 
 const (

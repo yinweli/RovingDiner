@@ -13,7 +13,7 @@ func TestSuiteEffectCleanup(t *testing.T) {
 	suite.Run(t, new(SuiteEffectCleanup))
 }
 
-// SuiteEffectCleanup 驗證清理效果流程（effectCleanup.go）:失效對象篩選 / 無目標排除 / 排序 / 退場 / 凍結整體 no-op。
+// SuiteEffectCleanup 驗證清理效果流程(effectCleanup.go): 失效對象篩選 / 無目標排除 / 排序 / 退場 / 凍結整體 no-op。
 type SuiteEffectCleanup struct {
 	suite.Suite
 }
@@ -36,7 +36,7 @@ func (this *SuiteEffectCleanup) TestCleanupEffect() {
 
 	game.Effect.Push(cores.NewEffect(game, 901, cores.NewRefGuest(dead), 2))
 	game.Effect.Push(cores.NewEffect(game, 902, cores.NewRefGuest(dead), 1))
-	game.Effect.Push(cores.NewEffect(game, 903, cores.NewRefGuest(dead), 1))  // 無目標效果 → 不在清理範圍（即使 self 同實例）
+	game.Effect.Push(cores.NewEffect(game, 903, cores.NewRefGuest(dead), 1))  // 無目標效果 → 不在清理範圍(即使 self 同實例)
 	game.Effect.Push(cores.NewEffect(game, 904, cores.NewRefGuest(alive), 1)) // self 他人 → 不清
 
 	strayData := tester.BuildData() // 以另一份資料建構效果 999 → 本場查無編譯資料 → 略過
@@ -45,8 +45,8 @@ func (this *SuiteEffectCleanup) TestCleanupEffect() {
 
 	cleanupEffect(game, cores.NewRefGuest(dead))
 	this.Equal([]int32{902, 901, 901}, ended) // 作用順序 20 先於 10;901 層數 2 → 結束命令 × 2
-	this.Len(game.Effect, 3)                  // 903（無目標）/ 904（他人）/ 999（防禦）留佇列
-	this.Nil(game.GetSelf())                  // self 還原（原 nil）
+	this.Len(game.Effect, 3)                  // 903(無目標)/ 904(他人)/ 999(防禦)留佇列
+	this.Nil(game.GetSelf())                  // self 還原(原 nil)
 
 	// 凍結中顧客不視為失效對象 → 整體 no-op
 	frozen := cores.NewGuest(game, 501)

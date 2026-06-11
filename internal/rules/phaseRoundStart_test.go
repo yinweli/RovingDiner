@@ -13,7 +13,7 @@ func TestSuitePhaseRoundStart(t *testing.T) {
 	suite.Run(t, new(SuitePhaseRoundStart))
 }
 
-// SuitePhaseRoundStart 驗證回合開始階段（phaseRoundStart.go）:回合遞增 / 計數歸零 / 兩觸發 / 點數補滿 / 入座迴圈 / 下一階段分派。
+// SuitePhaseRoundStart 驗證回合開始階段(phaseRoundStart.go): 回合遞增 / 計數歸零 / 兩觸發 / 點數補滿 / 入座迴圈 / 下一階段分派。
 type SuitePhaseRoundStart struct {
 	suite.Suite
 }
@@ -41,14 +41,14 @@ func (this *SuitePhaseRoundStart) TestPhaseRoundStart() {
 	this.Equal(1, ready)
 	this.Equal(1, start)
 	this.Equal(int32(3), game.GetEnergy().GetValue()) // 點數補滿
-	this.Equal(3, seat)                               // 三空位 → 三位入座（每位觸發一次）
+	this.Equal(3, seat)                               // 三空位 → 三位入座(每位觸發一次)
 	this.Equal(int32(3), game.GetSeatCount())         // RoundReset 歸零後重計 3
 	this.Len(game.Wait, 1)                            // 第四位仍排隊
 	this.NotNil(game.Seat[1])
 	this.NotNil(game.Seat[2])
 	this.NotNil(game.Seat[3])
 
-	// 下一階段分派:顧客行動 / 回合結束,皆清除跳轉
+	// 下一階段分派: 顧客行動 / 回合結束, 皆清除跳轉
 	game.SetNextPhase(cores.PhaseGuestAction)
 	this.Equal(cores.PhaseGuestAction, phaseRoundStart(game))
 	this.Equal(cores.PhaseNone, game.GetNextPhase())

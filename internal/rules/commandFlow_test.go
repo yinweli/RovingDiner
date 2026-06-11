@@ -14,7 +14,7 @@ func TestSuiteCommandFlow(t *testing.T) {
 	suite.Run(t, new(SuiteCommandFlow))
 }
 
-// SuiteCommandFlow 驗證處理流程命令(commandFlow.go):cardRun / *Morph / cardify / restore / guestExit / guestReturn / guestRoam / guestSeat。
+// SuiteCommandFlow 驗證處理流程命令(commandFlow.go): cardRun / *Morph / cardify / restore / guestExit / guestReturn / guestRoam / guestSeat。
 type SuiteCommandFlow struct {
 	suite.Suite
 }
@@ -138,7 +138,7 @@ func (this *SuiteCommandFlow) TestMorph() {
 	this.Equal(int32(1), game.GetMorphCount())
 	this.Len(game.Hand, 1) // 留原牌堆
 
-	this.Equal(2, ended) // 5. 清理變身前綁定本卡的效果:結束命令 × 層數 2
+	this.Equal(2, ended) // 5. 清理變身前綁定本卡的效果: 結束命令 × 層數 2
 	this.Require().Len(game.Effect, 1)
 	this.Equal(other, game.Effect[0].GetSelf().GetCard()) // 他卡效果不受影響
 }
@@ -168,7 +168,7 @@ func (this *SuiteCommandFlow) TestMorphNoop() {
 	this.Equal(int32(101), game.Exile[0].GetCardID())
 }
 
-// TestMorphEmit 驗證變身的實例事件:銷毀舊（舊編號）+ 建立新（新編號）兩發,位置不變無容器事件（EventInstance 唯一真身;M18 拍板）。
+// TestMorphEmit 驗證變身的實例事件: 銷毀舊(舊編號)+ 建立新(新編號)兩發, 位置不變無容器事件(EventInstance 唯一真身; M18 拍板)。
 func (this *SuiteCommandFlow) TestMorphEmit() {
 	game, record := newGameRecord()
 	card := cores.NewCard(game, 102)
@@ -212,7 +212,7 @@ func (this *SuiteCommandFlow) TestCardify() {
 
 func (this *SuiteCommandFlow) TestRestore() {
 	data := tester.BuildData()
-	data.SetEffect(801, cores.EffectData{}) // 自訂效果(整場保留),測試以 SetExpire 佈置結束回合
+	data.SetEffect(801, cores.EffectData{}) // 自訂效果(整場保留), 測試以 SetExpire 佈置結束回合
 	game := newGameData(data)
 	game.GetRound().Set(10)
 	guest := cores.NewGuest(game, 501)
@@ -322,7 +322,7 @@ func (this *SuiteCommandFlow) TestGuestExitScoreLock() {
 	this.Nil(game.Seat[2])
 }
 
-// TestGuestExitEmit 驗證離場的事件接線:容器事件（所在 → None,銷毀離開）+ 給滿意值 / 扣士氣屬性事件（流程寫入白名單,呼叫點包前後值）。
+// TestGuestExitEmit 驗證離場的事件接線: 容器事件(所在 → None, 銷毀離開)+ 給滿意值 / 扣士氣屬性事件(流程寫入白名單, 呼叫點包前後值)。
 func (this *SuiteCommandFlow) TestGuestExitEmit() {
 	game, record := newGameRecord()
 	game.GetMorale().Set(30)
@@ -411,7 +411,7 @@ func (this *SuiteCommandFlow) TestGuestSeat() {
 	this.Len(full.Wait, 1)
 }
 
-// TestGuestSeatOneEmit 驗證入座的容器事件:排隊 → 座位、To == Seat 帶座位編號。
+// TestGuestSeatOneEmit 驗證入座的容器事件: 排隊 → 座位、To == Seat 帶座位編號。
 func (this *SuiteCommandFlow) TestGuestSeatOneEmit() {
 	game, record := newGameRecord()
 	guest := cores.NewGuest(game, 501)
@@ -430,7 +430,7 @@ func (this *SuiteCommandFlow) TestRemoveGuestContainer() {
 	g4 := cores.NewGuest(game, 501)
 	keep := cores.NewGuest(game, 501)
 	game.Seat.Place(1, g1)
-	game.Wait = cores.WaitList{g2, keep} // 兩位:移除 g2、保留 keep
+	game.Wait = cores.WaitList{g2, keep} // 兩位: 移除 g2、保留 keep
 	game.Roam.Push(g3)
 	game.Cardify.Push(g4)
 
@@ -508,13 +508,13 @@ func (this *SuiteCommandFlow) TestGuestExitTrigger() {
 	} // for
 
 	guestExitOne(game, guest, cores.ContainerSeat, true, true) // 給滿意 + 扣士氣
-	// 依序:離場(2) → 飽食(3) → 生氣(4) → 離場後(6) → 士氣受損(9,扣士氣經 moraleDamage)
+	// 依序: 離場(2) → 飽食(3) → 生氣(4) → 離場後(6) → 士氣受損(9, 扣士氣經 moraleDamage)
 	this.Equal([]cores.TriggerKind{cores.TriggerExitAny, cores.TriggerExitSate, cores.TriggerExitCalm, cores.TriggerExitDone, cores.TriggerDamage}, fired)
 }
 
 // === 測試輔助(置尾) ===
 
-// flag 把兩個布林包成參數列表(供帶兩個布林旗標的流程命令:cardRun 消耗點數 / 進棄牌堆、guestExit 給滿意 / 扣士氣)。
+// flag 把兩個布林包成參數列表(供帶兩個布林旗標的流程命令: cardRun 消耗點數 / 進棄牌堆、guestExit 給滿意 / 扣士氣)。
 func (this *SuiteCommandFlow) flag(a, b bool) []exprs.Value {
 	return []exprs.Value{exprs.NewBool(a), exprs.NewBool(b)}
 }

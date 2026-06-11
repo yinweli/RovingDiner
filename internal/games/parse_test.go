@@ -14,9 +14,9 @@ func TestSuiteParse(t *testing.T) {
 	suite.Run(t, new(SuiteParse))
 }
 
-// SuiteParse 驗證命令文法解析(parse.go):屬性修改命令(全域 / 引用左值、賦值符、鎖定 / 解鎖、右值算術式)、
-// 操作命令(命令對象、[...] 參數、varargs、巢狀函式參數)、空白容錯,以及語法錯誤(含出錯位置)。
-// 名稱以原始字串擷取、不驗成員(成員合法性屬 Validate);AST 以 S-運算式字串比對。
+// SuiteParse 驗證命令文法解析(parse.go): 屬性修改命令(全域 / 引用左值、賦值符、鎖定 / 解鎖、右值算術式)、
+// 操作命令(命令對象、[...] 參數、varargs、巢狀函式參數)、空白容錯, 以及語法錯誤(含出錯位置)。
+// 名稱以原始字串擷取、不驗成員(成員合法性屬 Validate); AST 以 S-運算式字串比對。
 type SuiteParse struct {
 	suite.Suite
 }
@@ -48,7 +48,7 @@ func (this *SuiteParse) TestParseAssignRef() {
 }
 
 func (this *SuiteParse) TestParseAssignExpr() {
-	// 右值算術式委由 exprs 解析;求值確認運算子與優先序被正確擷取
+	// 右值算術式委由 exprs 解析; 求值確認運算子與優先序被正確擷取
 	command := this.assign("morale = 1 + 2 * 3")
 	this.Equal("morale", command.base)
 	this.Equal(cores.AssignSet, command.op)
@@ -75,7 +75,7 @@ func (this *SuiteParse) TestParseOperate() {
 func (this *SuiteParse) TestParseVararg() {
 	this.Equal("(op handCopy handPick[1 0] 3 20042 20055)", this.parse("handCopy(handPick[1, 0], 3, 20042, 20055)")) // 尾端 varargs
 
-	// 巢狀函式參數內部的逗號不可被誤判為外層分隔:min(10, 3) 須為單一參數
+	// 巢狀函式參數內部的逗號不可被誤判為外層分隔: min(10, 3) 須為單一參數
 	command := this.operate("deckAdd(none, min(10, 3), 1)")
 	this.Len(command.arg, 2)
 	this.Equal("(op deckAdd none <expr> 1)", commandString(command))
@@ -112,7 +112,7 @@ func (this *SuiteParse) TestParseError() {
 		"deckToHand(self,)",            // 尾隨逗號缺參數
 		"deckToHand(deckTop[2] false)", // 參數缺逗號分隔
 		"deckToHand(deckTop[2)",        // 命令對象中括號未閉合
-		"min(1, 2)",                    // 命令對象需為識別子（數字非法）
+		"min(1, 2)",                    // 命令對象需為識別子, 數字非法
 		"handAdd(none, 1 +, 2)",        // 參數算術式不完整(內嵌 exprs 錯誤上拋)
 		"deckToHand(deckTop[1 +], 0)",  // 命令對象參數算術式不完整
 		"phaseJump(none, 'oops)",       // 參數字串未結束(掃描至結尾仍委由 exprs 報錯)
@@ -126,10 +126,10 @@ func (this *SuiteParse) TestParseError() {
 
 func (this *SuiteParse) TestParseErrorPosition() {
 	this.Equal(0, this.errorPos(""))                       // 開頭即缺識別子
-	this.Equal(11, this.errorPos("morale = 1 2"))          // 右值多餘內容,定位回算至第二個 token
-	this.Equal(15, this.errorPos("deckToHand(self"))       // 缺 ) ,定位於來源結尾
-	this.Equal(15, this.errorPos("deckToHand(self.)"))     // 命令對象不可為引用,停在 '.'
-	this.Equal(17, this.errorPos("handAdd(none, 1 +, 2)")) // 參數內嵌 exprs 錯誤,偏移回算至命令來源
+	this.Equal(11, this.errorPos("morale = 1 2"))          // 右值多餘內容, 定位回算至第二個 token
+	this.Equal(15, this.errorPos("deckToHand(self"))       // 缺 ) , 定位於來源結尾
+	this.Equal(15, this.errorPos("deckToHand(self.)"))     // 命令對象不可為引用, 停在 '.'
+	this.Equal(17, this.errorPos("handAdd(none, 1 +, 2)")) // 參數內嵌 exprs 錯誤, 偏移回算至命令來源
 }
 
 // parse 解析 source 並回傳其 AST 的 S-運算式字串(解析失敗即 fail 測試)。
@@ -139,7 +139,7 @@ func (this *SuiteParse) parse(source string) string {
 	return commandString(command)
 }
 
-// assign 解析 source 並斷言為屬性修改命令,回傳其結構(供右值 / 欄位斷言)。
+// assign 解析 source 並斷言為屬性修改命令, 回傳其結構(供右值 / 欄位斷言)。
 func (this *SuiteParse) assign(source string) commandAssign {
 	command, err := Parse(source)
 	this.Require().NoError(err, source)
@@ -148,7 +148,7 @@ func (this *SuiteParse) assign(source string) commandAssign {
 	return result
 }
 
-// operate 解析 source 並斷言為操作命令,回傳其結構(供命令對象 / 參數斷言)。
+// operate 解析 source 並斷言為操作命令, 回傳其結構(供命令對象 / 參數斷言)。
 func (this *SuiteParse) operate(source string) commandOperate {
 	command, err := Parse(source)
 	this.Require().NoError(err, source)
@@ -166,7 +166,7 @@ func (this *SuiteParse) errorPos(source string) int {
 	return syntaxError.Pos
 }
 
-// commandString 把命令 AST 轉成 S-運算式字串,便於結構比對。
+// commandString 把命令 AST 轉成 S-運算式字串, 便於結構比對。
 func commandString(command Command) string {
 	switch c := command.(type) {
 	case commandAssign:
@@ -249,7 +249,7 @@ func assignTag(op cores.AssignKind) string {
 	} // switch
 }
 
-// exprText 把內嵌算術式以求值結果呈現:常數以其值顯示、需 Resolver 者(求值失敗)以 <expr> 表示。
+// exprText 把內嵌算術式以求值結果呈現: 常數以其值顯示、需 Resolver 者(求值失敗)以 <expr> 表示。
 func exprText(expr *exprs.Expr) string {
 	if expr == nil {
 		return "-"

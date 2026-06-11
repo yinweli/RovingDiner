@@ -14,7 +14,7 @@ func TestSuiteAttrRead(t *testing.T) {
 	suite.Run(t, new(SuiteAttrRead))
 }
 
-// SuiteAttrRead 驗證全域屬性讀取詞彙表(attrRead.go):純值 / 容器 / 衍生 / 物件引用 / self / 鎖 / 靜態 / 查詢函式。
+// SuiteAttrRead 驗證全域屬性讀取詞彙表(attrRead.go): 純值 / 容器 / 衍生 / 物件引用 / self / 鎖 / 靜態 / 查詢函式。
 type SuiteAttrRead struct {
 	suite.Suite
 }
@@ -38,7 +38,7 @@ func (this *SuiteAttrRead) TestAttrReadValue() {
 	game.EventDamage(6, guest) // 受損值 6
 	game.EventSeat(guest)      // 入座 2
 	game.EventSeat(guest)
-	game.EventExit(guest)     // 離場 1（座位 3）
+	game.EventExit(guest)     // 離場 1(座位 3)
 	game.EventTask(guest, 77) // 行動 4、技能 77
 	game.EventTask(guest, 77)
 	game.EventTask(guest, 77)
@@ -206,7 +206,7 @@ func (this *SuiteAttrRead) TestAttrReadStatic() {
 func (this *SuiteAttrRead) TestAttrReadTableCount() {
 	game := newGame()
 	game.Seat[1] = &cores.Guest{}
-	game.Seat[2] = &cores.Guest{} // 桌1 = 2 人;桌2 = 0 人
+	game.Seat[2] = &cores.Guest{} // 桌1 = 2 人; 桌2 = 0 人
 
 	this.Equal(float64(1), this.num(game, "tableCount", exprs.NewText(">="), exprs.NewNum(2)))
 	this.Equal(float64(1), this.num(game, "tableCount", exprs.NewText("=="), exprs.NewNum(0)))
@@ -254,7 +254,7 @@ func (this *SuiteAttrRead) TestAttrReadGroupQuery() {
 	this.False(ok)
 }
 
-// num 取全域屬性求值結果的數字;斷言命中且為數值。
+// num 取全域屬性求值結果的數字; 斷言命中且為數值。
 func (this *SuiteAttrRead) num(game *cores.Game, name string, arg ...exprs.Value) float64 {
 	value, ok := game.Attr(name, arg)
 	this.Require().True(ok)
@@ -262,7 +262,7 @@ func (this *SuiteAttrRead) num(game *cores.Game, name string, arg ...exprs.Value
 	return value.Num()
 }
 
-// tally 對累積計數的指定群組加 n 次（公開介面佈置整場累積）。
+// tally 對累積計數的指定群組加 n 次(公開介面佈置整場累積)。
 func tally(total *cores.Tally, group, n int32) {
 	for i := int32(0); i < n; i++ {
 		total.Add(group)

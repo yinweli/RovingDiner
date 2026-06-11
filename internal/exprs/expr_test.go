@@ -10,8 +10,8 @@ func TestSuiteExpr(t *testing.T) {
 	suite.Run(t, new(SuiteExpr))
 }
 
-// SuiteExpr 驗證對外入口 Parse / Expr / Eval:成功解析後可求值、詞法錯誤上拋、
-// 結尾多餘內容報錯,以及 parse-once / eval-many(同一 Expr 多次求值結果一致)。
+// SuiteExpr 驗證對外入口 Parse / Expr / Eval: 成功解析後可求值、詞法錯誤上拋、
+// 結尾多餘內容報錯, 以及 parse-once / eval-many(同一 Expr 多次求值結果一致)。
 type SuiteExpr struct {
 	suite.Suite
 }
@@ -27,7 +27,7 @@ func (this *SuiteExpr) TestParse() {
 }
 
 func (this *SuiteExpr) TestParseLexError() {
-	// 詞法錯誤(未知字元 / 字串未結束 / 裸 =)由 Parse 直接上拋,型別仍為 SyntaxError
+	// 詞法錯誤(未知字元 / 字串未結束 / 裸 =)由 Parse 直接上拋, 型別仍為 SyntaxError
 	source := []string{
 		"1 & 2", // 未知字元
 		"'oops", // 字串未結束
@@ -51,7 +51,7 @@ func (this *SuiteExpr) TestParseTrailing() {
 }
 
 func (this *SuiteExpr) TestExprReuse() {
-	// parse 一次、求值多次,結果穩定一致(對齊 parse-once / eval-many 設計)
+	// parse 一次、求值多次, 結果穩定一致(對齊 parse-once / eval-many 設計)
 	expr, err := Parse("(2 + 3) * 4")
 	this.Require().NoError(err)
 

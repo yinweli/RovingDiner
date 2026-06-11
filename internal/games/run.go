@@ -7,11 +7,11 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// Run 營業執行對外入口（【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 核心怎麼跑】）:
-// 以本場身分（seed / 關卡編號）與靜態表建營業實例——infra.NewRander(seed) 為唯一亂數來源、
-// compiler 閉包注入效果預編譯（Parse → 捕捉 AST → execute 派發 + Settle 結算尾,即【營業規格書 | 二十、獨立流程 | 執行命令】）、
-// rules.Register 裝備詞彙——自營業開始階段驅動 RunPhase 迴圈至停機,回報營業成功與否（踏入終止站時記錄）。
-// presenter 為事件流輸出 port（nil 由 NewGame 正規化為無輸出替身）;引擎逐單位同步 Emit（發射點對照詳見【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】）。
+// Run 營業執行對外入口(【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 核心怎麼跑】):
+// 以本場身分(seed / 關卡編號)與靜態表建營業實例——infra.NewRander(seed) 為唯一亂數來源、
+// compiler 閉包注入效果預編譯(Parse → 捕捉 AST → execute 派發 + Settle 結算尾, 即【營業規格書 | 二十、獨立流程 | 執行命令】)、
+// rules.Register 裝備詞彙——自營業開始階段驅動 RunPhase 迴圈至停機, 回報營業成功與否(踏入終止站時記錄)。
+// presenter 為事件流輸出 port(nil 由 NewGame 正規化為無輸出替身); 引擎逐單位同步 Emit(發射點對照詳見【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】)。
 func Run(seed int64, stageID int32, sheet *sheeter.Sheeter, operator cores.Operator, presenter cores.Presenter) bool {
 	compiler := func(source string) (command cores.EffectExec, err error) {
 		parsed, err := Parse(source)
@@ -22,7 +22,7 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter, operator cores.Opera
 
 		return func(game *cores.Game) {
 			execute(game, parsed)
-			rules.Settle(game) // 執行命令結算尾:結算旗標 == false → 執行結算
+			rules.Settle(game) // 執行命令結算尾: 結算旗標 == false → 執行結算
 		}, nil
 	}
 
@@ -32,7 +32,7 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter, operator cores.Opera
 
 	for phase := cores.PhaseGameStart; phase != cores.PhaseNone; {
 		if phase == cores.PhaseGameSucc {
-			succ = true // 兩終止站皆回 PhaseNone,踏站時記錄成敗
+			succ = true // 兩終止站皆回 PhaseNone, 踏站時記錄成敗
 		} // if
 
 		phase = rules.RunPhase(game, phase)

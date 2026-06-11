@@ -12,7 +12,7 @@ func TestSuiteTester(t *testing.T) {
 	suite.Run(t, new(SuiteTester))
 }
 
-// SuiteTester 驗證測試基建(tester.go);現僅事件流錄製器,其餘替身與迷你表行為由各層測試間接覆蓋。
+// SuiteTester 驗證測試基建(tester.go); 現僅事件流錄製器, 其餘替身與迷你表行為由各層測試間接覆蓋。
 type SuiteTester struct {
 	suite.Suite
 }

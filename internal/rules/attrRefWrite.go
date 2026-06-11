@@ -5,12 +5,12 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrRefWrite 引用屬性寫入詞彙表(名稱 → 寫入行為);服務屬性修改命令的引用左值(<引用>.<屬性>)。
-// 鍵集僅【營業規格書 | 二十三、屬性清單】卡牌 / 顧客引用屬性子表存取欄為 寫 / 寫鎖 / 鎖 的可寫屬性;唯讀屬性不在此(Validate 據此擋)。
+// attrRefWrite 引用屬性寫入詞彙表(名稱 → 寫入行為); 服務屬性修改命令的引用左值(<引用>.<屬性>)。
+// 鍵集僅【營業規格書 | 二十三、屬性清單】卡牌 / 顧客引用屬性子表存取欄為 寫 / 寫鎖 / 鎖 的可寫屬性; 唯讀屬性不在此(Validate 據此擋)。
 // 型別不符的引用(以顧客引用寫卡牌屬性等)回 changed=false。寫側不需 Lock 後綴路由(鎖定變更由 @ # 表達)。
-// 每一詞條對應一個獨立的 writeRef* 函式(便於逐條單元測試);本表僅作名稱 → 行為的索引。
+// 每一詞條對應一個獨立的 writeRef* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
 var attrRefWrite = map[string]cores.AttrRefWriteFunc{
-	// 卡牌引用屬性(cost / extraRun* 寫鎖;cardSeal / keep / playExile / unplayExile 純鎖)
+	// 卡牌引用屬性(cost / extraRun* 寫鎖; cardSeal / keep / playExile / unplayExile 純鎖)
 	"cost":        writeRefCost,
 	"extraRunMin": writeRefExtraRunMin,
 	"extraRunMax": writeRefExtraRunMax,
@@ -19,7 +19,7 @@ var attrRefWrite = map[string]cores.AttrRefWriteFunc{
 	"playExile":   writeRefPlayExile,
 	"unplayExile": writeRefUnplayExile,
 
-	// 顧客引用屬性(calm / sate / sateMax / morale / moraleMax / score / scoreMax 寫鎖;sateSeal / calmSeal 純鎖)
+	// 顧客引用屬性(calm / sate / sateMax / morale / moraleMax / score / scoreMax 寫鎖; sateSeal / calmSeal 純鎖)
 	"calm":      writeRefCalm,
 	"sate":      writeRefSate,
 	"sateMax":   writeRefSateMax,
@@ -31,7 +31,7 @@ var attrRefWrite = map[string]cores.AttrRefWriteFunc{
 	"calmSeal":  writeRefCalmSeal,
 }
 
-// HasAttrRefWrite 回報引用屬性寫入詞彙表是否登錄 name;供 games.Validate 檢查屬性修改命令的引用左值屬性可寫性。
+// HasAttrRefWrite 回報引用屬性寫入詞彙表是否登錄 name; 供 games.Validate 檢查屬性修改命令的引用左值屬性可寫性。
 func HasAttrRefWrite(name string) bool {
 	_, ok := attrRefWrite[name]
 	return ok
@@ -72,7 +72,7 @@ func writeRefExtraRunMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n
 	return card.GetExtraRunMax().Apply(op, n)
 }
 
-// writeRefCardSeal 寫卡牌封印(純鎖,僅 @ #)。
+// writeRefCardSeal 寫卡牌封印(純鎖, 僅 @ #)。
 func writeRefCardSeal(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -83,7 +83,7 @@ func writeRefCardSeal(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n fl
 	return card.GetSeal().ApplyLockOnly(op)
 }
 
-// writeRefKeep 寫卡牌不棄(純鎖,僅 @ #)。
+// writeRefKeep 寫卡牌不棄(純鎖, 僅 @ #)。
 func writeRefKeep(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -94,7 +94,7 @@ func writeRefKeep(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float6
 	return card.GetKeep().ApplyLockOnly(op)
 }
 
-// writeRefPlayExile 寫卡牌出牌後流放(純鎖,僅 @ #)。
+// writeRefPlayExile 寫卡牌出牌後流放(純鎖, 僅 @ #)。
 func writeRefPlayExile(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -105,7 +105,7 @@ func writeRefPlayExile(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n f
 	return card.GetPlayExile().ApplyLockOnly(op)
 }
 
-// writeRefUnplayExile 寫卡牌未出牌流放(純鎖,僅 @ #)。
+// writeRefUnplayExile 寫卡牌未出牌流放(純鎖, 僅 @ #)。
 func writeRefUnplayExile(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -151,7 +151,7 @@ func writeRefSateMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n flo
 	return guest.GetSateMax().Apply(op, n)
 }
 
-// writeRefMorale 寫顧客士氣值(寫鎖);引用屬性的 -= 走一般運算,不啟動餐廳 morale 特例。
+// writeRefMorale 寫顧客士氣值(寫鎖); 引用屬性的 -= 走一般運算, 不啟動餐廳 morale 特例。
 func writeRefMorale(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -195,7 +195,7 @@ func writeRefScoreMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n fl
 	return guest.GetScoreMax().Apply(op, n)
 }
 
-// writeRefSateSeal 寫顧客封印飽食技能(純鎖,僅 @ #)。
+// writeRefSateSeal 寫顧客封印飽食技能(純鎖, 僅 @ #)。
 func writeRefSateSeal(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -206,7 +206,7 @@ func writeRefSateSeal(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n fl
 	return guest.GetSateSeal().ApplyLockOnly(op)
 }
 
-// writeRefCalmSeal 寫顧客封印耐心技能(純鎖,僅 @ #)。
+// writeRefCalmSeal 寫顧客封印耐心技能(純鎖, 僅 @ #)。
 func writeRefCalmSeal(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 

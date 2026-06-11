@@ -13,7 +13,7 @@ func TestSuiteExecute(t *testing.T) {
 	suite.Run(t, new(SuiteExecute))
 }
 
-// SuiteExecute 驗證命令派發(execute.go):games 解析 → Game 執行的端到端接線(走法 X);詞彙經 rules.Register 裝備。
+// SuiteExecute 驗證命令派發(execute.go): games 解析 → Game 執行的端到端接線(走法 X); 詞彙經 rules.Register 裝備。
 type SuiteExecute struct {
 	suite.Suite
 }
