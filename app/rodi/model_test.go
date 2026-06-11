@@ -26,7 +26,8 @@ func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind[keyModeNormal], 10)
+	this.Len(target.keybar.bind[keyModeNormal], 12)
+	this.Empty(target.modal)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
 	this.Equal(modeFast, target.mode)
 	this.Equal(0, target.gen)
@@ -116,6 +117,50 @@ func (this *SuiteModel) TestModelUpdate() {
 	_, _ = target.Update(moveMsg{key: "up"})
 	this.Equal(1, target.log.offset)
 
+	result, cmd = tea.Model(target).Update(countMsg{}) // F1 開計數 modal: 入棧 + 世代 +1(在途拍作廢、暫停消費)
+	this.Len(result.(model).modal, 1)
+	this.Equal(1, result.(model).gen)
+	this.Equal(keyModeModal, result.(model).keymode())
+	this.Nil(cmd)
+
+	result, cmd = result.(model).Update(moveMsg{key: "down"}) // modal 態: 方向鍵轉頂層捲動(計數內容 22 行 > 可視 20, 上限 2)
+	this.Equal(1, result.(model).modalOff)
+	this.Nil(cmd)
+
+	result, _ = result.(model).Update(moveMsg{key: "down"})
+	result, _ = result.(model).Update(moveMsg{key: "down"}) // 過衝夾住上限
+	this.Equal(2, result.(model).modalOff)
+
+	result, _ = result.(model).Update(moveMsg{key: "up"})
+	result, _ = result.(model).Update(moveMsg{key: "up"})
+	result, _ = result.(model).Update(moveMsg{key: "up"}) // 過衝夾回 0
+	this.Equal(0, result.(model).modalOff)
+
+	result, cmd = result.(model).Update(popMsg{}) // Esc 關閉: 出棧 + 依當前模式(快速)恢復排拍
+	this.Empty(result.(model).modal)
+	this.Equal(keyModeNormal, result.(model).keymode())
+	this.NotNil(cmd)
+
+	result, cmd = result.(model).Update(popMsg{}) // 空棧防呆, 不動作也不重排拍以免雙鏈
+	this.Empty(result.(model).modal)
+	this.Nil(cmd)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet()))
+	target.modal = []modal{fakeModal{row: []string{"短內容"}}} // 內容未溢出: 捲動上限 0、down 不動
+	result, _ = target.Update(moveMsg{key: "down"})
+	this.Equal(0, result.(model).modalOff)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet()))
+	target.focus = focusStatus
+	result, cmd = target.Update(enterMsg{}) // 狀態列聚焦 Enter = 開計數 modal
+	this.Len(result.(model).modal, 1)
+	this.Nil(cmd)
+
+	target.focus = 0
+	result, cmd = target.Update(enterMsg{}) // 其餘區 Enter: 檢視 modal 歸 R4, 現不動作
+	this.Empty(result.(model).modal)
+	this.Nil(cmd)
+
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
 	this.Equal(40, result.(model).height)
@@ -185,6 +230,12 @@ func (this *SuiteModel) TestModelView() {
 	this.Contains(row[0], "- 事件日誌")
 	target.focus = 0
 
+	target.modal = []modal{modalCount{seed: 42}} // modal 開著: 置中疊在全畫面上、總行數不變
+	row = strings.Split(target.View(), "\n")
+	this.Len(row, 40)
+	this.Contains(target.View(), "計數檢視 (seed 42)")
+	target.modal = nil
+
 	this.Len(strings.Split(target.leftView(70, 5), "\n"), 27) // 內容超高(防禦): 留白歸零、不裁內容
 
 	target.width = 80 // 低於最低尺寸 → 守門提示
@@ -195,7 +246,8 @@ func (this *SuiteModel) TestModelView() {
 	this.Equal("請放大終端機 (現 100x20, 最低 100x30)", target.View())
 }
 
-// TestModelTick 驗證排拍 Cmd: 快/慢回 timer Cmd 且訊息蓋上當前世代(供驗章), 步進不排拍回 nil。
+// TestModelTick 驗證排拍 Cmd: 快/慢回 timer Cmd 且訊息蓋上當前世代(供驗章), 步進不排拍回 nil,
+// modal 開著不排拍回 nil(暫停消費)。
 func (this *SuiteModel) TestModelTick() {
 	target := newModel(nil)
 	target.gen = 7
@@ -208,11 +260,19 @@ func (this *SuiteModel) TestModelTick() {
 
 	target.mode = modeStep
 	this.Nil(target.tick())
+
+	target.mode = modeFast
+	target.modal = []modal{modalCount{}}
+	this.Nil(target.tick())
 }
 
-// TestModelKeymode 驗證鍵盤模式導出: R1 恆為常態(modal 堆疊與選取等待後站才有來源)。
+// TestModelKeymode 驗證鍵盤模式導出: modal 堆疊非空 = modal 態、否則常態(選取等待 M27 補來源)。
 func (this *SuiteModel) TestModelKeymode() {
-	this.Equal(keyModeNormal, newModel(nil).keymode())
+	target := newModel(nil)
+	this.Equal(keyModeNormal, target.keymode())
+
+	target.modal = []modal{modalCount{}}
+	this.Equal(keyModeModal, target.keymode())
 }
 
 // TestStep 驗證步進訊息 Cmd: 只回推進訊息(不碰引擎)。
@@ -235,4 +295,19 @@ func (this *SuiteModel) TestTab() {
 func (this *SuiteModel) TestMove() {
 	this.Equal(moveMsg{key: "up"}, move("up")())
 	this.Equal(moveMsg{key: "left"}, move("left")())
+}
+
+// TestCount 驗證開計數 modal 訊息 Cmd。
+func (this *SuiteModel) TestCount() {
+	this.Equal(countMsg{}, count()())
+}
+
+// TestEnter 驗證檢視訊息 Cmd。
+func (this *SuiteModel) TestEnter() {
+	this.Equal(enterMsg{}, enter()())
+}
+
+// TestPop 驗證關閉 modal 訊息 Cmd。
+func (this *SuiteModel) TestPop() {
+	this.Equal(popMsg{}, pop()())
 }

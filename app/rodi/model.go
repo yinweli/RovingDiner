@@ -51,16 +51,18 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 // 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄)。
 // Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈。
 type model struct {
-	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
-	log     *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
-	keybar  barKey      // 鍵位列(按鍵分派入口 + 底部全寬列)
-	status  barStatus   // 狀態列(左欄釘底)
-	comp    []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
-	mode    mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
-	gen     int         // 排拍世代(切模式 +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
-	focus   int         // 聚焦區索引(model 持有的跨組件 UI 狀態; Tab 經 tabMsg 循環 8 區, 聚焦高亮據此)
-	width   int         // 寬度預算(WindowSizeMsg 前用設計寬)
-	height  int         // 高度預算(WindowSizeMsg 前用最低高)
+	stepper  *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
+	log      *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
+	keybar   barKey      // 鍵位列(按鍵分派入口 + 底部全寬列)
+	status   barStatus   // 狀態列(左欄釘底)
+	comp     []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
+	mode     mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
+	gen      int         // 排拍世代(切模式 / 開 modal +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
+	focus    int         // 聚焦區索引(model 持有的跨組件 UI 狀態; Tab 經 tabMsg 循環 8 區, 聚焦高亮據此)
+	modal    []modal     // modal 堆疊(M26 R3; 開著時暫停消費、鍵盤入 modal 態, 頂層互動)
+	modalOff int         // 頂層 modal 捲動偏移(0 = 在頂; 開 / 關歸零, Update 捲動時夾界)
+	width    int         // 寬度預算(WindowSizeMsg 前用設計寬)
+	height   int         // 高度預算(WindowSizeMsg 前用最低高)
 }
 
 func newModel(stepper *stepper) model {
@@ -84,7 +86,8 @@ func (this model) Init() tea.Cmd {
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
 // 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
-// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → 分派聚焦區 Move(語意隨區, 狀態列落空不動作);
+// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層 modal、常態分派聚焦區 Move
+// (語意隨區, 狀態列落空不動作); 計數 / 檢視 → 推 modal 入棧(開著時暫停消費); 關閉 → 出棧並恢復排拍;
 // 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
@@ -117,6 +120,33 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this, nil
 
 	case moveMsg:
+		if len(this.modal) > 0 { // modal 態: 上下捲動頂層 modal(夾 [0, 內容行數 - 可視行數])
+			if msg.key == keyUp {
+				this.modalOff--
+			} // if
+
+			if msg.key == keyDown {
+				this.modalOff++
+			} // if
+
+			_, row := this.modal[len(this.modal)-1].Body(this.stepper.game)
+			limit := len(row) - (modalHeightMax - 2)
+
+			if limit < 0 {
+				limit = 0
+			} // if
+
+			if this.modalOff > limit {
+				this.modalOff = limit
+			} // if
+
+			if this.modalOff < 0 {
+				this.modalOff = 0
+			} // if
+
+			return this, nil
+		} // if
+
 		switch {
 		case this.focus < len(this.comp):
 			this.comp[this.focus].Move(this.stepper.game, msg.key)
@@ -126,6 +156,25 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		} // switch
 
 		return this, nil // 狀態列無游標(聚焦即整列), 落空不動作
+
+	case countMsg:
+		return this.push(modalCount{seed: this.stepper.game.Seed}), nil
+
+	case enterMsg:
+		if this.focus == focusStatus { // 狀態列聚焦 Enter = 開計數 modal(【營業顯示規格書 | 7、互動規格 | 7.3】)
+			return this.push(modalCount{seed: this.stepper.game.Seed}), nil
+		} // if
+
+		return this, nil // 其餘區的檢視 modal 歸 R4
+
+	case popMsg:
+		if size := len(this.modal); size > 0 {
+			this.modal = this.modal[:size-1]
+			this.modalOff = 0
+			return this, this.tick() // 全關後依當前模式恢復排拍(仍有 modal 或步進時 tick 自回 nil)
+		} // if
+
+		return this, nil // 空棧防呆: 不重排拍, 免與既有拍鏈雙鏈
 
 	case tea.WindowSizeMsg:
 		this.width = msg.Width
@@ -163,7 +212,13 @@ func (this model) View() string {
 	} // if
 
 	bottom := "+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+"
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width)
+	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width)
+
+	if size := len(this.modal); size > 0 { // 頂層 modal 置中疊在全畫面上(M26 R3)
+		view = overlay(view, modalView(this.stepper.game, this.modal[size-1], this.modalOff), this.width, this.height)
+	} // if
+
+	return view
 }
 
 // leftView 左欄主畫面(共 height 行): 六區堆疊 + 帶框空行墊高(格線不開洞; M26 R1.5)+ 狀態列釘底
@@ -194,6 +249,15 @@ func (this model) leftView(width, height int) string {
 	return strings.Join(row, "\n")
 }
 
+// push 開 modal: 疊層入棧、捲動歸零、世代 +1 作廢在途拍(開著時 tick 門控停排——
+// M26 拍板「modal 開著時暫停消費」; 速率 mode 不動, 關閉依當前模式恢復)。
+func (this model) push(top modal) model {
+	this.modal = append(this.modal, top)
+	this.modalOff = 0
+	this.gen++
+	return this
+}
+
 // advance 推一拍: 同步 Next 收行組入日誌(盤面組件直讀引擎、不持拷貝); 終局回 false(呼叫端據此停止排拍)。
 func (this model) advance() bool {
 	line, more := this.stepper.Next()
@@ -206,10 +270,11 @@ func (this model) advance() bool {
 	return true
 }
 
-// tick 依當前模式排下一拍的 Cmd: 快/慢回 timer Cmd(訊息蓋上當前世代供驗章)、步進不排拍回 nil(等 [N])。
-// timer Cmd 跑在別條 goroutine, 只回訊息不碰引擎(Next 必須留在 Update 內)。
+// tick 依當前模式排下一拍的 Cmd: 快/慢回 timer Cmd(訊息蓋上當前世代供驗章)、步進不排拍回 nil(等 [N])、
+// modal 開著不排拍(暫停消費, 凍結盤面供檢視; M26 R3)。timer Cmd 跑在別條 goroutine,
+// 只回訊息不碰引擎(Next 必須留在 Update 內)。
 func (this model) tick() tea.Cmd {
-	if this.mode == modeStep {
+	if this.mode == modeStep || len(this.modal) > 0 {
 		return nil
 	} // if
 
@@ -218,9 +283,13 @@ func (this model) tick() tea.Cmd {
 	})
 }
 
-// keymode 當前鍵盤模式(三模式框架; M26 R1 立框架): modal 堆疊非空 = modal 態(R3 起)、
-// 選取等待 = 選取模式(M27 起), 目前恆為常態——模式由 model 狀態導出、不另存欄位, 後站只補來源。
+// keymode 當前鍵盤模式(三模式框架; M26 R1 立框架): modal 堆疊非空 = modal 態、
+// 選取等待 = 選取模式(M27 補來源), 其餘常態——模式由 model 狀態導出、不另存欄位。
 func (this model) keymode() keyMode {
+	if len(this.modal) > 0 {
+		return keyModeModal
+	} // if
+
 	return keyModeNormal
 }
 
@@ -261,7 +330,8 @@ func tab(delta int) tea.Cmd {
 	}
 }
 
-// moveMsg 游標移動訊息(方向鍵投遞): 分派給聚焦區自持游標(語意隨區; 狀態列無游標不動作)。
+// moveMsg 游標移動訊息(方向鍵投遞): 常態分派給聚焦區自持游標(語意隨區; 狀態列無游標不動作)、
+// modal 態轉頂層 modal 捲動。
 type moveMsg struct {
 	key string // 方向鍵名(up / down / left / right)
 }
@@ -270,5 +340,35 @@ type moveMsg struct {
 func move(key string) tea.Cmd {
 	return func() tea.Msg {
 		return moveMsg{key: key}
+	}
+}
+
+// countMsg 開計數 modal 訊息([F1] 鍵投遞)。
+type countMsg struct{}
+
+// count 排開計數 modal 訊息的 Cmd([F1] 鍵綁定)。
+func count() tea.Cmd {
+	return func() tea.Msg {
+		return countMsg{}
+	}
+}
+
+// enterMsg 檢視訊息([Enter] 鍵投遞): 狀態列聚焦開計數 modal; 其餘區的檢視 modal 歸 R4。
+type enterMsg struct{}
+
+// enter 排檢視訊息的 Cmd([Enter] 鍵綁定)。
+func enter() tea.Cmd {
+	return func() tea.Msg {
+		return enterMsg{}
+	}
+}
+
+// popMsg 關閉頂層 modal 訊息([Esc] 鍵投遞)。
+type popMsg struct{}
+
+// pop 排關閉 modal 訊息的 Cmd([Esc] 鍵綁定)。
+func pop() tea.Cmd {
+	return func() tea.Msg {
+		return popMsg{}
 	}
 }

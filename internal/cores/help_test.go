@@ -184,6 +184,15 @@ func (this *SuiteHelp) TestTallyGet() {
 	this.Equal(int32(0), total.Get(9)) // 無鍵 → 0
 }
 
+// TestTallyGroup 驗證 Group 列舉已計數群組(升序); 零值回空。
+func (this *SuiteHelp) TestTallyGroup() {
+	total := Tally{count: map[int32]int32{5: 1, 1: 3, 3: 2}}
+	this.Equal([]int32{1, 3, 5}, total.Group())
+
+	zero := Tally{}
+	this.Empty(zero.Group()) // 零值 → 空
+}
+
 // TestTallySum 驗證 Sum 全群組加總; 零值回 0。
 func (this *SuiteHelp) TestTallySum() {
 	total := Tally{count: map[int32]int32{1: 3, 2: 5}}

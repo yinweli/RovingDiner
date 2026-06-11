@@ -102,22 +102,39 @@ func numFloor(value int32) string {
 	return num(value)
 }
 
-// alignPair 兩行對齊表: 第 1 行標籤、第 2 行數值逐欄上下對齊, 欄寬 = 該欄標籤 / 數值較寬者(content-fit),
-// 相鄰欄間隔 2 空白(【營業顯示規格書 | 4、渲染政策：ASCII + CJK only | 8】); 兩切片等長(呼叫端保證)。
-func alignPair(label, value []string) (row1, row2 string) {
-	cell1 := []string{}
-	cell2 := []string{}
+// alignTable 多行對齊表: 各欄寬 = 該欄各列最大顯示寬(content-fit)、相鄰欄間隔 2 空白、行尾不留補白
+// (【營業顯示規格書 | 4、渲染政策：ASCII + CJK only | 8】); 各列欄數一致由呼叫端保證。
+func alignTable(table [][]string) (result []string) {
+	if len(table) == 0 {
+		return nil
+	} // if
 
-	for itor := range label {
-		width := lipgloss.Width(label[itor])
+	width := make([]int, len(table[0]))
 
-		if w := lipgloss.Width(value[itor]); w > width {
-			width = w
-		} // if
-
-		cell1 = append(cell1, padTo(label[itor], width))
-		cell2 = append(cell2, padTo(value[itor], width))
+	for _, itor := range table {
+		for index, text := range itor {
+			if w := lipgloss.Width(text); w > width[index] {
+				width[index] = w
+			} // if
+		} // for
 	} // for
 
-	return strings.TrimRight(strings.Join(cell1, "  "), " "), strings.TrimRight(strings.Join(cell2, "  "), " ")
+	for _, itor := range table {
+		cell := []string{}
+
+		for index, text := range itor {
+			cell = append(cell, padTo(text, width[index]))
+		} // for
+
+		result = append(result, strings.TrimRight(strings.Join(cell, "  "), " "))
+	} // for
+
+	return result
+}
+
+// alignPair 兩行對齊表(alignTable 的 2 列特化): 第 1 行標籤、第 2 行數值逐欄上下對齊;
+// 兩切片等長(呼叫端保證)。
+func alignPair(label, value []string) (row1, row2 string) {
+	row := alignTable([][]string{label, value})
+	return row[0], row[1]
 }

@@ -1,5 +1,9 @@
 package cores
 
+import (
+	"sort"
+)
+
 // Immune 免疫群組計數(群組編號 → 鎖定計數); 效果免疫 / 技能免疫共用
 // (【營業規格書 | 五、實例結構 | 顧客（Guest）實例】)。零值可用(Add 自建表)。
 type Immune struct {
@@ -152,6 +156,16 @@ func (this *Tally) Add(group int32) {
 // Get 讀群組數量; 無鍵回 0。
 func (this *Tally) Get(group int32) int32 {
 	return this.count[group]
+}
+
+// Group 讀已計數的群組編號清單(升序; 計數 modal 歷史計數樞紐表列舉用, 唯讀)。
+func (this *Tally) Group() (result []int32) {
+	for k := range this.count {
+		result = append(result, k)
+	} // for
+
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
+	return result
 }
 
 // Sum 讀全群組數量加總(查詢函式 N == 0 全加總用)。

@@ -90,6 +90,16 @@ func (this *SuiteRender) TestNumFloor() {
 	this.Equal("0", numFloor(-2))
 }
 
+// TestAlignTable 驗證多行對齊表: 欄寬 = 該欄各列最大顯示寬、欄距 2 空白、行尾不留補白; 空表回空。
+func (this *SuiteRender) TestAlignTable() {
+	this.Equal([]string{
+		"項目  次數  對象",
+		"入座  12    501@老饕",
+		"離場  3",
+	}, alignTable([][]string{{"項目", "次數", "對象"}, {"入座", "12", "501@老饕"}, {"離場", "3", ""}}))
+	this.Empty(alignTable(nil))
+}
+
 // TestAlignPair 驗證兩行對齊表: 欄寬 = 標籤 / 數值較寬者、欄距 2 空白、行尾不留補白。
 func (this *SuiteRender) TestAlignPair() {
 	row1, row2 := alignPair([]string{"回合", "士氣值", "x"}, []string{"3/10", "25", "1250"})
