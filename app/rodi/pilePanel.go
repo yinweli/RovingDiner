@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 // pilePanel 牌堆組件(區 6; 【營業顯示規格書 | 6、畫面規格 | 6.8】): 抽 / 棄 / 流放三堆各一行、
@@ -13,24 +14,21 @@ import (
 type pilePanel struct{}
 
 // View 渲染標題列 + 3 列。
-func (this pilePanel) View(world *mirror, width int) string {
+func (this pilePanel) View(game *cores.Game, width int) string {
 	return strings.Join([]string{
 		panelTitle("牌堆", width),
-		truncMark(pileRow(world, "抽牌堆", cores.ContainerDeck), width),
-		truncMark(pileRow(world, "棄牌堆", cores.ContainerDrop), width),
-		truncMark(pileRow(world, "流放堆", cores.ContainerExile), width),
+		truncMark(pileRow(game.GetSheet(), "抽牌堆", game.Deck), width),
+		truncMark(pileRow(game.GetSheet(), "棄牌堆", game.Drop), width),
+		truncMark(pileRow(game.GetSheet(), "流放堆", game.Exile), width),
 	}, "\n")
 }
 
 // pileRow 單列: 標籤(N): 識別碼序列(第 1 個 = 堆頂)。
-func pileRow(world *mirror, label string, kind cores.ContainerKind) string {
-	member := world.zone[kind]
+func pileRow(sheet *sheeter.Sheeter, label string, member []*cores.Card) string {
 	text := fmt.Sprintf("%v(%v):", label, len(member))
 
 	for _, itor := range member {
-		if view := world.card[itor]; view != nil {
-			text += " " + identCard(world.sheet, view.dataID, cores.NoneID)
-		} // if
+		text += " " + identCard(sheet, itor.GetCardID(), cores.NoneID)
 	} // for
 
 	return text

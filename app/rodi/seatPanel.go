@@ -24,18 +24,18 @@ const flagNone = "  "
 type seatPanel struct{}
 
 // View 渲染標題列 + 5 行(桌號列 1 + 桌內 2 座各 2 行)。
-func (this seatPanel) View(world *mirror, width int) string {
+func (this seatPanel) View(game *cores.Game, width int) string {
 	row := []string{"", "", "", "", ""}
 
-	for index, itor := range seatTable(world.sheet) {
+	for index, itor := range seatTable(game.GetSheet()) {
 		col := []string{fmt.Sprintf("桌%v", itor.id), "", "", "", ""}
 
 		if len(itor.seat) > 0 {
-			col[1], col[2] = seatGuest(world, itor.seat[0])
+			col[1], col[2] = seatGuest(game, itor.seat[0])
 		} // if
 
 		if len(itor.seat) > 1 {
-			col[3], col[4] = seatGuest(world, itor.seat[1])
+			col[3], col[4] = seatGuest(game, itor.seat[1])
 		} // if
 
 		for r := range row {
@@ -80,22 +80,16 @@ func seatTable(sheet *sheeter.Sheeter) (result []tableInfo) {
 }
 
 // seatGuest 單一座位的 2 行(顧客摘要 + 旗標列); 空位顯「空」、旗標列全空留白。
-func seatGuest(world *mirror, seatID int32) (row1, row2 string) {
-	id, ok := world.seat[seatID]
+func seatGuest(game *cores.Game, seatID int32) (row1, row2 string) {
+	guest := game.Seat[seatID]
 
-	if ok == false {
+	if guest == nil {
 		return "空", ""
 	} // if
 
-	view := world.guest[id]
-
-	if view == nil {
-		return "空", "" // 防禦: 座位表有編號但視圖缺
-	} // if
-
-	ident := identGuest(world.sheet, view.dataID, cores.NoneID)
-	row1 = ident + " 飽" + num(view.attr["sate"]) + "耐" + num(view.attr["calm"])
-	flag := seatFlag(world, id, view)
+	ident := identGuest(game.GetSheet(), guest.GetGuestID(), cores.NoneID)
+	row1 = ident + " 飽" + num(guest.GetSate().GetValue()) + "耐" + num(guest.GetCalm().GetValue())
+	flag := seatFlag(game, guest)
 
 	if flag != "" {
 		row2 = strings.Repeat(" ", lipgloss.Width(ident)+1) + flag // 對齊到 飽 起始欄
@@ -105,25 +99,36 @@ func seatGuest(world *mirror, seatID int32) (row1, row2 string) {
 }
 
 // seatFlag 旗標列(封 免 效 三槽、各 2 格, 命中才顯、未命中該槽留白、全空回空字串):
-// 封 = 任一封印技能鎖定計數 > 0; 免 = 任一免疫群組計數 > 0(M22 拍板); 效 = 顧客身上有 active 效果。
-func seatFlag(world *mirror, instanceID cores.InstanceID, view *guestView) string {
+// 封 = 任一封印技能鎖定中; 免 = 任一免疫群組計數 > 0(M22 拍板); 效 = 顧客身上有 active 效果。
+func seatFlag(game *cores.Game, guest *cores.Guest) string {
 	seal := flagNone
 
-	if view.lock["sateSeal"] > 0 || view.lock["calmSeal"] > 0 {
+	if guest.GetSateSeal().IsLock() || guest.GetCalmSeal().IsLock() {
 		seal = "封"
 	} // if
 
 	immune := flagNone
 
-	if view.hasImmune() {
+	if guest.GetEffectImmune().Any() || guest.GetSkillImmune().Any() {
 		immune = "免"
 	} // if
 
 	effect := flagNone
 
-	if world.hasEffect(instanceID) {
+	if hasEffect(game, guest) {
 		effect = "效"
 	} // if
 
 	return strings.TrimRight(seal+immune+effect, " ")
+}
+
+// hasEffect 回報顧客身上是否有 active 效果(效 旗標用; 以效果佇列項 self 比對實例指標)。
+func hasEffect(game *cores.Game, guest *cores.Guest) bool {
+	for _, itor := range game.Effect {
+		if itor.GetSelf().GetGuest() == guest {
+			return true
+		} // if
+	} // for
+
+	return false
 }

@@ -15,20 +15,20 @@ import (
 type actionPanel struct{}
 
 // View 渲染標題列(含佇列數) + 2 行; 空佇列兩行留白(高度穩定)。
-func (this actionPanel) View(world *mirror, width int) string {
+func (this actionPanel) View(game *cores.Game, width int) string {
 	row1 := []string{}
 	row2 := []string{}
 
-	for _, itor := range world.action {
-		text1 := identSkill(world.sheet, itor.skillID)
-		text2 := identGuest(world.sheet, itor.guestID, cores.NoneID) + " " + taskName(itor.task)
+	for _, itor := range game.Action {
+		text1 := identSkill(game.GetSheet(), itor.GetSkillID())
+		text2 := identGuest(game.GetSheet(), itor.GetGuest().GetGuestID(), cores.NoneID) + " " + taskName(itor.GetKind())
 		size := max(lipgloss.Width(text1), lipgloss.Width(text2))
 		row1 = append(row1, padTo(text1, size))
 		row2 = append(row2, padTo(text2, size))
 	} // for
 
 	return strings.Join([]string{
-		panelTitle(fmt.Sprintf("行動佇列(%v)", len(world.action)), width),
+		panelTitle(fmt.Sprintf("行動佇列(%v)", len(game.Action)), width),
 		truncMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
 		truncTo(strings.TrimRight(strings.Join(row2, "  "), " "), width),
 	}, "\n")

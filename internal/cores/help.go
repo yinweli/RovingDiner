@@ -32,6 +32,17 @@ func (this *Immune) Get(group int32) int32 {
 	return this.count[group]
 }
 
+// Any 回報任一群組鎖定計數 > 0(顯示端旗標判定用; 歸零鍵與空表回 false)。
+func (this *Immune) Any() bool {
+	for _, v := range this.count {
+		if v > 0 {
+			return true
+		} // if
+	} // for
+
+	return false
+}
+
 // Hit 已觸發門檻集合(門檻值 → 已觸發); 飽食 / 耐心門檻共用, 擋同門檻重複觸發
 // (【營業規格書 | 二十、獨立流程 | 執行結算】)。零值可用(Add 自建表)。
 type Hit struct {

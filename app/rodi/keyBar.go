@@ -17,8 +17,8 @@ type keyBind struct {
 }
 
 // keyBar 鍵位列組件(【營業顯示規格書 | 6、畫面規格 | 6.11】): 常駐底部、固定 2 行、橫跨全寬、非聚焦;
-// 誠實列鍵——只列當前真有行為的鍵, 內容隨里程碑成長、M25 收斂成 §6.11 常態全鍵(M20 拍板)。
-// 綁定表為自持 UI 狀態(不讀鏡像), 父層 Update 經 Find 分派按鍵。
+// 誠實列鍵——只列當前真有行為的鍵, 內容隨里程碑成長、M26 收斂成 §6.11 常態全鍵(M20 拍板)。
+// 綁定表為自持 UI 狀態(不讀盤面, View 只吃寬度預算), 父層 Update 經 Find 分派按鍵。
 type keyBar struct {
 	bind []keyBind // 鍵綁定表
 }
@@ -31,7 +31,7 @@ func newKeyBar() keyBar {
 }
 
 // View 渲染固定 2 行(鍵少的行留白, 高度穩定不抖); 同行鍵以空白分隔, 超寬依預算截斷。
-func (this keyBar) View(world *mirror, width int) string {
+func (this keyBar) View(width int) string {
 	row1 := []string{}
 	row2 := []string{}
 

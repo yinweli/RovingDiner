@@ -1,6 +1,7 @@
 package rodi
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -55,6 +56,20 @@ func panelTitle(title string, width int) string {
 	} // if
 
 	return truncTo(text, width)
+}
+
+// num 整數屬性值轉顯示字串(屬性容器為整數, 直讀 GetValue 即 int32)。
+func num(value int32) string {
+	return strconv.FormatInt(int64(value), 10)
+}
+
+// numFloor 護盾 / 格擋專用: <= 0 顯 0(【營業顯示規格書 | 6、畫面規格 | 6.9】固定欄)。
+func numFloor(value int32) string {
+	if value <= 0 {
+		return "0"
+	} // if
+
+	return num(value)
 }
 
 // alignPair 兩行對齊表: 第 1 行標籤、第 2 行數值逐欄上下對齊, 欄寬 = 該欄標籤 / 數值較寬者(content-fit),

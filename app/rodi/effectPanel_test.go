@@ -20,19 +20,22 @@ type SuiteEffectPanel struct {
 
 // TestEffectPanelView 驗證渲染: 作用順序大者優先、層數 1 省 xN、整場保留顯 永、剩餘回合 = 結束回合 - 當前回合。
 func (this *SuiteEffectPanel) TestEffectPanelView() {
-	world := newMirror(testSheet())
-	world.Apply(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: 21, From: cores.ContainerNone, To: cores.ContainerWait})
-	world.Apply(cores.EventData{Kind: cores.EventEffect, Round: 2, DataID: 501, InstanceID: 21, EffectID: 401, EffectInstanceID: 41, Stage: cores.EffectStageJoin, Stack: 2, Expire: 5, Alive: true})
-	world.Apply(cores.EventData{Kind: cores.EventEffect, Round: 2, EffectID: 402, EffectInstanceID: 42, Stage: cores.EffectStageJoin, Stack: 1, Expire: 0, Alive: true})
-	world.Apply(cores.EventData{Kind: cores.EventEffect, Round: 2, EffectID: 403, EffectInstanceID: 43, Stage: cores.EffectStageJoin, Stack: 1, Expire: 0, Alive: true})
+	game := testGame()
+	game.GetRound().Set(2)
+	guest := cores.NewGuest(game, 501)
+	stacked := cores.NewEffect(game, 401, cores.NewRefGuest(guest), 2)
+	stacked.SetExpire(5)
+	game.Effect.Push(stacked)
+	game.Effect.Push(cores.NewEffect(game, 402, cores.Ref{}, 1))
+	game.Effect.Push(cores.NewEffect(game, 403, cores.Ref{}, 1))
 
 	this.Equal(strings.Join([]string{ // 作用順序 9 > 5 排前; 同序 402 < 403 編號小者優先
 		"+- 效果佇列(3) " + strings.Repeat("-", 45),
 		"402@護盾 (永)  403@立即 (永)  401@加耐x2 (3)",
 		"空 常駐" + strings.Repeat(" ", 8) + "空 ?" + strings.Repeat(" ", 11) + "501@老饕 觸發",
-	}, "\n"), effectPanel{}.View(world, 60))
+	}, "\n"), effectPanel{}.View(game, 60))
 
-	row := strings.Split(effectPanel{}.View(world, 12), "\n") // 超寬: 補右緣 >
+	row := strings.Split(effectPanel{}.View(game, 12), "\n") // 超寬: 補右緣 >
 	this.Equal("402@護盾 ( >", row[1])
 }
 
@@ -42,16 +45,12 @@ func (this *SuiteEffectPanel) TestEffectOrder() {
 	this.Equal(int32(0), effectOrder(testSheet(), 999))
 }
 
-// TestEffectSelf 驗證 self 主畫面投影: 顧客 / 卡牌辨型、空物件與失蹤實例顯 空。
+// TestEffectSelf 驗證 self 主畫面投影: Ref 自帶辨型(顧客 / 卡牌)、空物件顯 空。
 func (this *SuiteEffectPanel) TestEffectSelf() {
-	world := newMirror(testSheet())
-	world.Apply(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: 21, From: cores.ContainerNone, To: cores.ContainerWait})
-	world.Apply(cores.EventData{Kind: cores.EventContainer, DataID: 101, InstanceID: 11, From: cores.ContainerNone, To: cores.ContainerHand})
-
-	this.Equal("501@老饕", effectSelf(world, &effectView{selfID: 501, selfInstanceID: 21}))
-	this.Equal("101@上菜", effectSelf(world, &effectView{selfID: 101, selfInstanceID: 11}))
-	this.Equal("空", effectSelf(world, &effectView{}))                                // 空物件
-	this.Equal("空", effectSelf(world, &effectView{selfID: 501, selfInstanceID: 99})) // 失蹤實例(防禦)
+	game := testGame()
+	this.Equal("501@老饕", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.NewRefGuest(cores.NewGuest(game, 501)), 1)))
+	this.Equal("101@上菜", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.NewRefCard(cores.NewCard(game, 101)), 1)))
+	this.Equal("空", effectSelf(testSheet(), cores.NewEffect(game, 401, cores.Ref{}, 1))) // 空物件
 }
 
 // TestEffectKindName 驗證類型標記: 觸發 / 常駐; 立即與查無顯 ?。

@@ -73,9 +73,9 @@ func (this *SuiteModel) TestModelUpdate() {
 }
 
 // TestModelView 驗證全畫面 layout: 共 height 行、左欄六區與日誌同列起頭、狀態列釘底、鍵位列收尾;
-// 低於最低尺寸守門顯提示。
+// 低於最低尺寸守門顯提示。盤面直讀暫停機(未推進 = 開局前空白盤面, 守門與排版不受內容影響)。
 func (this *SuiteModel) TestModelView() {
-	target := newModel(nil, testSheet())
+	target := newModel(newStepper(1, 601, tester.BuildSheet()), tester.BuildSheet())
 	row := strings.Split(target.View(), "\n")
 	this.Len(row, minHeight) // 預設 100x30 → 滿版 30 行
 	this.Contains(row[0], "+- 座位")

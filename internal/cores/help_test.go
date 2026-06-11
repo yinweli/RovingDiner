@@ -53,6 +53,18 @@ func (this *SuiteHelp) TestImmuneGet() {
 	this.Equal(int32(0), immune.Get(99)) // 無鍵 → 0
 }
 
+// TestImmuneAny 驗證 Any 任一群組計數 > 0; 歸零鍵與空表回 false。
+func (this *SuiteHelp) TestImmuneAny() {
+	immune := Immune{count: map[int32]int32{7: 1}}
+	this.True(immune.Any())
+
+	immune.Del(7) // 歸零鍵仍在表 → false
+	this.False(immune.Any())
+
+	zero := Immune{}
+	this.False(zero.Any())
+}
+
 // TestNewHit 驗證 NewHit 建構空集合。
 func (this *SuiteHelp) TestNewHit() {
 	hit := NewHit()

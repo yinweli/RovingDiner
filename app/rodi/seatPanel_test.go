@@ -20,10 +20,10 @@ type SuiteSeatPanel struct {
 
 // TestSeatPanelView 驗證渲染: 桌號列 + 桌內 2 座各 2 行、桌欄固定寬 25、空位顯 空、超寬桌號列補右緣 >。
 func (this *SuiteSeatPanel) TestSeatPanelView() {
-	world := newMirror(testSheet())
-	world.Apply(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: 21, From: cores.ContainerNone, To: cores.ContainerWait})
-	world.Apply(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: 21, From: cores.ContainerWait, To: cores.ContainerSeat, SeatID: 1})
-	world.Apply(cores.EventData{Kind: cores.EventEffect, DataID: 501, InstanceID: 21, EffectID: 401, EffectInstanceID: 41, Stage: cores.EffectStageJoin, Stack: 1, Alive: true})
+	game := testGame()
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(1, guest)
+	game.Effect.Push(cores.NewEffect(game, 401, cores.NewRefGuest(guest), 1))
 
 	this.Equal(strings.Join([]string{ // 顧客 501: 封(資料 SateSeal)+ 效(佇列效果)命中、免 留白
 		"+- 座位 " + strings.Repeat("-", 52),
@@ -32,14 +32,17 @@ func (this *SuiteSeatPanel) TestSeatPanelView() {
 		strings.Repeat(" ", 9) + "封  效",
 		"空",
 		"",
-	}, "\n"), seatPanel{}.View(world, 60))
+	}, "\n"), seatPanel{}.View(game, 60))
 
-	world.Apply(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: 21, Attr: "effectImmune", Op: cores.AssignAdd, Operand: 5, After: 1})
-	this.Contains(seatPanel{}.View(world, 60), strings.Repeat(" ", 9)+"封免效") // 免疫計數 > 0 → 免 點亮(M22 拍板)
+	guest.GetEffectImmune().Add(5) // 免疫計數 > 0 → 免 點亮(M22 拍板)
+	this.Contains(seatPanel{}.View(game, 60), strings.Repeat(" ", 9)+"封免效")
 
-	row := strings.Split(seatPanel{}.View(world, 10), "\n") // 超寬: 桌號列補右緣 >
+	row := strings.Split(seatPanel{}.View(game, 10), "\n") // 超寬: 桌號列補右緣 >
 	this.Equal("桌1"+strings.Repeat(" ", 6)+">", row[1])
 
-	world.seat[2] = 99 // 防禦: 座位表有編號但視圖缺 → 顯 空
-	this.Contains(seatPanel{}.View(world, 60), "空")
+	game.Seat[2] = nil // 防禦: 座位表 nil 項 → 顯 空
+	this.Contains(seatPanel{}.View(game, 60), "空")
+
+	game.Effect = nil // 無效果 → 效 槽熄滅(hasEffect 掃完未命中)
+	this.NotContains(seatPanel{}.View(game, 60), "效")
 }

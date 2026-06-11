@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 // poolPanel 場外組件(區 2; 【營業顯示規格書 | 6、畫面規格 | 6.4】): 不在座的顧客池三列——
@@ -13,24 +14,21 @@ import (
 type poolPanel struct{}
 
 // View 渲染標題列 + 3 列。
-func (this poolPanel) View(world *mirror, width int) string {
+func (this poolPanel) View(game *cores.Game, width int) string {
 	return strings.Join([]string{
 		panelTitle("場外", width),
-		truncMark(poolRow(world, "排隊", cores.ContainerWait), width),
-		truncMark(poolRow(world, "遊蕩", cores.ContainerRoam), width),
-		truncMark(poolRow(world, "卡牌化", cores.ContainerCardify), width),
+		truncMark(poolRow(game.GetSheet(), "排隊", game.Wait), width),
+		truncMark(poolRow(game.GetSheet(), "遊蕩", game.Roam), width),
+		truncMark(poolRow(game.GetSheet(), "卡牌化", game.Cardify), width),
 	}, "\n")
 }
 
 // poolRow 單列: 標籤(N): 識別碼序列(第 1 個 = 隊頭 / 首位)。
-func poolRow(world *mirror, label string, kind cores.ContainerKind) string {
-	member := world.zone[kind]
+func poolRow(sheet *sheeter.Sheeter, label string, member []*cores.Guest) string {
 	text := fmt.Sprintf("%v(%v):", label, len(member))
 
 	for _, itor := range member {
-		if view := world.guest[itor]; view != nil {
-			text += " " + identGuest(world.sheet, view.dataID, cores.NoneID)
-		} // if
+		text += " " + identGuest(sheet, itor.GetGuestID(), cores.NoneID)
 	} // for
 
 	return text

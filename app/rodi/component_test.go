@@ -5,6 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/yinweli/RovingDiner/internal/cores"
+	"github.com/yinweli/RovingDiner/internal/games"
+	"github.com/yinweli/RovingDiner/internal/tester"
 )
 
 func TestSuiteComponent(t *testing.T) {
@@ -18,9 +22,19 @@ type SuiteComponent struct {
 
 // TestComposeView 驗證父層組合: 掛載順序 = 堆疊順序、每組件收到同一寬度預算; 空組件列表回空字串。
 func (this *SuiteComponent) TestComposeView() {
-	world := newMirror(testSheet())
-	this.Equal("a:80\nb:80", composeView(world, 80, []component{fakeComponent{text: "a"}, fakeComponent{text: "b"}}))
-	this.Equal("", composeView(world, 80, nil))
+	game := testGame()
+	this.Equal("a:80\nb:80", composeView(game, 80, []component{fakeComponent{text: "a"}, fakeComponent{text: "b"}}))
+	this.Equal("", composeView(game, 80, nil))
+}
+
+// TestEndGameView 驗證整場跑完的盤面直讀: 七組件對終局盤面渲染不爆、皆有內容(跨組件冒煙)。
+func (this *SuiteComponent) TestEndGameView() {
+	game := games.Build(0, 601, tester.BuildSheet(), tester.FakeOperator{}, nil)
+	games.Loop(game)
+
+	for _, itor := range []component{seatPanel{}, poolPanel{}, actionPanel{}, effectPanel{}, handPanel{}, pilePanel{}, statusBar{}} {
+		this.NotEmpty(itor.View(game, 100))
+	} // for
 }
 
 // fakeComponent 測試替身: 渲染自身文字與收到的寬度預算, 供 TestComposeView 驗證下發。
@@ -28,6 +42,6 @@ type fakeComponent struct {
 	text string
 }
 
-func (this fakeComponent) View(world *mirror, width int) string {
+func (this fakeComponent) View(game *cores.Game, width int) string {
 	return fmt.Sprintf("%v:%v", this.text, width)
 }

@@ -103,14 +103,14 @@ func (this model) View() string {
 
 	body := this.height - 2 // 鍵位列固定 2 行
 	left := this.leftView(this.width-logWidth, body)
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, this.log.View(logWidth, body)) + "\n" + this.keybar.View(this.world, this.width)
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, this.log.View(logWidth, body)) + "\n" + this.keybar.View(this.width)
 }
 
 // leftView 左欄主畫面(共 height 行): 六區堆疊 + 留白墊高 + 狀態列釘底(【營業顯示規格書 | 6、畫面規格 | 6.2】
-// 置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。
+// 置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。盤面直讀暫停機的營業實例(停點間引擎必停)。
 func (this model) leftView(width, height int) string {
-	stack := composeView(this.world, width, this.comp)
-	status := this.status.View(this.world, width)
+	stack := composeView(this.stepper.game, width, this.comp)
+	status := this.status.View(this.stepper.game, width)
 	gap := height - strings.Count(stack, "\n") - strings.Count(status, "\n") - 2
 
 	if gap < 0 {

@@ -8,7 +8,6 @@ import (
 	"github.com/yinweli/RovingDiner/internal/cores"
 	"github.com/yinweli/RovingDiner/internal/games"
 	"github.com/yinweli/RovingDiner/internal/tester"
-	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuiteMirror(t *testing.T) {
@@ -188,8 +187,8 @@ func (this *SuiteMirror) TestMirrorHasEffect() {
 	this.False(target.hasEffect(99))
 }
 
-// TestMirrorGame 驗證鏡像對完整一局真實事件流的摺疊(端到端): 終局座標為終止站、容器成員皆有視圖(無懸空編號)、
-// 六區渲染不噴錯——投影合約與摺疊規則的整合釘。
+// TestMirrorGame 驗證鏡像對完整一局真實事件流的摺疊(端到端): 終局座標為終止站、容器成員皆有視圖(無懸空編號)——
+// 投影合約與摺疊規則的整合釘(組件已直讀盤面, 渲染冒煙歸 component_test 的 TestEndGameView)。
 func (this *SuiteMirror) TestMirrorGame() {
 	record := &tester.RecordPresenter{}
 	games.Run(0, 601, tester.BuildSheet(), tester.FakeOperator{}, record)
@@ -210,36 +209,4 @@ func (this *SuiteMirror) TestMirrorGame() {
 	for _, itor := range target.seat {
 		this.NotNil(target.guest[itor])
 	} // for
-
-	for _, itor := range []component{seatPanel{}, poolPanel{}, actionPanel{}, effectPanel{}, handPanel{}, pilePanel{}, statusBar{}} {
-		this.NotEmpty(itor.View(target, 100))
-	} // for
-}
-
-// === 測試輔助(置尾) ===
-
-// testSheet 迷你靜態表(視圖初值與識別碼查表用): 座位 桌1(1,2)/ 桌2(3)、卡 101 / 103、顧客 501、技能 301、效果 401。
-func testSheet() *sheeter.Sheeter {
-	sheet := &sheeter.Sheeter{}
-	sheet.Seat.Data = map[int32]*sheeter.Seat{
-		1: {ID: 1, TableID: 1, SameSeatID: []int32{2}, NearSeatID: []int32{3}},
-		2: {ID: 2, TableID: 1, SameSeatID: []int32{1}, NearSeatID: []int32{3}},
-		3: {ID: 3, TableID: 2, SameSeatID: []int32{3}, NearSeatID: []int32{1, 2}},
-	}
-	sheet.Card.Data = map[int32]*sheeter.Card{
-		101: {ID: 101, Name: "上菜", Cost: 2, ExtraRunMin: 1, ExtraRunMax: 3, Seal: true},
-		103: {ID: 103, Name: "結帳", Cost: 1, Keep: true},
-	}
-	sheet.Guest.Data = map[int32]*sheeter.Guest{
-		501: {ID: 501, Name: "老饕", Score: 4, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 6, SateSeal: true},
-	}
-	sheet.Skill.Data = map[int32]*sheeter.Skill{
-		301: {ID: 301, Name: "開朗"},
-	}
-	sheet.Effect.Data = map[int32]*sheeter.Effect{
-		401: {ID: 401, Name: "加耐", Kind: 1, RunOrder: 5},
-		402: {ID: 402, Name: "護盾", Kind: 2, RunOrder: 9},
-		403: {ID: 403, Name: "立即", Kind: 0, RunOrder: 9},
-	}
-	return sheet
 }

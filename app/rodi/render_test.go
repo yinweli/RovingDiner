@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/yinweli/RovingDiner/internal/cores"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuiteRender(t *testing.T) {
@@ -45,9 +48,57 @@ func (this *SuiteRender) TestPanelTitle() {
 	this.Equal("+- 座", panelTitle("座位", 6))   // 超寬截斷
 }
 
+// TestNum 驗證整數屬性值轉字串。
+func (this *SuiteRender) TestNum() {
+	this.Equal("0", num(0))
+	this.Equal("1250", num(1250))
+	this.Equal("-3", num(-3))
+}
+
+// TestNumFloor 驗證護盾 / 格擋顯示下限: <= 0 顯 0。
+func (this *SuiteRender) TestNumFloor() {
+	this.Equal("5", numFloor(5))
+	this.Equal("0", numFloor(0))
+	this.Equal("0", numFloor(-2))
+}
+
 // TestAlignPair 驗證兩行對齊表: 欄寬 = 標籤 / 數值較寬者、欄距 2 空白、行尾不留補白。
 func (this *SuiteRender) TestAlignPair() {
 	row1, row2 := alignPair([]string{"回合", "士氣值", "x"}, []string{"3/10", "25", "1250"})
 	this.Equal("回合  士氣值  x", row1)
 	this.Equal("3/10  25      1250", row2)
+}
+
+// === 測試輔助(置尾) ===
+
+// testSheet 迷你靜態表(識別碼與初值查表用): 座位 桌1(1,2)/ 桌2(3)、卡 101 / 103、顧客 501、技能 301、效果 401。
+func testSheet() *sheeter.Sheeter {
+	sheet := &sheeter.Sheeter{}
+	sheet.Seat.Data = map[int32]*sheeter.Seat{
+		1: {ID: 1, TableID: 1, SameSeatID: []int32{2}, NearSeatID: []int32{3}},
+		2: {ID: 2, TableID: 1, SameSeatID: []int32{1}, NearSeatID: []int32{3}},
+		3: {ID: 3, TableID: 2, SameSeatID: []int32{3}, NearSeatID: []int32{1, 2}},
+	}
+	sheet.Card.Data = map[int32]*sheeter.Card{
+		101: {ID: 101, Name: "上菜", Cost: 2, ExtraRunMin: 1, ExtraRunMax: 3, Seal: true},
+		103: {ID: 103, Name: "結帳", Cost: 1, Keep: true},
+	}
+	sheet.Guest.Data = map[int32]*sheeter.Guest{
+		501: {ID: 501, Name: "老饕", Score: 4, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 6, SateSeal: true},
+	}
+	sheet.Skill.Data = map[int32]*sheeter.Skill{
+		301: {ID: 301, Name: "開朗"},
+	}
+	sheet.Effect.Data = map[int32]*sheeter.Effect{
+		401: {ID: 401, Name: "加耐", Kind: 1, RunOrder: 5},
+		402: {ID: 402, Name: "護盾", Kind: 2, RunOrder: 9},
+		403: {ID: 403, Name: "立即", Kind: 0, RunOrder: 9},
+	}
+	return sheet
+}
+
+// testGame 空白營業實例(盤面直讀渲染用): 吃 testSheet、不裝詞彙、不驅動,
+// 容器與屬性由各測試自行擺盤(port 全 nil; 渲染唯讀, 不會觸碰)。
+func testGame() *cores.Game {
+	return cores.NewGame(0, 0, cores.NewData(testSheet(), nil), nil, nil, nil)
 }
