@@ -109,6 +109,7 @@ linters:
       multi-func: true
     wrapcheck:
       ignore-sigs:
+        - fmt.Errorf( # wrapcheck 預設忽略清單成員（%w 即包裝慣用式）；本清單為覆蓋式設定，須自行補回
         - errors.New(
         - errors.Unwrap(
         - .Wrap(
