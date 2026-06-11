@@ -49,7 +49,7 @@ func (this *journal) Append(eventData cores.EventData) {
 
 	case cores.EventAction:
 		if eventData.Alive {
-			this.appendBody(identGuest(this.sheet, eventData.DataID, eventData.InstanceID) + " >> 行動佇列(" + taskText(eventData.Task) + ")")
+			this.appendBody(cores.IdentGuest(this.sheet, eventData.DataID, eventData.InstanceID) + " >> 行動佇列(" + cores.TaskText(eventData.Task) + ")")
 		} // if
 
 	case cores.EventPhase: // 不立行(M22 拍板)
@@ -62,20 +62,20 @@ func (this *journal) appendScope(eventData cores.EventData) {
 	this.effect = false
 	this.selfDataID = 0
 	this.selfInstanceID = cores.NoneID
-	this.line = append(this.line, "[R"+strconv.FormatInt(int64(eventData.Round), 10)+" "+phaseName(eventData.Phase)+"] "+scopeText(eventData.Scope, eventData.Trigger))
+	this.line = append(this.line, "[R"+strconv.FormatInt(int64(eventData.Round), 10)+" "+cores.PhaseName(eventData.Phase)+"] "+scopeText(eventData.Scope, eventData.Trigger))
 
 	switch eventData.Scope {
 	case cores.ScopePlay:
-		this.line = append(this.line, "* "+identCard(this.sheet, eventData.DataID, eventData.InstanceID))
+		this.line = append(this.line, "* "+cores.IdentCard(this.sheet, eventData.DataID, eventData.InstanceID))
 
 	case cores.ScopeGuest:
-		this.line = append(this.line, "* "+identGuest(this.sheet, eventData.DataID, eventData.InstanceID))
+		this.line = append(this.line, "* "+cores.IdentGuest(this.sheet, eventData.DataID, eventData.InstanceID))
 
 	default: // 其餘範圍無對象操作元
 	} // switch
 
 	if eventData.SkillID != 0 {
-		this.line = append(this.line, "* "+identSkill(this.sheet, eventData.SkillID))
+		this.line = append(this.line, "* "+cores.IdentSkill(this.sheet, eventData.SkillID))
 	} // if
 }
 
@@ -85,10 +85,10 @@ func (this *journal) appendEffect(eventData cores.EventData) {
 	target := "空"
 
 	if eventData.DataID != 0 {
-		target = identTarget(this.sheet, eventData.DataID, eventData.InstanceID)
+		target = cores.IdentTarget(this.sheet, eventData.DataID, eventData.InstanceID)
 	} // if
 
-	this.line = append(this.line, "- "+identEffect(this.sheet, eventData.EffectID, eventData.EffectInstanceID), "  "+target, "  "+stageText(eventData.Stage))
+	this.line = append(this.line, "- "+cores.IdentEffect(this.sheet, eventData.EffectID, eventData.EffectInstanceID), "  "+target, "  "+cores.StageText(eventData.Stage))
 	this.effect = true
 	this.selfDataID = eventData.DataID
 	this.selfInstanceID = eventData.InstanceID
@@ -109,10 +109,10 @@ func (this *journal) appendBody(body string) {
 // 行文轉查詢函式形 名稱(群組) 且運算值固定 1(M22 拍板); 鎖定 / 解鎖無算術式, 結果為鎖定計數。
 func (this *journal) propertyBody(eventData cores.EventData) string {
 	global := eventData.DataID == 0 && eventData.InstanceID == cores.NoneID
-	name := attrText(eventData.Attr, global)
-	value := numText(eventData.Operand)
+	name := cores.AttrText(eventData.Attr, global)
+	value := cores.NumText(eventData.Operand)
 
-	if eventData.Attr == attrEffectImmune || eventData.Attr == attrSkillImmune {
+	if eventData.Attr == cores.AttrEffectImmune || eventData.Attr == cores.AttrSkillImmune {
 		name += "(" + value + ")"
 		value = "1"
 	} // if
@@ -120,36 +120,36 @@ func (this *journal) propertyBody(eventData cores.EventData) string {
 	body := name
 
 	if global == false && (this.effect == false || eventData.DataID != this.selfDataID || eventData.InstanceID != this.selfInstanceID) {
-		body = identTarget(this.sheet, eventData.DataID, eventData.InstanceID) + " " + name
+		body = cores.IdentTarget(this.sheet, eventData.DataID, eventData.InstanceID) + " " + name
 	} // if
 
 	if eventData.Op == cores.AssignLock || eventData.Op == cores.AssignUnlock {
-		return body + " " + assignText(eventData.Op) + " >> " + numText(eventData.After)
+		return body + " " + cores.AssignText(eventData.Op) + " >> " + cores.NumText(eventData.After)
 	} // if
 
-	return body + " " + assignText(eventData.Op) + " " + value + " >> " + numText(eventData.After)
+	return body + " " + cores.AssignText(eventData.Op) + " " + value + " >> " + cores.NumText(eventData.After)
 }
 
 // containerBody 容器命令行本文: 重整(From == To)為洗牌行(全序不印, 順序直讀盤面即見; M22 拍板)、
 // 搬移為 <識別碼> >> <去向>(入座帶座位編號、To == None 即離場)。
 func (this *journal) containerBody(eventData cores.EventData) string {
 	if eventData.From == eventData.To {
-		return containerText(eventData.From) + " 洗牌"
+		return cores.ContainerText(eventData.From) + " 洗牌"
 	} // if
 
-	dest := containerText(eventData.To)
+	dest := cores.ContainerText(eventData.To)
 
 	if eventData.To == cores.ContainerSeat && eventData.SeatID > 0 {
-		dest += numText(float64(eventData.SeatID))
+		dest += cores.NumText(float64(eventData.SeatID))
 	} // if
 
-	return identTarget(this.sheet, eventData.DataID, eventData.InstanceID) + " >> " + dest
+	return cores.IdentTarget(this.sheet, eventData.DataID, eventData.InstanceID) + " >> " + dest
 }
 
 // appendInstance 變身配對(instance 唯一真身 = morph 銷毀舊 + 建立新, 必相鄰; M18 拍板):
 // 銷毀暫存舊識別碼、建立時合併為一行 <舊> >> <新>(M22 拍板); 防禦: 未見銷毀的建立以 ? 起頭。
 func (this *journal) appendInstance(eventData cores.EventData) {
-	ident := identTarget(this.sheet, eventData.DataID, eventData.InstanceID)
+	ident := cores.IdentTarget(this.sheet, eventData.DataID, eventData.InstanceID)
 
 	if eventData.Alive == false {
 		this.morph = ident
@@ -169,16 +169,16 @@ func (this *journal) appendInstance(eventData cores.EventData) {
 // appendSelect 玩家選取紀錄($ 選取 <來源> -> <選中…>; 恆為流程直屬行): 效果目標選取(EffectID 非零)
 // 來源顯效果識別碼、其餘查詞彙對照; 選中清單空白時防禦顯 空。
 func (this *journal) appendSelect(eventData cores.EventData) {
-	source := sourceText(eventData.Source)
+	source := cores.SourceText(eventData.Source)
 
 	if eventData.EffectID != 0 {
-		source = identEffect(this.sheet, eventData.EffectID, cores.NoneID)
+		source = cores.IdentEffect(this.sheet, eventData.EffectID, cores.NoneID)
 	} // if
 
 	pick := []string{}
 
 	for _, itor := range eventData.Pick {
-		pick = append(pick, identTarget(this.sheet, itor.DataID, itor.InstanceID))
+		pick = append(pick, cores.IdentTarget(this.sheet, itor.DataID, itor.InstanceID))
 	} // for
 
 	chosen := "空"
@@ -188,9 +188,4 @@ func (this *journal) appendSelect(eventData cores.EventData) {
 	} // if
 
 	this.line = append(this.line, "$ 選取 "+source+" -> "+chosen)
-}
-
-// numText 數值轉顯示字串(整數去小數位、運算值可為小數)。
-func numText(value float64) string {
-	return strconv.FormatFloat(value, 'f', -1, 64)
 }

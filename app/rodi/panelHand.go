@@ -48,10 +48,10 @@ func (this panelHand) View(game *cores.Game, width int) string {
 
 // handCard 卡名行: 識別碼(主畫面省實例段) + cardify 來源段(已綁才有) + (出牌費用)。
 func handCard(sheet *sheeter.Sheeter, card *cores.Card) string {
-	text := identCard(sheet, card.GetCardID(), cores.NoneID)
+	text := cores.IdentCard(sheet, card.GetCardID(), cores.NoneID)
 
 	if bind := card.GetCardify(); bind != nil {
-		text += "[" + identGuest(sheet, bind.GetGuestID(), cores.NoneID) + "]"
+		text += "[" + cores.IdentGuest(sheet, bind.GetGuestID(), cores.NoneID) + "]"
 	} // if
 
 	return text + " (" + num(card.GetCost().GetValue()) + ")"

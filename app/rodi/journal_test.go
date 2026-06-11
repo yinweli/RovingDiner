@@ -151,8 +151,8 @@ func (this *SuiteJournal) TestJournalPhase() {
 
 // TestNumText 驗證數值轉顯示字串: 整數去小數位、小數保留、負值。
 func (this *SuiteJournal) TestNumText() {
-	this.Equal("2", numText(2))
-	this.Equal("1.5", numText(1.5))
-	this.Equal("-3", numText(-3))
-	this.Equal("0", numText(0))
+	this.Equal("2", cores.NumText(2))
+	this.Equal("1.5", cores.NumText(1.5))
+	this.Equal("-3", cores.NumText(-3))
+	this.Equal("0", cores.NumText(0))
 }

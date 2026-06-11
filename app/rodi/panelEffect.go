@@ -34,7 +34,7 @@ func (this panelEffect) View(game *cores.Game, width int) string {
 	row2 := []string{}
 
 	for _, itor := range sorted {
-		text1 := identEffect(game.GetSheet(), itor.GetEffectID(), cores.NoneID)
+		text1 := cores.IdentEffect(game.GetSheet(), itor.GetEffectID(), cores.NoneID)
 
 		if itor.GetStack() > 1 {
 			text1 += "x" + num(itor.GetStack())
@@ -75,11 +75,11 @@ func effectSelf(sheet *sheeter.Sheeter, effect *cores.Effect) string {
 	self := effect.GetSelf()
 
 	if guest := self.GetGuest(); guest != nil {
-		return identGuest(sheet, guest.GetGuestID(), cores.NoneID)
+		return cores.IdentGuest(sheet, guest.GetGuestID(), cores.NoneID)
 	} // if
 
 	if card := self.GetCard(); card != nil {
-		return identCard(sheet, card.GetCardID(), cores.NoneID)
+		return cores.IdentCard(sheet, card.GetCardID(), cores.NoneID)
 	} // if
 
 	return "空"

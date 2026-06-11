@@ -20,7 +20,7 @@ func (this barStatus) View(game *cores.Game, width int) string {
 			numFloor(game.GetMoraleBlock().GetValue()),
 			energyText(game),
 			num(game.GetScore().GetValue()),
-			phaseName(game.GetPhase()),
+			cores.PhaseName(game.GetPhase()),
 			"快速",
 		})
 	return truncTo(row1, width) + "\n" + truncTo(row2, width)

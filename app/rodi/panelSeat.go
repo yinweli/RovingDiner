@@ -87,7 +87,7 @@ func seatGuest(game *cores.Game, seatID int32) (row1, row2 string) {
 		return "空", ""
 	} // if
 
-	ident := identGuest(game.GetSheet(), guest.GetGuestID(), cores.NoneID)
+	ident := cores.IdentGuest(game.GetSheet(), guest.GetGuestID(), cores.NoneID)
 	row1 = ident + " 飽" + num(guest.GetSate().GetValue()) + "耐" + num(guest.GetCalm().GetValue())
 	flag := seatFlag(game, guest)
 

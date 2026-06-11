@@ -20,8 +20,8 @@ func (this panelAction) View(game *cores.Game, width int) string {
 	row2 := []string{}
 
 	for _, itor := range game.Action {
-		text1 := identSkill(game.GetSheet(), itor.GetSkillID())
-		text2 := identGuest(game.GetSheet(), itor.GetGuest().GetGuestID(), cores.NoneID) + " " + taskName(itor.GetKind())
+		text1 := cores.IdentSkill(game.GetSheet(), itor.GetSkillID())
+		text2 := cores.IdentGuest(game.GetSheet(), itor.GetGuest().GetGuestID(), cores.NoneID) + " " + taskName(itor.GetKind())
 		size := max(lipgloss.Width(text1), lipgloss.Width(text2))
 		row1 = append(row1, padTo(text1, size))
 		row2 = append(row2, padTo(text2, size))

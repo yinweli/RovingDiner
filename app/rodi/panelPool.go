@@ -28,7 +28,7 @@ func poolRow(sheet *sheeter.Sheeter, label string, member []*cores.Guest) string
 	text := fmt.Sprintf("%v(%v):", label, len(member))
 
 	for _, itor := range member {
-		text += " " + identGuest(sheet, itor.GetGuestID(), cores.NoneID)
+		text += " " + cores.IdentGuest(sheet, itor.GetGuestID(), cores.NoneID)
 	} // for
 
 	return text

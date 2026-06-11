@@ -28,7 +28,7 @@ func pileRow(sheet *sheeter.Sheeter, label string, member []*cores.Card) string 
 	text := fmt.Sprintf("%v(%v):", label, len(member))
 
 	for _, itor := range member {
-		text += " " + identCard(sheet, itor.GetCardID(), cores.NoneID)
+		text += " " + cores.IdentCard(sheet, itor.GetCardID(), cores.NoneID)
 	} // for
 
 	return text
