@@ -68,6 +68,14 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Example: `} // if`
 - Closing comments on functions or methods are forbidden.
 
+- In comments and string literals, replace these full-width characters with their half-width forms: `（）` → `()`, `：` → `:`, `，` → `,`, `；` → `;`, `／` → `/`. Only the listed characters are replaced (`、`, `。` etc. stay as-is). Exception: text inside a spec citation `【…】` is verbatim — it keeps the doc heading's full-width punctuation.
+  - Example: `// 組裝後呼叫 app(詳見規格), CLI 框架統一用 cobra`
+  - Forbidden: `// 組裝後呼叫 app（詳見規格），CLI 框架統一用 cobra`
+
+- In comments and string literals, `,` / `;` / `:` must be followed by one space when text follows (visual separation).
+  - Example: `// 循序保行序, 依 Init 同註`
+  - Forbidden: `// 循序保行序,依 Init 同註`
+
 - A control-flow block (`if` / `for` / `switch`) must be preceded by a blank line when it follows another statement — never cuddle it against the previous line. (No blank line when it is the first statement in its block, i.e. directly after the opening `{`.)
   - Example:
 
