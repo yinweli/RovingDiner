@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
@@ -35,10 +37,35 @@ func (this *SuitePanelHand) TestPanelHandView() {
 		"| " + padTo("101@上菜[501@老饕] (2)  103@結帳 (1)  101@上菜 (2)", 56) + " |",
 		"| " + padTo("不棄 封印"+strings.Repeat(" ", 15)+"不棄"+strings.Repeat(" ", 10)+"封印", 56) + " |",
 		"| " + padTo("", 56) + " |",
-	}, "\n"), panelHand{}.View(game, 60)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
+	}, "\n"), (&panelHand{}).View(game, 60, false)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
 
-	row := strings.Split(panelHand{}.View(game, 12), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	row := strings.Split((&panelHand{}).View(game, 12, false), "\n") // 超寬: 內容寬 8、> 站最後內容格
 	this.Equal("| 101@上 > |", row[1])
+}
+
+// TestPanelHandMove 驗證游標移動: 單列左右、夾界不迴繞; 聚焦時游標卡區塊 3 行反白。
+func (this *SuitePanelHand) TestPanelHandMove() {
+	game := testGame()
+	game.GetEnergy().Set(9) // 出得起且 103 未封印: 游標卡無暗色疊加, 反白單獨可釘
+	game.Hand.Push(cores.NewCard(game, 101))
+	game.Hand.Push(cores.NewCard(game, 103))
+	target := &panelHand{}
+	target.Move(game, "right")
+	this.Equal(1, target.cursor)
+	target.Move(game, "right") // 右端夾住
+	this.Equal(1, target.cursor)
+	target.Move(game, "left")
+	this.Equal(0, target.cursor)
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestFocusView)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	row := strings.Split(target.View(game, 60, true), "\n") // 手牌序 = 新進入者在前: 索引 0 = 103(未封印)
+	this.Contains(row[1], styleCursor.Render(padTo("103@結帳 (1)", 12)))
+	this.Contains(row[2], styleCursor.Render(padTo("不棄", 12))) // 旗標行同卡反白
+
+	row = strings.Split((&panelHand{cursor: 1}).View(game, 16, true), "\n") // 窄寬: 窗格捲到游標、左緣 <
+	this.Contains(row[1], "| < ")
+	this.Contains(row[2], "|   ") // 旗標行同縮排
 }
 
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。

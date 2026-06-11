@@ -39,6 +39,10 @@ func newBarKey() barKey {
 		keyModeNormal: {
 			{key: "tab", label: "[Tab/Shift+Tab]切區", row: 1, cmd: tab(1)},
 			{key: "shift+tab", label: "", row: 1, cmd: tab(-1)},
+			{key: keyUp, label: "[Arrow]移動游標", row: 1, cmd: move(keyUp)},
+			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
+			{key: keyLeft, label: "", row: 1, cmd: move(keyLeft)},
+			{key: keyRight, label: "", row: 1, cmd: move(keyRight)},
 			{key: " ", label: "[Space]快/慢/步進", row: 2, cmd: cycle()},
 			{key: "n", label: "[N]前進", row: 2, cmd: step()},
 			{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},

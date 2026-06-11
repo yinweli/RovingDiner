@@ -19,6 +19,7 @@ var (
 	styleField   = lipgloss.NewStyle()                                 // 效果欄位(欄 2): 原色
 	styleDim     = lipgloss.NewStyle().Faint(true)                     // 手牌暗色標記(出不起 / 封印)
 	styleFocus   = lipgloss.NewStyle().Reverse(true)                   // 聚焦區標題列反白(M26 R1)
+	styleCursor  = lipgloss.NewStyle().Reverse(true)                   // 游標態反白(聚焦區內游標停駐項目; M26 R2)
 )
 
 // focusView 聚焦高亮: 區輸出首行(面板標題列 / 狀態列標籤行)整列反白, 其餘行原樣——

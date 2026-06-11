@@ -7,10 +7,13 @@ import (
 )
 
 // component 畫面組件契約(【營業實作規格書 | 九、里程碑 | M20】組件化 layout): 各組件獨立自持渲染——
-// View 為純函式(唯讀引擎盤面 + 寬度預算 → 渲染字串), 組件間互不伸手; 規則狀態一律直讀 *cores.Game,
-// 引擎停點間必停在事件邊界、唯讀不需鎖(M23 拍板, 原 M20 讀鏡像作廢); 新增介面 = 新掛組件。
+// View 唯讀引擎盤面 + 寬度預算 + 是否聚焦(游標態只在聚焦區顯示; M26 R2)→ 渲染字串, 組件間互不伸手;
+// 規則狀態一律直讀 *cores.Game, 引擎停點間必停在事件邊界、唯讀不需鎖(M23 拍板, 原 M20 讀鏡像作廢)。
+// Move 收方向鍵移游標(語意隨區, 【營業顯示規格書 | 7、互動規格 | 7.2】)——游標為組件自持 UI 狀態
+// (M20 拍板), 故組件以指標掛載; 夾界一律在讀取時(cursor.go 原語)。新增介面 = 新掛組件。
 type component interface {
-	View(game *cores.Game, width int) string
+	View(game *cores.Game, width int, focus bool) string
+	Move(game *cores.Game, key string)
 }
 
 // composeView 父層組合: 依掛載順序逐組件渲染、換行堆疊; 父層只組合與分配空間——M20 只發寬度預算,
@@ -20,7 +23,7 @@ func composeView(game *cores.Game, width int, comp []component, focus int) strin
 	view := []string{}
 
 	for index, itor := range comp {
-		render := itor.View(game, width)
+		render := itor.View(game, width, index == focus)
 
 		if index == focus {
 			render = focusView(render)

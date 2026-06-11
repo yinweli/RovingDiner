@@ -26,7 +26,7 @@ func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind[keyModeNormal], 6)
+	this.Len(target.keybar.bind[keyModeNormal], 10)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
 	this.Equal(modeFast, target.mode)
 	this.Equal(0, target.gen)
@@ -100,6 +100,21 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	result, _ = result.(model).Update(tabMsg{delta: 1}) // 正向自末區迴繞回座位
 	this.Equal(0, result.(model).focus)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet()))
+	target.focus = 1 // 聚焦場外: 方向鍵分派給組件自持游標
+	result, cmd = target.Update(moveMsg{key: "down"})
+	this.Equal(1, result.(model).comp[1].(*panelPool).curRow)
+	this.Nil(cmd)
+
+	target.focus = focusStatus // 狀態列無游標: 落空不動作
+	_, cmd = target.Update(moveMsg{key: "down"})
+	this.Nil(cmd)
+
+	target.focus = focusLog // 聚焦日誌: 分派 viewport 捲動
+	target.log.Append("a", "b")
+	_, _ = target.Update(moveMsg{key: "up"})
+	this.Equal(1, target.log.offset)
 
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
@@ -214,4 +229,10 @@ func (this *SuiteModel) TestCycle() {
 func (this *SuiteModel) TestTab() {
 	this.Equal(tabMsg{delta: 1}, tab(1)())
 	this.Equal(tabMsg{delta: -1}, tab(-1)())
+}
+
+// TestMove 驗證游標移動訊息 Cmd: 載方向鍵名(分派活在 Update)。
+func (this *SuiteModel) TestMove() {
+	this.Equal(moveMsg{key: "up"}, move("up")())
+	this.Equal(moveMsg{key: "left"}, move("left")())
 }

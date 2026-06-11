@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
@@ -33,10 +35,34 @@ func (this *SuitePanelEffect) TestPanelEffectView() {
 		"+- 效果佇列(3) " + strings.Repeat("-", 44) + "+",
 		"| " + padTo("402@護盾 (永)  403@立即 (永)  401@加耐x2 (3)", 56) + " |",
 		"| " + padTo("空 常駐"+strings.Repeat(" ", 8)+"空 ?"+strings.Repeat(" ", 11)+"501@老饕 觸發", 56) + " |",
-	}, "\n"), panelEffect{}.View(game, 60))
+	}, "\n"), (&panelEffect{}).View(game, 60, false))
 
-	row := strings.Split(panelEffect{}.View(game, 12), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	row := strings.Split((&panelEffect{}).View(game, 12, false), "\n") // 超寬: 內容寬 8、> 站最後內容格
 	this.Equal("| 402@護 > |", row[1])
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 游標態: 索引對排序後順序(索引 1 = 403@立即), 項目區塊 2 行反白
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	row = strings.Split((&panelEffect{cursor: 1}).View(game, 60, true), "\n")
+	this.Contains(row[1], styleCursor.Render(padTo("403@立即 (永)", 13)))
+
+	row = strings.Split((&panelEffect{cursor: 2}).View(game, 20, true), "\n") // 窄寬: 窗格捲到游標、左緣 <
+	this.Contains(row[1], "| < ")
+	this.Contains(row[2], "|   ") // 第 2 行同縮排
+}
+
+// TestPanelEffectMove 驗證游標移動: 單列左右、夾界不迴繞。
+func (this *SuitePanelEffect) TestPanelEffectMove() {
+	game := testGame()
+	game.Effect.Push(cores.NewEffect(game, 401, cores.Ref{}, 1))
+	game.Effect.Push(cores.NewEffect(game, 402, cores.Ref{}, 1))
+	target := &panelEffect{}
+	target.Move(game, "right")
+	this.Equal(1, target.cursor)
+	target.Move(game, "right") // 右端夾住
+	this.Equal(1, target.cursor)
+	target.Move(game, "left")
+	target.Move(game, "left") // 左端夾住
+	this.Equal(0, target.cursor)
 }
 
 // TestEffectOrder 驗證作用順序查表; 查無回 0。

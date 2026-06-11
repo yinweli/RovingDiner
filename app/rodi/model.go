@@ -69,7 +69,7 @@ func newModel(stepper *stepper) model {
 		log:     newPanelLog(),
 		keybar:  newBarKey(),
 		status:  barStatus{},
-		comp:    []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}},
+		comp:    []component{&panelSeat{}, &panelPool{}, &panelAction{}, &panelEffect{}, &panelHand{}, &panelPile{}},
 		mode:    modeFast,
 		width:   minWidth,
 		height:  minHeight,
@@ -84,8 +84,8 @@ func (this model) Init() tea.Cmd {
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
 // 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
-// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 視窗尺寸 → 更新寬高預算;
-// 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
+// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → 分派聚焦區 Move(語意隨區, 狀態列落空不動作);
+// 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
@@ -115,6 +115,17 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	case tabMsg:
 		this.focus = (this.focus + msg.delta + focusCount) % focusCount
 		return this, nil
+
+	case moveMsg:
+		switch {
+		case this.focus < len(this.comp):
+			this.comp[this.focus].Move(this.stepper.game, msg.key)
+
+		case this.focus == focusLog:
+			this.log.Move(msg.key)
+		} // switch
+
+		return this, nil // 狀態列無游標(聚焦即整列), 落空不動作
 
 	case tea.WindowSizeMsg:
 		this.width = msg.Width
@@ -247,5 +258,17 @@ type tabMsg struct {
 func tab(delta int) tea.Cmd {
 	return func() tea.Msg {
 		return tabMsg{delta: delta}
+	}
+}
+
+// moveMsg 游標移動訊息(方向鍵投遞): 分派給聚焦區自持游標(語意隨區; 狀態列無游標不動作)。
+type moveMsg struct {
+	key string // 方向鍵名(up / down / left / right)
+}
+
+// move 排游標移動訊息的 Cmd(方向鍵綁定)。
+func move(key string) tea.Cmd {
+	return func() tea.Msg {
+		return moveMsg{key: key}
 	}
 }

@@ -20,14 +20,21 @@ const flagNone = "  "
 
 // panelSeat 座位組件(區 1; 【營業顯示規格書 | 6、畫面規格 | 6.3】): 桌子排成水平 strip(左右相鄰即鄰桌拓樸),
 // 每桌 2 座位上下疊、每位顧客 2 行摘要(識別碼 + 飽耐 / 旗標列)、空位顯「空」; 桌欄固定寬 25、欄距 2。
-// 超寬固定窗截斷、桌號列補右緣 >。
-type panelSeat struct{}
+// 游標 = 桌 x 座(左右換桌、上下切座; M26 R2), 游標態反白整個顧客格 2 行(【營業顯示規格書 | 7、互動規格 | 7.4】
+// 粒度); 桌窗格跟游標捲、左緣 < 全行縮排對齊、桌號列補右緣 >。
+type panelSeat struct {
+	curTable int // 游標桌索引(自持 UI 狀態; 讀取時夾界)
+	curSeat  int // 游標桌內座索引(0 上 / 1 下; 讀取時夾界)
+}
 
 // View 渲染標題列 + 5 行(桌號列 1 + 桌內 2 座各 2 行)。
-func (this panelSeat) View(game *cores.Game, width int) string {
-	row := []string{"", "", "", "", ""}
+func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
+	table := seatTable(game.GetSheet())
+	cursor := clampIndex(this.curTable, len(table))
+	cell := [][]string{}
+	size := []int{}
 
-	for index, itor := range seatTable(game.GetSheet()) {
+	for index, itor := range table {
 		col := []string{fmt.Sprintf("桌%v", itor.id), "", "", "", ""}
 
 		if len(itor.seat) > 0 {
@@ -38,22 +45,76 @@ func (this panelSeat) View(game *cores.Game, width int) string {
 			col[3], col[4] = seatGuest(game, itor.seat[1])
 		} // if
 
-		for r := range row {
-			if index > 0 {
-				row[r] += "  "
-			} // if
-
-			row[r] += padTo(col[r], seatColumn)
+		for r := range col {
+			col[r] = padTo(col[r], seatColumn)
 		} // for
+
+		if focus && index == cursor {
+			base := 1 + clampIndex(this.curSeat, len(itor.seat))*2
+			col[base] = styleCursor.Render(col[base])
+			col[base+1] = styleCursor.Render(col[base+1])
+		} // if
+
+		cell = append(cell, col)
+		size = append(size, seatColumn)
 	} // for
 
-	text := []string{panelTitle("座位", width), boxMark(strings.TrimRight(row[0], " "), width)}
+	first := stripFirst(size, 2, width-4, cursor)
+	row := []string{"", "", "", "", ""}
+
+	for r := range row {
+		part := []string{}
+
+		for _, itor := range cell[first:] {
+			part = append(part, itor[r])
+		} // for
+
+		head := ""
+
+		if first > 0 {
+			head = markIndent // 左緣記號佔位: 各行同縮排, 桌欄上下對齊
+		} // if
+
+		if first > 0 && r == 0 {
+			head = markHead
+		} // if
+
+		row[r] = head + strings.Join(part, "  ")
+	} // for
+
+	text := []string{panelTitle("座位", width), boxMark(row[0], width)}
 
 	for _, itor := range row[1:] {
-		text = append(text, boxTrunc(strings.TrimRight(itor, " "), width))
+		text = append(text, boxTrunc(itor, width))
 	} // for
 
 	return strings.Join(text, "\n")
+}
+
+// Move 游標移動: 左右換桌、上下切桌內 2 座(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
+func (this *panelSeat) Move(game *cores.Game, key string) {
+	table := seatTable(game.GetSheet())
+
+	switch key {
+	case keyLeft:
+		this.curTable--
+
+	case keyRight:
+		this.curTable++
+
+	case keyUp:
+		this.curSeat--
+
+	case keyDown:
+		this.curSeat++
+	} // switch
+
+	this.curTable = clampIndex(this.curTable, len(table))
+	this.curSeat = clampIndex(this.curSeat, 2)
+
+	if len(table) > 0 {
+		this.curSeat = clampIndex(this.curSeat, len(table[this.curTable].seat))
+	} // if
 }
 
 // tableInfo 單一桌次(桌次編號 + 桌內座位編號, 升序)。

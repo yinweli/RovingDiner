@@ -14,11 +14,14 @@ import (
 // panelEffect 效果佇列組件(區 4; 【營業顯示規格書 | 6、畫面規格 | 6.6】): 依作用順序排序(大者優先、
 // 同序效果編號小者優先, 同【營業規格書 | 十五、作用順序】; 排序用本地複本, 不動引擎佇列);
 // 每項 2 行垂直區塊橫向並排——第 1 行 效果識別碼xStack (剩餘回合)(層數 1 省 xN、整場保留顯 永),
-// 第 2 行 self 識別碼 + 類型(觸發 / 常駐); 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-type panelEffect struct{}
+// 第 2 行 self 識別碼 + 類型(觸發 / 常駐); 欄寬 content-fit、欄距 2。游標單列左右移(M26 R2, 索引對排序後
+// 順序), 游標態反白整個項目區塊(2 行); 窗格跟游標捲、左緣 < 兩行同縮排、超寬補右緣 >。
+type panelEffect struct {
+	cursor int // 游標索引(對排序後順序; 自持 UI 狀態、讀取時夾界)
+}
 
 // View 渲染標題列(含佇列數) + 2 行; 空佇列兩行留白(高度穩定)。
-func (this panelEffect) View(game *cores.Game, width int) string {
+func (this *panelEffect) View(game *cores.Game, width int, focus bool) string {
 	sorted := append([]*cores.Effect{}, game.Effect...)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		left, right := effectOrder(game.GetSheet(), sorted[i].GetEffectID()), effectOrder(game.GetSheet(), sorted[j].GetEffectID())
@@ -30,10 +33,12 @@ func (this panelEffect) View(game *cores.Game, width int) string {
 		return sorted[i].GetEffectID() < sorted[j].GetEffectID()
 	})
 
+	cursor := clampIndex(this.cursor, len(sorted))
 	row1 := []string{}
 	row2 := []string{}
+	size := []int{}
 
-	for _, itor := range sorted {
+	for index, itor := range sorted {
 		text1 := cores.IdentEffect(game.GetSheet(), itor.GetEffectID(), cores.NoneID)
 
 		if itor.GetStack() > 1 {
@@ -47,16 +52,37 @@ func (this panelEffect) View(game *cores.Game, width int) string {
 		} // if
 
 		text2 := effectSelf(game.GetSheet(), itor) + " " + effectKindName(game.GetSheet(), itor.GetEffectID())
-		size := max(lipgloss.Width(text1), lipgloss.Width(text2))
-		row1 = append(row1, padTo(text1, size))
-		row2 = append(row2, padTo(text2, size))
+		w := max(lipgloss.Width(text1), lipgloss.Width(text2))
+		cell1 := padTo(text1, w)
+		cell2 := padTo(text2, w)
+
+		if focus && index == cursor {
+			cell1 = styleCursor.Render(cell1)
+			cell2 = styleCursor.Render(cell2)
+		} // if
+
+		row1 = append(row1, cell1)
+		row2 = append(row2, cell2)
+		size = append(size, w)
 	} // for
+
+	first := stripFirst(size, 2, width-4, cursor)
+	head1, head2 := "", ""
+
+	if first > 0 {
+		head1, head2 = markHead, markIndent // 左緣記號佔位: 兩行同縮排, 項目區塊上下對齊
+	} // if
 
 	return strings.Join([]string{
 		panelTitle(fmt.Sprintf("效果佇列(%v)", len(game.Effect)), width),
-		boxMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
-		boxTrunc(strings.TrimRight(strings.Join(row2, "  "), " "), width),
+		boxMark(head1+strings.Join(row1[first:], "  "), width),
+		boxTrunc(head2+strings.Join(row2[first:], "  "), width),
 	}, "\n")
+}
+
+// Move 游標移動: 單列左右(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
+func (this *panelEffect) Move(game *cores.Game, key string) {
+	this.cursor = moveIndex(this.cursor, key, len(game.Effect))
 }
 
 // effectOrder 查效果作用順序(查無回 0, 防禦; 與 EffectList.Sort 同源規則)。

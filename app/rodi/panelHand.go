@@ -12,38 +12,64 @@ import (
 
 // panelHand 手牌組件(區 5; 【營業顯示規格書 | 6、畫面規格 | 6.7】): 每卡 3 行垂直區塊橫向並排——
 // 第 1 行 卡牌識別碼[卡牌化來源] (出牌費用)、第 2 行 flag A(不棄 / 封印)、第 3 行 flag B(出放 / 未放),
-// 命中才顯、未命中留白; 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-// 出不起 / 封印的卡名行上暗色標記(顏色與排版正交; M22 拍板)。
-type panelHand struct{}
+// 命中才顯、未命中留白; 欄寬 content-fit、欄距 2。出不起 / 封印的卡名行上暗色標記(顏色與排版正交; M22 拍板)。
+// 游標單列左右移(M26 R2), 游標態反白整張卡區塊(3 行; 【營業顯示規格書 | 7、互動規格 | 7.4】粒度);
+// 窗格跟游標捲、左緣 < 三行同縮排、超寬補右緣 >。
+type panelHand struct {
+	cursor int // 游標索引(自持 UI 狀態; 讀取時夾界)
+}
 
 // View 渲染標題列(手牌(N/上限)) + 3 行; 空手牌三行留白(高度穩定)。
-func (this panelHand) View(game *cores.Game, width int) string {
+func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
+	cursor := clampIndex(this.cursor, len(game.Hand))
 	row1 := []string{}
 	row2 := []string{}
 	row3 := []string{}
+	size := []int{}
 
-	for _, itor := range game.Hand {
+	for index, itor := range game.Hand {
 		text1 := handCard(game.GetSheet(), itor)
 		text2 := handFlagA(itor)
 		text3 := handFlagB(itor)
-		size := max(lipgloss.Width(text1), lipgloss.Width(text2), lipgloss.Width(text3))
-		cell1 := padTo(text1, size)
+		w := max(lipgloss.Width(text1), lipgloss.Width(text2), lipgloss.Width(text3))
+		cell1 := padTo(text1, w)
+		cell2 := padTo(text2, w)
+		cell3 := padTo(text3, w)
 
 		if handDim(game, itor) {
 			cell1 = styleDim.Render(cell1) // 排版先完成、樣式最後上(寬度不受擾)
 		} // if
 
+		if focus && index == cursor {
+			cell1 = styleCursor.Render(cell1)
+			cell2 = styleCursor.Render(cell2)
+			cell3 = styleCursor.Render(cell3)
+		} // if
+
 		row1 = append(row1, cell1)
-		row2 = append(row2, padTo(text2, size))
-		row3 = append(row3, padTo(text3, size))
+		row2 = append(row2, cell2)
+		row3 = append(row3, cell3)
+		size = append(size, w)
 	} // for
+
+	first := stripFirst(size, 2, width-4, cursor)
+	head1, head2 := "", ""
+
+	if first > 0 {
+		head1, head2 = markHead, markIndent // 左緣記號佔位: 三行同縮排, 卡區塊上下對齊
+	} // if
 
 	return strings.Join([]string{
 		panelTitle(fmt.Sprintf("手牌(%v/%v)", len(game.Hand), num(game.GetHandMax().GetValue())), width),
-		boxMark(strings.TrimRight(strings.Join(row1, "  "), " "), width),
-		boxTrunc(strings.TrimRight(strings.Join(row2, "  "), " "), width),
-		boxTrunc(strings.TrimRight(strings.Join(row3, "  "), " "), width),
+		boxMark(head1+strings.Join(row1[first:], "  "), width),
+		boxTrunc(head2+strings.Join(row2[first:], "  "), width),
+		boxTrunc(head2+strings.Join(row3[first:], "  "), width),
 	}, "\n")
+}
+
+// Move 游標移動: 單列左右(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
+func (this *panelHand) Move(game *cores.Game, key string) {
+	this.cursor = moveIndex(this.cursor, key, len(game.Hand))
 }
 
 // handCard 卡名行: 識別碼(主畫面省實例段) + cardify 來源段(已綁才有) + (出牌費用)。

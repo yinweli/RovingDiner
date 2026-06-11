@@ -25,6 +25,28 @@ func (this *SuitePanelLog) TestPanelLogAppend() {
 	this.Equal([]string{"[R3 玩家行動] 玩家出牌", "* 101@上菜#1", "$ 出牌點數 -= 2 >> 8"}, target.line)
 }
 
+// TestPanelLogMove 驗證 viewport 捲動: 上捲 + / 下捲 -、下限 0 釘最新、上限過衝由 View 自校正(無死按鍵)。
+func (this *SuitePanelLog) TestPanelLogMove() {
+	target := newPanelLog()
+	target.Append("a", "b", "c")
+	target.Move("down")
+	this.Equal(0, target.offset) // 下限夾住(釘最新)
+	target.Move("up")
+	target.Move("up")
+	target.Move("up")
+	this.Equal(3, target.offset) // Move 不知可視高, 先收著
+
+	row := strings.Split(target.View(30, 3), "\n") // 可視 2 行: 上限 = 3 - 2 = 1, 過衝拉回
+	this.Equal(1, target.offset)
+	this.Contains(row[1], "a")
+	this.Contains(row[2], "b")
+
+	target.Move("down")
+	row = strings.Split(target.View(30, 3), "\n") // 回釘最新
+	this.Contains(row[1], "b")
+	this.Contains(row[2], "c")
+}
+
 // TestPanelLogView 驗證渲染: 標題 + 行歷史、行少底部補空行、行多取尾段、超寬補右緣 >、高度耗盡回空。
 func (this *SuitePanelLog) TestPanelLogView() {
 	target := newPanelLog()

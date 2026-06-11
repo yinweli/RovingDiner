@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
@@ -32,17 +34,47 @@ func (this *SuitePanelSeat) TestPanelSeatView() {
 		"| " + padTo(strings.Repeat(" ", 9)+"封  效", 56) + " |",
 		"| " + padTo("空", 56) + " |",
 		"| " + padTo("", 56) + " |",
-	}, "\n"), panelSeat{}.View(game, 60))
+	}, "\n"), (&panelSeat{}).View(game, 60, false))
 
 	guest.GetEffectImmune().Add(5) // 免疫計數 > 0 → 免 點亮(M22 拍板)
-	this.Contains(panelSeat{}.View(game, 60), strings.Repeat(" ", 9)+"封免效")
+	this.Contains((&panelSeat{}).View(game, 60, false), strings.Repeat(" ", 9)+"封免效")
 
-	row := strings.Split(panelSeat{}.View(game, 10), "\n") // 超寬: 內容寬 6、桌號列 > 站最後內容格
+	row := strings.Split((&panelSeat{}).View(game, 10, false), "\n") // 超寬: 內容寬 6、桌號列 > 站最後內容格
 	this.Equal("| 桌1  > |", row[1])
 
 	game.Seat[2] = nil // 防禦: 座位表 nil 項 → 顯 空
-	this.Contains(panelSeat{}.View(game, 60), "空")
+	this.Contains((&panelSeat{}).View(game, 60, false), "空")
 
 	game.Effect = nil // 無效果 → 效 槽熄滅(hasEffect 掃完未命中)
-	this.NotContains(panelSeat{}.View(game, 60), "效")
+	this.NotContains((&panelSeat{}).View(game, 60, false), "效")
+}
+
+// TestPanelSeatMove 驗證游標移動: 左右換桌、上下切座、夾界不迴繞(桌2 僅 1 座切不下去);
+// 聚焦時游標顧客格 2 行整格反白(未聚焦不顯游標)。
+func (this *SuitePanelSeat) TestPanelSeatMove() {
+	game := testGame() // 桌1(座1,2) / 桌2(座3)
+	target := &panelSeat{}
+	target.Move(game, "right")
+	this.Equal(1, target.curTable)
+	target.Move(game, "right") // 右端夾住
+	this.Equal(1, target.curTable)
+	target.Move(game, "down") // 桌2 僅 1 座 → 夾回 0
+	this.Equal(0, target.curSeat)
+	target.Move(game, "left")
+	target.Move(game, "down")
+	this.Equal(0, target.curTable)
+	this.Equal(1, target.curSeat)
+	target.Move(game, "up")
+	this.Equal(0, target.curSeat)
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestFocusView)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	row := strings.Split((&panelSeat{}).View(game, 60, true), "\n")
+	this.Contains(row[2], styleCursor.Render(padTo("空", seatColumn))) // 游標格(空位)整格 2 行反白
+	this.Contains(row[3], styleCursor.Render(padTo("", seatColumn)))
+	this.NotContains((&panelSeat{}).View(game, 60, false), styleCursor.Render(padTo("空", seatColumn))) // 未聚焦不顯游標
+
+	row = strings.Split((&panelSeat{curTable: 1}).View(game, 33, true), "\n") // 窄寬: 桌窗格捲到游標桌
+	this.Contains(row[1], "| < 桌2")                                           // 左緣 < 於桌號列
+	this.Contains(row[2], styleCursor.Render(padTo("空", seatColumn)))         // 其餘行同縮排, 游標格仍反白
 }
