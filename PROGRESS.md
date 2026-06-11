@@ -6,7 +6,7 @@
 
 ## 現況
 
-- **架構已定案、不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心四包:`cores`(營業引擎本體＝資料模型 + 驅動引擎 `Game`,單向 import `exprs`)+ `rules`(命令語言詞彙層＝屬性讀寫/操作命令/命令對象/內建函式 + 效果流程,單向 import `cores`/`exprs`)+ `games`(對外介面層＝`Parse`/`Validate`/`Run`,單向 import `rules`/`cores`/`exprs`)+ `exprs`(零遊戲依賴的運算式語言,可單獨測);依賴 `games → rules → cores → exprs` 一條直線。`infra` 為 Go-only 基礎設施、`internal/tester` 為跨包測試基建(BuildSheet/BuildData/FakeOperator/FakeRander)。
+- **架構已定案**(實作規格書 §一/§二/§四/§十)。核心四包:`cores`(營業引擎本體＝資料模型 + 驅動引擎 `Game`,單向 import `exprs`)+ `rules`(命令語言詞彙層＝屬性讀寫/操作命令/命令對象/內建函式 + 效果流程,單向 import `cores`/`exprs`)+ `games`(對外介面層＝`Parse`/`Validate`/`Run`,單向 import `rules`/`cores`/`exprs`)+ `exprs`(零遊戲依賴的運算式語言,可單獨測);依賴 `games → rules → cores → exprs` 一條直線。`infra` 為基礎設施、`internal/tester` 為跨包測試基建(BuildSheet/BuildData/FakeOperator/FakeRander)。
 - **M0–M22 已落地——核心線（M0–M16）達成 + 事件流收口（M17–M18）+ TUI 殼＋橋接（M19）+ 渲染地基（M20）+ 六區組件（M21）+ 事件日誌（M22:免疫投影補洞＋行合成器與詞彙對照＋日誌組件（區 8）＋alt-screen 換裝（dump 退役、狀態列釘底、100×30 守門）＋行角色上色與手牌暗色）;M23(互動與 modal)起未動**。消費端已於 M16 收站後依現況重切為 M17–M27(細目以實作規格書【九】為準)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。歷史里程碑的逐項落地紀錄已自本檔收斂(過程細節 git log 可查);跨重構仍有效的拍板整併入下方決策與待辦。
 - **整備重構完成(M12 後、M13 前;組件化→三合一→拆包)**:①組件化——`Value` 全封裝(`Apply`/`Clamp`)、實例與容器方法化、每型別一檔;②三合一——`Runtime`+`Engine` 收斂為 `cores.Game` 單型別(game.go),概念檔行為為吃 `game` 的自由函式;③拆包——命令語言詞彙全數遷出 cores 至 `internal/rules`(map 字面值 SSOT + `Game` 裝備制;commit `82d3278`),`Data` 聚合遊戲資料(原始表+衍生索引+效果預編譯,`Compiler` 注入)。改名:`CompileCommand`→`Compiler`、`EffectCommand`→`EffectExec`、`NewValuel`→`NewValueLock`、`runEffectCommand`→`runEffectExec`。**實作規格書已同步現行結構**(§二/§三/§四/§六/§七/§十);本檔決策節的重構前機制敘述以「重構對照」換讀。
 
