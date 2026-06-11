@@ -66,4 +66,4 @@ task install    # 安裝開發工具（golangci-lint、sheeter、markdownlint、
 
 ## 開發狀態
 
-營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流已收口。TUI debug viewer 的被動觀看（alt-screen 全畫面盤面與事件日誌、停點直讀）與速率控制（快／慢／步進）已落地；後續依序為互動與 modal、選取與鍵盤 Operator、企劃驗證器與 conformance golden。進度詳見 `PROGRESS.md`。
+營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流已收口。TUI debug viewer 的被動觀看（alt-screen 全畫面盤面與事件日誌、停點直讀）、速率控制（快／慢／步進）與互動層（切區聚焦、游標捲動、計數與檢視 modal）已落地；後續依序為選取與鍵盤 Operator、企劃驗證器與 conformance golden。進度詳見 `PROGRESS.md`。
