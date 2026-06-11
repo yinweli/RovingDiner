@@ -7,44 +7,51 @@
 ## 現況
 
 - **架構已定案、不再考慮 C# 移植**(實作規格書 §一/§二/§四/§十)。核心四包:`cores`(營業引擎本體＝資料模型 + 驅動引擎 `Game`,單向 import `exprs`)+ `rules`(命令語言詞彙層＝屬性讀寫/操作命令/命令對象/內建函式 + 效果流程,單向 import `cores`/`exprs`)+ `games`(對外介面層＝`Parse`/`Validate`/`Run`,單向 import `rules`/`cores`/`exprs`)+ `exprs`(零遊戲依賴的運算式語言,可單獨測);依賴 `games → rules → cores → exprs` 一條直線。`infra` 為 Go-only 基礎設施、`internal/tester` 為跨包測試基建(BuildSheet/BuildData/FakeOperator/FakeRander)。
-- **M0–M16 已落地——核心線（M0–M16）達成,`games.Run` 能以測試腳本跑通完整一局;M17(Presenter)起未動**。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%。歷史里程碑的逐項落地紀錄已自本檔收斂(過程細節 git log 可查);跨重構仍有效的拍板整併入下方決策與待辦。
+- **M0–M16 已落地——核心線（M0–M16）達成,`games.Run` 能以測試腳本跑通完整一局;M17(事件流合約)起未動**。消費端已於 M16 收站後依現況重切為 M17–M27(細目以實作規格書【九】為準)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%。歷史里程碑的逐項落地紀錄已自本檔收斂(過程細節 git log 可查);跨重構仍有效的拍板整併入下方決策與待辦。
 - **整備重構完成(M12 後、M13 前;組件化→三合一→拆包)**:①組件化——`Value` 全封裝(`Apply`/`Clamp`)、實例與容器方法化、每型別一檔;②三合一——`Runtime`+`Engine` 收斂為 `cores.Game` 單型別(game.go),概念檔行為為吃 `game` 的自由函式;③拆包——命令語言詞彙全數遷出 cores 至 `internal/rules`(map 字面值 SSOT + `Game` 裝備制;commit `82d3278`),`Data` 聚合遊戲資料(原始表+衍生索引+效果預編譯,`Compiler` 注入)。改名:`CompileCommand`→`Compiler`、`EffectCommand`→`EffectExec`、`NewValuel`→`NewValueLock`、`runEffectCommand`→`runEffectExec`。**實作規格書已同步現行結構**(§二/§三/§四/§六/§七/§十);本檔決策節的重構前機制敘述以「重構對照」換讀。
 
 ## 里程碑進度
 
-對應 `doc/營業實作規格書.md`【九、里程碑】(細節以該處為準)。全部依新(細切)里程碑重做;M0–M9 firm、M10 起 provisional(到站再細修)。
+對應 `doc/營業實作規格書.md`【九、里程碑】(細節以該處為準)。全部依新(細切)里程碑重做;M0–M9 firm、M10 起 provisional(到站再細修)。消費端 M17–M27 為 M16 收站後重切(原 M17–M20 粗切作廢)。
 
-| 里程碑 | 狀態 | 說明                                     |
-|:-------|:-----|:-----------------------------------------|
-| M0     | ✅   | cores 型別骨架                           |
-| M1     | ✅   | infra.Load（搬入 internal/）             |
-| M2     | ✅   | exprs lexer + SyntaxError                |
-| M3     | ✅   | exprs 純語言(parser/AST/eval)            |
-| M4     | ✅   | exprs 接縫(Resolver + builtin)           |
-| M5     | ✅   | 命令解析(企劃驗證器地基)                 |
-| M6     | ✅   | 屬性讀取側(registry + Resolver)          |
-| M7     | ✅   | 屬性修改命令 執行                        |
-| M8     | ✅   | 命令對象 selector                        |
-| M9     | ✅   | 操作命令 執行(三 seam 切)                |
-| M10    | ✅   | 效果實例 + 佇列（資料 + push/pop）       |
-| M11    | ✅   | 觸發派發 fireTrigger                     |
-| M12    | ✅   | 堆疊處理 + 啟動效果列表                  |
-| M13    | ✅   | 推進／清理／凍結 + 效果佇列三命令        |
-| M14    | ✅   | phase 狀態機 + 玩家行動主迴圈            |
-| M15    | ✅   | 初始組裝（關卡表格 + StageID）           |
+| 里程碑 | 狀態 | 說明                                      |
+|:-------|:-----|:------------------------------------------|
+| M0     | ✅   | cores 型別骨架                            |
+| M1     | ✅   | infra.Load（搬入 internal/）              |
+| M2     | ✅   | exprs lexer + SyntaxError                 |
+| M3     | ✅   | exprs 純語言(parser/AST/eval)             |
+| M4     | ✅   | exprs 接縫(Resolver + builtin)            |
+| M5     | ✅   | 命令解析(企劃驗證器地基)                  |
+| M6     | ✅   | 屬性讀取側(registry + Resolver)           |
+| M7     | ✅   | 屬性修改命令 執行                         |
+| M8     | ✅   | 命令對象 selector                         |
+| M9     | ✅   | 操作命令 執行(三 seam 切)                 |
+| M10    | ✅   | 效果實例 + 佇列（資料 + push/pop）        |
+| M11    | ✅   | 觸發派發 fireTrigger                      |
+| M12    | ✅   | 堆疊處理 + 啟動效果列表                   |
+| M13    | ✅   | 推進／清理／凍結 + 效果佇列三命令         |
+| M14    | ✅   | phase 狀態機 + 玩家行動主迴圈             |
+| M15    | ✅   | 初始組裝（關卡表格 + StageID）            |
 | M16    | ✅   | 執行結算 + Run → 跑通第一局              |
-| M17    | ⬜   | Presenter 顯示 *(prov)*                  |
-| M18    | ⬜   | Operator + adapter *(prov)*              |
-| M19    | ⬜   | 速率(快/慢/步進) *(prov)*                |
-| M20    | ⬜   | conformance golden *(prov)*              |
+| M17    | ⬜   | 事件流合約 *(prov)*                       |
+| M18    | ⬜   | Emit 接線 *(prov)*                        |
+| M19    | ⬜   | TUI 殼＋橋接 *(prov)*                     |
+| M20    | ⬜   | 渲染地基(組件框架+狀態列+鍵位列) *(prov)* |
+| M21    | ⬜   | 六區組件 *(prov)*                         |
+| M22    | ⬜   | 事件日誌 *(prov)*                         |
+| M23    | ⬜   | 互動與 modal *(prov)*                     |
+| M24    | ⬜   | 選取＋Operator *(prov)*                   |
+| M25    | ⬜   | 速率(快/慢/步進) *(prov)*                 |
+| M26    | ⬜   | 企劃驗證器 *(prov)*                       |
+| M27    | ⬜   | conformance golden *(prov)*               |
 
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
 - **[M8 約定] 牌堆順序 = slice 前端為頂端**(index 0、最新進入者):`deckTop` / `dropTop` 取 `slice[:N]`、新進入者 prepend、auto-shuffle 把洗後棄牌 `append` 至尾端(底部)。規格(§六/§三)只定「新進入者置頂、頂端指最新進入者」,未綁 slice 哪端;M8 取前端為頂並寫進實作、M9 容器移動命令(deckAdd / deckToHand / *Copy…)已沿用。初始牌堆組裝(M15 關卡表格建置)已沿用此約定;M8/M9 多處依賴、已視為鎖定(不再輕易改向)。
-- **[企劃驗證器後補] 命令對象參數數量 / 型別校驗**:M8 selector 對 `[...]` 參數採執行期寬鬆——數量 / 型別不符(`oneInt` / `twoInt` 失敗)→ 該 selector 回空集合、命令對該對象 no-op;**未做 Validate 期 arity 檢查**(裸寫 `guestPick`、`handAll` 缺卡牌編號等於 Validate 漏過、執行期靜默 no-op)。規格【二十四｜參數規則】要求「參數欄非空者必帶完整參數、裸寫視為語法錯誤」——靜態 arity 校驗歸企劃驗證器支線(避免另立一張與 `selector` 同步的 arity 表),非引擎正確性所需。
+- **[企劃驗證器後補] 命令對象參數數量 / 型別校驗**:M8 selector 對 `[...]` 參數採執行期寬鬆——數量 / 型別不符(`oneInt` / `twoInt` 失敗)→ 該 selector 回空集合、命令對該對象 no-op;**未做 Validate 期 arity 檢查**(裸寫 `guestPick`、`handAll` 缺卡牌編號等於 Validate 漏過、執行期靜默 no-op)。規格【二十四｜參數規則】要求「參數欄非空者必帶完整參數、裸寫視為語法錯誤」——靜態 arity 校驗歸企劃驗證器(M26)(避免另立一張與 `selector` 同步的 arity 表),非引擎正確性所需。
 - **[Validate 後補] 引用左值的引用基底合法性**:M7 的 `Validate` 對引用左值只查屬性可寫性(`HasAttrRefWrite(refAttr)`),未查引用基底本身是否為合法物件引用(主表類別 = 卡牌 / 顧客 / 卡牌兼顧客引用)——故 `morale.cost = 1` 這類「以非引用作基底」於 Validate 漏過(執行期安全:`ExecAssign` 解析基底非 ref → no-op)。`rules` 目前無「某名稱是否為物件引用」的匯出述詞;企劃驗證器要完整時補一個(如 `HasObjectRef`)。
-- **企劃驗證器工具本體 = M5 後置支線**:命令解析地基已隨 M5 落地(`games` 的 `parse.go` 重用 `exprs.SyntaxError`、吐帶位置中文錯誤;名稱合法性由自由 `Validate` 查詞彙表 keys、M6+ 詞條到位後生效);工具本體(CLI＋Effect 表掃描器＋`task`／CI)依賴 M5、可與效果系統並行,尚未做。詳見實作規格書【附錄:企劃驗證器】。
+- **企劃驗證器工具本體 = M26**:命令解析地基已隨 M5 落地(`games` 的 `parse.go` 重用 `exprs.SyntaxError`、吐帶位置中文錯誤;名稱合法性由自由 `Validate` 查詞彙表 keys、M6+ 詞條到位後生效);工具本體(CLI＋Effect 表掃描器＋arity 校驗＋`HasObjectRef`＋`task`／CI)已自支線編入里程碑 M26、置 golden 前。詳見實作規格書【附錄:企劃驗證器】。
 
 ## 已敲定的設計決策(勿重新爭論;重建時沿用)
 
@@ -92,3 +99,4 @@
 - **M14 開工前敲定(phase 狀態機,四問+盤點發現)**:盤點發現 **M15「啟動技能」已被 M12 吸收**——runEffectList 即【二十｜啟動技能】全流程,剩餘呼叫點(前置技能/玩家出牌/顧客行動技能)歸 M14 的 phase 工作。① **流程層歸 rules**——phase 函式密集呼叫 fireTrigger/runEffectList/advanceEffect 等包內未匯出函式,歸 rules 零新增匯出面;rules 章程擴為「規則內容層」(詞彙+效果+流程);檔名走字首家族 `phase*`(檔名=函式名=cores.PhaseKind 列舉名 1:1;六檔 phaseGameStart/phaseRoundStart/phasePlayerAction/phaseGuestAction/phaseRoundEnd/phaseGameEnd.go,成功失敗合檔)。② **狀態機形狀**——每站 `func phaseXxx(game) cores.PhaseKind` 回報下一站、不互相呼叫(單站白箱可測);終止站觸發 gameSucc/gameFail 後回 PhaseNone 當停機訊號;M14.4 建未匯出 runPhase(game, kind) 分派;給 games.Run 的匯出接縫與驅動迴圈留 M15/M16(無結算前迴圈不可終止、無法測)。③ **PlayerAction 還型 = `PlayerAction(game *Game) *Card`**——nil 即玩家結束(和型別恰兩態、無垃圾態);phase 迴圈防禦驗證回傳卡位於手牌、否則視為不執行出牌;tester.FakeOperator 與 cores fakeOperator 同步改簽章。④ **里程碑重排**——M15 就地改名「初始組裝」(infra 牌堆實例化沿用 M8 頂端約定/排隊佇列/前置技能注入),Run 本體留 M16(終止靠結算、同站才測得動);M16 維持「執行結算+終止判定+Run → 跑通第一局」。⑤ 重用抽取:入座/還原本體抽 guestSeatOne/restoreOne 供 phase 與命令共用(純搬移不改行為)。⑥ 寫入語意未明處(回合結束 calm−1、點數補滿是否尊重鎖定)一律走 Value 守衛方法,撞規格再回補。**子切:M14.0 設定載入+營業開始(Setting 解析、tester.BuildSheet 補 Setting 列、前置技能呼叫點)/ M14.1 回合開始(入座 helper 抽取)/ M14.2 玩家行動(還型+主迴圈+出牌流程)/ M14.3 顧客行動(TaskKind 越界防禦)/ M14.4 回合結束+成功失敗+runPhase 分派+收尾(里程碑重排、實作規格書 §二樹/§三流程列/§九,PROGRESS)**。
 - **M15 開工前敲定(初始組裝 → 關卡表格重塑)**:① **「外部資料」改為靜態關卡表格(Stage)**——啟動時以參數選關、每場獨立關卡(企劃工具定位);「一關接一關」進程**不存在**(非延後,不進系統)。② **表格八欄**:ID / Name / HandID / DeckID / DropID / ExileID / WaitID / PrefixSkillID(B 雙端輸出;含初始手牌與棄牌 / 流放兩堆,供企劃佈殘局);四個實例列表欄一律「第 1 個 = 頂端 / 隊首」。③ **組裝層消失**——關卡資料隨 Sheeter 注入,開局建置歸 rules 的 phaseGameStart(查 Stage 表 → 實例化五容器 + 填 PrefixSkill);原 infra / games assemble 歸屬之爭解散。④ **設置不觸發時機**——手牌 / 三堆開局建置不觸發 cardDraw / cardDrop / cardExile、不動事件屬性;初始手牌與補牌互動:≥ 補牌張數上限則開局不補。⑤ **初始牌堆保序不洗**——要開局洗牌用前置技能掛 deckShuffle 表達,組裝層不臆測。⑥ **寬鬆策略**——cardID / guestID 查無資料跳過該筆、查無關卡空盤面照走(嚴格把關交企劃驗證器)。⑦ **關卡編號與 seed 同為本場身分**——`NewGame(seed, stageID, data, operator, rander)` 雙身分參數(參數逼交代,避免欄位忘設的靜默空盤面),StageID 公開欄位與 Seed 並列;全 NewGame 呼叫點補 0(機械改)。⑧ 規格四處:【四】新增關卡表格節(含順序語意、設置不觸發時機)、【十九｜1】改依關卡編號建五容器、【二】補「關卡 ↔ Stage」、【五｜營業實例】補關卡編號欄。表格程式碼由使用者先建(gamedata / sheet / sheetdata 走 Sheet commit)。
 - **M16 開工前敲定(執行結算+終止判定+Run,五問)**:① **終止跳出 = panic(型別化哨兵) + runPhase 單點 recover**——終止判定命中 → 清結算旗標 → panic(gameEnd{階段});runPhase 以 defer recover 辨識哨兵回傳對應終止站、非哨兵原樣重拋;全鏈簽章零改動,self 綁定靠既有 defer restore 解棧自動還原(回傳碼全鏈/旗標緩跳兩案否決:前者 ~60 簽章翻修、後者違反「立即跳出」)。② **門檻解析 = data.go 衍生索引**——prepareGuest 載入解析 SateSkillID / CalmSkillID 的「門檻值^技能編號」配對一次,建 guestID → {Sate 升序 / Calm 降序 []Threshold} 唯讀索引;壞格式跳過該筆(比照 prepareAward / prepareEffect)。③ **Run 形狀** `games.Run(seed, stageID, sheet, operator) bool`——infra.NewRander(seed) 內建(games → infra 新依賴)、compiler 閉包(Parse → 捕捉 AST → execute)即 M11 預留注入 seam、Presenter M17 到站再加參數(不留 nil 佔位);rules 最小匯出 `RunPhase(game, phase) PhaseKind`,驅動迴圈與成敗記錄留 games(踏入 PhaseGameSucc / Fail 時記下,迴圈見 PhaseNone 停機)。④ **PickDiscard 防禦**——迴圈呼叫、回傳逐張驗證位於手牌後棄置(走 placeCard 照觸發 cardDrop),一輪無進展 → 防禦 break 不掛死;tester.FakeOperator.PickDiscard 改良性 source[:over],壞 Operator 分支由測試自備替身釘。⑤ **sate 鎖定 = 飽食線暫停**——飽食門檻與飽食離場兩迴圈跳過 self.sate 鎖定中顧客,使【二十｜執行結算】補充句恆真(遊蕩 = 只看耐心;座位上被 @ 鎖飽食者同凍結,統一語意);規格兩迴圈 filter 補明文。**離場重用 guestExitOne**((true,false) = 飽食、(false,true) = 生氣,與規格逐步吻合);候選快照 + 逐位再定位防禦。⑥ **(實作中修訂)結算尾位置改編進 Compiler 閉包**——原 M13 預留於 runEffectExec 的結算尾改放 games 編譯閉包(execute → rules.Settle):真實命令(Effect 表編譯而來)必經、白箱測試注入的裸閉包不受擾(否則空盤面測試每跑一條命令就終止判定命中);rules 因此匯出 Settle(phaseRoundEnd 與閉包共用)。**子切:M16.0 門檻衍生索引 / M16.1 執行結算+終止判定(settle.go,含手牌上限) / M16.2 接線(結算尾、phaseRoundEnd、RunPhase recover) / M16.3 games.Run+Compiler 閉包+跑通第一局 / M16.4 收尾(規格 filter 補文、文件、PROGRESS 前置待辦清掉)**。
+- **消費端里程碑重規劃(M16 收站後,4 站重切 11 站)**:舊 M17–M20(Presenter 顯示/Operator+adapter/速率/conformance)為核心未成形時粗估,作廢;依現況重切 M17–M27(細目以實作規格書【九】為準,全標 provisional、到站再各自盤點)。拍板:①**順序**=事件流收口(M17–M18,仍寫在核心套件)→被動觀看(M19 殼→M20 渲染地基→M21 六區→M22 日誌,FakeOperator 驅動、人只看不操作)→互動(M23 modal→M24 選取)→M25 速率,每站獨立可驗;②**盤面組件化約束(使用者需求)**——8 區與鍵位列各為獨立組件(自持渲染、不共享內部狀態),父層 layout 只組合與分配空間,新增介面=新掛組件;M20 以狀態列+鍵位列兩個最簡組件驗證框架;③**企劃驗證器自支線編入 M26**、置 golden 前(golden 需真實劇本資料,填表前先有驗證器把關);④**規格待定區**(表演資訊【十八】/guestPart/guestSkin/clamp 範圍)維持不編號,規格補明文後擇站排入。
