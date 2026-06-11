@@ -32,13 +32,13 @@ func (this *SuiteSheet) TestLoad() {
 	this.NotNil(data.Setting.Get("RoundMax"))
 	this.Nil(data.Setting.Get("NotExist"))
 
-	// 其餘表格目前無資料, 核心直接以 reader.Get 查詢應安全回傳 nil(不 panic)
-	this.Nil(data.Card.Get(1))
-	this.Nil(data.Guest.Get(1))
-	this.Nil(data.Skill.Get(1))
-	this.Nil(data.Effect.Get(1))
-	this.Nil(data.Seat.Get(1))
-	this.Nil(data.Award.Get(1))
+	// 查無編號的查詢應安全回傳 nil(不 panic), 不依賴表格是否已有資料
+	this.Nil(data.Card.Get(9999))
+	this.Nil(data.Guest.Get(9999))
+	this.Nil(data.Skill.Get(9999))
+	this.Nil(data.Effect.Get(9999))
+	this.Nil(data.Seat.Get(9999))
+	this.Nil(data.Award.Get(9999))
 }
 
 func (this *SuiteSheet) TestLoadMissing() {
