@@ -1,1 +1,41 @@
-{}
+{
+    "101": {
+        "Cost": 1,
+        "ExtraRunMax": 0,
+        "ExtraRunMin": 0,
+        "Group": 1,
+        "ID": 101,
+        "Keep": false,
+        "Name": "招牌定食",
+        "PlayExile": false,
+        "Seal": false,
+        "SkillID": 311,
+        "UnplayExile": false
+    },
+    "102": {
+        "Cost": 1,
+        "ExtraRunMax": 0,
+        "ExtraRunMin": 0,
+        "Group": 1,
+        "ID": 102,
+        "Keep": false,
+        "Name": "暖胃湯品",
+        "PlayExile": false,
+        "Seal": false,
+        "SkillID": 311,
+        "UnplayExile": false
+    },
+    "103": {
+        "Cost": 2,
+        "ExtraRunMax": 0,
+        "ExtraRunMin": 0,
+        "Group": 2,
+        "ID": 103,
+        "Keep": false,
+        "Name": "私房甜點",
+        "PlayExile": false,
+        "Seal": false,
+        "SkillID": 311,
+        "UnplayExile": false
+    }
+}
