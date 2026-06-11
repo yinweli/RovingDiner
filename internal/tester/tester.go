@@ -105,3 +105,13 @@ func (this FakeRander) Shuffle(n int, swap func(i, j int)) {
 func (this FakeRander) Weighted(weight []int32) int {
 	return 0
 }
+
+// RecordPresenter 事件流錄製器:Emit 逐筆依序追加進 Event 切片,供事件流接線測試與 conformance golden 比對
+// (【營業實作規格書 | 七、測試策略】L3 基建);須以指標使用(Emit 寫入切片)。
+type RecordPresenter struct {
+	Event []cores.EventData // 錄得事件(發射序)
+}
+
+func (this *RecordPresenter) Emit(eventData cores.EventData) {
+	this.Event = append(this.Event, eventData)
+}

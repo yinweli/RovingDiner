@@ -41,7 +41,7 @@ func (this *SuiteEffectCleanup) TestCleanupEffect() {
 
 	strayData := tester.BuildData() // 以另一份資料建構效果 999 → 本場查無編譯資料 → 略過
 	strayData.SetEffect(999, cores.EffectData{Kind: cores.EffectPersist, TargetKind: cores.TargetGuestRand, End: record(999)})
-	game.Effect.Push(cores.NewEffect(cores.NewGame(0, 0, strayData, nil, nil), 999, cores.NewRefGuest(dead), 1))
+	game.Effect.Push(cores.NewEffect(cores.NewGame(0, 0, strayData, nil, nil, nil), 999, cores.NewRefGuest(dead), 1))
 
 	cleanupEffect(game, cores.NewRefGuest(dead))
 	this.Equal([]int32{902, 901, 901}, ended) // 作用順序 20 先於 10;901 層數 2 → 結束命令 × 2

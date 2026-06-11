@@ -24,7 +24,7 @@ func (this *SuitePhasePlayerAction) TestPhasePlayerAction() {
 	count := 0
 	op := &playOperator{}
 	data := tester.BuildData()
-	game := cores.NewGame(0, 0, data, op, tester.FakeRander{})
+	game := cores.NewGame(0, 0, data, op, tester.FakeRander{}, nil)
 	Register(game)
 	game.GetDrawMax().Set(6)
 	game.GetEnergy().Set(5)
@@ -159,7 +159,7 @@ func (this *SuitePhasePlayerAction) TestExtraCount() {
 	card.GetExtraRunMax().Set(4)
 	this.Equal(int32(2), extraCount(game, card)) // Intn 恆 0 → 下限
 
-	gameN := cores.NewGame(0, 0, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{N: 2})
+	gameN := cores.NewGame(0, 0, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{N: 2}, nil)
 	this.Equal(int32(4), extraCount(gameN, card)) // 下限 2 + 位移 2
 
 	card.GetExtraRunMin().Set(5)

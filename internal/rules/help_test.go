@@ -112,7 +112,7 @@ func (this *SuiteHelp) TestArgTail() {
 }
 
 func (this *SuiteHelp) TestGroupSize() {
-	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil)
+	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil, nil)
 	card := cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 101), cores.NewCard(game, 102)}
 
 	result, ok := groupSize(card, game.GetSheet(), []exprs.Value{exprs.NewNum(0)}) // N==0 全量
@@ -170,7 +170,7 @@ func (this *SuiteHelp) TestCompareOp() {
 }
 
 func (this *SuiteHelp) TestCardLock() {
-	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil)
+	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil, nil)
 	card := cores.NewCard(game, 101)
 	card.GetCost().Lock()
 	pick := func(c *cores.Card) int32 { return c.GetCost().GetLock() }
@@ -184,7 +184,7 @@ func (this *SuiteHelp) TestCardLock() {
 }
 
 func (this *SuiteHelp) TestGuestLock() {
-	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil)
+	game := cores.NewGame(0, 0, tester.BuildData(), nil, nil, nil)
 	guest := cores.NewGuest(game, 501)
 	guest.GetCalm().Lock()
 	pick := func(g *cores.Guest) int32 { return g.GetCalm().GetLock() }

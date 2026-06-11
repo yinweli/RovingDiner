@@ -138,7 +138,7 @@ func (this *SuiteSettle) TestDiscardOver() {
 	this.Len(game.Drop, 2)
 	this.Equal(int32(2), game.GetDropCount()) // 走 placeCard → 照設棄牌事件
 
-	bad := cores.NewGame(0, 0, tester.BuildData(), badOperator{}, tester.FakeRander{})
+	bad := cores.NewGame(0, 0, tester.BuildData(), badOperator{}, tester.FakeRander{}, nil)
 	Register(bad)
 	bad.GetHandMax().Set(1)
 	bad.Hand = cores.CardList{cores.NewCard(bad, 101), cores.NewCard(bad, 101)}

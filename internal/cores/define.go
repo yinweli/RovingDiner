@@ -69,12 +69,55 @@ type Presenter interface {
 	Emit(eventData EventData) // 一個命令 / 一次觸發 / 一次 phase 切換 / 一個玩家動作 = 一個 EventData
 }
 
-// EventData 核心吐給前端的細粒度投影事件。
-// 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類。
-// TODO(M17)：各類別的詳細欄位（目標 InstanceID、屬性前後值、表演資訊）於 Presenter 顯示層實作時補齊，
-// 依【營業顯示規格書 | 3、事件流的消費：速率與步進】與【營業規格書 | 十八、表演資訊】。
+// EventData 核心吐給前端的細粒度投影事件：單一 struct 以 Kind 分派，各類只填自己的本體欄位、其餘留零值。
+// Round / Phase 為座標欄，由發射入口 Game.Emit 統一蓋章，發射點不自帶。
+// 識別碼只帶編號、名稱由前端憑同一份靜態表自查；凡指涉實例同時帶資料編號 + 實例編號（技能無實例編號只帶資料編號）。
+// 對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類；
+// 欄位形狀對齊事件日誌行角色（【營業顯示規格書 | 6、畫面規格 | 6.10】）。
 type EventData struct {
-	Kind EventKind // 投影事件類別
+	Kind  EventKind // 投影事件類別
+	Round int32     // 座標：當前回合（Emit 蓋章）
+	Phase PhaseKind // 座標：當前階段（Emit 蓋章）
+
+	// 對象欄（各類的作用對象：instance 本體 / container 移動者 / property 對象（全域屬性留零值）/
+	// scope 的卡牌或顧客操作元 / effect 的 self；無對象留零值）
+	DataID     int32      // 對象資料編號
+	InstanceID InstanceID // 對象實例編號
+
+	// EventInstance 本體欄位
+	Alive bool // 實例建立 true / 銷毀 false
+
+	// EventContainer 本體欄位
+	From   ContainerKind // 來源容器（新建直入容器留 ContainerNone）
+	To     ContainerKind // 目的容器（銷毀離開容器留 ContainerNone）
+	SeatID int32         // 入座座位編號（To == ContainerSeat 時）
+
+	// EventProperty 本體欄位（日誌命令行 <屬性> <運算> <值> >> <結果>）
+	Attr    string     // 屬性詞條鍵（英文；中文全名由前端憑詞彙對照轉換）
+	Op      AssignKind // 賦值符（@ / # 無算術式，Operand 留零值）
+	Operand float64    // 右值（命令求出的運算值）
+	Before  float64    // 前值（clamp 後實際變化量 = After - Before）
+	After   float64    // 後值（日誌的 >> 結果）
+
+	// EventScope 本體欄位（範圍標題 + 操作元；卡牌 / 顧客操作元於上方對象欄）
+	Scope   ScopeKind   // 範圍類別
+	Trigger TriggerKind // 時機名（Scope == ScopeTrigger 時）
+	SkillID int32       // 技能操作元資料編號（動作類；技能無實例編號）
+
+	// EventEffect 本體欄位（效果行；self 於上方對象欄；表演資訊規格待定，日後憑 EffectID 查表）
+	EffectID         int32       // 效果資料編號
+	EffectInstanceID InstanceID  // 效果實例編號
+	Stage            EffectStage // 效果階段
+
+	// EventSelect 本體欄位（玩家輸入紀錄，日誌 $ 選取 <來源> -> <選中…>；搭 seed 重現 bug）
+	Source string     // 選取來源（詞條鍵 / 流程名；前端轉中文）
+	Pick   []PickData // 選中清單
+}
+
+// PickData 玩家選取結果的一筆：資料編號 + 實例編號（EventSelect 的選中清單元素）。
+type PickData struct {
+	DataID     int32      // 資料編號
+	InstanceID InstanceID // 實例編號
 }
 
 // InstanceID 實例的唯一識別碼；卡牌實例 / 顧客實例 / 效果實例共用。
@@ -85,7 +128,7 @@ type InstanceID int64
 const NoneID InstanceID = 0
 
 // ContainerKind 容器種類；供 locate 回報實例所在容器、操作命令做「位置不符該項 no-op」判定。
-// 對應【營業規格書 | 六、容器結構】：卡牌四牌堆 + 顧客四容器。顯示層 EventContainer 投影（M17）亦復用本型別。
+// 對應【營業規格書 | 六、容器結構】：卡牌四牌堆 + 顧客四容器。顯示層 EventContainer 投影亦復用本型別（EventData 的 From / To 欄）。
 type ContainerKind int
 
 const (
@@ -100,15 +143,45 @@ const (
 	ContainerCardify                      // 卡牌化列表
 )
 
-// EventKind 投影事件類別；對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類。
+// EventKind 投影事件類別；對應【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 四之二】投影事件分類，
+// 與事件日誌行角色對齊（【營業顯示規格書 | 6、畫面規格 | 6.10】）；類內變體由 ScopeKind / EffectStage 欄位表達。
 type EventKind int
 
 const (
-	EventInstance  EventKind = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）
-	EventContainer                  // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化
-	EventProperty                   // sate / calm / score / 鎖定計數 變化
-	EventTrigger                    // 觸發時機到達、某效果觸發
-	EventPhase                      // phase 切換
+	EventInstance  EventKind = iota // 實例建立 / 銷毀（卡牌 / 顧客 / 效果）；前端生成 / 回收 View
+	EventContainer                  // 卡牌移動牌堆、顧客入座 / 離場 / 遊蕩 / 卡牌化；日誌容器類命令行
+	EventProperty                   // 屬性變化（前後值）；日誌屬性類命令行
+	EventScope                      // 範圍起點（頂層單位）；日誌範圍標題 + 操作元
+	EventEffect                     // 效果 + 階段；日誌效果行
+	EventSelect                     // 玩家選取紀錄；日誌 $ 選取行
+	EventPhase                      // phase 切換（無本體欄位，座標欄即新階段）；前端更新狀態列 / 標題前綴
+)
+
+// ScopeKind 範圍事件類別（EventScope 的類內變體）；對應【營業顯示規格書 | 6、畫面規格 | 6.10】範圍事件表。
+type ScopeKind int
+
+const (
+	ScopeNone    ScopeKind = iota // 非範圍事件（零值）
+	ScopePlay                     // 玩家出牌（動作；操作元 = 卡牌 + 技能）
+	ScopeGuest                    // 顧客行動（動作；操作元 = 顧客 + 技能）
+	ScopePrefix                   // 前置技能（動作；操作元 = 技能）
+	ScopeTrigger                  // 時機（Trigger 欄帶時機名）
+	ScopeSettle                   // 執行結算（流程）
+	ScopeManual                   // 手動結束（流程）
+)
+
+// EffectStage 效果階段（EventEffect 的類內變體；當前階段，非靜態效果類型）；
+// 對應【營業顯示規格書 | 6、畫面規格 | 6.10】效果欄位的階段值。
+type EffectStage int
+
+const (
+	EffectStageNone     EffectStage = iota // 非效果事件（零值）
+	EffectStageImmed                       // 立即
+	EffectStageJoin                        // 加入（進佇列）
+	EffectStageTrigger                     // 觸發
+	EffectStageStart                       // 啟動
+	EffectStageEnd                         // 結束
+	EffectStageCondFail                    // 條件不成立
 )
 
 // PhaseKind 營業的執行階段；對應【營業規格書 | 十九、核心流程】。

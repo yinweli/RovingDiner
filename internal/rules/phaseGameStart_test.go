@@ -24,7 +24,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	count := 0
 	fired := 0
 	data := tester.BuildData()
-	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{}) // 關卡 601:前置技能 301
+	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{}, nil) // 關卡 601:前置技能 301
 	Register(game)
 	data.SetEffect(401, cores.EffectData{Kind: cores.EffectImmed, Immed: func(game *cores.Game) { count++ }})
 	data.SetEffect(402, cores.EffectData{Kind: cores.EffectImmed, Immed: func(game *cores.Game) { count++ }})
@@ -65,7 +65,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 // TestBuildStage 驗證開局建置:五容器順序語意（第 1 個 = 頂端 / 隊首）、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。
 func (this *SuitePhaseGameStart) TestBuildStage() {
 	data := tester.BuildData()
-	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{})
+	game := cores.NewGame(0, 601, data, tester.FakeOperator{}, tester.FakeRander{}, nil)
 
 	buildStage(game)
 	this.Require().Len(game.Hand, 1) // 手牌列表
@@ -86,14 +86,14 @@ func (this *SuitePhaseGameStart) TestBuildStage() {
 	this.Nil(game.GetDropLast())
 	this.Nil(game.GetExileLast())
 
-	bad := cores.NewGame(0, 602, data, tester.FakeOperator{}, tester.FakeRander{}) // 全列壞引用 → 逐筆跳過
+	bad := cores.NewGame(0, 602, data, tester.FakeOperator{}, tester.FakeRander{}, nil) // 全列壞引用 → 逐筆跳過
 	buildStage(bad)
 	this.Empty(bad.Hand)
 	this.Empty(bad.Deck)
 	this.Empty(bad.Wait)
 	this.Equal([]int32{999}, bad.PrefixSkill) // 技能編號原樣（查無由啟動端防禦）
 
-	none := cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{}) // 查無關卡 → 空盤面照走
+	none := cores.NewGame(0, 0, data, tester.FakeOperator{}, tester.FakeRander{}, nil) // 查無關卡 → 空盤面照走
 	buildStage(none)
 	this.Empty(none.Hand)
 	this.Nil(none.PrefixSkill)

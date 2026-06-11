@@ -30,7 +30,8 @@ type Game struct {
 	drawMax      Value // 補牌張數上限
 
 	// 階段 / 回合
-	nextPhase PhaseKind // 下一階段（跳轉目標；系統於階段轉移時清為 PhaseNone）
+	phaseCurr PhaseKind // 當前階段（RunPhase 踏站時經 SetPhase 設定；Emit 座標蓋章來源）
+	phaseNext PhaseKind // 下一階段（跳轉目標；系統於階段轉移時清為 PhaseNone）
 	round     Value     // 當前回合數（寫屬性；無鎖定語意、鎖定計數恆 0）
 	roundMax  Value     // 回合上限（寫屬性；無鎖定語意、鎖定計數恆 0）
 
@@ -90,10 +91,11 @@ type Game struct {
 	lastID      InstanceID // 實例編號產生器游標
 
 	// 引擎注入與求值脈絡
-	self     *Ref     // 當前求值脈絡的 self 綁定（run-state，效果流程 save / restore 切換）;nil 代表 self 未固定
-	data     *Data    // 遊戲資料（原始表 + 衍生索引;建構注入、營業期唯讀）
-	operator Operator // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
-	rander   Rander   // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
+	self      *Ref      // 當前求值脈絡的 self 綁定（run-state，效果流程 save / restore 切換）;nil 代表 self 未固定
+	data      *Data     // 遊戲資料（原始表 + 衍生索引;建構注入、營業期唯讀）
+	operator  Operator  // 玩家輸入 port;命令對象 *Pick 暫停流程由玩家選取
+	rander    Rander    // 亂數 port;命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
+	presenter Presenter // 事件流輸出 port;建構時正規化（nil → emptyPresenter）,發射一律經 Emit 蓋章座標
 
 	// 詞彙裝備（rules 經 Register* 逐詞條注入;裝備後唯讀、等同常數,不破壞決定性）
 	attrRead     map[string]AttrReadFunc     // 全域屬性讀詞彙表（含 Lock 全名詞條）
@@ -107,12 +109,16 @@ type Game struct {
 
 // NewGame 建構營業實例：盤面空白（屬性零值、容器空、四張累積表零值可用），
 // 注入本場身分（seed / 關卡編號;同 seed + 同關卡 + 同玩家輸入 = 同一局）、遊戲資料（原始表 + 衍生索引,nil 補空殼）
-// 與玩家輸入 / 亂數兩 port，並預建七張空詞彙表（Register* 填入）。
+// 與玩家輸入 / 亂數 / 事件流三 port（presenter nil 正規化為無輸出替身），並預建七張空詞彙表（Register* 填入）。
 // 開局盤面（手牌 / 三堆 / 排隊 / 前置技能）由 phaseGameStart 依關卡編號自關卡表格建置；self 為求值脈絡 run-state、
 // 詞彙為裝備（rules.Register）,皆不入建構。
-func NewGame(seed int64, stageID int32, data *Data, operator Operator, rander Rander) *Game {
+func NewGame(seed int64, stageID int32, data *Data, operator Operator, rander Rander, presenter Presenter) *Game {
 	if data == nil {
 		data = NewData(nil, nil)
+	} // if
+
+	if presenter == nil {
+		presenter = emptyPresenter{}
 	} // if
 
 	return &Game{
@@ -122,6 +128,7 @@ func NewGame(seed int64, stageID int32, data *Data, operator Operator, rander Ra
 		data:         data,
 		operator:     operator,
 		rander:       rander,
+		presenter:    presenter,
 		attrRead:     map[string]AttrReadFunc{},
 		attrWrite:    map[string]AttrWriteFunc{},
 		attrRefRead:  map[string]AttrRefReadFunc{},
@@ -201,6 +208,14 @@ func (this *Game) GetRander() Rander {
 	return this.rander
 }
 
+// Emit 發射投影事件：蓋章座標（當前回合 / 階段）後轉交事件流輸出 port。
+// 發射點只填事件本體欄位，Round / Phase 由此統一蓋章、不會漏；presenter 建構時已正規化，免判 nil。
+func (this *Game) Emit(eventData EventData) {
+	eventData.Round = this.round.GetValue()
+	eventData.Phase = this.phaseCurr
+	this.presenter.Emit(eventData)
+}
+
 // GetMorale 取餐廳士氣值。
 func (this *Game) GetMorale() *Value {
 	return &this.morale
@@ -251,14 +266,24 @@ func (this *Game) GetDrawMax() *Value {
 	return &this.drawMax
 }
 
+// GetPhase 取當前階段（未踏站前為 PhaseNone）。
+func (this *Game) GetPhase() PhaseKind {
+	return this.phaseCurr
+}
+
+// SetPhase 設當前階段；RunPhase 踏站時設定，Emit 據此蓋章座標。
+func (this *Game) SetPhase(phase PhaseKind) {
+	this.phaseCurr = phase
+}
+
 // GetNextPhase 取下一階段（無跳轉目標時為 PhaseNone）。
 func (this *Game) GetNextPhase() PhaseKind {
-	return this.nextPhase
+	return this.phaseNext
 }
 
 // SetNextPhase 設下一階段；合法性由呼叫端把關（phaseJump 驗 PhaseJumpLegal、系統轉移時清 PhaseNone）。
 func (this *Game) SetNextPhase(phase PhaseKind) {
-	this.nextPhase = phase
+	this.phaseNext = phase
 }
 
 // GetRound 取當前回合數。
@@ -717,6 +742,13 @@ func (this *Game) IsFrozen(guest *Guest) bool {
 // Env 組裝求值期環境:以自身為條件對象 Resolver、帶入裝備的內建函式註冊表。
 func (this *Game) Env() exprs.Env {
 	return exprs.Env{Resolver: this, Builtin: this.builtin}
+}
+
+// emptyPresenter 無輸出替身：NewGame 對 presenter == nil 正規化為此（比照 data nil 補空殼）、Emit 靜默丟棄。
+// Presenter 為純輸出 port（Emit 無回傳、零決定性影響），no-op 在語意上無損，發射端因此免判 nil。
+type emptyPresenter struct{}
+
+func (this emptyPresenter) Emit(eventData EventData) {
 }
 
 // 編譯期確認 Game 滿足 exprs.Resolver(條件對象求值的接縫)。

@@ -23,7 +23,7 @@ type SuiteGame struct {
 // 注入靜態表與衍生索引、self 不入建構。
 func (this *SuiteGame) TestNewGame() {
 	sheet := buildSheet()
-	game := NewGame(123, 5, NewData(sheet, nil), nil, nil)
+	game := NewGame(123, 5, NewData(sheet, nil), nil, nil, nil)
 	this.Require().NotNil(game)
 	this.Equal(int32(0), game.GetMorale().GetValue())
 	this.Equal(PhaseNone, game.GetNextPhase())
@@ -41,13 +41,13 @@ func (this *SuiteGame) TestNewGame() {
 	this.Same(sheet, game.GetSheet()) // 注入遊戲資料
 	this.Nil(game.GetSelf())          // self 為 run-state,建構不綁定
 
-	empty := NewGame(0, 0, nil, nil, nil) // data nil → 補空殼,查詢不爆
+	empty := NewGame(0, 0, nil, nil, nil, nil) // data nil → 補空殼,查詢不爆
 	this.Nil(empty.GetSheet())
 }
 
 // TestGameNextID 驗證 NextID 配發遞增唯一實例編號（卡牌 / 顧客 / 效果共用同一序列）。
 func (this *SuiteGame) TestGameNextID() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	this.Equal(InstanceID(1), game.NextID())
 	this.Equal(InstanceID(2), game.NextID())
 	this.Equal(InstanceID(3), game.NextID())
@@ -55,7 +55,7 @@ func (this *SuiteGame) TestGameNextID() {
 
 // TestGameSetSelf 驗證 SetSelf 成對寫門:綁定 + 還原函式逐層退棧（結算重入安全）。
 func (this *SuiteGame) TestGameSetSelf() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	outer := NewRefGuest(&Guest{instanceID: 1})
 	inner := NewRefCard(&Card{instanceID: 2})
 
@@ -74,12 +74,29 @@ func (this *SuiteGame) TestGameSetSelf() {
 
 // TestGameGetOperator 驗證 GetOperator 取回注入的玩家輸入 port。
 func (this *SuiteGame) TestGameGetOperator() {
-	this.Equal(fakeOperator{}, NewGame(0, 0, nil, fakeOperator{}, nil).GetOperator())
+	this.Equal(fakeOperator{}, NewGame(0, 0, nil, fakeOperator{}, nil, nil).GetOperator())
 }
 
 // TestGameGetRander 驗證 GetRander 取回注入的亂數 port。
 func (this *SuiteGame) TestGameGetRander() {
-	this.Equal(fakeRander{}, NewGame(0, 0, nil, nil, fakeRander{}).GetRander())
+	this.Equal(fakeRander{}, NewGame(0, 0, nil, nil, fakeRander{}, nil).GetRander())
+}
+
+// TestGameEmit 驗證 Emit 發射投影事件:統一蓋章座標(當前回合 / 階段)後轉交 presenter,發射點不自帶;
+// presenter nil 由建構正規化為無輸出替身,發射不爆。
+func (this *SuiteGame) TestGameEmit() {
+	record := &fakePresenter{}
+	game := NewGame(0, 0, nil, nil, nil, record)
+	game.GetRound().Set(3)
+	game.SetPhase(PhaseRoundStart)
+	game.Emit(EventData{Kind: EventScope, Scope: ScopeSettle})
+	this.Require().Len(record.event, 1)
+	this.Equal(EventScope, record.event[0].Kind)
+	this.Equal(ScopeSettle, record.event[0].Scope)
+	this.Equal(int32(3), record.event[0].Round) // 座標由 Emit 蓋章,發射點未填
+	this.Equal(PhaseRoundStart, record.event[0].Phase)
+
+	NewGame(0, 0, nil, nil, nil, nil).Emit(EventData{}) // presenter nil → 無輸出替身,不爆
 }
 
 // TestGameGetMorale 驗證 GetMorale 取回餐廳士氣值組件（寫入經組件可見）。
@@ -136,10 +153,19 @@ func (this *SuiteGame) TestGameGetDrawMax() {
 	this.Equal(int32(5), (&Game{drawMax: NewValue(5, 0)}).GetDrawMax().GetValue())
 }
 
+// TestGameGetPhase 驗證 GetPhase / SetPhase 當前階段存取（未踏站前為 PhaseNone）。
+func (this *SuiteGame) TestGameGetPhase() {
+	game := NewGame(0, 0, nil, nil, nil, nil)
+	this.Equal(PhaseNone, game.GetPhase())
+
+	game.SetPhase(PhaseGuestAction)
+	this.Equal(PhaseGuestAction, game.GetPhase())
+}
+
 // TestGameGetNextPhase 驗證 GetNextPhase 取回下一階段（無跳轉目標為 PhaseNone）。
 func (this *SuiteGame) TestGameGetNextPhase() {
 	this.Equal(PhaseNone, (&Game{}).GetNextPhase())
-	this.Equal(PhasePlayerAction, (&Game{nextPhase: PhasePlayerAction}).GetNextPhase())
+	this.Equal(PhasePlayerAction, (&Game{phaseNext: PhasePlayerAction}).GetNextPhase())
 }
 
 // TestGameSetNextPhase 驗證 SetNextPhase 設下一階段（含清回 PhaseNone）。
@@ -451,7 +477,7 @@ func (this *SuiteGame) TestGameRoundReset() {
 
 // TestGameSkillEffect 驗證 SkillEffect 取技能效果列表複本(不共享靜態表底層);技能不存在回 nil。
 func (this *SuiteGame) TestGameSkillEffect() {
-	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 
 	effect := game.SkillEffect(301)
 	this.Equal([]int32{401, 402}, effect)
@@ -464,7 +490,7 @@ func (this *SuiteGame) TestGameSkillEffect() {
 
 // TestGameCardSkillGroup 驗證 CardSkillGroup 取卡牌技能群組;卡牌 / 技能資料缺失回 0。
 func (this *SuiteGame) TestGameCardSkillGroup() {
-	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 	this.Equal(int32(3), game.CardSkillGroup(103)) // 卡 103 → 技能 301 → 群組 3
 	this.Equal(int32(0), game.CardSkillGroup(101)) // 卡 101 無技能（SkillID 0）→ 0
 	this.Equal(int32(0), game.CardSkillGroup(999)) // 卡牌資料不存在 → 0
@@ -472,7 +498,7 @@ func (this *SuiteGame) TestGameCardSkillGroup() {
 
 // TestGameEffectData 驗證 EffectData 委派遊戲資料查預編譯效果;查無回 ok=false。
 func (this *SuiteGame) TestGameEffectData() {
-	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil)
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, nil, nil)
 
 	meta, ok := game.EffectData(401)
 	this.True(ok)
@@ -488,7 +514,7 @@ func (this *SuiteGame) TestGameGuestData() {
 	sheet.Guest.Data = map[int32]*sheeter.Guest{
 		501: {ID: 501, SateSkillID: []string{"6^301"}},
 	}
-	game := NewGame(0, 0, NewData(sheet, nil), nil, nil)
+	game := NewGame(0, 0, NewData(sheet, nil), nil, nil, nil)
 
 	meta, ok := game.GuestData(501)
 	this.True(ok)
@@ -500,7 +526,7 @@ func (this *SuiteGame) TestGameGuestData() {
 
 // TestGameRollCard 驗證 RollCard 對抽獎群組 weighted random 抽卡牌編號;群組不存在 / 總權重 0 回 ok=false。
 func (this *SuiteGame) TestGameRollCard() {
-	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, fakeRander{})
+	game := NewGame(0, 0, NewData(buildSheet(), nil), nil, fakeRander{}, nil)
 
 	cardID, ok := game.RollCard(7) // 群組 7:Weighted 恆取首位 → 101
 	this.True(ok)
@@ -515,7 +541,7 @@ func (this *SuiteGame) TestGameRollCard() {
 
 // TestGameAttr 驗證 Attr 對全域屬性詞彙表的單查分派(裝備經 RegisterAttrRead;只驗分派機制,真詞條驗證歸 rules)。
 func (this *SuiteGame) TestGameAttr() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterAttrRead("fake", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 		return exprs.NewNum(7), true
 	})
@@ -527,13 +553,13 @@ func (this *SuiteGame) TestGameAttr() {
 	_, ok = game.Attr("nope", nil) // 未知名稱 → 失敗
 	this.False(ok)
 
-	_, ok = NewGame(0, 0, nil, nil, nil).Attr("fake", nil) // 未裝備 → 失敗
+	_, ok = NewGame(0, 0, nil, nil, nil, nil).Attr("fake", nil) // 未裝備 → 失敗
 	this.False(ok)
 }
 
 // TestGameAttrRef 驗證 AttrRef 對引用屬性詞彙表的單查分派(裝備經 RegisterAttrRefRead)。
 func (this *SuiteGame) TestGameAttrRef() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterAttrRefRead("fake", func(game *Game, ref exprs.Ref, arg []exprs.Value) (result exprs.Value, ok bool) {
 		guest, valid := AsGuest(ref)
 
@@ -554,7 +580,7 @@ func (this *SuiteGame) TestGameAttrRef() {
 
 // TestGameExecAssignGlobal 驗證 ExecAssign 全域左值路徑:帶值賦值求值（含 builtin 注入）/ 鎖定 / 未知名稱與評估失敗 no-op。
 func (this *SuiteGame) TestGameExecAssignGlobal() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.score = NewValue(10, 0)
 	game.RegisterAttrWrite("score", func(game *Game, op AssignKind, n float64) bool {
 		return game.GetScore().Apply(op, n)
@@ -584,7 +610,7 @@ func (this *SuiteGame) TestGameExecAssignGlobal() {
 // TestGameExecAssignRef 驗證 ExecAssign 引用左值路徑:引用解析 / 屬性凍結 / 未知屬性 / 空物件 no-op。
 func (this *SuiteGame) TestGameExecAssignRef() {
 	card := &Card{instanceID: 1}
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.drawLast = card
 	game.RegisterAttrRead("drawLast", func(game *Game, arg []exprs.Value) (result exprs.Value, ok bool) {
 		return NewRefCard(game.GetDrawLast()).Value(), true
@@ -638,7 +664,7 @@ func (this *SuiteGame) TestGameExecAssignRef() {
 // 任一參數評估失敗 / 名稱未登錄 → 整動作 no-op(evalAll 順帶覆蓋)。
 func (this *SuiteGame) TestGameExecOperate() {
 	run := []InstanceID{}
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterSelector("fake", func(game *Game, arg []exprs.Value) (result []InstanceID) {
 		return []InstanceID{InstanceID(arg[0].Num())}
 	})
@@ -677,7 +703,7 @@ func (this *SuiteGame) TestGameExecOperate() {
 
 // TestGameSelectObject 驗證 selectObject 對命令對象詞彙表的分派與未登錄回報。
 func (this *SuiteGame) TestGameSelectObject() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterSelector("fake", func(game *Game, arg []exprs.Value) (result []InstanceID) {
 		return []InstanceID{7}
 	})
@@ -692,7 +718,7 @@ func (this *SuiteGame) TestGameSelectObject() {
 
 // TestGameLocateCard 驗證 LocateCard 自四牌堆定位卡牌與所在容器;未命中回 ContainerNone。
 func (this *SuiteGame) TestGameLocateCard() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Hand = CardList{{instanceID: 1}}
 	game.Deck = CardList{{instanceID: 2}}
 	game.Drop = CardList{{instanceID: 3}}
@@ -715,7 +741,7 @@ func (this *SuiteGame) TestGameLocateCard() {
 
 // TestGameLocateGuest 驗證 LocateGuest 自顧客四容器定位顧客與所在容器;未命中回 ContainerNone。
 func (this *SuiteGame) TestGameLocateGuest() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Seat.Place(1, &Guest{instanceID: 1})
 	game.Wait = WaitList{{instanceID: 2}}
 	game.Roam = GuestList{{instanceID: 3}}
@@ -741,7 +767,7 @@ func (this *SuiteGame) TestGameIsFrozen() {
 	frozen := &Guest{instanceID: 1}
 	free := &Guest{instanceID: 2}
 	free.SetFreeze(3) // freeze 殘值不影響判定（僅作解凍補回錨點）
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.Cardify = GuestList{frozen}
 
 	this.True(game.IsFrozen(frozen))
@@ -750,7 +776,7 @@ func (this *SuiteGame) TestGameIsFrozen() {
 
 // TestGameEnv 驗證 Env 組裝求值期環境:自身為 Resolver、帶入裝備的內建函式。
 func (this *SuiteGame) TestGameEnv() {
-	game := NewGame(0, 0, nil, nil, nil)
+	game := NewGame(0, 0, nil, nil, nil, nil)
 	game.RegisterBuiltin("seven", func(arg []exprs.Value) (result exprs.Value, ok bool) {
 		return exprs.NewNum(7), true
 	})
@@ -800,4 +826,13 @@ func (this fakeRander) Shuffle(n int, swap func(i, j int)) {
 
 func (this fakeRander) Weighted(weight []int32) int {
 	return 0
+}
+
+// fakePresenter 事件流錄製替身(cores 白箱測試私有;rules / games 用 tester.RecordPresenter)。
+type fakePresenter struct {
+	event []EventData
+}
+
+func (this *fakePresenter) Emit(eventData EventData) {
+	this.event = append(this.event, eventData)
 }

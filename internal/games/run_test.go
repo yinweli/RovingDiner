@@ -21,9 +21,9 @@ type SuiteRun struct {
 // TestRun 驗證跑通第一局:關卡 601 兩位顧客耐心耗盡生氣離場 → 全場清空 → 營業成功;
 // 同 seed + 同關卡 + 同輸入重跑同結果（決定性）;高耐心關卡 603 耗到回合上限 → 失敗。
 func (this *SuiteRun) TestRun() {
-	this.True(Run(1, 601, tester.BuildSheet(), tester.FakeOperator{}))
-	this.True(Run(1, 601, tester.BuildSheet(), tester.FakeOperator{})) // 決定性:重跑同結果
-	this.False(Run(1, 603, tester.BuildSheet(), tester.FakeOperator{}))
+	this.True(Run(1, 601, tester.BuildSheet(), tester.FakeOperator{}, nil))
+	this.True(Run(1, 601, tester.BuildSheet(), tester.FakeOperator{}, nil)) // 決定性:重跑同結果
+	this.False(Run(1, 603, tester.BuildSheet(), tester.FakeOperator{}, nil))
 }
 
 // TestRunCompile 驗證 Compiler 閉包:前置技能掛真命令字串——編譯執行（含結算尾）則排隊顧客離場、首結算全場清空而獲勝;
@@ -37,6 +37,6 @@ func (this *SuiteRun) TestRunCompile() {
 	sheet.Stage.Data[604] = &sheeter.Stage{ID: 604, Name: "編譯成功", WaitID: []int32{502}, PrefixSkillID: []int32{302}}
 	sheet.Stage.Data[605] = &sheeter.Stage{ID: 605, Name: "編譯失敗", WaitID: []int32{502}, PrefixSkillID: []int32{303}}
 
-	this.True(Run(1, 604, sheet, tester.FakeOperator{}))  // 命令執行 → 顧客離場 → 結算尾判全場清空 → 成功
-	this.False(Run(1, 605, sheet, tester.FakeOperator{})) // 語法錯效果被跳過 → 顧客存活 → 回合上限失敗
+	this.True(Run(1, 604, sheet, tester.FakeOperator{}, nil))  // 命令執行 → 顧客離場 → 結算尾判全場清空 → 成功
+	this.False(Run(1, 605, sheet, tester.FakeOperator{}, nil)) // 語法錯效果被跳過 → 顧客存活 → 回合上限失敗
 }

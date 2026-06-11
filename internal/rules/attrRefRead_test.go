@@ -186,7 +186,7 @@ func (this *SuiteAttrRefRead) TestAttrRefReadGuestNoSeat() {
 func (this *SuiteAttrRefRead) TestAttrRefReadEffect() {
 	data := tester.BuildData()
 	data.SetEffect(202, cores.EffectData{}) // 補登迷你表沒有的效果 202
-	game := cores.NewGame(0, 0, data, nil, nil)
+	game := cores.NewGame(0, 0, data, nil, nil, nil)
 	Register(game)
 	guest := &cores.Guest{}
 	card := &cores.Card{}
@@ -264,7 +264,7 @@ func lock(value *cores.Value, n int32) {
 func strayCard(cardID int32) *cores.Card {
 	sheet := &sheeter.Sheeter{}
 	sheet.Card.Data = map[int32]*sheeter.Card{cardID: {ID: cardID}}
-	game := cores.NewGame(0, 0, cores.NewData(sheet, nil), nil, nil)
+	game := cores.NewGame(0, 0, cores.NewData(sheet, nil), nil, nil, nil)
 
 	for i := 0; i < 999; i++ {
 		game.NextID()
