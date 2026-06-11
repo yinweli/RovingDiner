@@ -1,4 +1,4 @@
-package tui
+package rodi
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func Run(seed int64, stageID int32, dataDir string, sheet *sheeter.Sheeter) erro
 	_, err := tea.NewProgram(newModel(newAdapter(seed, stageID, sheet, passiveOperator{}), seed, stageID, dataDir)).Run()
 
 	if err != nil {
-		return fmt.Errorf("tui: %w", err)
+		return fmt.Errorf("rodi: %w", err)
 	} // if
 
 	return nil

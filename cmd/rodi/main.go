@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yinweli/RovingDiner/app/tui"
+	"github.com/yinweli/RovingDiner/app/rodi"
 	"github.com/yinweli/RovingDiner/internal/infra"
 )
 
@@ -20,8 +20,8 @@ func main() {
 	var data string
 
 	command := &cobra.Command{
-		Use:          "tui",
-		Short:        "營業 TUI(debug viewer)",
+		Use:          "rodi",
+		Short:        "流浪食堂營業 TUI(debug viewer)",
 		SilenceUsage: true, // 執行期錯誤(載表失敗等)不重印用法, 只在旗標解析錯時顯示
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if seed == 0 {
@@ -34,7 +34,7 @@ func main() {
 				return fmt.Errorf("載表失敗: %w", err)
 			} // if
 
-			return tui.Run(seed, stage, data, sheet)
+			return rodi.Run(seed, stage, data, sheet)
 		},
 	}
 	command.Flags().Int64Var(&seed, "seed", 0, "亂數種子; 0 = 以時間取亂")
