@@ -17,8 +17,8 @@ type SuiteBarKey struct {
 }
 
 // TestNewBarKey 驗證建構: 三模式表就位(選取留 M27 填); 常態表 = tab 雙向切區(shift+tab 併入 tab 標籤
-// 不列示)+ 四方向鍵移游標(down/left/right 併入 up 標籤不列示)+ enter 檢視(R3 僅狀態列有作用不列示,
-// 標籤隨 R4 點亮)+ f1 計數 + space 模式循環 + n 步進前進 + q 離開 + ctrl+c 逃生(不列示);
+// 不列示)+ 四方向鍵移游標(down/left/right 併入 up 標籤不列示)+ enter 檢視 + f1 計數 + space 模式循環
+// + n 步進前進 + q 離開 + ctrl+c 逃生(不列示);
 // modal 態表 = 上下捲動 + esc 關閉 + ctrl+c 逃生, 順序照【營業顯示規格書 | 6、畫面規格 | 6.11】終態。
 func (this *SuiteBarKey) TestNewBarKey() {
 	target := newBarKey()
@@ -33,7 +33,7 @@ func (this *SuiteBarKey) TestNewBarKey() {
 	this.Equal("right", target.bind[keyModeNormal][5].key)
 	this.Equal("", target.bind[keyModeNormal][3].label) // 併入 up 的 [Arrow] 標籤, 有作用不列示
 	this.Equal("enter", target.bind[keyModeNormal][6].key)
-	this.Equal("", target.bind[keyModeNormal][6].label) // R3 僅狀態列有作用, 標籤隨 R4 點亮
+	this.Equal("[Enter]檢視", target.bind[keyModeNormal][6].label) // R4 點亮(檢視 modal 全區到位)
 	this.Equal("f1", target.bind[keyModeNormal][7].key)
 	this.Equal(" ", target.bind[keyModeNormal][8].key)
 	this.Equal("n", target.bind[keyModeNormal][9].key)
@@ -50,7 +50,7 @@ func (this *SuiteBarKey) TestNewBarKey() {
 // TestBarKeyView 驗證渲染: 依模式查表固定 2 行、行位照終態安排、空標籤跳過、空表兩行留白(高度穩定)、
 // 超寬依預算截斷。
 func (this *SuiteBarKey) TestBarKeyView() {
-	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [F1]計數\n[Space]快/慢/步進 [N]前進 [Q]離開", newBarKey().View(keyModeNormal, 100))
+	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Enter]檢視 [F1]計數\n[Space]快/慢/步進 [N]前進 [Q]離開", newBarKey().View(keyModeNormal, 100))
 	this.Equal("[Up/Down]欄位捲動 [Esc]關閉\n", newBarKey().View(keyModeModal, 100)) // modal 態: 行 2 留白
 	this.Equal("\n", newBarKey().View(keyModePick, 100))                       // 空表(M27 填): 兩行留白
 

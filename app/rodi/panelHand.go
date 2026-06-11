@@ -72,6 +72,15 @@ func (this *panelHand) Move(game *cores.Game, key string) {
 	this.cursor = moveIndex(this.cursor, key, len(game.Hand))
 }
 
+// Item 回游標下的卡牌(空手牌回 nil; 檢視 modal 用)。
+func (this *panelHand) Item(game *cores.Game) any {
+	if len(game.Hand) == 0 {
+		return nil
+	} // if
+
+	return game.Hand[clampIndex(this.cursor, len(game.Hand))]
+}
+
 // handCard 卡名行: 識別碼(主畫面省實例段) + cardify 來源段(已綁才有) + (出牌費用)。
 func handCard(sheet *sheeter.Sheeter, card *cores.Card) string {
 	text := cores.IdentCard(sheet, card.GetCardID(), cores.NoneID)

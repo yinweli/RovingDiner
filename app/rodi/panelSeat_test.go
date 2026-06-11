@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/yinweli/RovingDiner/internal/cores"
+	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
 func TestSuitePanelSeat(t *testing.T) {
@@ -77,4 +78,19 @@ func (this *SuitePanelSeat) TestPanelSeatMove() {
 	row = strings.Split((&panelSeat{curTable: 1}).View(game, 33, true), "\n") // 窄寬: 桌窗格捲到游標桌
 	this.Contains(row[1], "| < 桌2")                                           // 左緣 < 於桌號列
 	this.Contains(row[2], styleCursor.Render(padTo("空", seatColumn)))         // 其餘行同縮排, 游標格仍反白
+}
+
+// TestPanelSeatItem 驗證游標項目: 游標座位上的顧客; 空位與無桌(防禦)回 nil。
+func (this *SuitePanelSeat) TestPanelSeatItem() {
+	game := testGame()
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(1, guest)
+	target := &panelSeat{}
+	this.Equal(guest, target.Item(game)) // 桌1 座位1
+
+	target.Move(game, "right") // 桌2 空位
+	this.Nil(target.Item(game))
+
+	empty := cores.NewGame(0, 0, cores.NewData(&sheeter.Sheeter{}, nil), nil, nil, nil) // 防禦: 座位表無桌
+	this.Nil(target.Item(empty))
 }

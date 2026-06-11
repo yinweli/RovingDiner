@@ -65,6 +65,19 @@ func (this *SuitePanelAction) TestPanelActionMove() {
 	this.Equal("|   "+styleCursor.Render(padTo("501@老饕 飽", 11))+" |", row[2]) // 第 2 行同縮排對齊
 }
 
+// TestPanelActionItem 驗證游標項目: 游標下的行動項; 空佇列回 nil。
+func (this *SuitePanelAction) TestPanelActionItem() {
+	game := testGame()
+	target := &panelAction{}
+	this.Nil(target.Item(game)) // 空佇列
+
+	guest := cores.NewGuest(game, 501)
+	game.Action.Push(cores.NewAction(guest, cores.TaskCalm, 301))
+	game.Action.Push(cores.NewAction(guest, cores.TaskSate, 301))
+	target.Move(game, "right")
+	this.Equal(game.Action[1], target.Item(game))
+}
+
 // TestTaskName 驗證行動類型標記; 越界顯 ?。
 func (this *SuitePanelAction) TestTaskName() {
 	this.Equal("飽", taskName(cores.TaskSate))

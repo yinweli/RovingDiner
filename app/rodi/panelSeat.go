@@ -117,6 +117,24 @@ func (this *panelSeat) Move(game *cores.Game, key string) {
 	} // if
 }
 
+// Item 回游標座位上的顧客(空位 / 無桌回 nil; 檢視 modal 用)。
+func (this *panelSeat) Item(game *cores.Game) any {
+	table := seatTable(game.GetSheet())
+
+	if len(table) == 0 {
+		return nil
+	} // if
+
+	itor := table[clampIndex(this.curTable, len(table))]
+	guest := game.Seat[itor.seat[clampIndex(this.curSeat, len(itor.seat))]]
+
+	if guest == nil {
+		return nil // 空位(型別斷言要的是無項目, 不回帶 nil 的具型指標)
+	} // if
+
+	return guest
+}
+
 // tableInfo 單一桌次(桌次編號 + 桌內座位編號, 升序)。
 type tableInfo struct {
 	id   int32   // 桌次編號

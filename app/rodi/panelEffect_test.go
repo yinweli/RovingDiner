@@ -65,6 +65,22 @@ func (this *SuitePanelEffect) TestPanelEffectMove() {
 	this.Equal(0, target.cursor)
 }
 
+// TestPanelEffectItem 驗證游標項目: 對排序後順序(與 View 同序); 空佇列回 nil。
+func (this *SuitePanelEffect) TestPanelEffectItem() {
+	game := testGame()
+	target := &panelEffect{}
+	this.Nil(target.Item(game)) // 空佇列
+
+	low := cores.NewEffect(game, 401, cores.Ref{}, 1)  // 作用順序 5
+	high := cores.NewEffect(game, 402, cores.Ref{}, 1) // 作用順序 9 排前
+	game.Effect.Push(low)
+	game.Effect.Push(high)
+	this.Equal(high, target.Item(game)) // 游標 0 = 排序後首位
+
+	target.Move(game, "right")
+	this.Equal(low, target.Item(game))
+}
+
 // TestEffectOrder 驗證作用順序查表; 查無回 0。
 func (this *SuitePanelEffect) TestEffectOrder() {
 	this.Equal(int32(9), effectOrder(testSheet(), 402))

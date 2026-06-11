@@ -77,6 +77,40 @@ func modalView(game *cores.Game, top modal, offset int) []string {
 	return append(box, modalBottom(width, label))
 }
 
+// wrapToken token 換行: 以欄距 2 貪婪打包至 modal 內容寬上界(超寬 wrap 成多列; 效果橫排用,
+// 【營業顯示規格書 | 7、互動規格 | 7.6 | 7.6.3】); 空列表回單一空行(區塊恆顯、列留空)。
+func wrapToken(token []string) (result []string) {
+	line := ""
+
+	for _, itor := range token {
+		if line != "" && lipgloss.Width(line+"  "+itor) > modalWidthMax-4 {
+			result = append(result, line)
+			line = itor
+			continue
+		} // if
+
+		if line != "" {
+			line += "  "
+		} // if
+
+		line += itor
+	} // for
+
+	return append(result, line)
+}
+
+// wrapText 長字串換行: 依顯示寬切段至 modal 內容寬上界(全形不切半字; 長命令 / 運算式原文用);
+// 未超寬原樣單行。
+func wrapText(text string) (result []string) {
+	for lipgloss.Width(text) > modalWidthMax-4 {
+		head := truncTo(text, modalWidthMax-4) // 內容寬上界 >= 2, 必切得出至少一字、迴圈必收斂
+		result = append(result, head)
+		text = text[len(head):]
+	} // for
+
+	return append(result, text)
+}
+
 // modalBottom modal 底框列: 無捲動素線收尾; 有捲動於右下嵌位置指示(仿 less; 格式「- 標示 -+」貼右緣)。
 func modalBottom(width int, label string) string {
 	if label == "" {

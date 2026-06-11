@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/yinweli/RovingDiner/internal/cores"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
@@ -165,7 +166,23 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 			return this.push(modalCount{seed: this.stepper.game.Seed}), nil
 		} // if
 
-		return this, nil // 其餘區的檢視 modal 歸 R4
+		if this.focus < len(this.comp) { // 對游標項目辨型開檢視 modal(M26 R4; 候選身分 = 實例指標)
+			switch item := this.comp[this.focus].Item(this.stepper.game).(type) {
+			case *cores.Guest:
+				return this.push(modalGuest{guest: item}), nil
+
+			case *cores.Action:
+				return this.push(modalAction{action: item}), nil
+
+			case *cores.Effect:
+				return this.push(modalEffect{effect: item}), nil
+
+			case *cores.Card:
+				return this.push(modalCard{card: item}), nil
+			} // switch
+		} // if
+
+		return this, nil // 游標下無項目 / 事件日誌無 modal: 不動作
 
 	case popMsg:
 		if size := len(this.modal); size > 0 {

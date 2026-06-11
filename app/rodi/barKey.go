@@ -43,7 +43,7 @@ func newBarKey() barKey {
 			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
 			{key: keyLeft, label: "", row: 1, cmd: move(keyLeft)},
 			{key: keyRight, label: "", row: 1, cmd: move(keyRight)},
-			{key: "enter", label: "", row: 1, cmd: enter()}, // R3 僅狀態列聚焦有作用(開計數); [Enter]檢視 標籤隨 R4 點亮
+			{key: "enter", label: "[Enter]檢視", row: 1, cmd: enter()},
 			{key: "f1", label: "[F1]計數", row: 1, cmd: count()},
 			{key: " ", label: "[Space]快/慢/步進", row: 2, cmd: cycle()},
 			{key: "n", label: "[N]前進", row: 2, cmd: step()},

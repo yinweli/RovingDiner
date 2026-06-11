@@ -36,6 +36,18 @@ func (this *Immune) Get(group int32) int32 {
 	return this.count[group]
 }
 
+// Group 讀鎖定計數 > 0 的群組編號清單(升序; 顧客 modal 免疫表列舉用, 唯讀)。
+func (this *Immune) Group() (result []int32) {
+	for k, v := range this.count {
+		if v > 0 {
+			result = append(result, k)
+		} // if
+	} // for
+
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
+	return result
+}
+
 // Any 回報任一群組鎖定計數 > 0(顯示端旗標判定用; 歸零鍵與空表回 false)。
 func (this *Immune) Any() bool {
 	for _, v := range this.count {

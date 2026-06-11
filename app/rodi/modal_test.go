@@ -58,6 +58,33 @@ func (this *SuiteModal) TestModalView() {
 	this.Equal(modalWidthMax, lipgloss.Width(wide[1]))
 }
 
+// TestWrapToken 驗證 token 換行: 未超寬單行、超寬貪婪打包成多列、空列表回單一空行。
+func (this *SuiteModal) TestWrapToken() {
+	this.Equal([]string{"aa  bb"}, wrapToken([]string{"aa", "bb"}))
+	this.Equal([]string{""}, wrapToken(nil)) // 空列表: 區塊恆顯、列留空
+
+	token := []string{}
+
+	for i := 0; i < 10; i++ { // 10 個 10 格 token: 預算 76 一列容 6 個(6x10+5x2 = 70)
+		token = append(token, strings.Repeat("x", 10))
+	} // for
+
+	row := wrapToken(token)
+	this.Require().Len(row, 2)
+	this.Equal(70, lipgloss.Width(row[0]))
+	this.Equal(46, lipgloss.Width(row[1]))
+}
+
+// TestWrapText 驗證長字串換行: 未超寬原樣單行、超寬依顯示寬切段(全形不切半字)。
+func (this *SuiteModal) TestWrapText() {
+	this.Equal([]string{"短文"}, wrapText("短文"))
+
+	row := wrapText(strings.Repeat("文", 50)) // 100 格 > 76: 切 38 字 + 12 字
+	this.Require().Len(row, 2)
+	this.Equal(76, lipgloss.Width(row[0]))
+	this.Equal(24, lipgloss.Width(row[1]))
+}
+
 // TestModalBottom 驗證底框列: 無標示素線收尾; 有標示嵌右下(仿 less)。
 func (this *SuiteModal) TestModalBottom() {
 	this.Equal("+--------+", modalBottom(10, ""))

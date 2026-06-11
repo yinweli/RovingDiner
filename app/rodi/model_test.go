@@ -157,9 +157,31 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Nil(cmd)
 
 	target.focus = 0
-	result, cmd = target.Update(enterMsg{}) // 其餘區 Enter: 檢視 modal 歸 R4, 現不動作
+	result, _ = target.Update(enterMsg{}) // 聚焦座位但全空位: 游標下無項目, 不動作
 	this.Empty(result.(model).modal)
-	this.Nil(cmd)
+
+	game := target.stepper.game // 擺盤後對游標項目辨型開檢視 modal(R4)
+	game.Wait.Insert(cores.NewGuest(game, 1))
+	game.Action.Push(cores.NewAction(game.Wait[0], cores.TaskSate, 1))
+	game.Effect.Push(cores.NewEffect(game, 1, cores.Ref{}, 1))
+	game.Hand.Push(cores.NewCard(game, 1))
+
+	for focus, want := range map[int]modal{
+		1: modalGuest{guest: game.Wait[0]},
+		2: modalAction{action: game.Action[0]},
+		3: modalEffect{effect: game.Effect[0]},
+		4: modalCard{card: game.Hand[0]},
+	} {
+		target.focus = focus
+		result, cmd = target.Update(enterMsg{})
+		this.Equal(want, result.(model).modal[0])
+		this.Nil(cmd)
+		target.modal = nil // 收回(value model: target 未持堆疊, 防呆歸位)
+	} // for
+
+	target.focus = focusLog // 事件日誌無 modal
+	result, _ = target.Update(enterMsg{})
+	this.Empty(result.(model).modal)
 
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)

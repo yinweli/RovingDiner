@@ -67,3 +67,14 @@ func (this *SuitePanelPool) TestPanelPoolMove() {
 	row = strings.Split(target.View(game, 26, true), "\n") // 窄寬: 窗格跟游標捲、左緣 < 緊接標籤後
 	this.Contains(row[1], "排隊(2): < "+styleCursor.Render("501@老饕"))
 }
+
+// TestPanelPoolItem 驗證游標項目: 游標列游標位置的顧客; 空列回 nil。
+func (this *SuitePanelPool) TestPanelPoolItem() {
+	game := testGame()
+	game.Wait.Insert(cores.NewGuest(game, 501))
+	target := &panelPool{}
+	this.Equal(game.Wait[0], target.Item(game))
+
+	target.Move(game, "down") // 遊蕩列空
+	this.Nil(target.Item(game))
+}

@@ -53,6 +53,15 @@ func (this *SuiteHelp) TestImmuneGet() {
 	this.Equal(int32(0), immune.Get(99)) // 無鍵 → 0
 }
 
+// TestImmuneGroup 驗證 Group 列舉鎖定中群組(升序; 歸零鍵不列); 零值回空。
+func (this *SuiteHelp) TestImmuneGroup() {
+	immune := Immune{count: map[int32]int32{7: 2, 3: 1, 5: 0}}
+	this.Equal([]int32{3, 7}, immune.Group()) // 歸零鍵 5 不列
+
+	zero := Immune{}
+	this.Empty(zero.Group()) // 零值 → 空
+}
+
 // TestImmuneAny 驗證 Any 任一群組計數 > 0; 歸零鍵與空表回 false。
 func (this *SuiteHelp) TestImmuneAny() {
 	immune := Immune{count: map[int32]int32{7: 1}}

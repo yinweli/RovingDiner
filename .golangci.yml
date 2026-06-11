@@ -170,3 +170,8 @@ linters:
       - path: internal/cores/vocab\.go
         linters:
           - goconst
+      # 場外（顧客池）與牌堆（卡牌堆）為同構三列面板：容器型別與識別碼工具不同（Guest／Card）、
+      # 語意各自獨立演化，結構平行屬刻意設計，泛型合一得不償失（M26 R2／R4 確認）。
+      - path: app/rodi/panel(Pool|Pile)\.go
+        linters:
+          - dupl

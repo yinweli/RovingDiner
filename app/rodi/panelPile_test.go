@@ -61,3 +61,14 @@ func (this *SuitePanelPile) TestPanelPileMove() {
 	row = strings.Split((&panelPile{curIdx: 1}).View(game, 24, true), "\n") // 窄寬: 窗格捲到游標、左緣 < 緊接標籤後
 	this.Contains(row[1], "抽牌堆(2): < ")
 }
+
+// TestPanelPileItem 驗證游標項目: 游標堆游標位置的卡牌; 空堆回 nil。
+func (this *SuitePanelPile) TestPanelPileItem() {
+	game := testGame()
+	game.Deck.Push(cores.NewCard(game, 101))
+	target := &panelPile{}
+	this.Equal(game.Deck[0], target.Item(game))
+
+	target.Move(game, "down") // 棄牌堆空
+	this.Nil(target.Item(game))
+}

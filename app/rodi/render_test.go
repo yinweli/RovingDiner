@@ -118,17 +118,19 @@ func testSheet() *sheeter.Sheeter {
 		3: {ID: 3, TableID: 2, SameSeatID: []int32{3}, NearSeatID: []int32{1, 2}},
 	}
 	sheet.Card.Data = map[int32]*sheeter.Card{
-		101: {ID: 101, Name: "上菜", Cost: 2, ExtraRunMin: 1, ExtraRunMax: 3, Seal: true},
+		101: {ID: 101, Name: "上菜", Group: 3, SkillID: 301, Cost: 2, ExtraRunMin: 1, ExtraRunMax: 3, Seal: true},
 		103: {ID: 103, Name: "結帳", Cost: 1, Keep: true},
 	}
 	sheet.Guest.Data = map[int32]*sheeter.Guest{
-		501: {ID: 501, Name: "老饕", Score: 4, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 6, SateSeal: true},
+		501: {ID: 501, Name: "老饕", Score: 4, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 6, SateSeal: true,
+			SateSkillID: []string{"5^301", "7^301"}, CalmSkillID: []string{"9^301", "7^301"}},
 	}
 	sheet.Skill.Data = map[int32]*sheeter.Skill{
-		301: {ID: 301, Name: "開朗"},
+		301: {ID: 301, Name: "開朗", EffectID: []int32{401, 401, 402}},
 	}
-	sheet.Effect.Data = map[int32]*sheeter.Effect{
-		401: {ID: 401, Name: "加耐", Kind: 1, RunOrder: 5},
+	sheet.Effect.Data = map[int32]*sheeter.Effect{ // 401 帶滿安全靜態欄(命令欄留空——testGame 無 compiler, 非空會炸 prepareEffect)
+		401: {ID: 401, Name: "加耐", Kind: 1, RunOrder: 5, TargetKind: 2, TargetCount: 1, RunRound: 3,
+			Stack: 1, StackMax: 3, StackTime: 1, TriggerKind: "cardPlay", TriggerCond: "self.sate > 0", TriggerCount: "self.calm"},
 		402: {ID: 402, Name: "護盾", Kind: 2, RunOrder: 9},
 		403: {ID: 403, Name: "立即", Kind: 0, RunOrder: 9},
 	}

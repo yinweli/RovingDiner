@@ -42,6 +42,17 @@ func (this *panelPool) Move(game *cores.Game, key string) {
 	this.curIdx = moveIndex(this.curIdx, key, len([][]*cores.Guest{game.Wait, game.Roam, game.Cardify}[this.curRow]))
 }
 
+// Item 回游標列游標位置的顧客(空列回 nil; 檢視 modal 用)。
+func (this *panelPool) Item(game *cores.Game) any {
+	member := [][]*cores.Guest{game.Wait, game.Roam, game.Cardify}[clampIndex(this.curRow, 3)]
+
+	if len(member) == 0 {
+		return nil
+	} // if
+
+	return member[clampIndex(this.curIdx, len(member))]
+}
+
 // poolRow 單列: 標籤(N): 識別碼序列(第 1 個 = 隊頭 / 首位); 聚焦且游標在本列時 token 反白 + 窗格跟游標捲。
 func (this *panelPool) poolRow(game *cores.Game, label string, member []*cores.Guest, index, inner int, focus bool) string {
 	token := []string{}

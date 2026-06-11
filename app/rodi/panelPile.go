@@ -42,6 +42,17 @@ func (this *panelPile) Move(game *cores.Game, key string) {
 	this.curIdx = moveIndex(this.curIdx, key, len([][]*cores.Card{game.Deck, game.Drop, game.Exile}[this.curRow]))
 }
 
+// Item 回游標堆游標位置的卡牌(空堆回 nil; 牌堆項目為單張卡, 檢視 modal 同手牌)。
+func (this *panelPile) Item(game *cores.Game) any {
+	member := [][]*cores.Card{game.Deck, game.Drop, game.Exile}[clampIndex(this.curRow, 3)]
+
+	if len(member) == 0 {
+		return nil
+	} // if
+
+	return member[clampIndex(this.curIdx, len(member))]
+}
+
 // pileRow 單列: 標籤(N): 識別碼序列(第 1 個 = 堆頂); 聚焦且游標在本堆時 token 反白 + 窗格跟游標捲。
 func (this *panelPile) pileRow(game *cores.Game, label string, member []*cores.Card, index, inner int, focus bool) string {
 	token := []string{}

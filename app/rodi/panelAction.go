@@ -60,6 +60,15 @@ func (this *panelAction) Move(game *cores.Game, key string) {
 	this.cursor = moveIndex(this.cursor, key, len(game.Action))
 }
 
+// Item 回游標下的行動項(空佇列回 nil; 檢視 modal 用)。
+func (this *panelAction) Item(game *cores.Game) any {
+	if len(game.Action) == 0 {
+		return nil
+	} // if
+
+	return game.Action[clampIndex(this.cursor, len(game.Action))]
+}
+
 // taskName 行動類型標記(飽 / 耐; 越界顯 ?)。
 func taskName(task cores.TaskKind) string {
 	switch task {

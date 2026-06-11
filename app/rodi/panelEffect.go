@@ -22,17 +22,7 @@ type panelEffect struct {
 
 // View 渲染標題列(含佇列數) + 2 行; 空佇列兩行留白(高度穩定)。
 func (this *panelEffect) View(game *cores.Game, width int, focus bool) string {
-	sorted := append([]*cores.Effect{}, game.Effect...)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		left, right := effectOrder(game.GetSheet(), sorted[i].GetEffectID()), effectOrder(game.GetSheet(), sorted[j].GetEffectID())
-
-		if left != right {
-			return left > right
-		} // if
-
-		return sorted[i].GetEffectID() < sorted[j].GetEffectID()
-	})
-
+	sorted := effectSorted(game)
 	cursor := clampIndex(this.cursor, len(sorted))
 	row1 := []string{}
 	row2 := []string{}
@@ -85,6 +75,33 @@ func (this *panelEffect) Move(game *cores.Game, key string) {
 	this.cursor = moveIndex(this.cursor, key, len(game.Effect))
 }
 
+// Item 回游標下的效果項(對排序後順序, 與 View 同序; 空佇列回 nil; 檢視 modal 用)。
+func (this *panelEffect) Item(game *cores.Game) any {
+	sorted := effectSorted(game)
+
+	if len(sorted) == 0 {
+		return nil
+	} // if
+
+	return sorted[clampIndex(this.cursor, len(sorted))]
+}
+
+// effectSorted 排序後的效果佇列複本(作用順序大者優先、同序效果編號小者優先, 不動引擎佇列;
+// View 與 Item 共用同一序, 游標所視即所開)。
+func effectSorted(game *cores.Game) []*cores.Effect {
+	sorted := append([]*cores.Effect{}, game.Effect...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		left, right := effectOrder(game.GetSheet(), sorted[i].GetEffectID()), effectOrder(game.GetSheet(), sorted[j].GetEffectID())
+
+		if left != right {
+			return left > right
+		} // if
+
+		return sorted[i].GetEffectID() < sorted[j].GetEffectID()
+	})
+	return sorted
+}
+
 // effectOrder 查效果作用順序(查無回 0, 防禦; 與 EffectList.Sort 同源規則)。
 func effectOrder(sheet *sheeter.Sheeter, effectID int32) int32 {
 	meta := sheet.Effect.Get(effectID)
@@ -121,7 +138,7 @@ func effectKindName(sheet *sheeter.Sheeter, effectID int32) string {
 
 	switch cores.EffectKind(meta.Kind) {
 	case cores.EffectTrigger:
-		return "觸發"
+		return textTrigger
 
 	case cores.EffectPersist:
 		return "常駐"

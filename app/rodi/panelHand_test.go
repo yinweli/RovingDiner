@@ -68,6 +68,18 @@ func (this *SuitePanelHand) TestPanelHandMove() {
 	this.Contains(row[2], "|   ") // 旗標行同縮排
 }
 
+// TestPanelHandItem 驗證游標項目: 游標下的卡牌; 空手牌回 nil。
+func (this *SuitePanelHand) TestPanelHandItem() {
+	game := testGame()
+	target := &panelHand{}
+	this.Nil(target.Item(game)) // 空手牌
+
+	game.Hand.Push(cores.NewCard(game, 101))
+	game.Hand.Push(cores.NewCard(game, 103))
+	target.Move(game, "right")
+	this.Equal(game.Hand[1], target.Item(game))
+}
+
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。
 func (this *SuitePanelHand) TestHandDim() {
 	game := testGame()

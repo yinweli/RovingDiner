@@ -64,3 +64,7 @@ func (this fakeComponent) View(game *cores.Game, width int, focus bool) string {
 
 func (this fakeComponent) Move(game *cores.Game, key string) {
 }
+
+func (this fakeComponent) Item(game *cores.Game) any {
+	return nil
+}
