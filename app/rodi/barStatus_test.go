@@ -32,8 +32,8 @@ func (this *SuiteBarStatus) TestBarStatusView() {
 	game.GetScore().Set(1250)
 
 	this.Equal("回合  士氣   護盾  格擋  出牌點數  滿意  階段      模式\n"+
-		"3/10  25/30  5     3     2/10      1250  玩家行動  快速", barStatus{}.View(game, 100))
-	this.Equal("回合\n3/10", barStatus{}.View(game, 4)) // 超寬截斷
+		"3/10  25/30  5     3     2/10      1250  玩家行動  步進", barStatus{}.View(game, modeStep, 100)) // 模式欄吃下傳的 UI 狀態
+	this.Equal("回合\n3/10", barStatus{}.View(game, modeFast, 4)) // 超寬截斷
 }
 
 // TestEnergyText 驗證出牌點數欄: 當前 / 上限; 出牌點數保留鎖定中加「保」。

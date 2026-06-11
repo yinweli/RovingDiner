@@ -25,6 +25,8 @@ type barKey struct {
 
 func newBarKey() barKey {
 	return barKey{bind: []keyBind{
+		{key: " ", label: "[Space]快/慢/步進", row: 2, cmd: cycle()},
+		{key: "n", label: "[N]前進", row: 2, cmd: step()},
 		{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},
 		{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
 	}}

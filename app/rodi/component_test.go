@@ -27,14 +27,17 @@ func (this *SuiteComponent) TestComposeView() {
 	this.Equal("", composeView(game, 80, nil))
 }
 
-// TestEndGameView 驗證整場跑完的盤面直讀: 七組件對終局盤面渲染不爆、皆有內容(跨組件冒煙)。
+// TestEndGameView 驗證整場跑完的盤面直讀: 六區組件與狀態列對終局盤面渲染不爆、皆有內容(跨組件冒煙)。
+// 狀態列另吃 UI 狀態(模式欄; M25), 不符 component 契約(唯讀盤面 + 寬度預算), 單獨呼叫。
 func (this *SuiteComponent) TestEndGameView() {
 	game := games.Build(0, 601, tester.BuildSheet(), tester.FakeOperator{}, nil)
 	games.Loop(game)
 
-	for _, itor := range []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}, barStatus{}} {
+	for _, itor := range []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}} {
 		this.NotEmpty(itor.View(game, 100))
 	} // for
+
+	this.NotEmpty(barStatus{}.View(game, modeFast, 100))
 }
 
 // fakeComponent 測試替身: 渲染自身文字與收到的寬度預算, 供 TestComposeView 驗證下發。

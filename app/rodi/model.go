@@ -3,6 +3,7 @@ package rodi
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -34,16 +35,19 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 
 // model Bubble Tea 殼(M22 alt-screen 換裝, M19 dump 退役): 全畫面 layout——左欄六區堆疊 + 狀態列釘底、
 // 右欄事件日誌與左欄同高、鍵位列橫跨底部全寬; 父層只組合與分配空間(M20 拍板)。
-// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(行組入日誌; 盤面組件直讀引擎、不持拷貝)、
-// 再排下一拍; 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄)。
-// Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈,
-// 即 M25 速率的掛點(【營業顯示規格書 | 3、日誌流的消費：速率與步進】)。
+// 消費依模式排拍(M25, 【營業顯示規格書 | 3、日誌流的消費：速率與步進】): 快/慢 = timer Cmd 投遞 tickMsg,
+// Update 同步 Next 推一拍(行組入日誌; 盤面組件直讀引擎、不持拷貝)再排下一拍; 步進 = 不排拍,
+// 等 [N] 的 stepMsg 逐拍前進; [Space] 經 cycleMsg 循環三模式, 世代 +1 作廢在途舊拍(驗章斷鏈)。
+// 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄)。
+// Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈。
 type model struct {
 	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
 	log     *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
 	keybar  barKey      // 鍵位列(按鍵分派入口 + 底部全寬列)
 	status  barStatus   // 狀態列(左欄釘底)
 	comp    []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
+	mode    mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
+	gen     int         // 排拍世代(切模式 +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
 	width   int         // 寬度預算(WindowSizeMsg 前用設計寬)
 	height  int         // 高度預算(WindowSizeMsg 前用最低高)
 }
@@ -55,30 +59,46 @@ func newModel(stepper *stepper) model {
 		keybar:  newBarKey(),
 		status:  barStatus{},
 		comp:    []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}},
+		mode:    modeFast,
 		width:   minWidth,
 		height:  minHeight,
 	}
 }
 
-// Init 起跑: 排第一拍(header 已由 cmd 印於 scrollback, 殼不再印行)。
+// Init 起跑: 依初始模式(快速)排第一拍(header 已由 cmd 印於 scrollback, 殼不再印行)。
 func (this model) Init() tea.Cmd {
-	return step()
+	return this.tick()
 }
 
-// Update 訊息分派: 推進拍 → 同步 Next 收一拍行組入日誌(盤面不摺疊, 組件直讀引擎)、再排下一拍,
-// 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作); 視窗尺寸 → 更新寬高預算;
-// 按鍵 → 查鍵綁定表分派(未綁定不動作)。
+// Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
+// 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
+// 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
+// 防呆自然 no-op); 視窗尺寸 → 更新寬高預算; 按鍵 → 查鍵綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
-	case stepMsg:
-		line, more := this.stepper.Next()
-
-		if more == false {
+	case tickMsg:
+		if msg.gen != this.gen {
 			return this, nil
 		} // if
 
-		this.log.Append(line...)
-		return this, step()
+		if this.advance() == false {
+			return this, nil
+		} // if
+
+		return this, this.tick()
+
+	case stepMsg:
+		if this.mode != modeStep {
+			return this, nil
+		} // if
+
+		this.advance()
+		return this, nil
+
+	case cycleMsg:
+		this.mode = this.mode.next()
+		this.gen++
+		return this, this.tick()
 
 	case tea.WindowSizeMsg:
 		this.width = msg.Width
@@ -108,7 +128,7 @@ func (this model) View() string {
 // 置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。盤面直讀暫停機的營業實例(停點間引擎必停)。
 func (this model) leftView(width, height int) string {
 	stack := composeView(this.stepper.game, width, this.comp)
-	status := this.status.View(this.stepper.game, width)
+	status := this.status.View(this.stepper.game, this.mode, width)
 	gap := height - strings.Count(stack, "\n") - strings.Count(status, "\n") - 2
 
 	if gap < 0 {
@@ -118,12 +138,51 @@ func (this model) leftView(width, height int) string {
 	return stack + strings.Repeat("\n", gap+1) + status
 }
 
-// stepMsg 推進一拍(Bubble Tea 訊息殼; 不載資料——行組由 Update 內同步 Next 取得)。
+// advance 推一拍: 同步 Next 收行組入日誌(盤面組件直讀引擎、不持拷貝); 終局回 false(呼叫端據此停止排拍)。
+func (this model) advance() bool {
+	line, more := this.stepper.Next()
+
+	if more == false {
+		return false
+	} // if
+
+	this.log.Append(line...)
+	return true
+}
+
+// tick 依當前模式排下一拍的 Cmd: 快/慢回 timer Cmd(訊息蓋上當前世代供驗章)、步進不排拍回 nil(等 [N])。
+// timer Cmd 跑在別條 goroutine, 只回訊息不碰引擎(Next 必須留在 Update 內)。
+func (this model) tick() tea.Cmd {
+	if this.mode == modeStep {
+		return nil
+	} // if
+
+	return tea.Tick(this.mode.interval(), func(time.Time) tea.Msg {
+		return tickMsg{gen: this.gen}
+	})
+}
+
+// tickMsg 自動排拍訊息(快/慢模式 timer 投遞; 不載行組資料——行組由 Update 內同步 Next 取得)。
+type tickMsg struct {
+	gen int // 排出當下的世代(與 model.gen 不符 = 切模式前的在途舊拍, 丟棄)
+}
+
+// stepMsg 步進一拍訊息([N] 鍵投遞; 步進模式專用, 自動模式下被 Update 忽略)。
 type stepMsg struct{}
 
-// step 排下一拍的 Cmd: 只回推進訊息、不碰引擎(Next 必須留在 Update 內, Cmd 跑在別條 goroutine)。
+// step 排步進訊息的 Cmd([N] 鍵綁定): 只回推進訊息、不碰引擎。
 func step() tea.Cmd {
 	return func() tea.Msg {
 		return stepMsg{}
+	}
+}
+
+// cycleMsg 模式循環訊息([Space] 鍵投遞): 快速 → 慢速 → 步進 循環。
+type cycleMsg struct{}
+
+// cycle 排模式循環訊息的 Cmd([Space] 鍵綁定)。
+func cycle() tea.Cmd {
+	return func() tea.Msg {
+		return cycleMsg{}
 	}
 }
