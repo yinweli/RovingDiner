@@ -497,7 +497,7 @@ RovingDiner/
 │  │   ├─ validate.go       命令 AST 名稱驗證：自由 Validate 逐名查 rules 詞彙表（Has* 四查詢）
 │  │   ├─ execute.go        走法 X 薄派發：AST 型別 switch → Game.ExecAssign／ExecOperate
 │  │   └─ run.go            營業執行對外入口 Run：NewGame + rules.Register + Compiler 閉包（Parse → execute + Settle 結算尾）後
-│  │                        驅動 rules.RunPhase 迴圈至停機、回報成敗;逐單位 Emit 隨 M17
+│  │                        驅動 rules.RunPhase 迴圈至停機、回報成敗;逐單位 Emit 隨 M17–M18
 │  └─ tester/               跨包共用測試基建：BuildSheet／BuildData 迷你資料、FakeOperator／FakeRander 決定性替身
 │                           （cores 白箱測試不能 import tester——成環，自持私有複本）
 ├─ sheet/ sheetdata/ gamedata/    （已存在，沿用既有 Sheeter pipeline）
@@ -714,7 +714,9 @@ L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapsho
 
 細切為小、可獨立測的單位（每個約一個專注工作單位）。M0–M9 已被既有實作驗證、firm；M10 起標 *provisional*（效果／流程／TUI，到站再依當時設計細修）。
 
-M0–M12 已完成（進度見 `PROGRESS.md`）。完成後的整備重構（實例組件化／Runtime+Engine 三合一為 `Game`／詞彙拆包 `rules`）使部分歷史里程碑敘述中的檔名與機制（`engine.go`、`tableAttr` 全域詞彙表等）不再對應現行結構——現行結構以【二、套件結構】【三、核心引擎的內部分層】為準，歷史敘述不回改。
+M0–M16 已完成（核心線達成，進度見 `PROGRESS.md`）。M12 後的整備重構（實例組件化／Runtime+Engine 三合一為 `Game`／詞彙拆包 `rules`）使部分歷史里程碑敘述中的檔名與機制（`engine.go`、`tableAttr` 全域詞彙表等）不再對應現行結構——現行結構以【二、套件結構】【三、核心引擎的內部分層】為準，歷史敘述不回改。
+
+消費端（M17 起）已於 M16 收站後依現況重切：原 M17–M20 四站（Presenter 顯示／Operator + adapter／速率／conformance）為核心未成形時的粗估，作廢重排為 M17–M27（事件流線 → TUI 線 → 驗證線）；歷史敘述慣例同上、不回改。
 
 1. **M0 `cores` 型別骨架**：`define` enums + `Value` 雙欄型別 + `instance` 結構 + `runtime` 容器 + 三個行為 port 介面（空殼）。
 2. **M1 `infra.Load`**：讀 `sheetdata/*.json` → 組裝 `*sheeter.Sheeter`（含載入測試）。
@@ -733,16 +735,21 @@ M0–M12 已完成（進度見 `PROGRESS.md`）。完成後的整備重構（實
 15. **M14 phase 狀態機** *(provisional)*：6 phase + 玩家行動主迴圈。
 16. **M15 初始組裝（關卡表格）**：關卡（Stage）表格（八欄,開局五容器 + 前置技能）+ `NewGame` 身分參數 `stageID` + `phaseGameStart` 開局建置（沿用 M8 頂端約定）。（原「啟動技能」內容已隨 M12 落地、呼叫點隨 M14。）
 17. **M16 執行結算** *(provisional)*：結算旗標重入防護 + 終止判定 + `games.Run` 驅動迴圈 → 跑通第一局（scripted Operator，無 TUI）。
-18. **M17 Presenter 顯示** *(provisional)*：`Presenter` → 事件日誌 + 盤面渲染。
-19. **M18 Operator + adapter** *(provisional)*：鍵盤輸入 + 背景 goroutine／channel 橋接。
-20. **M19 速率** *(provisional)*：快／慢／步進切換。
-21. **M20 conformance** *(provisional)*：golden scenario 套件。
+18. **M17 事件流合約** *(provisional)*：`EventKind`／`EventData` 欄位定案 + `Presenter` 參數接入（`NewGame`／`games.Run` + 全呼叫點掃掠）+ `tester` 事件流錄製器。
+19. **M18 Emit 接線** *(provisional)*：phase／trigger／instance／container／property／選取紀錄全引擎接上（每單位一次同步 `Emit`）。
+20. **M19 TUI 殼＋橋接** *(provisional)*：`app/tui` + `cmd/tui`、背景 goroutine／channel 橋接、`-seed`／`-stage` flags；先以純文字 dump 證明端到端通。
+21. **M20 渲染地基** *(provisional)*：組件化 layout——顯示規格書 §6 的 8 區與鍵位列各為**獨立組件**（自持渲染、不共享內部狀態），父層 layout 只組合與分配空間、新增介面＝新掛組件；CJK 寬度政策（顯示規格書 §4）與識別碼格式（顯示規格書 §5）為共用渲染工具；本站以**狀態列（區 7）＋鍵位列**兩個最簡組件驗證框架成立。
+22. **M21 六區組件** *(provisional)*：座位／場外／行動區／效果區／手牌／牌堆逐區掛上既成框架（顯示規格書 §6）。
+23. **M22 事件日誌** *(provisional)*：行角色（`[ * - $`）／範圍標題／命令行格式（顯示規格書 §6.10）；日誌區（區 8）同為獨立組件。
+24. **M23 互動與 modal** *(provisional)*：切區／游標／檢視 modal（顯示規格書 §7.1–7.3、§7.6）。
+25. **M24 選取＋Operator** *(provisional)*：選取模式 + `PlayerAction`／`Pick*` 鍵盤實作 + 引擎暫停橋接（顯示規格書 §7.4）。
+26. **M25 速率** *(provisional)*：快／慢／步進、`[Space]` 循環、步進＝`Emit` 阻塞（顯示規格書 §3）。
+27. **M26 企劃驗證器** *(provisional)*：單筆 CLI + Effect 表掃描器 + arity 校驗 + `HasObjectRef` + `task`／CI；置 golden 前——golden 需真實劇本資料，填表前先有驗證器把關。詳見【附錄：企劃驗證器】。
+28. **M27 conformance golden** *(provisional)*：scripted 局 + 事件流錄製 golden 比對、決定性 CI。
 
-> 核心線＝M0–M16（exprs + 全部命令 + 效果 + 流程）。**做到 M16、能用測試腳本跑通第一局,就達成「核心與顯示解耦」這個首要目標**；M17 起的 TUI 是後疊的消費端。
+> 核心線＝M0–M16（exprs + 全部命令 + 效果 + 流程）。**做到 M16、能用測試腳本跑通第一局,就達成「核心與顯示解耦」這個首要目標**；M17 起為後疊的消費端（M17–M18 事件流收口仍寫在核心套件，M19 起才是 TUI 外部程式）。
 
-**工具支線（非編號、不 gating 核心線）**：
-
-- **企劃驗證器**（Go-only）：單筆 CLI + Effect 表掃描器 + `task`／CI。依賴**命令解析（M5）**完成、**可與效果系統（M10 起）並行排入**；企劃開始填 Effect 表時即可優先做。不在核心線關鍵路徑上。詳見【附錄：企劃驗證器】。
+**規格待定區（非編號、不 gating）**：表演資訊（營業規格書【十八、表演資訊】尚無細節與表格欄位）、`guestPart`／`guestSkin`（規格待定，M9 跳過）、clamp 範圍補強——規格補明文後擇站排入。
 
 ---
 
