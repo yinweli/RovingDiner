@@ -20,7 +20,7 @@ const flagNone = "  "
 
 // seatPanel 座位組件(區 1; 【營業顯示規格書 | 6、畫面規格 | 6.3】): 桌子排成水平 strip(左右相鄰即鄰桌拓樸),
 // 每桌 2 座位上下疊、每位顧客 2 行摘要(識別碼 + 飽耐 / 旗標列)、空位顯「空」; 桌欄固定寬 25、欄距 2。
-// 免 旗標 M21 留白(*ImmuneAdd 投影缺口緩議 M22; M21 拍板⑥); 超寬固定窗截斷、桌號列補右緣 >。
+// 超寬固定窗截斷、桌號列補右緣 >。
 type seatPanel struct{}
 
 // View 渲染標題列 + 5 行(桌號列 1 + 桌內 2 座各 2 行)。
@@ -105,7 +105,7 @@ func seatGuest(world *mirror, seatID int32) (row1, row2 string) {
 }
 
 // seatFlag 旗標列(封 免 效 三槽、各 2 格, 命中才顯、未命中該槽留白、全空回空字串):
-// 封 = 任一封印技能鎖定計數 > 0; 免 M21 恆留白(緩議 M22); 效 = 顧客身上有 active 效果。
+// 封 = 任一封印技能鎖定計數 > 0; 免 = 任一免疫群組計數 > 0(M22 拍板); 效 = 顧客身上有 active 效果。
 func seatFlag(world *mirror, instanceID cores.InstanceID, view *guestView) string {
 	seal := flagNone
 
@@ -113,7 +113,12 @@ func seatFlag(world *mirror, instanceID cores.InstanceID, view *guestView) strin
 		seal = "封"
 	} // if
 
-	immune := flagNone // 免: M21 留白(投影缺口緩議 M22)
+	immune := flagNone
+
+	if view.hasImmune() {
+		immune = "免"
+	} // if
+
 	effect := flagNone
 
 	if world.hasEffect(instanceID) {

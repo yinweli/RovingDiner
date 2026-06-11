@@ -12,8 +12,9 @@ import (
 	"github.com/yinweli/RovingDiner/internal/infra"
 )
 
-// main 組裝營業 TUI: --seed 預設 0 = 以當下時間取亂(實際 seed 由 dump 首行印出供重現),
-// 明給非零值即決定性同一局; --stage 查無關卡空盤面照走(M15 寬鬆策略); --data 指向 Sheeter 生成的資料目錄。
+// main 組裝營業 TUI: --seed 預設 0 = 以當下時間取亂(實際 seed 於進 alt-screen 前印進 scrollback,
+// 退出後仍可見、供重現), 明給非零值即決定性同一局; --stage 查無關卡空盤面照走(M15 寬鬆策略);
+// --data 指向 Sheeter 生成的資料目錄。
 func main() {
 	var seed int64
 	var stage int32
@@ -34,7 +35,8 @@ func main() {
 				return fmt.Errorf("載表失敗: %w", err)
 			} // if
 
-			return rodi.Run(seed, stage, data, sheet)
+			fmt.Printf("營業開始 (seed %v, stage %v, data %v)\n", seed, stage, data) // 進 alt-screen 前印, 留 scrollback
+			return rodi.Run(seed, stage, sheet)
 		},
 	}
 	command.Flags().Int64Var(&seed, "seed", 0, "亂數種子; 0 = 以時間取亂")

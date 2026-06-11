@@ -42,3 +42,10 @@ func (this *SuiteIdent) TestIdentEffect() {
 	this.Equal("401@加耐#9", identEffect(testSheet(), 401, 9))
 	this.Equal("999@?#9", identEffect(testSheet(), 999, 9))
 }
+
+// TestIdentTarget 驗證辨型識別碼: 卡牌表優先、未中查顧客表、兩表皆查無顯 ?。
+func (this *SuiteIdent) TestIdentTarget() {
+	this.Equal("101@上菜#7", identTarget(testSheet(), 101, 7))
+	this.Equal("501@老饕#3", identTarget(testSheet(), 501, 3))
+	this.Equal("999@?#1", identTarget(testSheet(), 999, 1))
+}

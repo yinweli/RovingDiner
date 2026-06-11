@@ -12,7 +12,7 @@ import (
 // handPanel 手牌組件(區 5; 【營業顯示規格書 | 6、畫面規格 | 6.7】): 每卡 3 行垂直區塊橫向並排——
 // 第 1 行 卡牌識別碼[卡牌化來源] (出牌費用)、第 2 行 flag A(不棄 / 封印)、第 3 行 flag B(出放 / 未放),
 // 命中才顯、未命中留白; 欄寬 content-fit、欄距 2; 超寬固定窗截斷補右緣 >(M21 拍板⑦)。
-// 出不起 / 封印的暗色標記隨上色一併做(顏色與排版正交; M21 收站註記)。
+// 出不起 / 封印的卡名行上暗色標記(顏色與排版正交; M22 拍板)。
 type handPanel struct{}
 
 // View 渲染標題列(手牌(N/上限)) + 3 行; 空手牌三行留白(高度穩定)。
@@ -32,7 +32,13 @@ func (this handPanel) View(world *mirror, width int) string {
 		text2 := handFlagA(view)
 		text3 := handFlagB(view)
 		size := max(lipgloss.Width(text1), lipgloss.Width(text2), lipgloss.Width(text3))
-		row1 = append(row1, padTo(text1, size))
+		cell1 := padTo(text1, size)
+
+		if handDim(world, view) {
+			cell1 = styleDim.Render(cell1) // 排版先完成、樣式最後上(寬度不受擾)
+		} // if
+
+		row1 = append(row1, cell1)
 		row2 = append(row2, padTo(text2, size))
 		row3 = append(row3, padTo(text3, size))
 	} // for
@@ -54,6 +60,11 @@ func handCard(world *mirror, view *cardView) string {
 	} // if
 
 	return text + " (" + num(view.attr["cost"]) + ")"
+}
+
+// handDim 暗色標記判定(M22 拍板): 出不起(出牌費用 > 出牌點數)或封印(cardSeal 鎖 > 0)的卡, 卡名行轉暗。
+func handDim(world *mirror, view *cardView) bool {
+	return view.attr["cost"] > world.attr["energy"] || view.lock["cardSeal"] > 0
 }
 
 // handFlagA flag A 行: 不棄(keep 鎖 > 0 或已綁卡牌化來源——綁定即不棄 +1, 該鎖定變更無事件) / 封印(cardSeal 鎖 > 0);

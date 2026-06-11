@@ -41,6 +41,20 @@ func (this *SuiteHandPanel) TestHandPanelView() {
 	this.Contains(handPanel{}.View(world, 60), "手牌(4/5)")
 }
 
+// TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。
+func (this *SuiteHandPanel) TestHandDim() {
+	world := newMirror(testSheet())
+	world.attr["energy"] = 2
+	sealed := newCardView(testSheet(), 101) // 101: 費用 2、資料封印
+	this.True(handDim(world, sealed))
+
+	open := newCardView(testSheet(), 103) // 103: 費用 1、未封印
+	this.False(handDim(world, open))
+
+	world.attr["energy"] = 0 // 出不起
+	this.True(handDim(world, open))
+}
+
 // TestHandFlagB 驗證 flag B: 出放 / 未放命中並列。
 func (this *SuiteHandPanel) TestHandFlagB() {
 	view := newCardView(testSheet(), 101)

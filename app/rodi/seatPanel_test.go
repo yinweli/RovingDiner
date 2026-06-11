@@ -34,6 +34,9 @@ func (this *SuiteSeatPanel) TestSeatPanelView() {
 		"",
 	}, "\n"), seatPanel{}.View(world, 60))
 
+	world.Apply(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: 21, Attr: "effectImmune", Op: cores.AssignAdd, Operand: 5, After: 1})
+	this.Contains(seatPanel{}.View(world, 60), strings.Repeat(" ", 9)+"封免效") // 免疫計數 > 0 → 免 點亮(M22 拍板)
+
 	row := strings.Split(seatPanel{}.View(world, 10), "\n") // 超寬: 桌號列補右緣 >
 	this.Equal("桌1"+strings.Repeat(" ", 6)+">", row[1])
 

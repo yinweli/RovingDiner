@@ -64,6 +64,7 @@ func (this *mirror) Apply(eventData cores.EventData) {
 }
 
 // applyProperty 屬性摺疊: 對象欄零值 = 全域、否則路由至實例視圖; @ / # 入鎖定計數表、其餘入值表。
+// 免疫詞條為群組維度(Operand 載群組、After 載該群組計數; M22 拍板), 入顧客視圖的免疫表。
 func (this *mirror) applyProperty(eventData cores.EventData) {
 	attr, lock := this.attr, this.lock
 
@@ -71,6 +72,16 @@ func (this *mirror) applyProperty(eventData cores.EventData) {
 		if view, ok := this.card[eventData.InstanceID]; ok {
 			attr, lock = view.attr, view.lock
 		} else if view, ok := this.guest[eventData.InstanceID]; ok {
+			switch eventData.Attr {
+			case attrEffectImmune:
+				view.effectImmune[int32(eventData.Operand)] = eventData.After
+				return
+
+			case attrSkillImmune:
+				view.skillImmune[int32(eventData.Operand)] = eventData.After
+				return
+			} // switch
+
 			attr, lock = view.attr, view.lock
 		} else {
 			return // 未知實例(防禦) → 不投影

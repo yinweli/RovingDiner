@@ -50,6 +50,23 @@ func (this *SuiteView) TestNewGuestView() {
 	missing := newGuestView(testSheet(), 999) // 查無資料 → 零值視圖
 	this.Equal(int32(999), missing.dataID)
 	this.Empty(missing.attr)
+	this.NotNil(missing.effectImmune) // 免疫表出生恆空但可用
+}
+
+// TestGuestViewHasImmune 驗證免疫旗標判定: 任一類任一群組計數 > 0 即命中; 歸零不命中。
+func (this *SuiteView) TestGuestViewHasImmune() {
+	target := newGuestView(testSheet(), 501)
+	this.False(target.hasImmune())
+
+	target.effectImmune[5] = 1
+	this.True(target.hasImmune())
+
+	target.effectImmune[5] = 0
+	target.skillImmune[9] = 2
+	this.True(target.hasImmune())
+
+	target.skillImmune[9] = 0
+	this.False(target.hasImmune())
 }
 
 // TestLockInit 驗證靜態旗標轉鎖定計數初值。

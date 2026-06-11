@@ -2,8 +2,6 @@ package rodi
 
 import (
 	"strconv"
-
-	"github.com/yinweli/RovingDiner/internal/cores"
 )
 
 // statusBar 狀態列組件(區 7; 【營業顯示規格書 | 6、畫面規格 | 6.9】): 兩行對齊表——第 1 行標籤、第 2 行數值,
@@ -52,33 +50,4 @@ func energyText(world *mirror) string {
 	} // if
 
 	return text
-}
-
-// phaseName 階段中文全名(【營業顯示規格書 | 6、畫面規格 | 6.10】座標用全名); 無階段 / 未知顯 -。
-func phaseName(phase cores.PhaseKind) string {
-	switch phase {
-	case cores.PhaseGameStart:
-		return "營業開始"
-
-	case cores.PhaseRoundStart:
-		return "回合開始"
-
-	case cores.PhasePlayerAction:
-		return "玩家行動"
-
-	case cores.PhaseGuestAction:
-		return "顧客行動"
-
-	case cores.PhaseRoundEnd:
-		return "回合結束"
-
-	case cores.PhaseGameSucc:
-		return "營業成功"
-
-	case cores.PhaseGameFail:
-		return "營業失敗"
-
-	default:
-		return "-"
-	} // switch
 }

@@ -55,6 +55,16 @@ func identEffect(sheet *sheeter.Sheeter, dataID int32, instanceID cores.Instance
 	return identText(dataID, name, instanceID)
 }
 
+// identTarget 辨型識別碼: 對象欄可能是卡牌或顧客(容器移動者 / 效果 self / 選中清單元素)時,
+// 依資料編號先查卡牌表、再查顧客表辨型(實務上編號區段不相撞); 兩表皆查無顯 ?。
+func identTarget(sheet *sheeter.Sheeter, dataID int32, instanceID cores.InstanceID) string {
+	if sheet.Card.Get(dataID) != nil {
+		return identCard(sheet, dataID, instanceID)
+	} // if
+
+	return identGuest(sheet, dataID, instanceID)
+}
+
 // identText 模板組裝: 資料編號@名稱 + 可省略的 #實例編號(NoneID 即省略)。
 func identText(dataID int32, name string, instanceID cores.InstanceID) string {
 	text := strconv.FormatInt(int64(dataID), 10) + "@" + name

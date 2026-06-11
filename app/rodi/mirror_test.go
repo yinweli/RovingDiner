@@ -66,6 +66,12 @@ func (this *SuiteMirror) TestMirrorApplyProperty() {
 	target.Apply(cores.EventData{Kind: cores.EventProperty, InstanceID: 21, Attr: "sateSeal", Op: cores.AssignUnlock, After: 0})
 	this.Equal(float64(0), target.guest[21].lock["sateSeal"])
 
+	target.Apply(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: 21, Attr: "effectImmune", Op: cores.AssignAdd, Operand: 5, After: 2})
+	target.Apply(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: 21, Attr: "skillImmune", Op: cores.AssignSub, Operand: 9, After: 0})
+	this.Equal(float64(2), target.guest[21].effectImmune[5]) // 免疫: 群組維度入免疫表、不入值表(M22 拍板)
+	this.Equal(float64(0), target.guest[21].skillImmune[9])
+	this.Empty(target.guest[21].attr["effectImmune"])
+
 	target.Apply(cores.EventData{Kind: cores.EventProperty, InstanceID: 99, Attr: "calm", After: 9}) // 未知實例 → 不投影
 	this.Empty(target.attr["calm"])
 }

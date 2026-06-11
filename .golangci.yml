@@ -165,6 +165,11 @@ linters:
       - path: internal/rules/(attr.*|selector|command.*)\.go
         linters:
           - goconst
+      # 顯示端詞彙對照表（vocab.go）同理：map 鍵即詞條鍵，同名鍵跨全域／引用兩表（morale、score 等
+      # 全域與顧客同名屬性）重複是結構必然，非可抽常數的魔法字串。
+      - path: app/rodi/vocab\.go
+        linters:
+          - goconst
       # EventData 以值傳遞是事件流合約語意（事件＝快照，消費端拿副本、無別名回寫核心；Emit 蓋章改的是本地副本）：
       # 單一 struct 以 Kind 分派的設計天生超過 hugeParam 門檻，每單位一發、非熱路徑，不為 lint 改指標。
       - text: "hugeParam: eventData is heavy"

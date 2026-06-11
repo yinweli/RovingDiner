@@ -55,15 +55,3 @@ func (this *SuiteStatusBar) TestEnergyText() {
 	world.lock["energyKeep"] = 1
 	this.Equal("2/10保", energyText(world))
 }
-
-// TestPhaseName 驗證階段中文全名; 無階段 / 未知顯 -。
-func (this *SuiteStatusBar) TestPhaseName() {
-	this.Equal("營業開始", phaseName(cores.PhaseGameStart))
-	this.Equal("回合開始", phaseName(cores.PhaseRoundStart))
-	this.Equal("玩家行動", phaseName(cores.PhasePlayerAction))
-	this.Equal("顧客行動", phaseName(cores.PhaseGuestAction))
-	this.Equal("回合結束", phaseName(cores.PhaseRoundEnd))
-	this.Equal("營業成功", phaseName(cores.PhaseGameSucc))
-	this.Equal("營業失敗", phaseName(cores.PhaseGameFail))
-	this.Equal("-", phaseName(cores.PhaseNone))
-}

@@ -37,16 +37,20 @@ func newCardView(sheet *sheeter.Sheeter, dataID int32) *cardView {
 	return view
 }
 
-// guestView 顧客實例視圖; 鍵規則同 cardView。
+// guestView 顧客實例視圖; 鍵規則同 cardView。免疫群組計數為群組維度(詞條鍵固定、群組為鍵),
+// 不入 attr 表、effectImmune / skillImmune 各自持表(同群組編號兩類計數獨立; M22 拍板)。
 type guestView struct {
-	dataID int32              // 顧客資料編號
-	attr   map[string]float64 // 引用屬性值(sate / calm 等; sate 出生 0)
-	lock   map[string]float64 // 引用屬性鎖定計數(sateSeal / calmSeal 等)
+	dataID       int32              // 顧客資料編號
+	attr         map[string]float64 // 引用屬性值(sate / calm 等; sate 出生 0)
+	lock         map[string]float64 // 引用屬性鎖定計數(sateSeal / calmSeal 等)
+	effectImmune map[int32]float64  // 效果免疫群組計數(群組 → 計數)
+	skillImmune  map[int32]float64  // 技能免疫群組計數(群組 → 計數)
 }
 
 // newGuestView 依靜態表建顧客視圖初值(七數值 + 兩封印鎖; 對應 NewGuest 的欄位複製)。
+// 免疫表出生恆空(只能由命令調整, 無靜態初值)。
 func newGuestView(sheet *sheeter.Sheeter, dataID int32) *guestView {
-	view := &guestView{dataID: dataID, attr: map[string]float64{}, lock: map[string]float64{}}
+	view := &guestView{dataID: dataID, attr: map[string]float64{}, lock: map[string]float64{}, effectImmune: map[int32]float64{}, skillImmune: map[int32]float64{}}
 	meta := sheet.Guest.Get(dataID)
 
 	if meta == nil {
@@ -63,6 +67,23 @@ func newGuestView(sheet *sheeter.Sheeter, dataID int32) *guestView {
 	view.lock["sateSeal"] = lockInit(meta.SateSeal)
 	view.lock["calmSeal"] = lockInit(meta.CalmSeal)
 	return view
+}
+
+// hasImmune 任一免疫群組計數 > 0(區 1 免 旗標判定; M22 拍板)。
+func (this *guestView) hasImmune() bool {
+	for _, v := range this.effectImmune {
+		if v > 0 {
+			return true
+		} // if
+	} // for
+
+	for _, v := range this.skillImmune {
+		if v > 0 {
+			return true
+		} // if
+	} // for
+
+	return false
 }
 
 // effectView 效果佇列項視圖; 層數 / 結束回合摺自效果事件的快照欄(M21 拍板④)。
