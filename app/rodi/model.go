@@ -37,7 +37,7 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 // 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(行組入日誌; 盤面組件直讀引擎、不持拷貝)、
 // 再排下一拍; 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄)。
 // Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈,
-// 即 M27 速率的掛點(【營業顯示規格書 | 3、日誌流的消費：速率與步進】)。
+// 即 M25 速率的掛點(【營業顯示規格書 | 3、日誌流的消費：速率與步進】)。
 type model struct {
 	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
 	log     *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)

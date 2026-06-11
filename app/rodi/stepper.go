@@ -9,7 +9,7 @@ import (
 // stepper 暫停機橋接器(【營業實作規格書 | 四、解耦的關鍵：邊界介面 | TUI stepper】): 引擎跑在交棒
 // goroutine 上、只在 Next 期間推進——放行一拍(gate), 引擎跑到下一個事件邊界送出行組(line)後再停。
 // Next 返回後引擎必停在事件邊界, TUI 直讀 game 盤面(單一真相), 不持第二份規則狀態;
-// 快/慢/步進(M27)只是呼叫 Next 的節奏、引擎端零改動。
+// 快/慢/步進(M25)只是呼叫 Next 的節奏、引擎端零改動。
 // done 緩衝 1: 終局只在最後一拍放行後送出, 不會搶在行組之前到達。
 type stepper struct {
 	game  *cores.Game   // 營業實例(唯一真相; 停點間組件唯讀直讀)
@@ -21,7 +21,7 @@ type stepper struct {
 }
 
 // newStepper 組裝營業實例與交棒 goroutine: 引擎建後完全靜止(首拍放行前不推進),
-// 建構與首拍之間讀到的是開局建置前的空白盤面。operator 固定被動觀看(鍵盤 Operator 到 M26 再開參數)。
+// 建構與首拍之間讀到的是開局建置前的空白盤面。operator 固定被動觀看(鍵盤 Operator 到 M27 再開參數)。
 // 中途離開不做取消: process 結束時停棒中的引擎 goroutine 隨之消滅,
 // 核心不吃 context(鐵則 1)、亦無外部資源要清理。
 func newStepper(seed int64, stageID int32, sheet *sheeter.Sheeter) *stepper {
