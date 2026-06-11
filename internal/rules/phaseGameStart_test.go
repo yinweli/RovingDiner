@@ -62,12 +62,31 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(1, fired) // 營業開始觸發
 }
 
-// TestPhaseGameStartEmit 驗證營業開始的事件接線: 前置技能發範圍標題(操作元 = 技能); 開局建置(設置)靜默無容器 / 實例事件。
+// TestPhaseGameStartEmit 驗證營業開始的事件接線: 設定六鍵逐筆發開局快照屬性事件(流程寫入白名單; M20 拍板);
+// 前置技能發範圍標題(操作元 = 技能); 開局建置(設置)靜默無容器 / 實例事件。
 func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	record := &tester.RecordPresenter{}
 	game := cores.NewGame(0, 601, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{}, record)
 	Register(game)
 	phaseGameStart(game)
+
+	expect := []struct {
+		attr  string
+		after float64
+	}{
+		{"roundMax", 12}, {"morale", 30}, {"moraleMax", 50}, {"energyMax", 3}, {"handMax", 10}, {"drawMax", 5},
+	}
+	this.Require().GreaterOrEqual(len(record.Event), len(expect))
+
+	for itor := range expect { // 開局快照: 六鍵屬性事件位居事件流最前端、序同 loadSetting
+		this.Equal(cores.EventProperty, record.Event[itor].Kind)
+		this.Equal(expect[itor].attr, record.Event[itor].Attr)
+		this.Equal(cores.AssignSet, record.Event[itor].Op)
+		this.Equal(float64(0), record.Event[itor].Before)
+		this.Equal(expect[itor].after, record.Event[itor].After)
+		this.Equal(int32(0), record.Event[itor].DataID)
+		this.Equal(cores.NoneID, record.Event[itor].InstanceID)
+	} // for
 
 	prefix := []cores.EventData{}
 

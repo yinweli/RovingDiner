@@ -66,13 +66,21 @@ func stageCard(game *cores.Game, cardID []int32) (result cores.CardList) {
 }
 
 // loadSetting 自設定表格載入全域設定初值(【營業規格書 | 四、表格結構 | 設定表格】六鍵)。
+// 流程寫入白名單: 每鍵發一筆屬性事件(開局快照, 事件流自足——鏡像消費端免自查設定表格; M20 拍板)。
 func loadSetting(game *cores.Game) {
-	game.GetRoundMax().Set(settingNum(game, "RoundMax"))
-	game.GetMorale().Set(settingNum(game, "Morale"))
-	game.GetMoraleMax().Set(settingNum(game, "MoraleMax"))
-	game.GetEnergyMax().Set(settingNum(game, "EnergyMax"))
-	game.GetHandMax().Set(settingNum(game, "HandMax"))
-	game.GetDrawMax().Set(settingNum(game, "DrawMax"))
+	settingLoad(game, "roundMax", game.GetRoundMax(), settingNum(game, "RoundMax"))
+	settingLoad(game, "morale", game.GetMorale(), settingNum(game, "Morale"))
+	settingLoad(game, "moraleMax", game.GetMoraleMax(), settingNum(game, "MoraleMax"))
+	settingLoad(game, "energyMax", game.GetEnergyMax(), settingNum(game, "EnergyMax"))
+	settingLoad(game, "handMax", game.GetHandMax(), settingNum(game, "HandMax"))
+	settingLoad(game, "drawMax", game.GetDrawMax(), settingNum(game, "DrawMax"))
+}
+
+// settingLoad 寫入單鍵設定值並發屬性事件(attr 為寫側詞條鍵; 開局無鎖定, Set 必然生效)。供 loadSetting 逐鍵使用。
+func settingLoad(game *cores.Game, attr string, value *cores.Value, num float64) {
+	before := float64(value.GetValue())
+	value.Set(num)
+	emitProperty(game, 0, cores.NoneID, attr, cores.AssignSet, num, before, float64(value.GetValue()))
 }
 
 // settingNum 讀單一數字設定值; 缺鍵 / 空值 / 非數字回 0(寬鬆, 嚴格把關交企劃驗證器)。
