@@ -81,6 +81,8 @@ func commandTaskAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 			continue
 		} // if
 
-		game.Action.Push(cores.NewAction(guest, cores.TaskKind(kind), skillID))
+		action := cores.NewAction(guest, cores.TaskKind(kind), skillID)
+		game.Action.Push(action)
+		emitAction(game, action, true) // 入列投影(M21 拍板)
 	} // for
 }

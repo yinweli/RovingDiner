@@ -49,22 +49,34 @@ func (this *SuiteEffectStack) TestEffectStack() {
 	this.Equal(int32(0), game.Effect[1].GetExpire()) // RunRound 0 → 整場
 }
 
-// TestEffectStackEmit 驗證堆疊處理的效果事件: 新建入列 / 既有實際增層發 加入; 堆疊滿(增層 0)不發。
+// TestEffectStackEmit 驗證堆疊處理的效果事件: 新建入列 / 既有實際增層 / 刷新改變結束回合發 加入(載層數 / 結束回合快照);
+// 堆疊滿且結束回合不變 → 不發。
 func (this *SuiteEffectStack) TestEffectStackEmit() {
 	data := tester.BuildData()
 	data.SetEffect(801, cores.EffectData{Stack: 2, StackMax: 3})
+	data.SetEffect(803, cores.EffectData{Stack: 3, StackMax: 3, StackTime: cores.StackTimeRefresh, RunRound: 2})
 	game, record := newGameDataRecord(data)
 	guest := &cores.Guest{}
 
-	effect, _ := effectStack(game, cores.NewRefGuest(guest), 801, 0) // 新建入列 → 加入
+	effect, _ := effectStack(game, cores.NewRefGuest(guest), 801, 0) // 新建入列 → 加入(快照: 層數 2、整場保留)
 	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventEffect, EffectID: 801, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageJoin}, record.Event[0])
+	this.Equal(cores.EventData{Kind: cores.EventEffect, EffectID: 801, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageJoin, Stack: 2, Alive: true}, record.Event[0])
 
-	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 疊層(實際 +1) → 加入
+	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 疊層(實際 +1) → 加入(快照: 層數 3)
+	this.Require().Len(record.Event, 2)
+	this.Equal(int32(3), record.Event[1].Stack)
+
+	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 堆疊滿(增層 0)且結束回合不變 → 不發
 	this.Len(record.Event, 2)
 
-	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 堆疊滿(增層 0) → 不發
-	this.Len(record.Event, 2)
+	effectStack(game, cores.NewRefGuest(guest), 803, 0) // 新建入列(滿層 3、結束回合 = 0 + 2 - 1)
+	this.Require().Len(record.Event, 3)
+	this.Equal(int32(1), record.Event[2].Expire)
+
+	game.GetRound().Set(5)
+	effectStack(game, cores.NewRefGuest(guest), 803, 0) // 堆疊滿但刷新改變結束回合 → 照發(快照載刷後值)
+	this.Require().Len(record.Event, 4)
+	this.Equal(cores.EventData{Kind: cores.EventEffect, Round: 5, EffectID: 803, EffectInstanceID: record.Event[2].EffectInstanceID, Stage: cores.EffectStageJoin, Stack: 3, Expire: 6, Alive: true}, record.Event[3]) // Round 為 Emit 座標蓋章
 }
 
 func (this *SuiteEffectStack) TestEffectStackImmune() {

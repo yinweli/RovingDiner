@@ -210,6 +210,27 @@ func (this *SuiteCommandFlow) TestCardify() {
 	this.NotNil(game.Seat[3])
 }
 
+// TestCardifyEmit 驗證卡牌化的事件接線: 顧客 Seat → Cardify 移動 + 綁定卡 None → Hand(語境欄載來源顧客; M21 拍板)。
+func (this *SuiteCommandFlow) TestCardifyEmit() {
+	game, record := newGameRecord()
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(2, guest)
+
+	commandCardify(game, []cores.InstanceID{guest.GetInstanceID()}, nums(101))
+	this.Require().Len(game.Hand, 1)
+	move := []cores.EventData{}
+
+	for itor := range record.Event {
+		if record.Event[itor].Kind == cores.EventContainer {
+			move = append(move, record.Event[itor])
+		} // if
+	} // for
+
+	this.Require().Len(move, 2)
+	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: guest.GetInstanceID(), From: cores.ContainerSeat, To: cores.ContainerCardify}, move[0])
+	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 101, InstanceID: game.Hand[0].GetInstanceID(), From: cores.ContainerNone, To: cores.ContainerHand, BindID: 501, BindInstanceID: guest.GetInstanceID()}, move[1])
+}
+
 func (this *SuiteCommandFlow) TestRestore() {
 	data := tester.BuildData()
 	data.SetEffect(801, cores.EffectData{}) // 自訂效果(整場保留), 測試以 SetExpire 佈置結束回合
@@ -233,6 +254,35 @@ func (this *SuiteCommandFlow) TestRestore() {
 	this.Equal(int32(0), guest.GetFreeze())           // 5. 解凍
 	this.Nil(card.GetCardify())                       // 6. 解綁
 	this.Equal(int32(0), card.GetKeep().GetLock())    // 7. 不棄 - 1
+}
+
+// TestRestoreEmit 驗證還原的事件接線: 解凍補回逐效果發 加入快照(載補回後結束回合; M21 拍板)。
+func (this *SuiteCommandFlow) TestRestoreEmit() {
+	data := tester.BuildData()
+	data.SetEffect(801, cores.EffectData{})
+	game, record := newGameDataRecord(data)
+	game.GetRound().Set(10)
+	guest := cores.NewGuest(game, 501)
+	guest.SetFreeze(4)
+	card := cores.NewCard(game, 101)
+	card.CardifyBind(guest)
+	game.Hand = cores.CardList{card}
+	game.Cardify.Push(guest)
+	effect := cores.NewEffect(game, 801, cores.NewRefGuest(guest), 1)
+	effect.SetExpire(5)
+	game.Effect.Push(effect)
+
+	commandRestore(game, []cores.InstanceID{card.GetInstanceID()}, nil)
+	join := []cores.EventData{}
+
+	for itor := range record.Event {
+		if record.Event[itor].Kind == cores.EventEffect && record.Event[itor].Stage == cores.EffectStageJoin {
+			join = append(join, record.Event[itor])
+		} // if
+	} // for
+
+	this.Require().Len(join, 1)
+	this.Equal(cores.EventData{Kind: cores.EventEffect, Round: 10, DataID: 501, InstanceID: guest.GetInstanceID(), EffectID: 801, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageJoin, Stack: 1, Expire: 11, Alive: true}, join[0]) // 結束回合 = 5 + (10 - 4); Round 為 Emit 座標蓋章
 }
 
 func (this *SuiteCommandFlow) TestRestoreNoop() {

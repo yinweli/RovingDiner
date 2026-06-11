@@ -63,7 +63,7 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 }
 
 // TestPhaseGameStartEmit 驗證營業開始的事件接線: 設定六鍵逐筆發開局快照屬性事件(流程寫入白名單; M20 拍板);
-// 前置技能發範圍標題(操作元 = 技能); 開局建置(設置)靜默無容器 / 實例事件。
+// 開局建置逐實例發容器事件(發射序 = 容器序; M21 拍板); 前置技能發範圍標題(操作元 = 技能)。
 func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	record := &tester.RecordPresenter{}
 	game := cores.NewGame(0, 601, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{}, record)
@@ -88,16 +88,41 @@ func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 		this.Equal(cores.NoneID, record.Event[itor].InstanceID)
 	} // for
 
+	// 開局投影: 設定六鍵 + 點數補滿(索引 0~6)後, 逐實例容器事件依容器序(關卡 601; M21 拍板, 原設置靜默作廢)
+	opening := []struct {
+		dataID int32
+		to     cores.ContainerKind
+	}{
+		{101, cores.ContainerHand}, {101, cores.ContainerDeck}, {102, cores.ContainerDeck},
+		{102, cores.ContainerDrop}, {101, cores.ContainerExile}, {501, cores.ContainerWait}, {501, cores.ContainerWait},
+	}
+	this.Require().GreaterOrEqual(len(record.Event), 7+len(opening))
+
+	for itor := range opening {
+		event := record.Event[7+itor]
+		this.Equal(cores.EventContainer, event.Kind)
+		this.Equal(opening[itor].dataID, event.DataID)
+		this.Equal(cores.ContainerNone, event.From) // 新建直入
+		this.Equal(opening[itor].to, event.To)
+		this.NotEqual(cores.NoneID, event.InstanceID) // 開局投影即帶實例編號, 為鏡像摺疊的地基
+	} // for
+
 	prefix := []cores.EventData{}
+	container := 0
 
 	for itor := range record.Event {
-		this.NotEqual(cores.EventContainer, record.Event[itor].Kind) // 設置靜默: 開局建置不發容器事件
-		this.NotEqual(cores.EventInstance, record.Event[itor].Kind)
+		this.NotEqual(cores.EventInstance, record.Event[itor].Kind) // 設置非 morph: 無實例事件
+
+		if record.Event[itor].Kind == cores.EventContainer {
+			container++
+		} // if
 
 		if record.Event[itor].Kind == cores.EventScope && record.Event[itor].Scope == cores.ScopePrefix {
 			prefix = append(prefix, record.Event[itor])
 		} // if
 	} // for
+
+	this.Equal(len(opening), container) // 容器事件僅開局投影七筆
 
 	this.Require().Len(prefix, 1) // 關卡 601 前置技能 301
 	this.Equal(int32(301), prefix[0].SkillID)

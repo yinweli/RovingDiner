@@ -110,6 +110,28 @@ func (this *SuiteCommandEffect) TestCommandEffectDel() {
 	this.Empty(ended)
 }
 
+// TestEffectDelEmit 驗證 effectDel 的效果事件(M21 拍板): 退層發 結束(Alive true、Stack 載退後層數);
+// 歸零出佇列發 結束(Alive false、Stack 0)。
+func (this *SuiteCommandEffect) TestEffectDelEmit() {
+	data := tester.BuildData()
+	data.SetEffect(901, cores.EffectData{Stack: 3, StackMax: 5})
+	game, record := newGameDataRecord(data)
+	guest := cores.NewGuest(game, 501)
+	game.Seat.Place(1, guest)
+	effect := cores.NewEffect(game, 901, cores.NewRefGuest(guest), 3)
+	game.Effect.Push(effect)
+
+	commandEffectDel(game, []cores.InstanceID{guest.GetInstanceID()}, nums(901, 1)) // 退 1 層 → 留佇列
+	this.Require().Len(record.Event, 1)
+	this.Equal(cores.EventData{Kind: cores.EventEffect, DataID: 501, InstanceID: guest.GetInstanceID(), EffectID: 901, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageEnd, Stack: 2, Alive: true}, record.Event[0])
+
+	commandEffectDel(game, []cores.InstanceID{guest.GetInstanceID()}, nums(901, 9)) // 歸零 → 出佇列
+	this.Require().Len(record.Event, 2)
+	this.Equal(int32(0), record.Event[1].Stack)
+	this.False(record.Event[1].Alive)
+	this.Empty(game.Effect)
+}
+
 func (this *SuiteCommandEffect) TestCommandEffectRun() {
 	started := []int32{}
 	immed := 0

@@ -112,6 +112,22 @@ func (this *SuiteSettle) TestSettleEmit() {
 	this.Require().Len(pick, 1) // 玩家輸入紀錄: 流程名 + 選中清單
 	this.Equal("discardOver", pick[0].Source)
 	this.Equal([]cores.PickData{{DataID: 101, InstanceID: game.Drop[0].GetInstanceID()}}, pick[0].Pick)
+
+	record.Event = nil
+	hit := cores.NewGuest(game, 501) // 耐心門檻 2^301 命中 → 入列投影(M21 拍板)
+	hit.GetCalm().Set(2)
+	game.Seat.Place(3, hit)
+	Settle(game)
+	action := []cores.EventData{}
+
+	for itor := range record.Event {
+		if record.Event[itor].Kind == cores.EventAction {
+			action = append(action, record.Event[itor])
+		} // if
+	} // for
+
+	this.Require().Len(action, 1)
+	this.Equal(cores.EventData{Kind: cores.EventAction, DataID: 501, InstanceID: hit.GetInstanceID(), SkillID: 301, Task: cores.TaskCalm, Alive: true}, action[0])
 }
 
 // TestJudgeEnd 驗證終止判定: 失敗(回合上限 / 士氣歸零, 失敗優先)與成功(全場清空)以哨兵跳出、命中前清旗標; 未命中無事。

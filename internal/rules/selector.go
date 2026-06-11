@@ -282,8 +282,15 @@ func selectDeckTop(game *cores.Game, arg []exprs.Value) (result []cores.Instance
 
 	if int(n) > len(game.Deck) && len(game.Drop) > 0 {
 		shuffleCard(game, game.Drop)
+		back := game.Drop
 		game.Deck = append(game.Deck, game.Drop...) // 洗後棄牌置底端(尾端)、保留原牌堆於頂端
 		game.Drop = nil
+
+		for _, itor := range back {
+			emitCardMove(game, itor, cores.ContainerDrop, cores.ContainerDeck) // 洗回逐卡投影(成員真相, 發射序 = 洗後序; M21 拍板, 原 M18 洗回靜默作廢)
+		} // for
+
+		emitDeckOrder(game) // 重整快照(順序真相)
 	} // if
 
 	return cardIDs(top(game.Deck, n))

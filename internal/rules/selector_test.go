@@ -292,6 +292,24 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	this.Empty(this.must(deckGe, "deckTop", nil))
 }
 
+// TestSelectDeckTopEmit 驗證 deckTop auto-shuffle 的洗回投影(M21 拍板): 逐卡 Drop → Deck(發射序 = 洗後序)
+// + 一筆重整快照(From == To == Deck、Pick 載全序); 牌堆足夠不洗回 → 不發。
+func (this *SuiteSelector) TestSelectDeckTopEmit() {
+	game, record := newGameRecord()
+	game.Deck = cores.CardList{cores.NewCard(game, 101)}
+	game.Drop = cores.CardList{cores.NewCard(game, 102), cores.NewCard(game, 103)}
+
+	selectDeckTop(game, nums(3)) // 不足 3 → 洗回
+	this.Empty(game.Drop)
+	this.Require().Len(record.Event, 3) // 2 移動 + 1 快照
+	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: game.Deck[1].GetCardID(), InstanceID: game.Deck[1].GetInstanceID(), From: cores.ContainerDrop, To: cores.ContainerDeck}, record.Event[0])
+	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: game.Deck[2].GetCardID(), InstanceID: game.Deck[2].GetInstanceID(), From: cores.ContainerDrop, To: cores.ContainerDeck}, record.Event[1])
+	this.Equal(cores.EventData{Kind: cores.EventContainer, From: cores.ContainerDeck, To: cores.ContainerDeck, Pick: cardPickData(game.Deck)}, record.Event[2])
+
+	selectDeckTop(game, nums(1)) // 牌堆足夠 → 未洗回不發
+	this.Len(record.Event, 3)
+}
+
 func (this *SuiteSelector) TestSelectDropTop() {
 	game := newGame()
 	d1 := cores.NewCard(game, 101)

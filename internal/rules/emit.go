@@ -20,6 +20,39 @@ func emitGuestMove(game *cores.Game, guest *cores.Guest, from, to cores.Containe
 	game.Emit(cores.EventData{Kind: cores.EventContainer, DataID: guest.GetGuestID(), InstanceID: guest.GetInstanceID(), From: from, To: to, SeatID: seatID})
 }
 
+// emitCardMove 發射卡牌容器搬移事件(placeCard 收口與開局投影 / 洗回投影共用; M21 拍板):
+// 已綁卡牌化來源者帶語境欄(來源顧客資料 + 實例編號, 比照 SeatID 先例), 供前端標注 cardify 卡。
+func emitCardMove(game *cores.Game, card *cores.Card, from, to cores.ContainerKind) {
+	eventData := cores.EventData{Kind: cores.EventContainer, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), From: from, To: to}
+
+	if guest := card.GetCardify(); guest != nil {
+		eventData.BindID = guest.GetGuestID()
+		eventData.BindInstanceID = guest.GetInstanceID()
+	} // if
+
+	game.Emit(eventData)
+}
+
+// emitDeckOrder 發射抽牌牌堆重整快照(From == To == Deck、Pick 載重整後全序; M21 拍板):
+// 洗牌 / 洗回後收口順序——逐卡移動事件載成員真相、快照載順序真相, 前端整堆置換。
+func emitDeckOrder(game *cores.Game) {
+	game.Emit(cores.EventData{Kind: cores.EventContainer, From: cores.ContainerDeck, To: cores.ContainerDeck, Pick: cardPickData(game.Deck)})
+}
+
+// emitAction 發射行動佇列事件(入列 alive == true / 出列 alive == false; M21 拍板):
+// 對象欄載顧客、SkillID 載技能、Task 載行動類型; 入列發於門檻命中與 taskAdd、出列發於顧客行動彈出(含封印防禦路徑)。
+func emitAction(game *cores.Game, action *cores.Action, alive bool) {
+	game.Emit(cores.EventData{Kind: cores.EventAction, DataID: action.GetGuest().GetGuestID(), InstanceID: action.GetGuest().GetInstanceID(), SkillID: action.GetSkillID(), Task: action.GetKind(), Alive: alive})
+}
+
+// emitEffectState 發射載佇列狀態快照的效果事件(加入 / 結束; M21 拍板): Stack / Expire 為事件後絕對值,
+// Alive 區分留佇列(true; 加入與退層)/ 出佇列(false; 退場, Stack 為退場層數)。
+// 不載佇列狀態的階段(立即 / 觸發 / 啟動 / 條件不成立)仍走 emitEffect。
+func emitEffectState(game *cores.Game, effect *cores.Effect, stage cores.EffectStage, alive bool) {
+	dataID, selfID := cores.RefTarget(effect.GetSelf())
+	game.Emit(cores.EventData{Kind: cores.EventEffect, DataID: dataID, InstanceID: selfID, EffectID: effect.GetEffectID(), EffectInstanceID: effect.GetInstanceID(), Stage: stage, Stack: effect.GetStack(), Expire: effect.GetExpire(), Alive: alive})
+}
+
 // emitProperty 發射流程直寫的屬性事件(白名單; M18 拍板): 流程呼叫點自包前後值; 全域屬性對象欄傳零值。
 // 命令路徑的屬性事件歸 ExecAssign 收口, 不經此。
 func emitProperty(game *cores.Game, dataID int32, instanceID cores.InstanceID, attr string, op cores.AssignKind, operand, before, after float64) {

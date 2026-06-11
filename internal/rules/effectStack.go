@@ -6,7 +6,8 @@ import (
 
 // effectStack 套用 [堆疊處理](【營業規格書 | 二十、獨立流程 | 堆疊處理】): 把效果以 self 加入效果佇列, 或對佇列既有同份疊層。
 // override > 0 為 effectRun 命令指定的增量; 否則用效果堆疊層數(0 / 1 → 1)。回佇列實例與實際增加層數(供常駐 啟動命令判斷)。
-// 效果事件: 新建入列 / 既有實際增層發 加入; 免疫 / 堆疊滿(增層 0)不發(無事不發; M18)。
+// 效果事件: 新建入列 / 既有實際增層 / 刷新改變結束回合發 加入(載層數與結束回合快照; M21 拍板);
+// 免疫 / 堆疊滿且結束回合不變 不發(無事不發; M18)。
 func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (effect *cores.Effect, added int32) {
 	meta, ok := game.EffectData(effectID)
 
@@ -29,19 +30,20 @@ func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (ef
 	if existing == nil {
 		effect = cores.NewEffect(game, effectID, self, add) // 建構即依堆疊上限夾制
 		game.Effect.Push(effect)
-		emitEffect(game, effectID, effect.GetInstanceID(), self, cores.EffectStageJoin)
+		emitEffectState(game, effect, cores.EffectStageJoin, true)
 		added = effect.GetStack()
 		return effect, added
 	} // if
 
 	added = existing.StackAdd(add, meta.StackMax)
-
-	if added > 0 {
-		emitEffect(game, effectID, existing.GetInstanceID(), self, cores.EffectStageJoin)
-	} // if
+	expire := existing.GetExpire()
 
 	if meta.StackTime == cores.StackTimeRefresh {
-		existing.Refresh(game, meta.RunRound) // 刷新時重算結束回合, 不變則維持原值
+		existing.Refresh(game, meta.RunRound) // 刷新時重算結束回合, 不變則維持原值(先刷新再發, 快照載刷後值)
+	} // if
+
+	if added > 0 || existing.GetExpire() != expire {
+		emitEffectState(game, existing, cores.EffectStageJoin, true) // 實際增層或刷新改變結束回合才發(堆疊滿且結束回合不變 = 無事不發; M21 拍板)
 	} // if
 
 	return existing, added

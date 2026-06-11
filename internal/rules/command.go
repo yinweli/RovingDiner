@@ -104,6 +104,11 @@ func commandPhaseJump(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 }
 
 // commandDeckShuffle 將抽牌牌堆隨機洗牌(【營業規格書 | 二十五、操作命令清單 | deckShuffle】); 命令對象固定 none、無參數。
+// 成員不變、僅順序重排, 故只發重整快照(<= 1 張無事不發; M21 拍板, 原 M18 靜默作廢)。
 func commandDeckShuffle(game *cores.Game, target []cores.InstanceID, arg []exprs.Value) {
 	shuffleCard(game, game.Deck)
+
+	if len(game.Deck) > 1 {
+		emitDeckOrder(game)
+	} // if
 }

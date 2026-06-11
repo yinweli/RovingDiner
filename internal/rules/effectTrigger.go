@@ -61,8 +61,8 @@ func fireOne(game *cores.Game, effect *cores.Effect) {
 	runEffectExec(game, meta.Trigger, effect.GetStack()*count) // 重複(堆疊層數 × M)次
 
 	if meta.TriggerAfter == cores.TriggerAfterRemove {
-		emitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageEnd)
-		runEffectExec(game, meta.End, effect.GetStack()) // 重複 堆疊層數 次
+		emitEffectState(game, effect, cores.EffectStageEnd, false) // 觸發後移除 = 退場(M21 拍板)
+		runEffectExec(game, meta.End, effect.GetStack())           // 重複 堆疊層數 次
 		game.Effect.Remove(effect.GetInstanceID())
 	} // if
 }

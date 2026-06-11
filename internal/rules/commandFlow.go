@@ -267,6 +267,7 @@ func restoreOne(game *cores.Game, card *cores.Card) {
 	for _, effect := range game.Effect { // 4. 調整其效果結束回合(補回凍結期間)
 		if effect.GetSelf().GetGuest() == guest && effect.GetExpire() > 0 {
 			effect.SetExpire(effect.GetExpire() + round - guest.GetFreeze())
+			emitEffectState(game, effect, cores.EffectStageJoin, true) // 解凍補回投影(佇列項重新生效的狀態快照; M21 拍板)
 		} // if
 	} // for
 

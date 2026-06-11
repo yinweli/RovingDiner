@@ -52,6 +52,28 @@ func buildStage(game *cores.Game) {
 	} // for
 
 	game.PrefixSkill = append([]int32(nil), stage.PrefixSkillID...) // 複本; 不共享靜態表底層
+
+	// 開局投影: 逐實例發容器事件(From None 新建直入, 發射序 = 容器序, 第 1 個 = 頂端 / 隊首;
+	// M21 拍板, 原 M18 設置靜默作廢)。僅投影——設置非命令, 不觸發時機 / 不動事件屬性(不走 placeCard)。
+	for _, itor := range game.Hand {
+		emitCardMove(game, itor, cores.ContainerNone, cores.ContainerHand)
+	} // for
+
+	for _, itor := range game.Deck {
+		emitCardMove(game, itor, cores.ContainerNone, cores.ContainerDeck)
+	} // for
+
+	for _, itor := range game.Drop {
+		emitCardMove(game, itor, cores.ContainerNone, cores.ContainerDrop)
+	} // for
+
+	for _, itor := range game.Exile {
+		emitCardMove(game, itor, cores.ContainerNone, cores.ContainerExile)
+	} // for
+
+	for _, itor := range game.Wait {
+		emitGuestMove(game, itor, cores.ContainerNone, cores.ContainerWait, 0)
+	} // for
 }
 
 // stageCard 依卡牌編號列表實例化卡牌容器(列表序 = slice 序, 第 1 個 = 頂端); 查無卡牌資料跳過該筆。

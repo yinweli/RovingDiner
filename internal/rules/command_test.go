@@ -49,11 +49,17 @@ func (this *SuiteCommand) TestExecOperatePhaseJump() {
 }
 
 func (this *SuiteCommand) TestExecOperateDeckShuffle() {
-	game := newGame()
+	game, record := newGameRecord()
 	game.Deck = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 101), cores.NewCard(game, 101)}
 
 	game.ExecOperate("deckShuffle", "none", nil, nil)
 	this.Len(game.Deck, 3) // 委派 Rander 洗牌(恆等替身: 張數保留)
+	this.Require().Len(record.Event, 1)
+	this.Equal(cores.EventData{Kind: cores.EventContainer, From: cores.ContainerDeck, To: cores.ContainerDeck, Pick: cardPickData(game.Deck)}, record.Event[0]) // 重整快照(M21 拍板)
+
+	game.Deck = cores.CardList{cores.NewCard(game, 101)}
+	game.ExecOperate("deckShuffle", "none", nil, nil) // <= 1 張 → 無事不發
+	this.Len(record.Event, 1)
 }
 
 func (this *SuiteCommand) TestExecOperateNoop() {

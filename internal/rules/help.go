@@ -229,7 +229,7 @@ func placeCard(game *cores.Game, from, dest cores.ContainerKind, card *cores.Car
 		return // 不可達: placeCard 僅以四牌堆 dest 呼叫
 	} // switch
 
-	game.Emit(cores.EventData{Kind: cores.EventContainer, DataID: card.GetCardID(), InstanceID: card.GetInstanceID(), From: from, To: dest})
+	emitCardMove(game, card, from, dest)
 
 	switch dest {
 	case cores.ContainerHand:
@@ -316,20 +316,20 @@ func frozenSelf(game *cores.Game, effect *cores.Effect) bool {
 func retireEffect(game *cores.Game, effect *cores.Effect) {
 	meta, _ := game.EffectData(effect.GetEffectID()) // 呼叫端已確認存在
 
-	runEffectEnd(game, effect, meta.End, effect.GetStack())
+	runEffectEnd(game, effect, meta.End, effect.GetStack(), false)
 	game.Effect.Remove(effect.GetInstanceID())
 }
 
 // runEffectEnd 以效果自身 self 綁定執行結束命令 times 次(綁定逐層 save / restore; 退場與 effectDel 退層共用)。
 // 效果事件: 結束 階段於此發(推進 / 清理 / effectClear 經 retireEffect、effectDel 退層皆收口於此;
-// 觸發後移除路徑因 self 已綁定、由 fireOne 自發)。
-func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32) {
+// 觸發後移除路徑因 self 已綁定、由 fireOne 自發); alive 區分退層留佇列(true)/ 退場出佇列(false)(M21 拍板)。
+func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32, alive bool) {
 	self := effect.GetSelf()
 	restore := game.SetSelf(&self)
 
 	defer restore()
 
-	emitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageEnd)
+	emitEffectState(game, effect, cores.EffectStageEnd, alive)
 	runEffectExec(game, end, times)
 }
 

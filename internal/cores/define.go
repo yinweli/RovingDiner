@@ -84,13 +84,16 @@ type EventData struct {
 	DataID     int32      // 對象資料編號
 	InstanceID InstanceID // 對象實例編號
 
-	// EventInstance 本體欄位
-	Alive bool // 實例建立 true / 銷毀 false
+	// 成員資格記號(跨類別共用; M21 拍板): EventInstance 實例建立 true / 銷毀 false;
+	// EventEffect 結束階段 退層留佇列 true / 退場出佇列 false; EventAction 入列 true / 出列 false。
+	Alive bool
 
-	// EventContainer 本體欄位
-	From   ContainerKind // 來源容器(新建直入容器留 ContainerNone)
-	To     ContainerKind // 目的容器(銷毀離開容器留 ContainerNone)
-	SeatID int32         // 入座座位編號(To == ContainerSeat 時)
+	// EventContainer 本體欄位; From == To 為容器重整(洗牌 / 洗回後), Pick 欄載重整後全序(M21 拍板)
+	From           ContainerKind // 來源容器(新建直入容器留 ContainerNone)
+	To             ContainerKind // 目的容器(銷毀離開容器留 ContainerNone)
+	SeatID         int32         // 入座座位編號(To == ContainerSeat 時)
+	BindID         int32         // 卡牌化來源顧客資料編號(移動者為已綁定卡牌時; M21 拍板)
+	BindInstanceID InstanceID    // 卡牌化來源顧客實例編號(同上)
 
 	// EventProperty 本體欄位(日誌命令行 <屬性> <運算> <值> >> <結果>)
 	Attr    string     // 屬性詞條鍵(英文; 中文全名由前端憑詞彙對照轉換)
@@ -108,10 +111,16 @@ type EventData struct {
 	EffectID         int32       // 效果資料編號
 	EffectInstanceID InstanceID  // 效果實例編號
 	Stage            EffectStage // 效果階段
+	Stack            int32       // 佇列項層數快照(事件後絕對值; 加入 / 結束帶, 退場時為退場層數; M21 拍板)
+	Expire           int32       // 佇列項結束回合快照(0 = 整場保留; 加入 / 結束帶; M21 拍板)
 
-	// EventSelect 本體欄位(玩家輸入紀錄, 日誌 $ 選取 <來源> -> <選中…>; 搭 seed 重現 bug)
+	// EventAction 本體欄位(行動佇列入列 / 出列; 對象欄載顧客、SkillID 重用 scope 段、在列記號重用 Alive; M21 拍板)
+	Task TaskKind // 行動類型(飽食 / 耐心)
+
+	// EventSelect 本體欄位(玩家輸入紀錄, 日誌 $ 選取 <來源> -> <選中…>; 搭 seed 重現 bug);
+	// Pick 另供容器重整事件載重整後全序(M21 拍板)
 	Source string     // 選取來源(詞條鍵 / 流程名; 前端轉中文)
-	Pick   []PickData // 選中清單
+	Pick   []PickData // 選中清單 / 重整後全序
 }
 
 // PickData 玩家選取結果的一筆: 資料編號 + 實例編號(EventSelect 的選中清單元素)。
@@ -155,6 +164,7 @@ const (
 	EventEffect                     // 效果 + 階段; 日誌效果行
 	EventSelect                     // 玩家選取紀錄; 日誌 $ 選取行
 	EventPhase                      // phase 切換(無本體欄位, 座標欄即新階段); 前端更新狀態列 / 標題前綴
+	EventAction                     // 行動佇列入列 / 出列(M21 拍板, 七類擴八類); 前端更新行動區
 )
 
 // ScopeKind 範圍事件類別(EventScope 的類內變體); 對應【營業顯示規格書 | 6、畫面規格 | 6.10】範圍事件表。
