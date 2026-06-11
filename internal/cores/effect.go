@@ -126,7 +126,7 @@ func (this *EffectList) Find(self Ref, effectID int32) *Effect {
 
 // Sort 依【營業規格書 | 十五、作用順序】就地排序: 作用順序大者優先, 同作用順序時效果編號小者優先;
 // 作用順序查 game 的預編譯效果索引(查無回 0, 防禦)。觸發時機 / 推進效果 / 清理效果三流程對快照共用此排序。
-func (this EffectList) Sort(game *Game) {
+func (this *EffectList) Sort(game *Game) {
 	order := func(effect *Effect) int32 {
 		meta, ok := game.EffectData(effect.effectID)
 
@@ -137,14 +137,14 @@ func (this EffectList) Sort(game *Game) {
 		return meta.RunOrder
 	}
 
-	sort.SliceStable(this, func(i, j int) bool {
-		left, right := order(this[i]), order(this[j])
+	sort.SliceStable(*this, func(i, j int) bool {
+		left, right := order((*this)[i]), order((*this)[j])
 
 		if left != right {
 			return left > right
 		} // if
 
-		return this[i].effectID < this[j].effectID
+		return (*this)[i].effectID < (*this)[j].effectID
 	})
 }
 
