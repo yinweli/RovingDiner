@@ -19,7 +19,7 @@ type SuiteStatusBar struct {
 
 // TestStatusBarView 驗證渲染: 欄序 / 對齊與【營業顯示規格書 | 6、畫面規格 | 6.1】草圖一致; 超寬依預算截斷。
 func (this *SuiteStatusBar) TestStatusBarView() {
-	world := newMirror()
+	world := newMirror(testSheet())
 	world.round = 3
 	world.phase = cores.PhasePlayerAction
 	world.attr = map[string]float64{
@@ -47,7 +47,7 @@ func (this *SuiteStatusBar) TestNumFloor() {
 
 // TestEnergyText 驗證出牌點數欄: 當前 / 上限; 出牌點數保留鎖定中加「保」。
 func (this *SuiteStatusBar) TestEnergyText() {
-	world := newMirror()
+	world := newMirror(testSheet())
 	world.attr["energy"] = 2
 	world.attr["energyMax"] = 10
 	this.Equal("2/10", energyText(world))

@@ -30,6 +30,21 @@ func (this *SuiteRender) TestTruncTo() {
 	this.Equal("中", truncTo("中文字", 3)) // 3 格只容 1 個全形, 不切半字
 }
 
+// TestTruncMark 驗證截斷補右緣 > 記號: 未超寬原樣、超寬截斷後 > 貼右緣、過窄純截斷。
+func (this *SuiteRender) TestTruncMark() {
+	this.Equal("abc", truncMark("abc", 5))
+	this.Equal("abcd >", truncMark("abcdefgh", 6))
+	this.Equal("中文 >", truncMark("中文字串", 6)) // 全形不切半字
+	this.Equal("ab", truncMark("abcdef", 2)) // 過窄(防禦) → 純截斷
+}
+
+// TestPanelTitle 驗證面板標題列: 標題前後留 1 空白、餘寬補橫線、超寬截斷。
+func (this *SuiteRender) TestPanelTitle() {
+	this.Equal("+- 座位 ----", panelTitle("座位", 12))
+	this.Equal("+- 座位 ", panelTitle("座位", 8)) // 餘寬 0 → 不補線
+	this.Equal("+- 座", panelTitle("座位", 6))   // 超寬截斷
+}
+
 // TestAlignPair 驗證兩行對齊表: 欄寬 = 標籤 / 數值較寬者、欄距 2 空白、行尾不留補白。
 func (this *SuiteRender) TestAlignPair() {
 	row1, row2 := alignPair([]string{"回合", "士氣值", "x"}, []string{"3/10", "25", "1250"})

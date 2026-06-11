@@ -12,7 +12,7 @@ import (
 // Run 顯示/操作層對外入口: 組裝橋接器(被動觀看 operator)與 Bubble Tea 殼後跑到離開。
 // seed 由呼叫端先行定案(cmd 對 0 取時間亂數), 本層只負責驅動與消費。
 func Run(seed int64, stageID int32, dataDir string, sheet *sheeter.Sheeter) error {
-	_, err := tea.NewProgram(newModel(newAdapter(seed, stageID, sheet, passiveOperator{}), seed, stageID, dataDir)).Run()
+	_, err := tea.NewProgram(newModel(newAdapter(seed, stageID, sheet, passiveOperator{}), seed, stageID, dataDir, sheet)).Run()
 
 	if err != nil {
 		return fmt.Errorf("rodi: %w", err)
@@ -38,16 +38,16 @@ type model struct {
 	serial  int         // 已收事件序號(dump 行前綴)
 }
 
-func newModel(adapter *adapter, seed int64, stageID int32, dataDir string) model {
+func newModel(adapter *adapter, seed int64, stageID int32, dataDir string, sheet *sheeter.Sheeter) model {
 	keybar := newKeyBar()
 	return model{
 		adapter: adapter,
 		seed:    seed,
 		stageID: stageID,
 		dataDir: dataDir,
-		world:   newMirror(),
+		world:   newMirror(sheet),
 		keybar:  keybar,
-		comp:    []component{statusBar{}, keybar},
+		comp:    []component{seatPanel{}, poolPanel{}, actionPanel{}, effectPanel{}, handPanel{}, pilePanel{}, statusBar{}, keybar},
 		width:   100,
 	}
 }

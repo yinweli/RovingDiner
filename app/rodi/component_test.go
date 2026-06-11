@@ -18,7 +18,7 @@ type SuiteComponent struct {
 
 // TestComposeView 驗證父層組合: 掛載順序 = 堆疊順序、每組件收到同一寬度預算; 空組件列表回空字串。
 func (this *SuiteComponent) TestComposeView() {
-	world := newMirror()
+	world := newMirror(testSheet())
 	this.Equal("a:80\nb:80", composeView(world, 80, []component{fakeComponent{text: "a"}, fakeComponent{text: "b"}}))
 	this.Equal("", composeView(world, 80, nil))
 }

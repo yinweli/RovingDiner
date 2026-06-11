@@ -27,7 +27,7 @@ func (this *SuiteKeyBar) TestNewKeyBar() {
 
 // TestKeyBarView 驗證渲染: 固定 2 行、行位照終態安排、空標籤跳過、超寬依預算截斷。
 func (this *SuiteKeyBar) TestKeyBarView() {
-	world := newMirror()
+	world := newMirror(testSheet())
 	this.Equal("\n[Q]離開", newKeyBar().View(world, 100)) // M20 第 1 行尚無鍵 → 留白
 
 	target := keyBar{bind: []keyBind{ // 行位驗證用假表(M23 起第 1 行才有真鍵)
