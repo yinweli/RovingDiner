@@ -29,7 +29,7 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 - `章節編號、章節名稱`: copied from the chapter's `##` heading; separator always `、`. Numbering follows the source doc — Chinese numerals in `營業規格書` / `營業實作規格書`, Arabic in `營業顯示規格書`.
 - `小節` (optional): a number (`### 1.` → `1`), a title (`### 觸發時機` → `觸發時機`), or a named entry inside a list/table (e.g. `phaseJump`).
 - The 編號 is authoritative for locating; the 名稱 is for readability. If they drift, the 編號 wins.
-- Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、事件流的消費：速率與步進】`.
+- Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、日誌流的消費：速率與步進】`.
 - Why half-width `|` + 檔名: comments aren't inside Markdown tables (no clash), and code always cites across into the docs.
 
 ## Context Management
