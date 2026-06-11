@@ -73,7 +73,7 @@ func commandEffectDel(game *cores.Game, target []cores.InstanceID, arg []exprs.V
 		} // if
 
 		sub := effect.StackSub(n)
-		runEffectEnd(game, effect, meta.End, sub, effect.GetStack() > 0) // 退層留佇列 / 歸零出佇列(快照載退後層數; M21 拍板)
+		runEffectEnd(game, effect, meta.End, sub) // 退層留佇列 / 歸零出佇列
 
 		if effect.GetStack() <= 0 {
 			game.Effect.Remove(effect.GetInstanceID())

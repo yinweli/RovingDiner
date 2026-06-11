@@ -10,7 +10,7 @@ import (
 // Build 組裝營業實例(【營業實作規格書 | 四、解耦的關鍵：邊界介面 | 核心怎麼跑】):
 // 以本場身分(seed / 關卡編號)與靜態表建 Game——infra.NewRander(seed) 為唯一亂數來源、
 // compiler 閉包注入效果預編譯(Parse → 捕捉 AST → execute 派發 + Settle 結算尾, 即【營業規格書 | 二十、獨立流程 | 執行命令】)、
-// rules.Register 裝備詞彙。presenter 為事件流輸出 port(nil 由 NewGame 正規化為無輸出替身)。
+// rules.Register 裝備詞彙。presenter 為日誌流輸出 port(nil 由 NewGame 正規化為無輸出替身)。
 // 建後盤面空白且引擎靜止, 開局建置由 Loop 的營業開始階段執行; 建造與驅動分離,
 // 供消費端先取得 *cores.Game 再決定驅動節奏(同步直跑 Run / 顯示層停點直讀)。
 func Build(seed int64, stageID int32, sheet *sheeter.Sheeter, operator cores.Operator, presenter cores.Presenter) *cores.Game {

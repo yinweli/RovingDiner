@@ -106,12 +106,21 @@ func (this FakeRander) Weighted(weight []int32) int {
 	return 0
 }
 
-// RecordPresenter 事件流錄製器: Emit 逐筆依序追加進 Event 切片, 供事件流接線測試與 conformance golden 比對
+// RecordPresenter 日誌流錄製器: Emit 逐拍依序追加進 Line 切片(一拍一組行), 供發射點測試與 conformance golden 比對
 // (【營業實作規格書 | 七、測試策略】L3 基建); 須以指標使用(Emit 寫入切片)。
 type RecordPresenter struct {
-	Event []cores.EventData // 錄得事件(發射序)
+	Line [][]string // 錄得行組(發射序; 一拍一組)
 }
 
-func (this *RecordPresenter) Emit(eventData cores.EventData) {
-	this.Event = append(this.Event, eventData)
+func (this *RecordPresenter) Emit(line ...string) {
+	this.Line = append(this.Line, line)
+}
+
+// Flat 攤平行組為行序列(golden 比對素材; 拍的分組是節奏、不入 golden)。
+func (this *RecordPresenter) Flat() (result []string) {
+	for _, itor := range this.Line {
+		result = append(result, itor...)
+	} // for
+
+	return result
 }

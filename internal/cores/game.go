@@ -9,7 +9,7 @@ import (
 // 對應【營業規格書 | 五、實例結構 | 營業（Game）實例】【營業規格書 | 六、容器結構】。
 //
 // Game 是唯一真相、持有全部實例與容器(零顯示依賴);
-// 前端於停點間直讀盤面(唯讀)、事件流供日誌敘事與步進節拍, 不持有第二份規則狀態。
+// 前端於停點間直讀盤面(唯讀)、日誌流供敘事與步進節拍, 不持有第二份規則狀態。
 // 作為驅動引擎, Game 持遊戲資料與兩 port、委派實作 exprs.Resolver(Attr / AttrRef),
 // 對外執行命令(ExecAssign / ExecOperate); 詞彙行為由 rules 套件經 Register* 裝備。
 //
@@ -30,10 +30,15 @@ type Game struct {
 	drawMax      Value // 補牌張數上限
 
 	// 階段 / 回合
-	phaseCurr PhaseKind // 當前階段(RunPhase 踏站時經 SetPhase 設定; Emit 座標蓋章來源)
+	phaseCurr PhaseKind // 當前階段(RunPhase 踏站時經 SetPhase 設定; 日誌標題前綴的座標來源)
 	phaseNext PhaseKind // 下一階段(跳轉目標; 系統於階段轉移時清為 PhaseNone)
 	round     Value     // 當前回合數(寫屬性; 無鎖定語意、鎖定計數恆 0)
 	roundMax  Value     // 回合上限(寫屬性; 無鎖定語意、鎖定計數恆 0)
+
+	// 日誌歸因(發射台狀態; 詳見 emit.go: 平面語意——最後效果行勝出、範圍標題重置)
+	logEffect       bool       // 歸因: 當前效果存在(決定命令行前綴 $ / 縮排)
+	logSelfData     int32      // 歸因: 當前效果 self 資料編號(屬性行 self 省略判定)
+	logSelfInstance InstanceID // 歸因: 當前效果 self 實例編號(同上)
 
 	// 士氣受損事件
 	damageValue int32  // 士氣受損值(最近一次實際扣減值)
@@ -95,7 +100,7 @@ type Game struct {
 	data      *Data     // 遊戲資料(原始表 + 衍生索引; 建構注入、營業期唯讀)
 	operator  Operator  // 玩家輸入 port; 命令對象 *Pick 暫停流程由玩家選取
 	rander    Rander    // 亂數 port; 命令對象 *Rand 隨機選取、deckTop auto-shuffle 洗牌
-	presenter Presenter // 事件流輸出 port; 建構時正規化(nil → emptyPresenter), 發射一律經 Emit 蓋章座標
+	presenter Presenter // 日誌流輸出 port; 建構時正規化(nil → emptyPresenter), 行由發射台組畢(emit.go)
 
 	// 詞彙裝備(rules 經 Register* 逐詞條注入; 裝備後唯讀、等同常數, 不破壞決定性)
 	attrRead     map[string]AttrReadFunc     // 全域屬性讀詞彙表(含 Lock 全名詞條)
@@ -109,7 +114,7 @@ type Game struct {
 
 // NewGame 建構營業實例: 盤面空白(屬性零值、容器空、四張累積表零值可用),
 // 注入本場身分(seed / 關卡編號; 同 seed + 同關卡 + 同玩家輸入 = 同一局)、遊戲資料(原始表 + 衍生索引, nil 補空殼)
-// 與玩家輸入 / 亂數 / 事件流三 port(presenter nil 正規化為無輸出替身), 並預建七張空詞彙表(Register* 填入)。
+// 與玩家輸入 / 亂數 / 日誌流三 port(presenter nil 正規化為無輸出替身), 並預建七張空詞彙表(Register* 填入)。
 // 開局盤面(手牌 / 三堆 / 排隊 / 前置技能)由 phaseGameStart 依關卡編號自關卡表格建置; self 為求值脈絡 run-state、
 // 詞彙為裝備(rules.Register), 皆不入建構。
 func NewGame(seed int64, stageID int32, data *Data, operator Operator, rander Rander, presenter Presenter) *Game {
@@ -208,12 +213,10 @@ func (this *Game) GetRander() Rander {
 	return this.rander
 }
 
-// Emit 發射事件: 蓋章座標(當前回合 / 階段)後轉交事件流輸出 port。
-// 發射點只填事件本體欄位, Round / Phase 由此統一蓋章、不會漏; presenter 建構時已正規化, 免判 nil。
-func (this *Game) Emit(eventData EventData) {
-	eventData.Round = this.round.GetValue()
-	eventData.Phase = this.phaseCurr
-	this.presenter.Emit(eventData)
+// Emit 發射日誌行(一個語意單位 = 一拍 = 0..n 行): 原樣轉交日誌流輸出 port。
+// 行由發射台組畢(emit.go 的 Emit* 家族; 發後不改), 此處不再加工; presenter 建構時已正規化, 免判 nil。
+func (this *Game) Emit(line ...string) {
+	this.presenter.Emit(line...)
 }
 
 // GetMorale 取餐廳士氣值。
@@ -607,8 +610,8 @@ func (this *Game) attrRefNum(ref exprs.Ref, name string, op AssignKind) float64 
 // 帶值賦值先求值右值(評估失敗 / 右值非數值 → no-op); 引用左值先解析引用主體(空物件 / 型別不符 / 不存在 → no-op),
 // 主體為凍結中顧客一律 no-op(屬性凍結; 【營業規格書 | 二十一、流程補充 | 凍結語意】);
 // 再經寫入詞彙表(全域 attrWrite / 引用 attrRefWrite)依賦值符變更狀態。名稱可寫性由 games.Validate 先行檢查。
-// 屬性事件於此收口: 進了寫入詞條就發、沒進就不發(閘門前夭折無事件; 鎖定拒寫以 Before == After 表達; M18 拍板),
-// 前後值經讀詞條取得、@ / # 載鎖定計數, 引用左值帶對象編號、全域留零值。
+// 屬性日誌行於此收口: 進了寫入詞條就發、沒進就不發(閘門前夭折無行; 鎖定拒寫的行結果值不變; M18 拍板),
+// 結果值經讀詞條取得、@ / # 載鎖定計數, 引用左值帶對象、全域走全名。
 func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, value *exprs.Expr) (changed bool) {
 	n := float64(0)
 
@@ -640,9 +643,8 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 		} // if
 
 		dataID, instanceID := RefTarget(owner.Ref())
-		before := this.attrRefNum(owner.Ref(), refAttr, op)
 		changed = write(this, owner.Ref(), op, n)
-		this.Emit(EventData{Kind: EventProperty, DataID: dataID, InstanceID: instanceID, Attr: refAttr, Op: op, Operand: n, Before: before, After: this.attrRefNum(owner.Ref(), refAttr, op)})
+		EmitProperty(this, dataID, instanceID, refAttr, op, n, this.attrRefNum(owner.Ref(), refAttr, op))
 		return changed
 	} // if
 
@@ -652,9 +654,8 @@ func (this *Game) ExecAssign(base, refAttr string, isRef bool, op AssignKind, va
 		return false
 	} // if
 
-	before := this.attrNum(base, op)
 	changed = write(this, op, n)
-	this.Emit(EventData{Kind: EventProperty, Attr: base, Op: op, Operand: n, Before: before, After: this.attrNum(base, op)})
+	EmitProperty(this, 0, NoneID, base, op, n, this.attrNum(base, op))
 	return changed
 }
 
@@ -788,7 +789,7 @@ func (this *Game) Env() exprs.Env {
 // Presenter 為純輸出 port(Emit 無回傳、零決定性影響), no-op 在語意上無損, 發射端因此免判 nil。
 type emptyPresenter struct{}
 
-func (this emptyPresenter) Emit(eventData EventData) {
+func (this emptyPresenter) Emit(line ...string) {
 }
 
 // 編譯期確認 Game 滿足 exprs.Resolver(條件對象求值的接縫)。

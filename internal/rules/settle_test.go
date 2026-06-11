@@ -77,8 +77,8 @@ func (this *SuiteSettle) TestSettle() {
 	this.True(game.Settling)
 }
 
-// TestSettleEmit 驗證執行結算的事件接線: 無事結算(settleBusy 全不中)靜默不發題; 有事結算先發範圍標題;
-// 手牌上限棄牌發玩家輸入紀錄(流程名 discardOver)。
+// TestSettleEmit 驗證執行結算的發射接線: 無事結算(settleBusy 全不中)靜默不發題; 有事結算先發範圍標題;
+// 手牌上限棄牌發玩家輸入紀錄行(流程名 discardOver); 門檻命中發入列行。
 func (this *SuiteSettle) TestSettleEmit() {
 	game, record := newGameRecord()
 	game.GetRoundMax().Set(99)
@@ -88,46 +88,32 @@ func (this *SuiteSettle) TestSettleEmit() {
 	game.Seat.Place(2, cores.NewGuest(game, 502)) // 第二位: 離場後仍有人在座, 擋全場清空
 
 	Settle(game) // 無事結算 → 靜默, 不發題不立旗標
-	this.Empty(record.Event)
+	this.Empty(record.Line)
 	this.False(game.Settling)
 
 	angry := game.Seat[1]
 	angry.GetCalm().Set(0) // 生氣離場線 → 有事
 	Settle(game)
-	this.Require().NotEmpty(record.Event)
-	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeSettle}, record.Event[0]) // 範圍標題先行
+	this.Require().NotEmpty(record.Line)
+	this.Equal([]string{"[R0 -] 執行結算"}, record.Line[0]) // 範圍標題先行
+
 	this.Nil(game.Seat[1])
 
-	record.Event = nil
+	record.Line = nil
 	game.Hand = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 101), cores.NewCard(game, 103)} // 3 > 上限 2 → 棄 1
 	Settle(game)
-	pick := []cores.EventData{}
+	pick := filterLine(record, "$ 選取 ")
+	this.Require().Len(pick, 1) // 玩家輸入紀錄行: 流程名 + 選中識別碼
+	this.Equal("$ 選取 手牌上限 -> "+cores.IdentCard(game.GetSheet(), 101, game.Drop[0].GetInstanceID()), pick[0])
 
-	for itor := range record.Event {
-		if record.Event[itor].Kind == cores.EventSelect {
-			pick = append(pick, record.Event[itor])
-		} // if
-	} // for
-
-	this.Require().Len(pick, 1) // 玩家輸入紀錄: 流程名 + 選中清單
-	this.Equal("discardOver", pick[0].Source)
-	this.Equal([]cores.PickData{{DataID: 101, InstanceID: game.Drop[0].GetInstanceID()}}, pick[0].Pick)
-
-	record.Event = nil
-	hit := cores.NewGuest(game, 501) // 耐心門檻 2^301 命中 → 入列事件(M21 拍板)
+	record.Line = nil
+	hit := cores.NewGuest(game, 501) // 耐心門檻 2^301 命中 → 入列行(M21 拍板)
 	hit.GetCalm().Set(2)
 	game.Seat.Place(3, hit)
 	Settle(game)
-	action := []cores.EventData{}
-
-	for itor := range record.Event {
-		if record.Event[itor].Kind == cores.EventAction {
-			action = append(action, record.Event[itor])
-		} // if
-	} // for
-
+	action := filterLine(record, "$ "+cores.IdentGuest(game.GetSheet(), 501, hit.GetInstanceID())+" >> 行動佇列(")
 	this.Require().Len(action, 1)
-	this.Equal(cores.EventData{Kind: cores.EventAction, DataID: 501, InstanceID: hit.GetInstanceID(), SkillID: 301, Task: cores.TaskCalm, Alive: true}, action[0])
+	this.Equal("$ "+cores.IdentGuest(game.GetSheet(), 501, hit.GetInstanceID())+" >> 行動佇列(耐心)", action[0])
 }
 
 // TestJudgeEnd 驗證終止判定: 失敗(回合上限 / 士氣歸零, 失敗優先)與成功(全場清空)以哨兵跳出、命中前清旗標; 未命中無事。

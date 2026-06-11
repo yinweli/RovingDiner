@@ -208,10 +208,9 @@ func removeCard(game *cores.Game, source cores.ContainerKind, card *cores.Card) 
 	} // switch
 }
 
-// placeCard 把卡牌加入 dest 牌堆頂端(前端), 並依目的設事件與 system 觸發(進抽牌牌堆無事件屬性與觸發)。
-// 卡牌容器事件的單點收口(M18 拍板): from 由呼叫端供給(剛移出的來源牌堆; 新建直入傳 ContainerNone),
-// 入容器後、事件屬性與觸發前發射(消費端見事件時盤面已就位)。
-func placeCard(game *cores.Game, from, dest cores.ContainerKind, card *cores.Card) {
+// placeCard 把卡牌加入 dest 牌堆頂端(前端), 並依目的設事件屬性與 system 觸發(進抽牌牌堆無事件屬性與觸發)。
+// 卡牌搬移行的單點收口(M18 拍板): 入容器後、事件屬性與觸發前發射(消費端見行時盤面已就位)。
+func placeCard(game *cores.Game, dest cores.ContainerKind, card *cores.Card) {
 	switch dest {
 	case cores.ContainerHand:
 		game.Hand.Push(card)
@@ -229,7 +228,7 @@ func placeCard(game *cores.Game, from, dest cores.ContainerKind, card *cores.Car
 		return // 不可達: placeCard 僅以四牌堆 dest 呼叫
 	} // switch
 
-	emitCardMove(game, card, from, dest)
+	emitCardMove(game, card, dest)
 
 	switch dest {
 	case cores.ContainerHand:
@@ -316,20 +315,20 @@ func frozenSelf(game *cores.Game, effect *cores.Effect) bool {
 func retireEffect(game *cores.Game, effect *cores.Effect) {
 	meta, _ := game.EffectData(effect.GetEffectID()) // 呼叫端已確認存在
 
-	runEffectEnd(game, effect, meta.End, effect.GetStack(), false)
+	runEffectEnd(game, effect, meta.End, effect.GetStack())
 	game.Effect.Remove(effect.GetInstanceID())
 }
 
 // runEffectEnd 以效果自身 self 綁定執行結束命令 times 次(綁定逐層 save / restore; 退場與 effectDel 退層共用)。
-// 效果事件: 結束 階段於此發(推進 / 清理 / effectClear 經 retireEffect、effectDel 退層皆收口於此;
-// 觸發後移除路徑因 self 已綁定、由 fireOne 自發); alive 區分退層留佇列(true)/ 退場出佇列(false)(M21 拍板)。
-func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32, alive bool) {
+// 效果頭: 結束 階段於此發(推進 / 清理 / effectClear 經 retireEffect、effectDel 退層皆收口於此;
+// 觸發後移除路徑因 self 已綁定、由 fireOne 自發)。
+func runEffectEnd(game *cores.Game, effect *cores.Effect, end cores.EffectExec, times int32) {
 	self := effect.GetSelf()
 	restore := game.SetSelf(&self)
 
 	defer restore()
 
-	emitEffectState(game, effect, cores.EffectStageEnd, alive)
+	cores.EmitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageEnd)
 	runEffectExec(game, end, times)
 }
 

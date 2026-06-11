@@ -63,18 +63,17 @@ func (this *SuitePhaseGuestAction) TestPhaseGuestAction() {
 	this.Equal(2, end)
 }
 
-// TestPhaseGuestActionEmit 驗證顧客行動的事件接線: 逐筆行動先發出列事件(M21 拍板)、再發範圍標題
-// (操作元 = 顧客 + 技能; 踏站 phase 事件歸 RunPhase)。
+// TestPhaseGuestActionEmit 驗證顧客行動的發射接線: 逐筆行動發範圍標題(操作元 = 顧客 + 技能;
+// 出列不發行——標題已承載; M22 拍板)。
 func (this *SuitePhaseGuestAction) TestPhaseGuestActionEmit() {
 	game, record := newGameRecord()
-	guest := cores.NewGuest(game, 501)
+	guest := cores.NewGuest(game, 501) // 實例編號 1
 	game.Seat.Place(1, guest)
 	game.Action.Push(cores.NewAction(guest, cores.TaskCalm, 301))
 
 	phaseGuestAction(game)
-	this.Require().GreaterOrEqual(len(record.Event), 2)
-	this.Equal(cores.EventData{Kind: cores.EventAction, DataID: 501, InstanceID: guest.GetInstanceID(), SkillID: 301, Task: cores.TaskCalm}, record.Event[0]) // 出列(Alive false)
-	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: 501, InstanceID: guest.GetInstanceID(), SkillID: 301}, record.Event[1])
+	this.Require().NotEmpty(record.Line)
+	this.Equal([]string{"[R0 -] 顧客行動", "* 501@#1", "* 301@"}, record.Line[0])
 }
 
 // TestSealTask 驗證行動封印閘門: 飽食 / 耐心各查對應封印鎖、越界行動類型視為封印。

@@ -19,8 +19,13 @@ type Data struct {
 }
 
 // NewData 以原始表組裝遊戲資料, 建構時整理衍生索引(prepareAward / prepareEffect / prepareGuest);
-// 效果編譯需命令解析, 由 games 經 Compiler 注入(無命令資料可傳 nil); sheet nil → 空表空索引。
+// 效果編譯需命令解析, 由 games 經 Compiler 注入(無命令資料可傳 nil); sheet nil → 空表空索引
+// (正規化為空 Sheeter, 發射台識別碼查名免判 nil)。
 func NewData(sheet *sheeter.Sheeter, compile Compiler) *Data {
+	if sheet == nil {
+		sheet = &sheeter.Sheeter{}
+	} // if
+
 	return &Data{
 		sheet:  sheet,
 		award:  prepareAward(sheet),

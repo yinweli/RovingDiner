@@ -105,7 +105,7 @@ func (this *SuiteCommandFlow) TestCardRunEffectMove() {
 	game.Hand = cores.CardList{card}
 	data.SetEffect(802, cores.EffectData{Kind: cores.EffectImmed, TargetKind: cores.TargetNone, Immed: func(e *cores.Game) {
 		removeCard(e, cores.ContainerHand, card)
-		placeCard(e, cores.ContainerHand, cores.ContainerExile, card) // 立即命令在出牌途中把本卡移至流放牌堆
+		placeCard(e, cores.ContainerExile, card) // 立即命令在出牌途中把本卡移至流放牌堆
 	}})
 
 	commandCardRun(game, []cores.InstanceID{card.GetInstanceID()}, this.flag(false, true)) // 不耗點、進棄牌堆
@@ -168,17 +168,15 @@ func (this *SuiteCommandFlow) TestMorphNoop() {
 	this.Equal(int32(101), game.Exile[0].GetCardID())
 }
 
-// TestMorphEmit 驗證變身的實例事件: 銷毀舊(舊編號)+ 建立新(新編號)兩發, 位置不變無容器事件(EventInstance 唯一真身; M18 拍板)。
+// TestMorphEmit 驗證變身行: 舊識別碼 >> 新識別碼 一行收口(位置不變、無搬移行; M24 拍板雙發協定作廢)。
 func (this *SuiteCommandFlow) TestMorphEmit() {
 	game, record := newGameRecord()
-	card := cores.NewCard(game, 102)
-	oldInstance := card.GetInstanceID()
+	card := cores.NewCard(game, 102) // 實例編號 1; 變身重分配為 2
 	game.Hand = cores.CardList{card}
 
-	morph(game, []cores.InstanceID{oldInstance}, nums(7), cores.ContainerHand) // 群組 7 → 抽中卡 101
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EventData{Kind: cores.EventInstance, DataID: 102, InstanceID: oldInstance, Alive: false}, record.Event[0])
-	this.Equal(cores.EventData{Kind: cores.EventInstance, DataID: 101, InstanceID: card.GetInstanceID(), Alive: true}, record.Event[1])
+	morph(game, []cores.InstanceID{card.GetInstanceID()}, nums(7), cores.ContainerHand) // 群組 7 → 抽中卡 101
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 102@#1 >> 101@#2"}, record.Line[0])
 }
 
 func (this *SuiteCommandFlow) TestCardify() {
@@ -210,25 +208,18 @@ func (this *SuiteCommandFlow) TestCardify() {
 	this.NotNil(game.Seat[3])
 }
 
-// TestCardifyEmit 驗證卡牌化的事件接線: 顧客 Seat → Cardify 移動 + 綁定卡 None → Hand(語境欄載來源顧客; M21 拍板)。
+// TestCardifyEmit 驗證卡牌化的發射接線: 顧客 >> 卡牌化 + 綁定卡 >> 手牌 兩行
+// (綁定資訊不入行——盤面直讀 GetCardify 即見; M24 拍板)。
 func (this *SuiteCommandFlow) TestCardifyEmit() {
 	game, record := newGameRecord()
-	guest := cores.NewGuest(game, 501)
+	guest := cores.NewGuest(game, 501) // 實例編號 1; 綁定卡實例編號 2
 	game.Seat.Place(2, guest)
 
 	commandCardify(game, []cores.InstanceID{guest.GetInstanceID()}, nums(101))
 	this.Require().Len(game.Hand, 1)
-	move := []cores.EventData{}
-
-	for itor := range record.Event {
-		if record.Event[itor].Kind == cores.EventContainer {
-			move = append(move, record.Event[itor])
-		} // if
-	} // for
-
-	this.Require().Len(move, 2)
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: guest.GetInstanceID(), From: cores.ContainerSeat, To: cores.ContainerCardify}, move[0])
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 101, InstanceID: game.Hand[0].GetInstanceID(), From: cores.ContainerNone, To: cores.ContainerHand, BindID: 501, BindInstanceID: guest.GetInstanceID()}, move[1])
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"$ 501@#1 >> 卡牌化"}, record.Line[0])
+	this.Equal([]string{"$ 101@#2 >> 手牌"}, record.Line[1])
 }
 
 func (this *SuiteCommandFlow) TestRestore() {
@@ -256,13 +247,14 @@ func (this *SuiteCommandFlow) TestRestore() {
 	this.Equal(int32(0), card.GetKeep().GetLock())    // 7. 不棄 - 1
 }
 
-// TestRestoreEmit 驗證還原的事件接線: 解凍補回逐效果發 加入快照(載補回後結束回合; M21 拍板)。
+// TestRestoreEmit 驗證還原的發射接線: 顧客 >> 座位 + 解凍補回逐效果發 加入 三行
+// (補回後結束回合不入行, 直讀佇列項驗證)。
 func (this *SuiteCommandFlow) TestRestoreEmit() {
 	data := tester.BuildData()
 	data.SetEffect(801, cores.EffectData{})
 	game, record := newGameDataRecord(data)
 	game.GetRound().Set(10)
-	guest := cores.NewGuest(game, 501)
+	guest := cores.NewGuest(game, 501) // 實例編號 1; 卡 2、效果 3
 	guest.SetFreeze(4)
 	card := cores.NewCard(game, 101)
 	card.CardifyBind(guest)
@@ -273,16 +265,10 @@ func (this *SuiteCommandFlow) TestRestoreEmit() {
 	game.Effect.Push(effect)
 
 	commandRestore(game, []cores.InstanceID{card.GetInstanceID()}, nil)
-	join := []cores.EventData{}
-
-	for itor := range record.Event {
-		if record.Event[itor].Kind == cores.EventEffect && record.Event[itor].Stage == cores.EffectStageJoin {
-			join = append(join, record.Event[itor])
-		} // if
-	} // for
-
-	this.Require().Len(join, 1)
-	this.Equal(cores.EventData{Kind: cores.EventEffect, Round: 10, DataID: 501, InstanceID: guest.GetInstanceID(), EffectID: 801, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageJoin, Stack: 1, Expire: 11, Alive: true}, join[0]) // 結束回合 = 5 + (10 - 4); Round 為 Emit 座標蓋章
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"$ 501@#1 >> 座位1"}, record.Line[0])
+	this.Equal([]string{"- 801@?#3", "  501@#1", "  加入"}, record.Line[1])
+	this.Equal(int32(11), game.Effect[0].GetExpire()) // 結束回合 = 5 + (10 - 4) 補回凍結期間
 }
 
 func (this *SuiteCommandFlow) TestRestoreNoop() {
@@ -372,18 +358,18 @@ func (this *SuiteCommandFlow) TestGuestExitScoreLock() {
 	this.Nil(game.Seat[2])
 }
 
-// TestGuestExitEmit 驗證離場的事件接線: 容器事件(所在 → None, 銷毀離開)+ 給滿意值 / 扣士氣屬性事件(流程寫入白名單, 呼叫點包前後值)。
+// TestGuestExitEmit 驗證離場的發射接線: 搬移行(>> 離場)+ 給滿意值 / 扣士氣屬性行(流程寫入白名單)。
 func (this *SuiteCommandFlow) TestGuestExitEmit() {
 	game, record := newGameRecord()
 	game.GetMorale().Set(30)
-	guest := cores.NewGuest(game, 502) // Score 2、Morale 5
+	guest := cores.NewGuest(game, 502) // Score 2、Morale 5; 實例編號 1
 	game.Seat.Place(1, guest)
 
 	guestExitOne(game, guest, cores.ContainerSeat, true, true)
-	this.Require().Len(record.Event, 3)
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 502, InstanceID: guest.GetInstanceID(), From: cores.ContainerSeat, To: cores.ContainerNone}, record.Event[0])
-	this.Equal(cores.EventData{Kind: cores.EventProperty, Attr: "score", Op: cores.AssignAdd, Operand: 2, Before: 0, After: 2}, record.Event[1])
-	this.Equal(cores.EventData{Kind: cores.EventProperty, Attr: "morale", Op: cores.AssignSub, Operand: 5, Before: 30, After: 25}, record.Event[2])
+	this.Require().Len(record.Line, 3)
+	this.Equal([]string{"$ 502@#1 >> 離場"}, record.Line[0])
+	this.Equal([]string{"$ 餐廳滿意值 += 2 >> 2"}, record.Line[1])
+	this.Equal([]string{"$ 餐廳士氣值 -= 5 >> 25"}, record.Line[2])
 }
 
 func (this *SuiteCommandFlow) TestGuestReturn() {
@@ -461,15 +447,15 @@ func (this *SuiteCommandFlow) TestGuestSeat() {
 	this.Len(full.Wait, 1)
 }
 
-// TestGuestSeatOneEmit 驗證入座的容器事件: 排隊 → 座位、To == Seat 帶座位編號。
+// TestGuestSeatOneEmit 驗證入座的搬移行: 識別碼 >> 座位{座位編號}。
 func (this *SuiteCommandFlow) TestGuestSeatOneEmit() {
 	game, record := newGameRecord()
 	guest := cores.NewGuest(game, 501)
 	game.Wait.Insert(guest)
 
 	this.True(guestSeatOne(game))
-	this.Require().NotEmpty(record.Event)
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: 501, InstanceID: guest.GetInstanceID(), From: cores.ContainerWait, To: cores.ContainerSeat, SeatID: 1}, record.Event[0])
+	this.Require().NotEmpty(record.Line)
+	this.Equal([]string{"$ 501@#1 >> 座位1"}, record.Line[0])
 }
 
 func (this *SuiteCommandFlow) TestRemoveGuestContainer() {

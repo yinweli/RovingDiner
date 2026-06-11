@@ -114,12 +114,12 @@ func commandGuestSpawn(game *cores.Game, target []cores.InstanceID, arg []exprs.
 	if seatID == 0 {
 		guest.RoamLock()
 		game.Roam.Push(guest)
-		emitGuestMove(game, guest, cores.ContainerNone, cores.ContainerRoam, 0) // 新建直入遊蕩
+		emitGuestMove(game, guest, cores.ContainerRoam, 0) // 新建直入遊蕩
 		return
 	} // if
 
 	game.Seat.Place(seatID, guest)
-	emitGuestMove(game, guest, cores.ContainerNone, cores.ContainerSeat, seatID) // 新建直入座位
+	emitGuestMove(game, guest, cores.ContainerSeat, seatID) // 新建直入座位
 }
 
 // commandWaitAdd 依顧客編號實例化 N 位新顧客插入排隊佇列前端(優先入座); N <= 0 / 顧客資料不存在 → no-op(【二十五 | waitAdd】)。
@@ -144,7 +144,7 @@ func commandWaitAdd(game *cores.Game, target []cores.InstanceID, arg []exprs.Val
 		} // if
 
 		game.Wait.Insert(guest)
-		emitGuestMove(game, guest, cores.ContainerNone, cores.ContainerWait, 0) // 新建直入排隊
+		emitGuestMove(game, guest, cores.ContainerWait, 0) // 新建直入排隊
 	} // for
 }
 
@@ -171,7 +171,7 @@ func cardAdd(game *cores.Game, arg []exprs.Value, dest cores.ContainerKind) {
 			return // 卡牌資料不存在 → no-op
 		} // if
 
-		placeCard(game, cores.ContainerNone, dest, card) // 新建直入
+		placeCard(game, dest, card) // 新建直入
 	} // for
 }
 
@@ -202,7 +202,7 @@ func cardRoll(game *cores.Game, arg []exprs.Value, dest cores.ContainerKind) {
 			continue // 抽中編號無資料 → 跳過該張(防禦)
 		} // if
 
-		placeCard(game, cores.ContainerNone, dest, card) // 新建直入
+		placeCard(game, dest, card) // 新建直入
 	} // for
 }
 
@@ -240,7 +240,7 @@ func copyClone(game *cores.Game, target []cores.InstanceID, arg []exprs.Value, d
 			} // if
 
 			card.GetEffectID().Add(addEffect...)
-			placeCard(game, cores.ContainerNone, dest, card) // 新建直入
+			placeCard(game, dest, card) // 新建直入
 		} // for
 	} // for
 

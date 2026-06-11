@@ -30,7 +30,7 @@ func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (ef
 	if existing == nil {
 		effect = cores.NewEffect(game, effectID, self, add) // 建構即依堆疊上限夾制
 		game.Effect.Push(effect)
-		emitEffectState(game, effect, cores.EffectStageJoin, true)
+		cores.EmitEffect(game, effectID, effect.GetInstanceID(), self, cores.EffectStageJoin)
 		added = effect.GetStack()
 		return effect, added
 	} // if
@@ -43,7 +43,7 @@ func effectStack(game *cores.Game, self cores.Ref, effectID, override int32) (ef
 	} // if
 
 	if added > 0 || existing.GetExpire() != expire {
-		emitEffectState(game, existing, cores.EffectStageJoin, true) // 實際增層或刷新改變結束回合才發(堆疊滿且結束回合不變 = 無事不發; M21 拍板)
+		cores.EmitEffect(game, effectID, existing.GetInstanceID(), self, cores.EffectStageJoin) // 實際增層或刷新改變結束回合才發(堆疊滿且結束回合不變 = 無事不發; M21 拍板)
 	} // if
 
 	return existing, added

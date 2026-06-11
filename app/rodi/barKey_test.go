@@ -29,7 +29,7 @@ func (this *SuiteBarKey) TestNewBarKey() {
 func (this *SuiteBarKey) TestBarKeyView() {
 	this.Equal("\n[Q]離開", newBarKey().View(100)) // M20 第 1 行尚無鍵 → 留白
 
-	target := barKey{bind: []keyBind{ // 行位驗證用假表(M24 起第 1 行才有真鍵)
+	target := barKey{bind: []keyBind{ // 行位驗證用假表(M25 起第 1 行才有真鍵)
 		{key: "t", label: "[T]導覽", row: 1},
 		{key: "u", label: "[U]導覽", row: 1},
 		{key: "q", label: "[Q]離開", row: 2},

@@ -8,8 +8,9 @@ import (
 // 每站只回報下一站、不互相呼叫(單站可獨立測試); 營業成功 / 失敗觸發後回 PhaseNone 作停機訊號。
 // 本檔持分派入口(RunPhase, games.Run 的驅動接縫)與跨站共用 helper; 驅動迴圈與成敗記錄屬 games.Run。
 
-// RunPhase 跑指定階段一站、回下一站; PhaseNone / 未知階段回 PhaseNone(停機, 不踏站不發事件)。
-// 已知階段踏站時先 SetPhase(Emit 座標蓋章來源)再發 phase 切換事件(無本體欄位, 座標即新階段; M17 拍板、M18 接線)。
+// RunPhase 跑指定階段一站、回下一站; PhaseNone / 未知階段回 PhaseNone(停機, 不踏站)。
+// 已知階段踏站時 SetPhase(日誌標題前綴的座標來源); phase 切換不發射——發射 = 有話要說(M24 拍板),
+// 階段值活在其後標題的前綴與狀態列直讀。
 // 終止判定的哨兵(gameEnd)在此單點 recover → 回對應終止站; 非哨兵 panic 原樣重拋(真 bug 不被吞)。
 func RunPhase(game *cores.Game, phase cores.PhaseKind) (next cores.PhaseKind) {
 	defer func() {
@@ -53,17 +54,15 @@ func RunPhase(game *cores.Game, phase cores.PhaseKind) (next cores.PhaseKind) {
 	} // switch
 
 	game.SetPhase(phase)
-	game.Emit(cores.EventData{Kind: cores.EventPhase})
 	return station(game)
 }
 
 // energyFill 點數補滿: 出牌點數低於上限時補至上限(「出牌點數 = max(出牌點數, 出牌點數上限)」; 鎖定 → 不補)。
-// 營業開始 / 回合開始設置共用。流程寫入白名單: 發屬性事件(鎖定不補以 Before == After 表達; M18 拍板)。
+// 營業開始 / 回合開始設置共用。流程寫入白名單: 發屬性行(鎖定不補的行結果值不變; M18 拍板)。
 func energyFill(game *cores.Game) {
 	if game.GetEnergy().GetValue() < game.GetEnergyMax().GetValue() {
-		before := float64(game.GetEnergy().GetValue())
 		game.GetEnergy().Set(float64(game.GetEnergyMax().GetValue()))
-		emitProperty(game, 0, cores.NoneID, "energy", cores.AssignSet, float64(game.GetEnergyMax().GetValue()), before, float64(game.GetEnergy().GetValue()))
+		cores.EmitProperty(game, 0, cores.NoneID, "energy", cores.AssignSet, float64(game.GetEnergyMax().GetValue()), float64(game.GetEnergy().GetValue()))
 	} // if
 }
 

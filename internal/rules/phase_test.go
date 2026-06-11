@@ -39,17 +39,16 @@ func (this *SuitePhase) TestRunPhase() {
 		RunPhase(bad, cores.PhaseRoundEnd)
 	})
 
-	// 踏站接線: 已知階段先 SetPhase 再發 phase 切換事件(座標即新階段); PhaseNone 不踏站不發(M18)
+	// 踏站接線: 已知階段先 SetPhase 再跑站(站內發射的標題前綴即新階段座標); phase 切換本身不發(M24 拍板)
 	wired, record := newGameRecord()
 	RunPhase(wired, cores.PhaseGameStart)
 	this.Equal(cores.PhaseGameStart, wired.GetPhase())
-	this.Require().NotEmpty(record.Event)
-	this.Equal(cores.EventPhase, record.Event[0].Kind)
-	this.Equal(cores.PhaseGameStart, record.Event[0].Phase)
+	this.Require().NotEmpty(record.Line)
+	this.Equal([]string{"$ 回合上限 = 12 >> 12"}, record.Line[0]) // 首行即站內設定載入, 無 phase 拍
 
-	count := len(record.Event)
+	count := len(record.Line)
 	RunPhase(wired, cores.PhaseNone)
-	this.Len(record.Event, count) // 停機 → 無事件
+	this.Len(record.Line, count) // 停機 → 不踏站無行
 }
 
 // TestEnergyFill 驗證 energyFill 點數補滿: 低於上限補至上限、高於上限保留、鎖定不補。

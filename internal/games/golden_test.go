@@ -1,4 +1,4 @@
-package rodi
+package games
 
 import (
 	"flag"
@@ -10,21 +10,19 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/yinweli/RovingDiner/internal/cores"
-	"github.com/yinweli/RovingDiner/internal/games"
 	"github.com/yinweli/RovingDiner/internal/tester"
 )
 
-// updateGolden 重錄 golden 快照(go test ./app/rodi -run TestSuiteGolden -update)。
+// updateGolden 重錄 golden 快照(go test ./internal/games -run TestSuiteGolden -update)。
 var updateGolden = flag.Bool("update", false, "重錄 golden 行歷史快照")
 
 func TestSuiteGolden(t *testing.T) {
 	suite.Run(t, new(SuiteGolden))
 }
 
-// SuiteGolden 驗證日誌行歷史 golden(M24 R0 錄製): 固定 seed×關卡跑完整營業, 行歷史與 testdata 快照
+// SuiteGolden 驗證日誌行歷史 golden: 固定 seed×關卡跑完整營業, 引擎直出的行序列與 testdata 快照
 // 逐 byte 相同(CRLF 正規化除外); -update 重錄。引擎決定性使快照釘住整個規則引擎的敘事行為——
-// 它是 M24 換軌的驗收基準(引擎直出行必須逐 byte 重現), 其後常駐為核心回歸網(家隨 R2 遷往 games)。
+// M24 R0 以舊管線(事件→journal)錄製、R2 換軌後由引擎直出逐 byte 重現, 其後常駐為核心回歸網(M24 拍板④)。
 type SuiteGolden struct {
 	suite.Suite
 }
@@ -52,18 +50,9 @@ func (this *SuiteGolden) TestGolden() {
 	} // for
 }
 
-// goldenLine 跑完整營業並收集行歷史(現管線: 事件 → journal 轉寫; Operator 與 games 側測試同用 FakeOperator)。
+// goldenLine 跑完整營業並收集攤平行序列(引擎直出最終行; Operator 用決定性替身)。
 func goldenLine(seed int64, stageID int32) []string {
-	target := newJournal(tester.BuildSheet())
-	games.Run(seed, stageID, tester.BuildSheet(), tester.FakeOperator{}, journalPresenter{journal: target})
-	return target.line
-}
-
-// journalPresenter 把事件流直灌 journal 的錄製 presenter(golden 管線的接頭)。
-type journalPresenter struct {
-	journal *journal // 行合成器(行歷史收集處)
-}
-
-func (this journalPresenter) Emit(eventData cores.EventData) {
-	this.journal.Append(eventData)
+	record := &tester.RecordPresenter{}
+	Run(seed, stageID, tester.BuildSheet(), tester.FakeOperator{}, record)
+	return record.Flat()
 }

@@ -17,10 +17,9 @@ func phaseGuestAction(game *cores.Game) cores.PhaseKind {
 			return cores.PhaseRoundEnd
 		} // if
 
-		action := game.Action.Pop()
-		emitAction(game, action, false)                                                                                                                                                                  // 出列事件(含封印防禦路徑; M21 拍板)
-		game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeGuest, DataID: action.GetGuest().GetGuestID(), InstanceID: action.GetGuest().GetInstanceID(), SkillID: action.GetSkillID()}) // 範圍標題: 顧客行動(操作元 = 顧客 + 技能)
-		game.EventTask(action.GetGuest(), action.GetSkillID())                                                                                                                                           // 最後行動顧客 / 技能 / 回合行動次數
+		action := game.Action.Pop()                            // 出列不發行(緊接的標題已承載; M22 拍板)
+		emitGuestTitle(game, action)                           // 範圍標題: 顧客行動(操作元 = 顧客 + 技能)
+		game.EventTask(action.GetGuest(), action.GetSkillID()) // 最後行動顧客 / 技能 / 回合行動次數
 
 		if sealTask(action) == false {
 			runEffectList(game, game.SkillEffect(action.GetSkillID()), skillGroup(game, action.GetSkillID())) // 啟動技能: 顧客行動技能

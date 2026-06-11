@@ -37,10 +37,9 @@ func cardCost(game *cores.Game, target []cores.InstanceID, op cores.AssignKind, 
 			continue // 非卡牌實例 → 該項 no-op
 		} // if
 
-		before := float64(card.GetCost().GetValue())
 		card.GetCost().Apply(op, n)
 		card.GetCost().Clamp(0)
-		emitProperty(game, card.GetCardID(), card.GetInstanceID(), "cost", op, n, before, float64(card.GetCost().GetValue()))
+		cores.EmitProperty(game, card.GetCardID(), card.GetInstanceID(), "cost", op, n, float64(card.GetCost().GetValue()))
 	} // for
 }
 

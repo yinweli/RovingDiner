@@ -29,7 +29,7 @@ func fireTrigger(game *cores.Game, timing cores.TriggerKind) {
 	fire.Sort(game) // 快照排序; 不擾動 game.Effect(順序無關)
 
 	if len(fire) > 0 {
-		game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeTrigger, Trigger: timing}) // 範圍標題: 時機(空名單不發題; M18 拍板)
+		cores.EmitTitle(game, "時機:"+cores.TriggerText(timing)) // 範圍標題: 時機(空名單不發題; M18 拍板)
 	} // if
 
 	for _, itor := range fire {
@@ -47,7 +47,7 @@ func fireOne(game *cores.Game, effect *cores.Effect) {
 	defer restore() // 結算重入時逐層 save / restore
 
 	if condPass(game, meta.Cond) == false {
-		emitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageCondFail)
+		cores.EmitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageCondFail)
 		return // 觸發條件不成立(【十一】評估失敗即不成立)
 	} // if
 
@@ -57,12 +57,12 @@ func fireOne(game *cores.Game, effect *cores.Effect) {
 		return // 觸發次數 <= 0 / 失敗 → 該效果中止(不觸發、不移除、留佇列; 無對應效果階段、不發事件, M18)
 	} // if
 
-	emitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageTrigger)
+	cores.EmitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageTrigger)
 	runEffectExec(game, meta.Trigger, effect.GetStack()*count) // 重複(堆疊層數 × M)次
 
 	if meta.TriggerAfter == cores.TriggerAfterRemove {
-		emitEffectState(game, effect, cores.EffectStageEnd, false) // 觸發後移除 = 退場(M21 拍板)
-		runEffectExec(game, meta.End, effect.GetStack())           // 重複 堆疊層數 次
+		cores.EmitEffect(game, effect.GetEffectID(), effect.GetInstanceID(), self, cores.EffectStageEnd) // 觸發後移除 = 退場
+		runEffectExec(game, meta.End, effect.GetStack())                                                 // 重複 堆疊層數 次
 		game.Effect.Remove(effect.GetInstanceID())
 	} // if
 }

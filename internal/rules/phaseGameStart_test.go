@@ -62,70 +62,38 @@ func (this *SuitePhaseGameStart) TestPhaseGameStart() {
 	this.Equal(1, fired) // 營業開始觸發
 }
 
-// TestPhaseGameStartEmit 驗證營業開始的事件接線: 設定六鍵逐筆發開局快照屬性事件(流程寫入白名單; M20 拍板);
-// 開局建置逐實例發容器事件(發射序 = 容器序; M21 拍板); 前置技能發範圍標題(操作元 = 技能)。
+// TestPhaseGameStartEmit 驗證營業開始的發射接線: 設定六鍵 + 點數補滿逐筆屬性行(流程寫入白名單; M20 拍板);
+// 開局建置逐實例搬移行(發射序 = 容器序; M21 拍板); 前置技能發範圍標題(操作元 = 技能)。
 func (this *SuitePhaseGameStart) TestPhaseGameStartEmit() {
 	record := &tester.RecordPresenter{}
 	game := cores.NewGame(0, 601, tester.BuildData(), tester.FakeOperator{}, tester.FakeRander{}, record)
 	Register(game)
 	phaseGameStart(game)
 
-	expect := []struct {
-		attr  string
-		after float64
-	}{
-		{"roundMax", 12}, {"morale", 30}, {"moraleMax", 50}, {"energyMax", 3}, {"handMax", 10}, {"drawMax", 5},
+	expect := []string{
+		// 開局快照(六鍵 + 點數補滿)位居行流最前端、序同 loadSetting
+		"$ 回合上限 = 12 >> 12",
+		"$ 餐廳士氣值 = 30 >> 30",
+		"$ 餐廳士氣值上限 = 50 >> 50",
+		"$ 出牌點數上限 = 3 >> 3",
+		"$ 手牌張數上限 = 10 >> 10",
+		"$ 補牌張數上限 = 5 >> 5",
+		"$ 出牌點數 = 3 >> 3",
+		// 開局建置: 逐實例搬移行依容器序(關卡 601; 原設置靜默作廢), 行即帶實例編號供消費端對照
+		"$ 101@#1 >> 手牌",
+		"$ 101@#2 >> 抽牌堆",
+		"$ 102@#3 >> 抽牌堆",
+		"$ 102@#4 >> 棄牌堆",
+		"$ 101@#5 >> 流放堆",
+		"$ 501@#6 >> 排隊",
+		"$ 501@#7 >> 排隊",
+		// 前置技能範圍標題(操作元 = 技能 301; 直呼站函式未踏站 → 前綴階段顯 -)
+		"[R0 -] 前置技能",
+		"* 301@",
 	}
-	this.Require().GreaterOrEqual(len(record.Event), len(expect))
-
-	for itor := range expect { // 開局快照: 六鍵屬性事件位居事件流最前端、序同 loadSetting
-		this.Equal(cores.EventProperty, record.Event[itor].Kind)
-		this.Equal(expect[itor].attr, record.Event[itor].Attr)
-		this.Equal(cores.AssignSet, record.Event[itor].Op)
-		this.Equal(float64(0), record.Event[itor].Before)
-		this.Equal(expect[itor].after, record.Event[itor].After)
-		this.Equal(int32(0), record.Event[itor].DataID)
-		this.Equal(cores.NoneID, record.Event[itor].InstanceID)
-	} // for
-
-	// 開局事件: 設定六鍵 + 點數補滿(索引 0~6)後, 逐實例容器事件依容器序(關卡 601; M21 拍板, 原設置靜默作廢)
-	opening := []struct {
-		dataID int32
-		to     cores.ContainerKind
-	}{
-		{101, cores.ContainerHand}, {101, cores.ContainerDeck}, {102, cores.ContainerDeck},
-		{102, cores.ContainerDrop}, {101, cores.ContainerExile}, {501, cores.ContainerWait}, {501, cores.ContainerWait},
-	}
-	this.Require().GreaterOrEqual(len(record.Event), 7+len(opening))
-
-	for itor := range opening {
-		event := record.Event[7+itor]
-		this.Equal(cores.EventContainer, event.Kind)
-		this.Equal(opening[itor].dataID, event.DataID)
-		this.Equal(cores.ContainerNone, event.From) // 新建直入
-		this.Equal(opening[itor].to, event.To)
-		this.NotEqual(cores.NoneID, event.InstanceID) // 開局事件即帶實例編號, 供消費端對照實例
-	} // for
-
-	prefix := []cores.EventData{}
-	container := 0
-
-	for itor := range record.Event {
-		this.NotEqual(cores.EventInstance, record.Event[itor].Kind) // 設置非 morph: 無實例事件
-
-		if record.Event[itor].Kind == cores.EventContainer {
-			container++
-		} // if
-
-		if record.Event[itor].Kind == cores.EventScope && record.Event[itor].Scope == cores.ScopePrefix {
-			prefix = append(prefix, record.Event[itor])
-		} // if
-	} // for
-
-	this.Equal(len(opening), container) // 容器事件僅開局七筆
-
-	this.Require().Len(prefix, 1) // 關卡 601 前置技能 301
-	this.Equal(int32(301), prefix[0].SkillID)
+	flat := record.Flat()
+	this.Require().GreaterOrEqual(len(flat), len(expect))
+	this.Equal(expect, flat[:len(expect)])
 }
 
 // TestBuildStage 驗證開局建置: 五容器順序語意(第 1 個 = 頂端 / 隊首)、設置不觸發時機、壞引用逐筆跳過、查無關卡空盤面。

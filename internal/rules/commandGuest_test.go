@@ -59,20 +59,21 @@ func (this *SuiteCommandGuest) TestSkillImmune() {
 	this.Equal(int32(0), guest.GetSkillImmune().Get(9))
 }
 
-// TestImmuneEmit 驗證免疫命令的屬性事件(群組維度事件; M22 拍板): Operand 載群組編號、前後值載該群組計數、夾 0 不動以 Before == After 表達。
+// TestImmuneEmit 驗證免疫命令的屬性行(群組維度; M22 拍板): 行文轉查詢函式形 名稱(群組)、運算值固定 1、
+// 結果載該群組計數、夾 0 不動結果值不變。
 func (this *SuiteCommandGuest) TestImmuneEmit() {
 	game, record := newGameRecord()
-	guest := cores.NewGuest(game, 501)
+	guest := cores.NewGuest(game, 501) // 實例編號 1(新局首發)
 	game.Seat.Place(1, guest)
 	id := []cores.InstanceID{guest.GetInstanceID()}
 
 	commandEffectImmuneAdd(game, id, nums(5))
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: guest.GetInstanceID(), Attr: "effectImmune", Op: cores.AssignAdd, Operand: 5, Before: 0, After: 1}, record.Event[0])
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 501@#1 效果免疫群組(5) += 1 >> 1"}, record.Line[0])
 
-	commandSkillImmuneDel(game, id, nums(9)) // 夾 0 不動 → Before == After、Op 為 Sub
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: guest.GetInstanceID(), Attr: "skillImmune", Op: cores.AssignSub, Operand: 9, Before: 0, After: 0}, record.Event[1])
+	commandSkillImmuneDel(game, id, nums(9)) // 夾 0 不動 → 照發、結果值不變
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"$ 501@#1 技能免疫群組(9) -= 1 >> 0"}, record.Line[1])
 }
 
 func (this *SuiteCommandGuest) TestTaskAdd() {

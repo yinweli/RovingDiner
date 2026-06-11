@@ -39,32 +39,32 @@ func (this *SuiteEffectStart) TestRunEffectList() {
 	this.Require().Len(game.Effect, 2) // 903 觸發 + 904 常駐 入列; 立即不入列
 }
 
-// TestDispatchEffectEmit 驗證派發的效果階段事件: 立即 / 條件不成立(效果實例編號零值)、觸發入列僅加入、常駐加入 + 啟動。
+// TestDispatchEffectEmit 驗證派發的效果頭: 立即 / 條件不成立(效果實例編號零值、識別碼省實例段)、
+// 觸發入列僅 加入、常駐 加入 + 啟動。
 func (this *SuiteEffectStart) TestDispatchEffectEmit() {
 	data := tester.BuildData()
 	game, record := newGameDataRecord(data)
 
 	dispatchEffect(game, cores.EffectData{Kind: cores.EffectImmed}, 901, cores.Ref{}, 0) // 條件空 → 成立 → 立即
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventEffect, EffectID: 901, Stage: cores.EffectStageImmed}, record.Event[0])
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"- 901@?", "  空", "  立即"}, record.Line[0])
 
 	dispatchEffect(game, cores.EffectData{Kind: cores.EffectImmed, Cond: this.expr("0")}, 901, cores.Ref{}, 0) // 條件不成立
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EffectStageCondFail, record.Event[1].Stage)
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"- 901@?", "  空", "  條件不成立"}, record.Line[1])
 
-	record.Event = nil
+	record.Line = nil
 	data.SetEffect(902, cores.EffectData{Kind: cores.EffectTrigger, Stack: 1})
-	dispatchEffect(game, cores.EffectData{Kind: cores.EffectTrigger, Stack: 1}, 902, cores.Ref{}, 0) // 觸發入列 → 僅 加入
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EffectStageJoin, record.Event[0].Stage)
-	this.Equal(game.Effect[0].GetInstanceID(), record.Event[0].EffectInstanceID)
+	dispatchEffect(game, cores.EffectData{Kind: cores.EffectTrigger, Stack: 1}, 902, cores.Ref{}, 0) // 觸發入列 → 僅 加入(實例編號 1)
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"- 902@?#1", "  空", "  加入"}, record.Line[0])
 
-	record.Event = nil
+	record.Line = nil
 	data.SetEffect(903, cores.EffectData{Kind: cores.EffectPersist, Stack: 2})
-	dispatchEffect(game, cores.EffectData{Kind: cores.EffectPersist, Stack: 2}, 903, cores.Ref{}, 0) // 常駐 → 加入 + 啟動
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EffectStageJoin, record.Event[0].Stage)
-	this.Equal(cores.EffectStageStart, record.Event[1].Stage)
+	dispatchEffect(game, cores.EffectData{Kind: cores.EffectPersist, Stack: 2}, 903, cores.Ref{}, 0) // 常駐 → 加入 + 啟動(實例編號 2)
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"- 903@?#2", "  空", "  加入"}, record.Line[0])
+	this.Equal([]string{"- 903@?#2", "  空", "  啟動"}, record.Line[1])
 }
 
 func (this *SuiteEffectStart) TestSelectTargets() {
@@ -128,33 +128,29 @@ func (this *SuiteEffectStart) TestSelectTargetsSame() {
 	this.Equal([]cores.Ref{cores.NewRefCard(c1)}, selectTargets(game, cores.EffectData{TargetKind: cores.TargetCardSame, TargetCount: 1}, 0, 0, &inherit))
 }
 
-// TestSelectTargetsEmit 驗證目標選取的玩家輸入紀錄: 真選取(交 Operator)發 EventSelect(目標類型鍵 + 效果編號 + 選中清單);
-// 退化全取與系統隨機由 seed 涵蓋, 不記(M18 拍板)。
+// TestSelectTargetsEmit 驗證目標選取的玩家輸入紀錄行: 真選取(交 Operator)發 $ 選取 行
+// (效果目標選取顯效果識別碼 + 選中識別碼); 退化全取與系統隨機由 seed 涵蓋, 不記(M18 拍板)。
 func (this *SuiteEffectStart) TestSelectTargetsEmit() {
 	game, record := newGameRecord()
-	g1 := cores.NewGuest(game, 501)
+	g1 := cores.NewGuest(game, 501) // 實例編號 1
 	g2 := cores.NewGuest(game, 501)
 	game.Seat.Place(1, g1)
 	game.Seat.Place(2, g2)
 	inherit := []cores.Ref{}
 
 	selectTargets(game, cores.EffectData{TargetKind: cores.TargetGuestPick, TargetCount: 1}, 401, 0, &inherit) // 候選 2 > 1 → 真選取
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventSelect, record.Event[0].Kind)
-	this.Equal("guestPick", record.Event[0].Source)
-	this.Equal(int32(401), record.Event[0].EffectID)
-	this.Equal([]cores.PickData{{DataID: 501, InstanceID: g1.GetInstanceID()}}, record.Event[0].Pick)
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 選取 401@ -> 501@#1"}, record.Line[0])
 
-	record.Event = nil
+	record.Line = nil
 	selectTargets(game, cores.EffectData{TargetKind: cores.TargetGuestPick, TargetCount: 5}, 401, 0, &inherit) // 退化全取 → 不記
 	selectTargets(game, cores.EffectData{TargetKind: cores.TargetGuestRand, TargetCount: 1}, 401, 0, &inherit) // 系統隨機 → 不記
-	this.Empty(record.Event)
+	this.Empty(record.Line)
 
-	game.Hand = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 103)}
+	game.Hand = cores.CardList{cores.NewCard(game, 101), cores.NewCard(game, 103)}                            // 卡實例編號 3、4
 	selectTargets(game, cores.EffectData{TargetKind: cores.TargetCardPick, TargetCount: 1}, 402, 0, &inherit) // 手牌真選取
-	this.Require().Len(record.Event, 1)
-	this.Equal("cardPick", record.Event[0].Source)
-	this.Equal([]cores.PickData{{DataID: 101, InstanceID: game.Hand[0].GetInstanceID()}}, record.Event[0].Pick)
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 選取 402@ -> 101@#3"}, record.Line[0])
 }
 
 // === 測試輔助(置尾) ===

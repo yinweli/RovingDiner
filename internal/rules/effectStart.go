@@ -33,10 +33,10 @@ func dispatchEffect(game *cores.Game, meta cores.EffectData, effectID int32, sel
 	switch meta.Kind {
 	case cores.EffectImmed:
 		if condPass(game, meta.Cond) {
-			emitEffect(game, effectID, cores.NoneID, self, cores.EffectStageImmed)
+			cores.EmitEffect(game, effectID, cores.NoneID, self, cores.EffectStageImmed)
 			runEffectExec(game, meta.Immed, 1) // 立即: 條件成立執行立即命令一次, 不入佇列
 		} else {
-			emitEffect(game, effectID, cores.NoneID, self, cores.EffectStageCondFail)
+			cores.EmitEffect(game, effectID, cores.NoneID, self, cores.EffectStageCondFail)
 		} // if
 
 	case cores.EffectTrigger:
@@ -46,7 +46,7 @@ func dispatchEffect(game *cores.Game, meta cores.EffectData, effectID int32, sel
 		effect, added := effectStack(game, self, effectID, override)
 
 		if added > 0 { // 常駐: 啟動命令每增加一層執行一次(免疫 / 堆疊滿 → 不啟動不發事件)
-			emitEffect(game, effectID, effect.GetInstanceID(), self, cores.EffectStageStart)
+			cores.EmitEffect(game, effectID, effect.GetInstanceID(), self, cores.EffectStageStart)
 			runEffectExec(game, meta.Start, added)
 		} // if
 	} // switch
@@ -108,7 +108,7 @@ func pickGuestSelf(game *cores.Game, effectID, skillGroup, count int32, random b
 	chosen, picked := selectN(game, guestCandidate(game, skillGroup), count, random, game.GetOperator().PickGuest)
 
 	if picked {
-		emitSelect(game, "guestPick", effectID, guestPickData(chosen))
+		emitSelect(game, "guestPick", effectID, guestIdentList(game, chosen))
 	} // if
 
 	return guestSelf(chosen)
@@ -120,7 +120,7 @@ func pickCardSelf(game *cores.Game, effectID, count int32, random bool) []cores.
 	chosen, picked := selectN(game, cardCandidate(game), count, random, game.GetOperator().PickCard)
 
 	if picked {
-		emitSelect(game, "cardPick", effectID, cardPickData(chosen))
+		emitSelect(game, "cardPick", effectID, cardIdentList(game, chosen))
 	} // if
 
 	return cardSelf(chosen)

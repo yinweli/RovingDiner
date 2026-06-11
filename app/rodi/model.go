@@ -23,7 +23,7 @@ const (
 // seed 由呼叫端先行定案(cmd 對 0 取時間亂數), 並由 cmd 在進 alt-screen 前把 seed / 關卡印進
 // scrollback(退出後仍可見, 供重現與對帳; M22 拍板)。
 func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
-	_, err := tea.NewProgram(newModel(newStepper(seed, stageID, sheet), sheet), tea.WithAltScreen()).Run()
+	_, err := tea.NewProgram(newModel(newStepper(seed, stageID, sheet)), tea.WithAltScreen()).Run()
 
 	if err != nil {
 		return fmt.Errorf("rodi: %w", err)
@@ -34,10 +34,10 @@ func Run(seed int64, stageID int32, sheet *sheeter.Sheeter) error {
 
 // model Bubble Tea 殼(M22 alt-screen 換裝, M19 dump 退役): 全畫面 layout——左欄六區堆疊 + 狀態列釘底、
 // 右欄事件日誌與左欄同高、鍵位列橫跨底部全寬; 父層只組合與分配空間(M20 拍板)。
-// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(轉寫日誌; 盤面組件直讀引擎、不持拷貝)、
-// 再排下一拍; 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄與日誌標題前綴)。
+// 消費採自我訊息鏈: stepMsg 抵達 → Update 同步 Next 推一拍(行組入日誌; 盤面組件直讀引擎、不持拷貝)、
+// 再排下一拍; 終局即停止推進、等 q 離開(成敗常駐顯示活在狀態列階段欄)。
 // Next 只在 Update 內呼叫(stepper 直讀安全窗的前提), 推進節奏全活在 Update 迴圈,
-// 即 M26 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
+// 即 M27 速率的掛點(【營業顯示規格書 | 3、事件流的消費：速率與步進】)。
 type model struct {
 	stepper *stepper    // 暫停機橋接器(盤面唯一真相 = stepper.game, 組件直讀、不持拷貝)
 	log     *panelLog   // 事件日誌組件(右欄; 行歷史自持、簽章自立, 不入 comp; M22 拍板)
@@ -48,10 +48,10 @@ type model struct {
 	height  int         // 高度預算(WindowSizeMsg 前用最低高)
 }
 
-func newModel(stepper *stepper, sheet *sheeter.Sheeter) model {
+func newModel(stepper *stepper) model {
 	return model{
 		stepper: stepper,
-		log:     newPanelLog(sheet),
+		log:     newPanelLog(),
 		keybar:  newBarKey(),
 		status:  barStatus{},
 		comp:    []component{panelSeat{}, panelPool{}, panelAction{}, panelEffect{}, panelHand{}, panelPile{}},
@@ -65,19 +65,19 @@ func (this model) Init() tea.Cmd {
 	return step()
 }
 
-// Update 訊息分派: 推進拍 → 同步 Next 收一筆事件轉寫日誌(盤面不摺疊, 組件直讀引擎)、再排下一拍,
-// 終局停止推進(成敗已由終局 phase 事件入日誌, 不另動作); 視窗尺寸 → 更新寬高預算;
+// Update 訊息分派: 推進拍 → 同步 Next 收一拍行組入日誌(盤面不摺疊, 組件直讀引擎)、再排下一拍,
+// 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作); 視窗尺寸 → 更新寬高預算;
 // 按鍵 → 查鍵綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case stepMsg:
-		eventData, more := this.stepper.Next()
+		line, more := this.stepper.Next()
 
 		if more == false {
 			return this, nil
 		} // if
 
-		this.log.Append(eventData)
+		this.log.Append(line...)
 		return this, step()
 
 	case tea.WindowSizeMsg:
@@ -118,7 +118,7 @@ func (this model) leftView(width, height int) string {
 	return stack + strings.Repeat("\n", gap+1) + status
 }
 
-// stepMsg 推進一拍(Bubble Tea 訊息殼; 不載資料——事件由 Update 內同步 Next 取得)。
+// stepMsg 推進一拍(Bubble Tea 訊息殼; 不載資料——行組由 Update 內同步 Next 取得)。
 type stepMsg struct{}
 
 // step 排下一拍的 Cmd: 只回推進訊息、不碰引擎(Next 必須留在 Update 內, Cmd 跑在別條 goroutine)。

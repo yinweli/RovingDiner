@@ -149,32 +149,32 @@ func (this *SuitePhasePlayerAction) TestPlayCard() {
 	this.True(game.Drop.Has(bind.GetInstanceID()))
 }
 
-// TestPlayCardEmit 驗證玩家出牌的事件接線: 範圍標題(操作元 = 卡牌 + 技能)先行、出牌耗能屬性事件接續(流程寫入白名單)。
+// TestPlayCardEmit 驗證玩家出牌的發射接線: 範圍標題(操作元 = 卡牌 + 技能)先行、出牌耗能屬性行接續(流程寫入白名單)。
 func (this *SuitePhasePlayerAction) TestPlayCardEmit() {
 	game, record := newGameRecord()
-	card := cores.NewCard(game, 103) // 費用 2、技能 301
+	card := cores.NewCard(game, 103) // 費用 2、技能 301; 實例編號 1
 	card.GetSeal().Unlock()
 	game.Hand = cores.CardList{card}
 	game.GetEnergy().Set(5)
 
 	playCard(game, card)
-	this.Require().True(len(record.Event) >= 2)
-	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopePlay, DataID: 103, InstanceID: card.GetInstanceID(), SkillID: 301}, record.Event[0])
-	this.Equal(cores.EventData{Kind: cores.EventProperty, Attr: "energy", Op: cores.AssignSub, Operand: 2, Before: 5, After: 3}, record.Event[1])
+	this.Require().True(len(record.Line) >= 2)
+	this.Equal([]string{"[R0 -] 玩家出牌", "* 103@#1", "* 301@"}, record.Line[0])
+	this.Equal([]string{"$ 出牌點數 -= 2 >> 3"}, record.Line[1])
 
-	record.Event = nil
-	sealed := cores.NewCard(game, 103) // 封印閘門擋下 → 不執行出牌、無事件
+	record.Line = nil
+	sealed := cores.NewCard(game, 103) // 封印閘門擋下 → 不執行出牌、無行
 	game.Hand.Push(sealed)
 	playCard(game, sealed)
-	this.Empty(record.Event)
+	this.Empty(record.Line)
 }
 
-// TestPlayerEndEmit 驗證玩家結束的事件接線: 手動結束範圍標題先行(流程, 無操作元; 階段跳轉路徑亦發)。
+// TestPlayerEndEmit 驗證玩家結束的發射接線: 手動結束範圍標題先行(流程, 無操作元; 階段跳轉路徑亦發)。
 func (this *SuitePhasePlayerAction) TestPlayerEndEmit() {
 	game, record := newGameRecord()
 	playerEnd(game)
-	this.Require().NotEmpty(record.Event)
-	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeManual}, record.Event[0])
+	this.Require().NotEmpty(record.Line)
+	this.Equal([]string{"[R0 -] 手動結束"}, record.Line[0])
 }
 
 // TestExtraCount 驗證額外發動次數: Intn 取下限 / 帶位移、下限 > 上限與上限 < 0 為 0、負結果視為 0。

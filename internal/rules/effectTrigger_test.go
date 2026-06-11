@@ -50,36 +50,36 @@ func (this *SuiteEffectTrigger) TestFireTrigger() {
 	this.Len(game.Effect, 6)             // 觸發後行為預設保留 → 佇列不變
 }
 
-// TestFireTriggerEmit 驗證觸發時機的事件接線: 空名單不發題、非空發範圍標題 + 各效果階段事件(觸發 / 條件不成立 / 結束)。
+// TestFireTriggerEmit 驗證觸發時機的發射接線: 空名單不發題、非空發範圍標題 + 各效果頭(觸發 / 條件不成立 / 結束)。
 func (this *SuiteEffectTrigger) TestFireTriggerEmit() {
 	data := tester.BuildData()
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundStart})
 	game, record := newGameDataRecord(data)
 
 	fireTrigger(game, cores.TriggerRoundStart) // 佇列空 → 名單空 → 不發題
-	this.Empty(record.Event)
+	this.Empty(record.Line)
 
-	effect := cores.NewEffect(game, 901, cores.Ref{}, 1)
+	effect := cores.NewEffect(game, 901, cores.Ref{}, 1) // 效果實例編號 1
 	game.Effect.Push(effect)
 	fireTrigger(game, cores.TriggerRoundStart) // 名單非空 → 範圍標題 + 觸發階段
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeTrigger, Trigger: cores.TriggerRoundStart}, record.Event[0])
-	this.Equal(cores.EventData{Kind: cores.EventEffect, EffectID: 901, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageTrigger}, record.Event[1])
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"[R0 -] 時機:回合開始"}, record.Line[0])
+	this.Equal([]string{"- 901@?#1", "  空", "  觸發"}, record.Line[1])
 
-	record.Event = nil
+	record.Line = nil
 	cond, err := exprs.Parse("0") // 恆不成立
 	this.Require().Nil(err)
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundStart, Cond: cond})
-	fireTrigger(game, cores.TriggerRoundStart) // 條件不成立 → 仍發題, 效果行為條件不成立階段
-	this.Require().Len(record.Event, 2)
-	this.Equal(cores.EffectStageCondFail, record.Event[1].Stage)
+	fireTrigger(game, cores.TriggerRoundStart) // 條件不成立 → 仍發題, 效果頭為條件不成立階段
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"- 901@?#1", "  空", "  條件不成立"}, record.Line[1])
 
-	record.Event = nil
+	record.Line = nil
 	data.SetEffect(901, cores.EffectData{Kind: cores.EffectTrigger, TriggerKind: cores.TriggerRoundStart, TriggerAfter: cores.TriggerAfterRemove})
 	fireTrigger(game, cores.TriggerRoundStart) // 觸發後移除 → 觸發 + 結束兩階段、出佇列
-	this.Require().Len(record.Event, 3)
-	this.Equal(cores.EffectStageTrigger, record.Event[1].Stage)
-	this.Equal(cores.EffectStageEnd, record.Event[2].Stage)
+	this.Require().Len(record.Line, 3)
+	this.Equal([]string{"- 901@?#1", "  空", "  觸發"}, record.Line[1])
+	this.Equal([]string{"- 901@?#1", "  空", "  結束"}, record.Line[2])
 	this.Empty(game.Effect)
 }
 

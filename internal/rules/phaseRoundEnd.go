@@ -19,9 +19,8 @@ func phaseRoundEnd(game *cores.Game) cores.PhaseKind {
 	} // for
 
 	if game.GetEnergyKeep().IsLock() == false {
-		before := float64(game.GetEnergy().GetValue())
 		game.GetEnergy().Set(0) // 出牌點數歸零(出牌點數保留鎖定 → 保留)
-		emitProperty(game, 0, cores.NoneID, "energy", cores.AssignSet, 0, before, float64(game.GetEnergy().GetValue()))
+		cores.EmitProperty(game, 0, cores.NoneID, "energy", cores.AssignSet, 0, float64(game.GetEnergy().GetValue()))
 	} // if
 
 	advanceEffect(game)
@@ -29,9 +28,8 @@ func phaseRoundEnd(game *cores.Game) cores.PhaseKind {
 	return cores.PhaseRoundStart
 }
 
-// calmDrop 回合結束的單位顧客耐心 -1(鎖定 → 不扣, 以 Before == After 表達); 流程寫入白名單, 逐位發屬性事件。
+// calmDrop 回合結束的單位顧客耐心 -1(鎖定 → 不扣, 行結果值不變); 流程寫入白名單, 逐位發屬性行。
 func calmDrop(game *cores.Game, guest *cores.Guest) {
-	before := float64(guest.GetCalm().GetValue())
 	guest.GetCalm().Sub(1)
-	emitProperty(game, guest.GetGuestID(), guest.GetInstanceID(), "calm", cores.AssignSub, 1, before, float64(guest.GetCalm().GetValue()))
+	cores.EmitProperty(game, guest.GetGuestID(), guest.GetInstanceID(), "calm", cores.AssignSub, 1, float64(guest.GetCalm().GetValue()))
 }

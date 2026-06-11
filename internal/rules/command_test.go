@@ -54,12 +54,12 @@ func (this *SuiteCommand) TestExecOperateDeckShuffle() {
 
 	game.ExecOperate("deckShuffle", "none", nil, nil)
 	this.Len(game.Deck, 3) // 委派 Rander 洗牌(恆等替身: 張數保留)
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventContainer, From: cores.ContainerDeck, To: cores.ContainerDeck, Pick: cardPickData(game.Deck)}, record.Event[0]) // 重整快照(M21 拍板)
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 抽牌堆 洗牌"}, record.Line[0]) // 重整行(全序不印, 順序直讀盤面; M22 拍板)
 
 	game.Deck = cores.CardList{cores.NewCard(game, 101)}
 	game.ExecOperate("deckShuffle", "none", nil, nil) // <= 1 張 → 無事不發
-	this.Len(record.Event, 1)
+	this.Len(record.Line, 1)
 }
 
 func (this *SuiteCommand) TestExecOperateNoop() {

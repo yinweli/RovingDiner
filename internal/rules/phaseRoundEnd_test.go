@@ -56,19 +56,18 @@ func (this *SuitePhaseRoundEnd) TestPhaseRoundEnd() {
 	this.Equal(int32(4), game.GetEnergy().GetValue())
 }
 
-// TestCalmDrop 驗證回合結束的耐心 -1 屬性事件(流程寫入白名單): 帶對象編號與前後值; 鎖定不扣以 Before == After 表達。
+// TestCalmDrop 驗證回合結束的耐心 -1 屬性行(流程寫入白名單): 帶對象識別碼; 鎖定不扣結果值不變。
 func (this *SuitePhaseRoundEnd) TestCalmDrop() {
 	game, record := newGameRecord()
-	guest := cores.NewGuest(game, 501) // Calm 3
+	guest := cores.NewGuest(game, 501) // Calm 3; 實例編號 1
 
 	calmDrop(game, guest)
 	this.Equal(int32(2), guest.GetCalm().GetValue())
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 501, InstanceID: guest.GetInstanceID(), Attr: "calm", Op: cores.AssignSub, Operand: 1, Before: 3, After: 2}, record.Event[0])
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 501@#1 耐心值 -= 1 >> 2"}, record.Line[0])
 
 	guest.GetCalm().Lock()
-	calmDrop(game, guest) // 鎖定不扣 → Before == After
-	this.Require().Len(record.Event, 2)
-	this.Equal(float64(2), record.Event[1].Before)
-	this.Equal(float64(2), record.Event[1].After)
+	calmDrop(game, guest) // 鎖定不扣 → 照發、結果值不變
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"$ 501@#1 耐心值 -= 1 >> 2"}, record.Line[1])
 }

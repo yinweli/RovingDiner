@@ -25,7 +25,7 @@ func Settle(game *cores.Game) {
 	} // if
 
 	game.Settling = true
-	game.Emit(cores.EventData{Kind: cores.EventScope, Scope: cores.ScopeSettle}) // 範圍標題: 執行結算(有事才發; M18 拍板)
+	cores.EmitTitle(game, "執行結算") // 範圍標題: 執行結算(有事才發; M18 拍板)
 	judgeEnd(game)
 	hitSate(game)
 	exitSate(game)
@@ -97,7 +97,7 @@ func hitSate(game *cores.Game) {
 				itor.GetSateHit().Add(threshold.Value)
 				action := cores.NewAction(itor, cores.TaskSate, threshold.SkillID)
 				game.Action.Push(action)
-				emitAction(game, action, true) // 入列事件(M21 拍板)
+				emitAction(game, action) // 入列事件(M21 拍板)
 			} // if
 		} // for
 	} // for
@@ -131,7 +131,7 @@ func hitCalm(game *cores.Game) {
 				itor.GetCalmHit().Add(threshold.Value)
 				action := cores.NewAction(itor, cores.TaskCalm, threshold.SkillID)
 				game.Action.Push(action)
-				emitAction(game, action, true) // 入列事件(M21 拍板)
+				emitAction(game, action) // 入列事件(M21 拍板)
 			} // if
 		} // for
 	} // for
@@ -217,12 +217,12 @@ func discardOver(game *cores.Game) {
 		over := len(game.Hand) - int(game.GetHandMax().GetValue())
 		before := len(game.Hand)
 		chosen := game.GetOperator().PickDiscard(append(cores.CardList{}, game.Hand...), over)
-		emitSelect(game, "discardOver", 0, cardPickData(chosen))
+		emitSelect(game, "discardOver", 0, cardIdentList(game, chosen))
 
 		for _, itor := range chosen {
 			if _, where, ok := game.LocateCard(itor.GetInstanceID()); ok && where == cores.ContainerHand {
 				removeCard(game, cores.ContainerHand, itor)
-				placeCard(game, cores.ContainerHand, cores.ContainerDrop, itor)
+				placeCard(game, cores.ContainerDrop, itor)
 			} // if
 		} // for
 

@@ -28,7 +28,7 @@ func (this *SuiteData) TestNewData() {
 	this.NotEmpty(data.effect) // 預編譯效果索引已建
 
 	empty := NewData(nil, nil)
-	this.Nil(empty.GetSheet())
+	this.Equal(&sheeter.Sheeter{}, empty.GetSheet()) // sheet nil 正規化為空表(查詢與識別碼查名不爆)
 	this.Empty(empty.award)
 	this.Empty(empty.effect)
 }

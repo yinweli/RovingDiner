@@ -57,23 +57,22 @@ func (this *SuiteCommandCard) TestCardCostNoop() {
 	this.Equal(int32(3), card.GetCost().GetValue())
 }
 
-// TestCardCostEmit 驗證費用命令的屬性事件(數值型操作命令事件; M21 拍板): 逐卡包前後值、鎖定拒寫以 Before == After 表達。
+// TestCardCostEmit 驗證費用命令的屬性行(數值型操作命令; M21 拍板): 逐卡一行、鎖定拒寫結果值不變。
 func (this *SuiteCommandCard) TestCardCostEmit() {
 	game, record := newGameRecord()
-	card := cores.NewCard(game, 101)
+	card := cores.NewCard(game, 101) // 實例編號 1
 	card.GetCost().Set(3)
 	game.Hand = cores.CardList{card}
 	id := []cores.InstanceID{card.GetInstanceID()}
 
 	commandCardCostAdd(game, id, nums(2))
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventProperty, DataID: 101, InstanceID: card.GetInstanceID(), Attr: "cost", Op: cores.AssignAdd, Operand: 2, Before: 3, After: 5}, record.Event[0])
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 101@#1 出牌費用 += 2 >> 5"}, record.Line[0])
 
 	card.GetCost().Lock()
-	commandCardCostAdd(game, id, nums(2)) // 鎖定拒寫 → Before == After
-	this.Require().Len(record.Event, 2)
-	this.Equal(float64(5), record.Event[1].Before)
-	this.Equal(float64(5), record.Event[1].After)
+	commandCardCostAdd(game, id, nums(2)) // 鎖定拒寫 → 照發、結果值不變
+	this.Require().Len(record.Line, 2)
+	this.Equal([]string{"$ 101@#1 出牌費用 += 2 >> 5"}, record.Line[1])
 }
 
 func (this *SuiteCommandCard) TestCardEffect() {

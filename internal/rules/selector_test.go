@@ -124,14 +124,12 @@ func (this *SuiteSelector) TestSelectGuestPickEmit() {
 	g1, _, _ := seatGuest(game)
 
 	this.must(game, "guestPick", nums(1)) // 候選 3 > 1 → 真選取
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventSelect, record.Event[0].Kind)
-	this.Equal("guestPick", record.Event[0].Source)
-	this.Equal([]cores.PickData{{DataID: g1.GetGuestID(), InstanceID: g1.GetInstanceID()}}, record.Event[0].Pick)
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"$ 選取 顧客指定 -> " + cores.IdentGuest(game.GetSheet(), g1.GetGuestID(), g1.GetInstanceID())}, record.Line[0])
 
-	record.Event = nil
+	record.Line = nil
 	this.must(game, "guestPick", nums(5)) // 退化全取 → 不記
-	this.Empty(record.Event)
+	this.Empty(record.Line)
 }
 
 func (this *SuiteSelector) TestSelectGuestRand() {
@@ -292,22 +290,22 @@ func (this *SuiteSelector) TestSelectDeckTop() {
 	this.Empty(this.must(deckGe, "deckTop", nil))
 }
 
-// TestSelectDeckTopEmit 驗證 deckTop auto-shuffle 的洗回事件(M21 拍板): 逐卡 Drop → Deck(發射序 = 洗後序)
-// + 一筆重整快照(From == To == Deck、Pick 載全序); 牌堆足夠不洗回 → 不發。
+// TestSelectDeckTopEmit 驗證 deckTop auto-shuffle 的洗回行(M21 拍板): 逐卡搬移行(發射序 = 洗後序)
+// + 一筆洗牌行(全序不印, 順序直讀盤面); 牌堆足夠不洗回 → 不發。
 func (this *SuiteSelector) TestSelectDeckTopEmit() {
 	game, record := newGameRecord()
-	game.Deck = cores.CardList{cores.NewCard(game, 101)}
+	game.Deck = cores.CardList{cores.NewCard(game, 101)} // 實例編號 1; 棄牌堆兩卡 2、3
 	game.Drop = cores.CardList{cores.NewCard(game, 102), cores.NewCard(game, 103)}
 
 	selectDeckTop(game, nums(3)) // 不足 3 → 洗回
 	this.Empty(game.Drop)
-	this.Require().Len(record.Event, 3) // 2 移動 + 1 快照
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: game.Deck[1].GetCardID(), InstanceID: game.Deck[1].GetInstanceID(), From: cores.ContainerDrop, To: cores.ContainerDeck}, record.Event[0])
-	this.Equal(cores.EventData{Kind: cores.EventContainer, DataID: game.Deck[2].GetCardID(), InstanceID: game.Deck[2].GetInstanceID(), From: cores.ContainerDrop, To: cores.ContainerDeck}, record.Event[1])
-	this.Equal(cores.EventData{Kind: cores.EventContainer, From: cores.ContainerDeck, To: cores.ContainerDeck, Pick: cardPickData(game.Deck)}, record.Event[2])
+	this.Require().Len(record.Line, 3) // 2 搬移 + 1 洗牌
+	this.Equal([]string{"$ 102@#2 >> 抽牌堆"}, record.Line[0])
+	this.Equal([]string{"$ 103@#3 >> 抽牌堆"}, record.Line[1])
+	this.Equal([]string{"$ 抽牌堆 洗牌"}, record.Line[2])
 
 	selectDeckTop(game, nums(1)) // 牌堆足夠 → 未洗回不發
-	this.Len(record.Event, 3)
+	this.Len(record.Line, 3)
 }
 
 func (this *SuiteSelector) TestSelectDropTop() {

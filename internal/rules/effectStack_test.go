@@ -49,8 +49,8 @@ func (this *SuiteEffectStack) TestEffectStack() {
 	this.Equal(int32(0), game.Effect[1].GetExpire()) // RunRound 0 → 整場
 }
 
-// TestEffectStackEmit 驗證堆疊處理的效果事件: 新建入列 / 既有實際增層 / 刷新改變結束回合發 加入(載層數 / 結束回合快照);
-// 堆疊滿且結束回合不變 → 不發。
+// TestEffectStackEmit 驗證堆疊處理的效果頭: 新建入列 / 既有實際增層 / 刷新改變結束回合發 加入 三行;
+// 堆疊滿且結束回合不變 → 不發(層數與結束回合不入行, 直讀佇列項驗證)。
 func (this *SuiteEffectStack) TestEffectStackEmit() {
 	data := tester.BuildData()
 	data.SetEffect(801, cores.EffectData{Stack: 2, StackMax: 3})
@@ -58,25 +58,27 @@ func (this *SuiteEffectStack) TestEffectStackEmit() {
 	game, record := newGameDataRecord(data)
 	guest := &cores.Guest{}
 
-	effect, _ := effectStack(game, cores.NewRefGuest(guest), 801, 0) // 新建入列 → 加入(快照: 層數 2、整場保留)
-	this.Require().Len(record.Event, 1)
-	this.Equal(cores.EventData{Kind: cores.EventEffect, EffectID: 801, EffectInstanceID: effect.GetInstanceID(), Stage: cores.EffectStageJoin, Stack: 2, Alive: true}, record.Event[0])
+	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 新建入列(效果實例編號 1) → 加入; 空物件 self 顯 空
+	this.Require().Len(record.Line, 1)
+	this.Equal([]string{"- 801@?#1", "  空", "  加入"}, record.Line[0])
 
-	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 疊層(實際 +1) → 加入(快照: 層數 3)
-	this.Require().Len(record.Event, 2)
-	this.Equal(int32(3), record.Event[1].Stack)
+	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 疊層(實際 +1) → 照發
+	this.Require().Len(record.Line, 2)
+	this.Equal(record.Line[0], record.Line[1])
 
 	effectStack(game, cores.NewRefGuest(guest), 801, 0) // 堆疊滿(增層 0)且結束回合不變 → 不發
-	this.Len(record.Event, 2)
+	this.Len(record.Line, 2)
 
 	effectStack(game, cores.NewRefGuest(guest), 803, 0) // 新建入列(滿層 3、結束回合 = 0 + 2 - 1)
-	this.Require().Len(record.Event, 3)
-	this.Equal(int32(1), record.Event[2].Expire)
+	this.Require().Len(record.Line, 3)
+	this.Equal([]string{"- 803@?#2", "  空", "  加入"}, record.Line[2])
+	this.Equal(int32(1), game.Effect.Find(cores.NewRefGuest(guest), 803).GetExpire())
 
 	game.GetRound().Set(5)
-	effectStack(game, cores.NewRefGuest(guest), 803, 0) // 堆疊滿但刷新改變結束回合 → 照發(快照載刷後值)
-	this.Require().Len(record.Event, 4)
-	this.Equal(cores.EventData{Kind: cores.EventEffect, Round: 5, EffectID: 803, EffectInstanceID: record.Event[2].EffectInstanceID, Stage: cores.EffectStageJoin, Stack: 3, Expire: 6, Alive: true}, record.Event[3]) // Round 為 Emit 座標蓋章
+	effectStack(game, cores.NewRefGuest(guest), 803, 0) // 堆疊滿但刷新改變結束回合 → 照發
+	this.Require().Len(record.Line, 4)
+	this.Equal(record.Line[2], record.Line[3])
+	this.Equal(int32(6), game.Effect.Find(cores.NewRefGuest(guest), 803).GetExpire())
 }
 
 func (this *SuiteEffectStack) TestEffectStackImmune() {

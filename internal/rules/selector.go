@@ -287,7 +287,7 @@ func selectDeckTop(game *cores.Game, arg []exprs.Value) (result []cores.Instance
 		game.Drop = nil
 
 		for _, itor := range back {
-			emitCardMove(game, itor, cores.ContainerDrop, cores.ContainerDeck) // 洗回逐卡事件(成員真相, 發射序 = 洗後序; M21 拍板, 原 M18 洗回靜默作廢)
+			emitCardMove(game, itor, cores.ContainerDeck) // 洗回逐卡事件(成員真相, 發射序 = 洗後序; M21 拍板, 原 M18 洗回靜默作廢)
 		} // for
 
 		emitDeckOrder(game) // 重整快照(順序真相)
@@ -484,7 +484,7 @@ func pickCard(game *cores.Game, card []*cores.Card, n int32, source string) (res
 	} // if
 
 	chosen := game.GetOperator().PickCard(card, int(n))
-	emitSelect(game, source, 0, cardPickData(chosen))
+	emitSelect(game, source, 0, cardIdentList(game, chosen))
 	return cardIDs(chosen)
 }
 
@@ -499,7 +499,7 @@ func pickGuest(game *cores.Game, guest []*cores.Guest, n int32, source string) (
 	} // if
 
 	chosen := game.GetOperator().PickGuest(guest, int(n))
-	emitSelect(game, source, 0, guestPickData(chosen))
+	emitSelect(game, source, 0, guestIdentList(game, chosen))
 	return guestIDs(chosen)
 }
 
@@ -515,7 +515,7 @@ func pickGuestOne(game *cores.Game, guest []*cores.Guest, source string) (result
 	} // if
 
 	chosen := game.GetOperator().PickGuest(guest, 1)
-	emitSelect(game, source, 0, guestPickData(chosen))
+	emitSelect(game, source, 0, guestIdentList(game, chosen))
 
 	if len(chosen) == 0 {
 		return nil
