@@ -497,7 +497,7 @@ RovingDiner/
 │  │   ├─ validate.go       命令 AST 名稱驗證：自由 Validate 逐名查 rules 詞彙表（Has* 四查詢）
 │  │   ├─ execute.go        走法 X 薄派發：AST 型別 switch → Game.ExecAssign／ExecOperate
 │  │   └─ run.go            營業執行對外入口 Run：NewGame + rules.Register + Compiler 閉包（Parse → execute + Settle 結算尾）後
-│  │                        驅動 rules.RunPhase 迴圈至停機、回報成敗;逐單位 Emit 隨 M17–M18
+│  │                        驅動 rules.RunPhase 迴圈至停機、回報成敗;引擎逐單位同步 Emit（M18 已接線,發射點對照見【四之二】）
 │  └─ tester/               跨包共用測試基建：BuildSheet／BuildData 迷你資料、FakeOperator／FakeRander 決定性替身
 │                           （cores 白箱測試不能 import tester——成環，自持私有複本）
 ├─ sheet/ sheetdata/ gamedata/    （已存在，沿用既有 Sheeter pipeline）
@@ -622,7 +622,7 @@ Bubble Tea 的 Elm loop。步進＝`Presenter.Emit` 在 channel 上阻塞，等�
 
 | 類別      | 例                                                               | 前端反應                                     |
 |:----------|:-----------------------------------------------------------------|:---------------------------------------------|
-| instance  | 實例 建立／銷毀（卡牌／顧客／效果）                              | 生成／回收 View                              |
+| instance  | 實例 建立／銷毀；僅載位置不變的身分變更（morph）                 | 生成／回收 View                              |
 | container | 卡牌移動牌堆、顧客入座／離場／遊蕩／卡牌化                       | View 換容器、播移動動畫；日誌容器類命令行    |
 | property  | 屬性變化（詞條鍵＋運算＋右值＋前後值）                           | 更新數字、播受擊／加值表演；日誌屬性類命令行 |
 | scope     | 範圍起點：玩家出牌／顧客行動／前置技能／時機／執行結算／手動結束 | 日誌範圍標題＋操作元                         |
@@ -631,6 +631,18 @@ Bubble Tea 的 Elm loop。步進＝`Presenter.Emit` 在 channel 上阻塞，等�
 | phase     | phase 切換（不另立日誌行，併入下一事件前綴）                     | 更新狀態列                                   |
 
 合約細則（M17 拍板）：單一 struct 以 `Kind` 分派、未用欄位留零值；`Round`／`Phase` 座標欄由發射入口 `Game.Emit` 統一蓋章，發射點不自帶；識別碼只帶編號（資料編號＋實例編號，名稱由前端憑同一份靜態表自查，技能無實例編號）；property 帶前後值（clamp 後實際變化量可算）；presenter nil 由 `NewGame` 正規化為無輸出替身（純輸出 port，no-op 語意無損）。
+
+**發射點對照（M18 接線）**：發射全在語意呼叫點，建構式不發；引擎每跑一個單位同步 `Emit` 一發。
+
+| 類別      | 發射點                                                                                                                                                        | 細則（M18 拍板）                                                                                                                                                              |
+|:----------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| phase     | `RunPhase` 踏站（先 `SetPhase` 再發）                                                                                                                         | PhaseNone／未知階段不踏站不發                                                                                                                                                 |
+| scope     | 玩家出牌（`playCard` 過閘後）／顧客行動（逐筆彈出）／前置技能（逐技能）／時機（`fireTrigger`）／執行結算（`Settle`）／手動結束（`playerEnd`）                 | 標題**有內容才立**：時機題空名單不發（全數條件不成立算內容照發）；結算題有事才發（`settleBusy` 廉價預判：終止會中／門檻待標記／達離場線／手牌超上限，判式與正式迴圈共用述詞） |
+| effect    | 派發（立即／條件不成立）、堆疊處理（加入）、觸發（觸發／條件不成立／移除結束）、退場與退層收口（結束）                                                        | 加入限實際增層（免疫／堆疊滿不發）；觸發次數中止無對應階段、不發                                                                                                              |
+| property  | 命令路徑＝`ExecAssign` 收口（前後值經讀詞條，`@`／`#` 載鎖定計數）；流程白名單＝出牌耗能、點數補滿／歸零、回合結束耐心 -1、給滿意值、扣士氣（呼叫點包前後值） | 進了寫入詞條就發、沒進不發（求值／解析失敗、凍結無事件）；鎖定拒寫以 Before == After 表達；扣士氣只發 morale 行（格擋／護盾消耗鏈不發）；數值型操作命令缺口緩議 M22           |
+| container | 卡牌＝`placeCard` 單點收口（呼叫端供 from，新建直入 None）；顧客＝八搬移點逐點發（To == Seat 帶座位編號，離場 To == None）                                    | 設置（`buildStage`）、抽牌堆洗回、`deckShuffle` 靜默（開局盤面由顯示端直讀）                                                                                                  |
+| instance  | morph：銷毀舊＋建立新兩發（位置不變，無容器事件）                                                                                                             | 唯一真身；一般生滅由 container 的 From／To == None 表達、效果生滅由 effect 的 加入／結束 表達，皆不雙發                                                                       |
+| select    | Operator 真選取五處：效果目標選取（pick 分支）、命令對象 Pick 詞條、手牌上限棄牌                                                                              | 退化全取／系統隨機由 seed 涵蓋不記；Source 為英文鍵（詞條鍵／流程名），效果目標選取掛效果編號；Pick 每發新建切片、發後不改（值複製合約的唯一共享點）                          |
 
 > 選項（暫不採）：核心對容器存取走 `Container[T]` 介面、**預設 in-core 實作**，保留未來讓外部接管儲存的seam。預設關閉，因為事件投影已達成解耦。
 
@@ -698,7 +710,7 @@ Bubble Tea 的 Elm loop。步進＝`Presenter.Emit` 在 channel 上阻塞，等�
 - `BuildData()`：包裝成 `cores.Data`（無命令編譯；自訂編譯效果以 `Data.SetEffect` 注入）。
 - `FakeOperator`／`FakeRander`：決定性替身（Pick 取候選前綴、`Intn` 固定、`Shuffle` 恆等、`Weighted` 取首位）。
 
-L3 基建之事件流錄製已備（`tester.RecordPresenter`，M17）；scripted `Operator` 輸入佇列到站再補；初始盤面組裝已由關卡表格 + `StageID` 取代（M15）。
+L3 基建之事件流錄製已備（`tester.RecordPresenter`，M17）且全引擎發射點已接線並逐類釘住事件形狀（M18）；scripted `Operator` 輸入佇列到站再補；初始盤面組裝已由關卡表格 + `StageID` 取代（M15）。
 L3 若要廣域回歸，可**選擇性**對事件日誌做 golden 字串 snapshot（per-test 選項，非必備基建）。
 單一 seeded `Rander` 確保 L3 決定性、assertion 穩定。
 
