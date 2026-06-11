@@ -6,7 +6,7 @@ import (
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
-// stepper 暫停機橋接器(【營業實作規格書 | 四、解耦的關鍵：邊界介面 | TUI adapter】): 引擎跑在交棒
+// stepper 暫停機橋接器(【營業實作規格書 | 四、解耦的關鍵：邊界介面 | TUI stepper】): 引擎跑在交棒
 // goroutine 上、只在 Next 期間推進——放行一拍(gate), 引擎跑到下一個事件邊界送出事件(event)後再停。
 // Next 返回後引擎必停在事件邊界, TUI 直讀 game 盤面(單一真相), 不持第二份規則狀態;
 // 快/慢/步進(M26)只是呼叫 Next 的節奏、引擎端零改動。
