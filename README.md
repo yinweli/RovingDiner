@@ -50,7 +50,7 @@
 | `cmd/`       | 瘦進入點：`rodi`（營業 TUI）、`roditool`（企劃驗證器）                                                       |
 | `app/`       | 應用本體：`rodi`（TUI 渲染與互動）、`roditool`（檢查引擎）                                                   |
 | `internal/`  | 核心套件：`games → rules → cores → exprs` 一條直線依賴，加 `infra`（基礎設施）與 `tester`（跨包測試基建） |
-| `gamedata/`  | xlsx 來源表格、Sheeter 建置設定與 `build.bat`（生成＋自動表單檢查）                                          |
+| `gamedata/`  | xlsx 來源表格與 Sheeter 建置設定（編譯腳本 `build.bat` 在根目錄，生成＋自動表單檢查）                        |
 | `sheet/`     | Sheeter 生成的 Go 讀取器（自動生成，請勿手動編輯）                                                           |
 | `sheetdata/` | Sheeter 生成的 JSON 資料（自動生成，請勿手動編輯）                                                           |
 | `doc/`       | 設計文件與其建置工具（`build-md/`、`build-html/`）                                                           |
@@ -76,7 +76,7 @@ task install    # 安裝開發工具（golangci-lint、sheeter、roditool、mark
 
 ## 遊戲安裝壓縮包與發版
 
-`task build` 產出 `pack/output/RovingDiner-<版本>.zip`，內含遊戲執行檔 `rodi.exe`、企劃驗證器 `roditool.exe`、表格編譯工具 `sheeter.exe`、`gamedata/`（xlsx＋`build.bat`）、`sheetdata/`、營業規格書（md＋html）、`play.bat` 與 `MANUAL.md`。目標機器**無須安裝 Go 或任何工具**，解壓即用；企劃改完 xlsx 後雙擊 `gamedata/build.bat` 重建資料並自動表單檢查。使用方式詳見 `pack/MANUAL.md`。
+`task build` 產出 `pack/output/RovingDiner-<版本>.zip`，內含遊戲執行檔 `rodi.exe`、企劃驗證器 `roditool.exe`、表格編譯工具 `sheeter.exe`、`build.bat`、`gamedata/`（xlsx）、`sheetdata/`、營業規格書（md＋html）、`play.bat` 與 `MANUAL.md`。目標機器**無須安裝 Go 或任何工具**，解壓即用；企劃改完 xlsx 後雙擊根目錄的 `build.bat` 重建資料並自動表單檢查。使用方式詳見 `pack/MANUAL.md`。
 
 發版：推上 `v*` tag 觸發 release workflow——先跑與 ci 相同的三檢，再以 `task build` 打包，release 說明自 git log 依 commit 類型（Feature / Fix / Sheet / Doc）分組生成，最後建立同名 release 並附上壓縮包。
 

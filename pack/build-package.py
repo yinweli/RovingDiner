@@ -7,7 +7,7 @@
 流程：
 1. go build cmd/rodi、cmd/roditool（GOOS=windows）
 2. go install sheeter@釘住版本（版本由 --sheeter 傳入，單一定義點在 Taskfile 的 SHEETER_VERSION）
-3. 收集 gamedata（排除 output 暫存與 Excel 鎖檔）、sheetdata、
+3. 收集 build.bat、gamedata（排除 output 暫存與 Excel 鎖檔）、sheetdata、
    營業規格書.md / .html、pack/play.bat、pack/MANUAL.md
 4. 壓成 pack/output/RovingDiner-<版本>.zip（zip 內含同名頂層目錄）
 
@@ -68,6 +68,7 @@ def collect(pkg: Path) -> None:
     for name in ('營業規格書.md', '營業規格書.html'):
         shutil.copy2(ROOT / 'doc' / name, pkg / name)
 
+    shutil.copy2(ROOT / 'build.bat', pkg / 'build.bat')
     shutil.copy2(HERE / 'play.bat', pkg / 'play.bat')
     shutil.copy2(HERE / 'MANUAL.md', pkg / 'MANUAL.md')
 
