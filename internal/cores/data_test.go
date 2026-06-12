@@ -156,6 +156,9 @@ func (this *SuiteData) TestPrepareEffect() {
 	this.NotNil(result[700].Start)
 
 	this.Empty(prepareEffect(nil, stub)) // data nil → 空
+
+	result = prepareEffect(data, nil) // 編譯器未注入 → 帶命令的效果同語法錯跳過(700 帶命令亦除名)
+	this.NotContains(result, int32(700))
 }
 
 // TestParseThreshold 驗證單筆門檻配對解析: 好格式回配對、壞格式(缺 ^ / 多段 / 非整數 / 空字串)回帶位置錯誤。

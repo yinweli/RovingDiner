@@ -289,10 +289,15 @@ func parseThreshold(source []string) (result []Threshold) {
 	return result
 }
 
-// compileCommand 把命令字串編成執行器: 空字串 → nil(無命令); 非空交注入的 compile, 語法錯 → ok=false(跳過該效果)。
+// compileCommand 把命令字串編成執行器: 空字串 → nil(無命令); 非空交注入的 compile, 語法錯 → ok=false(跳過該效果);
+// 編譯器未注入(NewData「無命令資料可傳 nil」)時帶命令的效果無從編譯, 同語法錯跳過。
 func compileCommand(compile Compiler, source string) (command EffectExec, ok bool) {
 	if source == "" {
 		return nil, true
+	} // if
+
+	if compile == nil {
+		return nil, false // 無編譯器 → 帶命令的效果跳過
 	} // if
 
 	command, err := compile(source)

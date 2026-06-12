@@ -1,0 +1,29 @@
+# 決定性 CI(M29): Go 三件套——lint / 測試(含 -race, 本機無 gcc 跑不了, 由 CI 補)/ 表單檢查。
+# golden 測試(internal/games TestSuiteGolden)即決定性斷言: 固定 seed×關卡×腳本, 行序列與快照逐 byte 相同。
+# 文件鏈(markdownlint / prettier / task doc)留本機, 不入 CI。
+name: ci
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.12.2 # 釘本機同版, lint 結果一致
+
+      - name: test
+        run: go test -race ./...
+
+      - name: sheet check
+        run: go run ./cmd/roditool sheet
