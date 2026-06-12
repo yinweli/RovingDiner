@@ -69,5 +69,6 @@ func (this modalHelp) Body(game *cores.Game) (title string, row []string) {
 		"  飽食 -= 2 >> 3        <- 命令, 作用於上方對象",
 		"$ 1001@招呼#9 >> 棄牌堆 <- 搬移: 對象 >> 去向",
 		"                           (變身搬移寫作 舊卡 >> 新卡)",
+		"                           (選取紀錄寫作 $ 選取 來源 -> 選中)",
 	}
 }
