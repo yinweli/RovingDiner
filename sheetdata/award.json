@@ -1,1 +1,44 @@
-{}
+{
+    "1": {
+        "CardID": 111,
+        "Group": 7,
+        "ID": 1,
+        "Weight": 3
+    },
+    "2": {
+        "CardID": 113,
+        "Group": 7,
+        "ID": 2,
+        "Weight": 3
+    },
+    "3": {
+        "CardID": 115,
+        "Group": 7,
+        "ID": 3,
+        "Weight": 2
+    },
+    "4": {
+        "CardID": 117,
+        "Group": 7,
+        "ID": 4,
+        "Weight": 1
+    },
+    "5": {
+        "CardID": 103,
+        "Group": 8,
+        "ID": 5,
+        "Weight": 2
+    },
+    "6": {
+        "CardID": 118,
+        "Group": 8,
+        "ID": 6,
+        "Weight": 2
+    },
+    "7": {
+        "CardID": 123,
+        "Group": 8,
+        "ID": 7,
+        "Weight": 1
+    }
+}
