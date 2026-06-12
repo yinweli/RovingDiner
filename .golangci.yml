@@ -69,7 +69,7 @@ linters:
         - wrapperFunc
       settings:
         hugeParam:
-          sizeThreshold: 128
+          sizeThreshold: 256 # Bubble Tea 值接收器 model（Init/Update/View 回傳修改後拷貝）為框架慣例；M27 model 補 wait 欄後達 128 預設門檻，放寬而非改指標接收器
     gocyclo:
       min-complexity: 50
     mnd:

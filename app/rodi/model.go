@@ -26,6 +26,7 @@ const (
 // 0..5 對應 comp 堆疊順序(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆), 狀態列與事件日誌為專屬掛點接末;
 // 起始聚焦 = 座位(0)且恆有聚焦區(不設無聚焦態)。鍵位列非聚焦元件, 不入循環。
 const (
+	focusHand   = 4 // 手牌區([P] 出牌取其游標卡)
 	focusStatus = 6 // 狀態列
 	focusLog    = 7 // 事件日誌
 	focusCount  = 8 // 循環模數
@@ -58,6 +59,7 @@ type model struct {
 	status   barStatus   // 狀態列(左欄釘底)
 	comp     []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
 	mode     mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
+	wait     *request    // 玩家行動等待中的輸入請求(M27 R3; 非 nil 時不排拍不放行, [P]/[E] 答覆後恢復)
 	gen      int         // 排拍世代(切模式 / 開 modal +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
 	focus    int         // 聚焦區索引(model 持有的跨組件 UI 狀態; Tab 經 tabMsg 循環 8 區, 聚焦高亮據此)
 	modal    []modal     // modal 堆疊(M26 R3; 開著時暫停消費、鍵盤入 modal 態, 頂層互動)
@@ -86,10 +88,11 @@ func (this model) Init() tea.Cmd {
 
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
-// 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
-// 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層 modal、常態分派聚焦區 Move
-// (語意隨區, 狀態列落空不動作); 說明 / 計數 / 檢視 → 推 modal 入棧(開著時暫停消費); 關閉 → 出棧並恢復排拍;
-// 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
+// 新模式為自動即重排拍; 玩家行動請求 → 進等待態(不排拍), [P] 出手牌游標卡(空手牌 / 出不起 / 封印 no-op;
+// M27 拍板)、[E] 結束, 答覆後依當前模式恢復; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作;
+// 終局後切模式排的拍經 Next 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層
+// modal、常態分派聚焦區 Move(語意隨區, 狀態列落空不動作); 說明 / 計數 / 檢視 → 推 modal 入棧(開著時
+// 暫停消費); 關閉 → 出棧並恢復排拍; 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
@@ -97,18 +100,21 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 			return this, nil
 		} // if
 
-		if this.advance() == false {
+		wait, more := this.advance()
+		this.wait = wait
+
+		if more == false {
 			return this, nil
 		} // if
 
-		return this, this.tick()
+		return this, this.tick() // 等待輸入時 tick 自回 nil
 
 	case stepMsg:
-		if this.mode != modeStep {
-			return this, nil
+		if this.mode != modeStep || this.wait != nil {
+			return this, nil // 非步進模式不插拍; 等待輸入不放行(引擎停在 Operator, 再放行會卡死)
 		} // if
 
-		this.advance()
+		this.wait, _ = this.advance()
 		return this, nil
 
 	case cycleMsg:
@@ -186,6 +192,26 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		} // if
 
 		return this, nil // 游標下無項目 / 事件日誌無 modal: 不動作
+
+	case playMsg:
+		if this.wait == nil {
+			return this, nil // 非等待輸入: 不動作
+		} // if
+
+		card, ok := this.comp[focusHand].Item(this.stepper.game).(*cores.Card)
+
+		if ok == false || handDim(this.stepper.game, card) {
+			return this, nil // 空手牌 / 出不起 / 封印: no-op(M27 拍板; 暗色已提示)
+		} // if
+
+		return this.answer(answer{card: []*cores.Card{card}})
+
+	case endMsg:
+		if this.wait == nil {
+			return this, nil // 非等待輸入: 不動作
+		} // if
+
+		return this.answer(answer{})
 
 	case popMsg:
 		if size := len(this.modal); size > 0 {
@@ -278,28 +304,52 @@ func (this model) push(top modal) model {
 	return this
 }
 
-// advance 推一拍: 同步 Next 收輪次——行組入日誌(盤面組件直讀引擎、不持拷貝); 輸入請求暫以被動答覆立答
-// 再續收(R2 過渡, R3 / R4 換成真等待態); 終局回 false(呼叫端據此停止排拍)。
-func (this model) advance() bool {
-	next := this.stepper.Next()
+// advance 推一拍: 放行引擎收輪次後交 consume 消化(等待 / 終局語意見彼處)。
+func (this model) advance() (wait *request, more bool) {
+	return this.consume(this.stepper.Next())
+}
 
-	for next.role == turnRequest {
-		next = this.stepper.Answer(next.req, passiveAnswer(next.req))
+// consume 消化輪次至停點: 行組入日誌(盤面組件直讀引擎、不持拷貝); 玩家行動請求回傳等待(不立答,
+// 等 [P]/[E] 答覆; M27 R3)、Pick 請求暫以被動答覆立答再續收(R4 換真選取模式); 終局回 more == false
+// (呼叫端據此停止排拍)。
+func (this model) consume(next turn) (wait *request, more bool) {
+	for {
+		switch next.role {
+		case turnLine:
+			this.log.Append(next.line...)
+			return nil, true
+
+		case turnRequest:
+			if next.req.guest == nil && next.req.card == nil {
+				return next.req, true // 玩家行動: 進等待態
+			} // if
+
+			next = this.stepper.Answer(next.req, passiveAnswer(next.req))
+
+		case turnOver:
+			return nil, false
+		} // switch
 	} // for
+}
 
-	if next.role == turnOver {
-		return false
+// answer 答覆玩家行動等待並消化續收輪次: 答覆即恢復訊號(stepper.Answer 不經 gate), 之後依當前模式
+// 恢復排拍(再遇請求繼續等待、終局停止)。
+func (this model) answer(ans answer) (result tea.Model, cmd tea.Cmd) {
+	wait, more := this.consume(this.stepper.Answer(this.wait, ans))
+	this.wait = wait
+
+	if more == false {
+		return this, nil
 	} // if
 
-	this.log.Append(next.line...)
-	return true
+	return this, this.tick()
 }
 
 // tick 依當前模式排下一拍的 Cmd: 快/慢回 timer Cmd(訊息蓋上當前世代供驗章)、步進不排拍回 nil(等 [N])、
-// modal 開著不排拍(暫停消費, 凍結盤面供檢視; M26 R3)。timer Cmd 跑在別條 goroutine,
-// 只回訊息不碰引擎(Next 必須留在 Update 內)。
+// modal 開著不排拍(暫停消費, 凍結盤面供檢視; M26 R3)、等待輸入不排拍(引擎停在 Operator 等答覆; M27 R3)。
+// timer Cmd 跑在別條 goroutine, 只回訊息不碰引擎(Next 必須留在 Update 內)。
 func (this model) tick() tea.Cmd {
-	if this.mode == modeStep || len(this.modal) > 0 {
+	if this.mode == modeStep || len(this.modal) > 0 || this.wait != nil {
 		return nil
 	} // if
 
@@ -395,6 +445,26 @@ type enterMsg struct{}
 func enter() tea.Cmd {
 	return func() tea.Msg {
 		return enterMsg{}
+	}
+}
+
+// playMsg 出牌訊息([P] 鍵投遞): 玩家行動等待中出手牌游標卡; 非等待 / 不可出時無動作。
+type playMsg struct{}
+
+// play 排出牌訊息的 Cmd([P] 鍵綁定)。
+func play() tea.Cmd {
+	return func() tea.Msg {
+		return playMsg{}
+	}
+}
+
+// endMsg 玩家結束訊息([E] 鍵投遞): 玩家行動等待中答覆結束; 非等待時無動作。
+type endMsg struct{}
+
+// end 排玩家結束訊息的 Cmd([E] 鍵綁定)。
+func end() tea.Cmd {
+	return func() tea.Msg {
+		return endMsg{}
 	}
 }
 

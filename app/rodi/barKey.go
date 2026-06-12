@@ -48,6 +48,8 @@ func newBarKey() barKey {
 			{key: "f2", label: "[F2]計數", row: 1, cmd: count()},
 			{key: " ", label: "[Space]快/慢/步進", row: 2, cmd: cycle()},
 			{key: "n", label: "[N]前進", row: 2, cmd: step()},
+			{key: "p", label: "[P]出牌", row: 2, cmd: play()},
+			{key: "e", label: "[E]結束", row: 2, cmd: end()},
 			{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},
 			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
 		},

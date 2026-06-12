@@ -26,8 +26,9 @@ func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind[keyModeNormal], 13)
+	this.Len(target.keybar.bind[keyModeNormal], 15)
 	this.Empty(target.modal)
+	this.Nil(target.wait)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
 	this.Equal(modeFast, target.mode)
 	this.Equal(0, target.gen)
@@ -49,8 +50,17 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Equal(cores.PhaseGameStart, result.(model).stepper.game.GetPhase()) // 首拍: 引擎停在首事件邊界, 直讀即見
 	this.NotNil(cmd)                                                         // 已排下一拍
 
-	for cmd != nil { // 逐拍推進到終局: 停止排拍
-		result, cmd = result.(model).Update(tickMsg{})
+	for { // 逐拍推進到終局: 玩家行動等待以 [E] 結束答覆並恢復排拍, 終局停止排拍
+		if cmd != nil {
+			result, cmd = result.(model).Update(tickMsg{})
+			continue
+		} // if
+
+		if result.(model).wait == nil {
+			break // 停止排拍且無等待 = 終局
+		} // if
+
+		result, cmd = result.(model).Update(endMsg{})
 	} // for
 
 	this.NotEmpty(result.(model).log.line)                          // 行組已入日誌
@@ -73,6 +83,35 @@ func (this *SuiteModel) TestModelUpdate() {
 	result, cmd = target.Update(stepMsg{}) // 步進模式: [N] 推一拍、不排拍(等下一個 [N])
 	this.Equal(cores.PhaseGameStart, result.(model).stepper.game.GetPhase())
 	this.Nil(cmd)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet()))
+	result, cmd = tea.Model(target).Update(tickMsg{})
+
+	for result.(model).wait == nil { // 推進到第一個玩家行動等待
+		result, cmd = result.(model).Update(tickMsg{})
+	} // for
+
+	this.Nil(cmd)                                                               // 等待輸入: 不排拍
+	this.Equal(cores.PhasePlayerAction, result.(model).stepper.game.GetPhase()) // 引擎停在 PlayerAction 暫停點
+
+	hold := result.(model)
+	hold.mode = modeStep
+	result, cmd = hold.Update(stepMsg{}) // 等待中 [N] 防呆: 不放行不推進(引擎停在 Operator)
+	this.NotNil(result.(model).wait)
+	this.Nil(cmd)
+
+	hold = result.(model)
+	hold.mode = modeFast
+	hold.stepper.game.Hand[0].GetSeal().Lock() // 游標卡封印 → [P] no-op(M27 拍板; 暗色已提示)
+	result, cmd = hold.Update(playMsg{})
+	this.NotNil(result.(model).wait)
+	this.Nil(cmd)
+
+	hold = result.(model)
+	hold.stepper.game.Hand[0].GetSeal().Unlock() // 解封 → [P] 出游標卡: 答覆會合、行組續收、恢復排拍
+	result, cmd = hold.Update(playMsg{})
+	this.Nil(result.(model).wait)
+	this.NotNil(cmd)
 
 	result, cmd = tea.Model(newModel(nil)).Update(cycleMsg{}) // 快速 → 慢速: 世代 +1、重排拍
 	this.Equal(modeSlow, result.(model).mode)
@@ -188,6 +227,35 @@ func (this *SuiteModel) TestModelUpdate() {
 	result, _ = target.Update(enterMsg{})
 	this.Empty(result.(model).modal)
 
+	pick := &request{guest: []*cores.Guest{{}, {}}, count: 1, answer: make(chan answer, 1)}
+	fab := newModel(&stepper{turn: make(chan turn, 2)}) // 偽 stepper 預填輪次: 驗答覆後續收的 Pick 被動立答
+	fab.wait = &request{answer: make(chan answer, 1)}
+	fab.stepper.turn <- turn{role: turnRequest, req: pick}
+	fab.stepper.turn <- turn{role: turnLine, line: []string{"x"}}
+	result, cmd = fab.Update(endMsg{})
+	this.Nil(result.(model).wait)
+	this.NotNil(cmd)                                         // 行組後依快速恢復排拍
+	this.Equal(answer{guest: pick.guest[:1]}, <-pick.answer) // Pick 請求已被動立答(R4 換真選取前的過渡)
+	this.NotEmpty(result.(model).log.line)
+
+	fab = newModel(&stepper{turn: make(chan turn, 1)})
+	fab.wait = &request{answer: make(chan answer, 1)}
+	fab.stepper.turn <- turn{role: turnOver, succ: true}
+	result, cmd = fab.Update(endMsg{}) // 答覆後直接終局: 停止排拍
+	this.Nil(result.(model).wait)
+	this.Nil(cmd)
+
+	fab = newModel(newStepper(1, 601, tester.BuildSheet())) // 未推進: 空白盤面空手牌
+	fab.wait = &request{answer: make(chan answer, 1)}
+	_, cmd = fab.Update(playMsg{}) // 游標下無卡: no-op
+	this.Nil(cmd)
+
+	_, cmd = newModel(nil).Update(playMsg{}) // 非等待輸入: [P]/[E] 不動作
+	this.Nil(cmd)
+
+	_, cmd = newModel(nil).Update(endMsg{})
+	this.Nil(cmd)
+
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
 	this.Equal(40, result.(model).height)
@@ -291,6 +359,10 @@ func (this *SuiteModel) TestModelTick() {
 	target.mode = modeFast
 	target.modal = []modal{modalCount{}}
 	this.Nil(target.tick())
+
+	target.modal = nil
+	target.wait = &request{}
+	this.Nil(target.tick()) // 等待輸入不排拍(引擎停在 Operator)
 }
 
 // TestModelKeymode 驗證鍵盤模式導出: modal 堆疊非空 = modal 態、否則常態(選取等待 M27 補來源)。
@@ -337,6 +409,16 @@ func (this *SuiteModel) TestCount() {
 // TestEnter 驗證檢視訊息 Cmd。
 func (this *SuiteModel) TestEnter() {
 	this.Equal(enterMsg{}, enter()())
+}
+
+// TestPlay 驗證出牌訊息 Cmd。
+func (this *SuiteModel) TestPlay() {
+	this.Equal(playMsg{}, play()())
+}
+
+// TestEnd 驗證玩家結束訊息 Cmd。
+func (this *SuiteModel) TestEnd() {
+	this.Equal(endMsg{}, end()())
 }
 
 // TestPop 驗證關閉 modal 訊息 Cmd。
