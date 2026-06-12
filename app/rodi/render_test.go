@@ -109,7 +109,8 @@ func (this *SuiteRender) TestAlignPair() {
 
 // === 測試輔助(置尾) ===
 
-// testSheet 迷你靜態表(識別碼與初值查表用): 座位 桌1(1,2)/ 桌2(3)、卡 101 / 103、顧客 501、技能 301、效果 401。
+// testSheet 迷你靜態表(識別碼與初值查表用): 座位 桌1(1,2)/ 桌2(3)、卡 101 / 103 / 104、顧客 501、
+// 技能 301 / 302、效果 401~406。
 func testSheet() *sheeter.Sheeter {
 	sheet := &sheeter.Sheeter{}
 	sheet.Seat.Data = map[int32]*sheeter.Seat{
@@ -120,6 +121,7 @@ func testSheet() *sheeter.Sheeter {
 	sheet.Card.Data = map[int32]*sheeter.Card{
 		101: {ID: 101, Name: "上菜", Group: 3, SkillID: 301, Cost: 2, ExtraRunMin: 1, ExtraRunMax: 3, Seal: true},
 		103: {ID: 103, Name: "結帳", Cost: 1, Keep: true},
+		104: {ID: 104, Name: "補貨", Group: 2, Cost: 1, SkillID: 302}, // 效果摘要素材: 技能 302 引三類命令效果
 	}
 	sheet.Guest.Data = map[int32]*sheeter.Guest{
 		501: {ID: 501, Name: "老饕", Score: 4, ScoreMax: 10, Morale: 5, MoraleMax: 8, Calm: 3, SateMax: 6, SateSeal: true,
@@ -127,12 +129,16 @@ func testSheet() *sheeter.Sheeter {
 	}
 	sheet.Skill.Data = map[int32]*sheeter.Skill{
 		301: {ID: 301, Name: "開朗", EffectID: []int32{401, 401, 402}},
+		302: {ID: 302, Name: "補給", EffectID: []int32{404, 405, 406}}, // 卡 104: 三類命令效果(摘要列素材)
 	}
-	sheet.Effect.Data = map[int32]*sheeter.Effect{ // 401 帶滿安全靜態欄(命令欄留空——testGame 無 compiler, 非空會炸 prepareEffect)
+	sheet.Effect.Data = map[int32]*sheeter.Effect{ // 401 帶滿安全靜態欄(命令欄留空——401~403 有實例化測試, testGame 無 compiler, 非空被 prepareEffect 跳過會失去 Data 索引)
 		401: {ID: 401, Name: "加耐", Kind: 1, RunOrder: 5, TargetKind: 2, TargetCount: 1, RunRound: 3,
 			Stack: 1, StackMax: 3, StackTime: 1, TriggerKind: "cardPlay", TriggerCond: "self.sate > 0", TriggerCount: "self.calm"},
 		402: {ID: 402, Name: "護盾", Kind: 2, RunOrder: 9},
 		403: {ID: 403, Name: "立即", Kind: 0, RunOrder: 9},
+		404: {ID: 404, Name: "餵食", Kind: 0, CommandImmed: "self.sate += 6"}, // 404~406 帶命令(摘要列直讀 sheet; 不進 Data 索引、不實例化)
+		405: {ID: 405, Name: "鼓舞", Kind: 1, TriggerKind: "roundStart", CommandTrigger: "morale += 1"},
+		406: {ID: 406, Name: "護持", Kind: 2, CommandStart: "moraleShield += 2", CommandEnd: "moraleShield -= 2"},
 	}
 	return sheet
 }
