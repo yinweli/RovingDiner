@@ -448,7 +448,7 @@ func (this *SuiteModel) TestModelTick() {
 	target.gen = 7
 	cmd := target.tick()
 	this.Require().NotNil(cmd)
-	this.Equal(tickMsg{gen: 7}, cmd()) // 快速 timer: 0.2 秒後投遞當前世代章
+	this.Equal(tickMsg{gen: 7}, cmd()) // 快速 timer: 0.1 秒後投遞當前世代章
 
 	target.mode = modeSlow
 	this.NotNil(target.tick())

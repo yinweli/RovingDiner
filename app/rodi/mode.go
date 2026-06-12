@@ -11,14 +11,14 @@ import (
 type mode int
 
 const (
-	modeFast mode = iota // 快速(0.2 秒一拍)
+	modeFast mode = iota // 快速(0.1 秒一拍)
 	modeSlow             // 慢速(1 秒一拍)
 	modeStep             // 步進(停止自動消費, 按 [N] 逐拍前進的暫停態)
 )
 
 // 排拍間隔(M25 拍板數值)。
 const (
-	intervalFast = 200 * time.Millisecond // 快速
+	intervalFast = 100 * time.Millisecond // 快速
 	intervalSlow = time.Second            // 慢速
 )
 
@@ -39,7 +39,7 @@ func (this mode) name() string {
 	} // switch
 }
 
-// interval 排拍間隔(快 0.2 秒 / 慢 1 秒): 步進不排拍、回 0(呼叫端先以模式擋下, 不據此排拍)。
+// interval 排拍間隔(快 0.1 秒 / 慢 1 秒): 步進不排拍、回 0(呼叫端先以模式擋下, 不據此排拍)。
 func (this mode) interval() time.Duration {
 	switch this {
 	case modeFast:

@@ -24,9 +24,9 @@ func (this *SuiteMode) TestModeName() {
 	this.Equal("-", mode(99).name())
 }
 
-// TestModeInterval 驗證排拍間隔: 快 0.2 秒 / 慢 1 秒(M25 拍板數值); 步進不排拍回 0。
+// TestModeInterval 驗證排拍間隔: 快 0.1 秒 / 慢 1 秒; 步進不排拍回 0。
 func (this *SuiteMode) TestModeInterval() {
-	this.Equal(200*time.Millisecond, modeFast.interval())
+	this.Equal(100*time.Millisecond, modeFast.interval())
 	this.Equal(time.Second, modeSlow.interval())
 	this.Equal(time.Duration(0), modeStep.interval())
 }
