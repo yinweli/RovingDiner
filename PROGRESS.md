@@ -30,7 +30,6 @@
 
 ## 接續待辦
 
-- **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
 - **-race 已交 CI**:本機無 gcc 維持不跑;`.github/workflows/ci.yml` 在 ubuntu 跑 `go test -race ./...`,首次執行結果待 push 後確認。
 
 ## 已敲定的設計決策(勿重新爭論;只列規格與程式看不出來的)
