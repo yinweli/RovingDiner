@@ -165,6 +165,33 @@ const (
 	TriggerGameFail   TriggerKind = "gameFail"   // 營業失敗; 失敗結算判定後
 )
 
+// TriggerKindLegal 觸發時機英文名稱的合法值集合(列舉自上方常數, 新增時機需同步補列; 比照 PhaseJumpLegal)。
+// 供企劃驗證器檢查 Effect.TriggerKind 非空時的成員資格(M28 R4; 引擎載入直接轉型、執行期不查表)。
+var TriggerKindLegal = map[TriggerKind]bool{
+	TriggerGameStart:  true,
+	TriggerRoundReady: true,
+	TriggerRoundStart: true,
+	TriggerGuestSeat:  true,
+	TriggerCardDraw:   true,
+	TriggerUserStart:  true,
+	TriggerUserEnd:    true,
+	TriggerCardDrop:   true,
+	TriggerCardExile:  true,
+	TriggerCardMorph:  true,
+	TriggerCardPlay:   true,
+	TriggerGuestStart: true,
+	TriggerGuestTask:  true,
+	TriggerGuestEnd:   true,
+	TriggerRoundEnd:   true,
+	TriggerExitAny:    true,
+	TriggerExitSate:   true,
+	TriggerExitCalm:   true,
+	TriggerExitDone:   true,
+	TriggerDamage:     true,
+	TriggerGameSucc:   true,
+	TriggerGameFail:   true,
+}
+
 // EffectKind 效果類型; 對應【營業規格書 | 七、效果類型】。
 // (效果實例型別見 effect.go 的 Effect; 此 enum 表達其靜態類型, 故以 Kind 為後綴避免撞名。)
 type EffectKind int32
