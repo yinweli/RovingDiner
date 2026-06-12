@@ -5,12 +5,14 @@ REM chcp 65001: sheeter/roditool print UTF-8; switch so their output displays ri
 chcp 65001 >nul
 
 REM Build sheet code and data, then run the sheet check (roditool).
+REM This file sits at the repo/package root and cds into gamedata, where
+REM sheeter.yaml and the xlsx live; all relative paths below assume that cwd.
 REM Shared by the dev repo and the game install package: tools are called bare;
 REM inside the package the PATH line below hits the exes at the package root,
 REM in the dev repo the repo root has no exes so lookup falls through to the
 REM versions installed by task install.
-cd /d %~dp0
-set PATH=%~dp0..;%PATH%
+cd /d %~dp0gamedata
+set PATH=%~dp0;%PATH%
 set output=output
 set targetCode=..\sheet
 set targetData=..\sheetdata

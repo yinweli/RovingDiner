@@ -8,9 +8,10 @@
 |:------------------|:------------------------------------------------|
 | `rodi.exe`        | 遊戲本體（營業 TUI）                            |
 | `roditool.exe`    | 企劃驗證器（單筆 / 表單檢查）                   |
-| `sheeter.exe`     | 表格編譯工具（`gamedata/build.bat` 使用）       |
+| `sheeter.exe`     | 表格編譯工具（`build.bat` 使用）                |
 | `play.bat`        | 啟動遊戲（關卡編號預設 1）                      |
-| `gamedata/`       | 表格原始檔（xlsx）與編譯腳本 `build.bat`        |
+| `build.bat`       | 重建表格資料並自動表單檢查                      |
+| `gamedata/`       | 表格原始檔（xlsx）與編譯設定                    |
 | `sheetdata/`      | 遊戲讀取的表格資料（json，由 `build.bat` 生成） |
 | `營業規格書.md`   | 遊戲規則規格書（Markdown 原稿）                 |
 | `營業規格書.html` | 遊戲規則規格書（瀏覽器開啟）                    |
@@ -19,7 +20,7 @@
 ## bat 說明
 
 - `play.bat`：雙擊啟動遊戲，以關卡 1 開局；遊戲結束後視窗暫停，捲回畫面上方可看到本局 seed（供重現）。
-- `gamedata/build.bat`：修改 `gamedata/` 下的 xlsx 後雙擊執行，重新生成 `sheetdata/` 並自動做表單檢查；檢查不通過會逐筆列出 表 / 列 / 欄 與錯誤原因。
+- `build.bat`：修改 `gamedata/` 下的 xlsx 後雙擊執行，重新生成 `sheetdata/` 並自動做表單檢查；檢查不通過會逐筆列出 表 / 列 / 欄 與錯誤原因。
 
 ## 遊戲執行命令
 
@@ -44,9 +45,9 @@
 | `roditool threshold "<內容>"`  | 門檻配對欄位（門檻值^技能編號）                    |
 | `roditool sheet [--data 目錄]` | 表單檢查（掃描表格資料全表，目錄預設 `sheetdata`） |
 
-`gamedata/build.bat` 結尾會自動執行表單檢查，通常不需手動跑 `roditool sheet`。
+`build.bat` 結尾會自動執行表單檢查，通常不需手動跑 `roditool sheet`。
 
 ## 修改表格的限制
 
-- **可以改**：xlsx 欄位裡的「值」（數值、運算式、命令內容等）——改完跑 `gamedata/build.bat` 重建即生效。
+- **可以改**：xlsx 欄位裡的「值」（數值、運算式、命令內容等）——改完跑 `build.bat` 重建即生效。
 - **不能改**：表結構（新增 / 刪除欄位、改欄位名稱或型別、增刪工作表）——讀表程式已編譯在 `rodi.exe` 內，結構變更需要重新建置遊戲，請聯絡工程。
