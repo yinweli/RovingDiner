@@ -7,8 +7,8 @@
 ## 現況
 
 - **架構已定案**(實作規格書 §一~§四):核心四包依賴 `games → rules → cores → exprs` 一條直線,`internal/infra` 基礎設施、`internal/tester` 跨包測試基建;TUI = `app/rodi`(停點直讀 + 交棒 stepper)+ `cmd/rodi` 瘦進入點。
-- **M0–M26 已落地,M27(選取＋Operator)起未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
-- **剩餘站序已凍結**(2026-06-11 拍板):M26 互動與 modal → M27 選取＋Operator → M28 企劃驗證器 → M29 conformance golden;細目以實作規格書【九】為準,再插站不改號。
+- **M0–M26A 已落地,M27(選取＋Operator)起未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)→ 格式說明 modal(M26A 插站)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
+- **剩餘站序已凍結**(2026-06-11 拍板):M27 選取＋Operator → M28 企劃驗證器 → M29 conformance golden;細目以實作規格書【九】為準,再插站不改號(M26A 格式說明 modal 即依此插站,M27–M29 編號未動)。
 
 ## 里程碑進度
 
@@ -23,6 +23,7 @@
 | M24     | ✅   | 日誌流換軌(行組 Emit+發射台+golden 常駐)   |
 | M25     | ✅   | 速率(快/慢/步進排拍+世代驗章)              |
 | M26     | ✅   | 互動與 modal(切區游標+框線網格+五 modal)   |
+| M26A    | ✅   | 格式說明 modal(插站; F1 說明/F2 計數)      |
 | M27     | ⬜   | 選取＋Operator *(prov)*                    |
 | M28     | ⬜   | 企劃驗證器 *(prov)*                        |
 | M29     | ⬜   | conformance golden(擴充覆蓋) *(prov)*      |
