@@ -5,99 +5,113 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrRead 全域屬性值讀取詞彙表(名稱 → 讀取行為); 服務 exprs.Resolver。
+// attrReadEntry 全域屬性讀詞條: 讀取行為 + 是否產出物件引用。行為與 metadata 同詞條單一定義點
+// (比照 selectorEntry; M28 R2), 供 games.Validate 靜態查引用左值的引用基底合法性。
+type attrReadEntry struct {
+	resolve cores.AttrReadFunc // 讀取行為(read* 具名函式)
+	ref     bool               // 產出物件引用(對齊【營業規格書 | 二十三、屬性清單】類別欄為引用者; 引用左值的合法基底)
+}
+
+// attrRead 全域屬性值讀取詞彙表(名稱 → 詞條); 服務 exprs.Resolver。
 // 涵蓋【營業規格書 | 二十三、屬性清單】主表: 純值 / 容器大小 / 衍生 / 物件引用 / 查詢函式。
-// 鎖定計數(Lock 後綴)另置 attrLockRead, 由 Game.Attr 剝後綴路由。
+// 鎖定計數(Lock 後綴)以全名詞條登錄於本表尾段。
 // 每一詞條對應一個獨立的 read* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
-var attrRead = map[string]cores.AttrReadFunc{
+var attrRead = map[string]attrReadEntry{
 	// 餐廳 / 出牌全域數值屬性
-	"morale":       readMorale,
-	"moraleMax":    readMoraleMax,
-	"moraleShield": readMoraleShield,
-	"moraleBlock":  readMoraleBlock,
-	"score":        readScore,
-	"energy":       readEnergy,
-	"energyMax":    readEnergyMax,
-	"energyKeep":   readEnergyKeep,
-	"handMax":      readHandMax,
-	"drawMax":      readDrawMax,
+	"morale":       {resolve: readMorale},
+	"moraleMax":    {resolve: readMoraleMax},
+	"moraleShield": {resolve: readMoraleShield},
+	"moraleBlock":  {resolve: readMoraleBlock},
+	"score":        {resolve: readScore},
+	"energy":       {resolve: readEnergy},
+	"energyMax":    {resolve: readEnergyMax},
+	"energyKeep":   {resolve: readEnergyKeep},
+	"handMax":      {resolve: readHandMax},
+	"drawMax":      {resolve: readDrawMax},
 
 	// 階段 / 回合
-	"nextPhase": readNextPhase,
-	"round":     readRound,
-	"roundMax":  readRoundMax,
-	"roundLeft": readRoundLeft,
+	"nextPhase": {resolve: readNextPhase},
+	"round":     {resolve: readRound},
+	"roundMax":  {resolve: readRoundMax},
+	"roundLeft": {resolve: readRoundLeft},
 
 	// 士氣受損事件
-	"damageValue": readDamageValue,
-	"damageGuest": readDamageGuest,
+	"damageValue": {resolve: readDamageValue},
+	"damageGuest": {resolve: readDamageGuest, ref: true},
 
 	// 入座 / 離場 / 行動事件
-	"seatLast":     readSeatLast,
-	"seatCount":    readSeatCount,
-	"exitLast":     readExitLast,
-	"exitLastSeat": readExitLastSeat,
-	"exitCount":    readExitCount,
-	"taskGuest":    readTaskGuest,
-	"taskSkill":    readTaskSkill,
-	"taskCount":    readTaskCount,
+	"seatLast":     {resolve: readSeatLast, ref: true},
+	"seatCount":    {resolve: readSeatCount},
+	"exitLast":     {resolve: readExitLast, ref: true},
+	"exitLastSeat": {resolve: readExitLastSeat},
+	"exitCount":    {resolve: readExitCount},
+	"taskGuest":    {resolve: readTaskGuest, ref: true},
+	"taskSkill":    {resolve: readTaskSkill},
+	"taskCount":    {resolve: readTaskCount},
 
 	// 卡牌事件: 回合計數 / 最後引用 / 變身編號
-	"drawLast":   readDrawLast,
-	"drawCount":  readDrawCount,
-	"dropLast":   readDropLast,
-	"dropCount":  readDropCount,
-	"playLast":   readPlayLast,
-	"playCount":  readPlayCount,
-	"exileLast":  readExileLast,
-	"exileCount": readExileCount,
-	"morphLast":  readMorphLast,
-	"morphCount": readMorphCount,
-	"morphOldID": readMorphOldID,
-	"morphNewID": readMorphNewID,
+	"drawLast":   {resolve: readDrawLast, ref: true},
+	"drawCount":  {resolve: readDrawCount},
+	"dropLast":   {resolve: readDropLast, ref: true},
+	"dropCount":  {resolve: readDropCount},
+	"playLast":   {resolve: readPlayLast, ref: true},
+	"playCount":  {resolve: readPlayCount},
+	"exileLast":  {resolve: readExileLast, ref: true},
+	"exileCount": {resolve: readExileCount},
+	"morphLast":  {resolve: readMorphLast, ref: true},
+	"morphCount": {resolve: readMorphCount},
+	"morphOldID": {resolve: readMorphOldID},
+	"morphNewID": {resolve: readMorphNewID},
 
 	// 容器當下大小
-	"seatSize":    readSeatSize,
-	"waitSize":    readWaitSize,
-	"roamSize":    readRoamSize,
-	"cardifySize": readCardifySize,
-	"taskSize":    readTaskSize,
+	"seatSize":    {resolve: readSeatSize},
+	"waitSize":    {resolve: readWaitSize},
+	"roamSize":    {resolve: readRoamSize},
+	"cardifySize": {resolve: readCardifySize},
+	"taskSize":    {resolve: readTaskSize},
 
 	// 衍生 / self
-	"guestSize": readGuestSize,
-	"self":      readSelf,
+	"guestSize": {resolve: readGuestSize},
+	"self":      {resolve: readSelf, ref: true},
 
 	// 靜態座位佈局衍生
-	"seatLeft":  readSeatLeft,
-	"tableSize": readTableSize,
+	"seatLeft":  {resolve: readSeatLeft},
+	"tableSize": {resolve: readTableSize},
 
 	// 查詢函式: 桌次
-	"tableGuest": readTableGuest,
-	"tableCount": readTableCount,
+	"tableGuest": {resolve: readTableGuest},
+	"tableCount": {resolve: readTableCount},
 
 	// 查詢函式: 各牌堆 / 手牌的卡牌群組張數
-	"handSize":  readHandSize,
-	"deckSize":  readDeckSize,
-	"dropSize":  readDropSize,
-	"exileSize": readExileSize,
+	"handSize":  {resolve: readHandSize},
+	"deckSize":  {resolve: readDeckSize},
+	"dropSize":  {resolve: readDropSize},
+	"exileSize": {resolve: readExileSize},
 
 	// 查詢函式: 整場累積分組張數
-	"drawTotal":  readDrawTotal,
-	"dropTotal":  readDropTotal,
-	"playTotal":  readPlayTotal,
-	"exileTotal": readExileTotal,
+	"drawTotal":  {resolve: readDrawTotal},
+	"dropTotal":  {resolve: readDropTotal},
+	"playTotal":  {resolve: readPlayTotal},
+	"exileTotal": {resolve: readExileTotal},
 
 	// 鎖定計數讀取(Lock 全名詞條; 僅【二十三】存取欄為「寫鎖 / 鎖」的屬性)
-	"moraleLock":       readMoraleLock,
-	"moraleMaxLock":    readMoraleMaxLock,
-	"moraleShieldLock": readMoraleShieldLock,
-	"moraleBlockLock":  readMoraleBlockLock,
-	"scoreLock":        readScoreLock,
-	"energyLock":       readEnergyLock,
-	"energyMaxLock":    readEnergyMaxLock,
-	"energyKeepLock":   readEnergyKeepLock,
-	"handMaxLock":      readHandMaxLock,
-	"drawMaxLock":      readDrawMaxLock,
+	"moraleLock":       {resolve: readMoraleLock},
+	"moraleMaxLock":    {resolve: readMoraleMaxLock},
+	"moraleShieldLock": {resolve: readMoraleShieldLock},
+	"moraleBlockLock":  {resolve: readMoraleBlockLock},
+	"scoreLock":        {resolve: readScoreLock},
+	"energyLock":       {resolve: readEnergyLock},
+	"energyMaxLock":    {resolve: readEnergyMaxLock},
+	"energyKeepLock":   {resolve: readEnergyKeepLock},
+	"handMaxLock":      {resolve: readHandMaxLock},
+	"drawMaxLock":      {resolve: readDrawMaxLock},
+}
+
+// HasObjectRef 回報全域屬性讀詞彙表是否登錄 name 且詞條產出物件引用; 供 games.Validate 檢查
+// 引用左值的引用基底合法性(如 morale.cost 的 morale 非引用、未知名稱皆回 false; 執行期仍寬鬆 no-op)。
+func HasObjectRef(name string) bool {
+	entry, ok := attrRead[name]
+	return ok && entry.ref
 }
 
 // === 餐廳 / 出牌全域數值屬性 ===

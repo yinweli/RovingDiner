@@ -8,7 +8,7 @@ import (
 // games 於建構 Game 後呼叫一次。詞彙字面值由各概念檔自持(attrRead.go 等), 本入口僅逐詞條餵給 Game.Register*。
 func Register(game *cores.Game) {
 	for k, v := range attrRead {
-		game.RegisterAttrRead(k, v)
+		game.RegisterAttrRead(k, v.resolve) // 引擎只需讀取行為; ref 屬 Validate 期靜態知識, 不入 Game
 	} // for
 
 	for k, v := range attrWrite {

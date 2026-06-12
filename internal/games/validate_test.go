@@ -49,8 +49,13 @@ func (this *SuiteValidate) TestValidateAssign() {
 
 	// 引用可寫屬性 → 通過
 	this.NoError(Validate(this.parse("self.calm += 1")))
+	this.NoError(Validate(this.parse("drawLast.cost = 1")))
 	// 引用唯讀屬性 → 報錯(cardID 唯讀)
 	this.Error(Validate(this.parse("drawLast.cardID = 1")))
+	// 引用基底非物件引用 → 報錯(M28; morale 為數值屬性、不可作 <基底>.<屬性> 基底)
+	this.Error(Validate(this.parse("morale.cost = 1")))
+	// 引用基底未登錄 → 報錯(M28; 先前僅查屬性可寫性會漏過)
+	this.Error(Validate(this.parse("nope.cost = 1")))
 }
 
 // parse 解析命令來源為 Command; 解析失敗即測試失敗(供 Validate 斷言聚焦於語意檢查)。

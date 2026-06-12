@@ -19,6 +19,17 @@ type SuiteAttrRead struct {
 	suite.Suite
 }
 
+// TestAttrReadHasObjectRef 驗證引用基底述詞: 引用詞條(顧客 / 卡牌 / self)為真, 數值詞條與未登錄為假。
+func (this *SuiteAttrRead) TestAttrReadHasObjectRef() {
+	this.True(HasObjectRef("self"))
+	this.True(HasObjectRef("damageGuest"))
+	this.True(HasObjectRef("seatLast"))
+	this.True(HasObjectRef("drawLast"))
+	this.False(HasObjectRef("morale"))    // 數值詞條非引用基底
+	this.False(HasObjectRef("drawCount")) // 同上
+	this.False(HasObjectRef("nope"))      // 未登錄
+}
+
 func (this *SuiteAttrRead) TestAttrReadValue() {
 	game := newGame()
 	game.GetMorale().Set(25)
