@@ -25,14 +25,14 @@
 | M26     | ✅   | 互動與 modal(切區游標+框線網格+五 modal)   |
 | M26A    | ✅   | 格式說明 modal(插站; F1 說明/F2 計數)      |
 | M27     | ✅   | 選取＋Operator(交棒廣義化+選取/出牌模式)   |
-| M28     | 🔶   | 企劃驗證器(R1~R3 完成,R4 表單掃描器起未動)  |
+| M28     | 🔶   | 企劃驗證器(R1~R4 完成,R5 CLI 未動)         |
 | M29     | ⬜   | conformance golden(擴充覆蓋) *(prov)*      |
 
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
 - **[企劃驗證器 M28] 切站序(2026-06-12 拍板)**:R1 詞彙 metadata 形狀 + 命令對象 arity 校驗 → R2 `HasObjectRef` 引用基底補強 → R3 門檻配對共用 parse → R4 表單掃描器 → R5 `cmd/roditool` CLI + `task`/CI 接線。**R1、R2 完成**:metadata 形狀拍板為 map 值升級小 struct(具名函式 + metadata 欄,單一定義點;每詞條一具名函式不變)——R1 `selectorEntry`(arity 欄)+ `rules.SelectorArity`,`games.Validate` 依【二十四|參數規則】報數量錯誤;R2 `attrReadEntry`(ref 欄)+ `rules.HasObjectRef`,Validate 對引用左值先驗基底再驗屬性可寫性(`morale.cost` / 未知基底不再漏過)。**R3 完成**:cores 抽單筆 `ParseThreshold` 匯出為門檻配對格式單一定義點(錯誤用 `exprs.SyntaxError` 與兩文法同型、位置指向壞段起點),`prepareGuest` 寬鬆面改呼叫共用 parse 跳筆;驗證器嚴格面(R4 起)同一來源。執行期仍寬鬆 no-op 不變。參數**型別**靜態校驗不做:參數為算術式、值型別屬執行期知識(數值檢查仍由 oneInt / twoInt 執行期把關)。收站時 entry 機制成文於實作規格書。
-- **[企劃驗證器 M28] 其餘**:門檻配對(`門檻值^技能編號`)的嚴格驗證要與 cores 寬鬆解析共用單一格式來源(抽共用 parse,勿雙寫格式知識);緩議:適用類型矩陣要不要驗(如立即類型填了 TriggerKind 報不報),開站時拍板。
+- **[企劃驗證器 M28] R4 完成(2026-06-12)**:`app/roditool` 新包(`cmd/roditool` CLI 歸 R5),`CheckSheet` 七表逐欄掃描輸出 `Issue{表/列/欄/中文錯誤}`(表序列序決定性);適用類型矩陣**拍板要驗**(填了不適用欄位即報;首跑真資料即抓到 effect 401/402/411 立即類型填 Group 三筆,待企劃改 xlsx 後 `task sheet` 重生)。插站 **R4A 運算式詞彙查名**(排 R5 前):TriggerCond/TriggerCount 現只驗文法,識別子查名(如 `morale2 > 1`)需 exprs AST 走訪 + rules 讀側述詞/查詢函式 arity 匯出,獨立一站。緩議:矩陣反向(必填缺漏,如觸發類型缺 TriggerKind)要不要驗,再議。
 - **[緩議] -race 未跑**:無 gcc 環境;嚴格交棒按構造無並行存取,雙跑同序測試為行為釘。
 
 ## 已敲定的設計決策(勿重新爭論;只列規格與程式看不出來的)
