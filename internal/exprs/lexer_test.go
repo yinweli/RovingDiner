@@ -10,7 +10,7 @@ func TestSuiteLexer(t *testing.T) {
 	suite.Run(t, new(SuiteLexer))
 }
 
-// SuiteLexer 驗證詞法分析:各 token、雙字元符號、字串(含 CJK)、數字、關鍵字大小寫、空白與非法輸入。
+// SuiteLexer 驗證詞法分析: 各 token、雙字元符號、字串(含 CJK)、數字、關鍵字大小寫、空白與非法輸入。
 type SuiteLexer struct {
 	suite.Suite
 }
@@ -45,13 +45,13 @@ func (this *SuiteLexer) TestLexNum() {
 }
 
 func (this *SuiteLexer) TestLexNumMultiDot() {
-	// 多個小數點:1.2 為一數、第二個點獨立、3 為另一數(lexer 只組合合法數字串,不產生無效數字)
+	// 多個小數點: 1.2 為一數、第二個點獨立、3 為另一數(lexer 只組合合法數字串, 不產生無效數字)
 	kind := this.kindOf("1.2.3")
 	this.Equal([]tokenKind{tokenNum, tokenDot, tokenNum}, kind)
 }
 
 func (this *SuiteLexer) TestLexNumDotNotFraction() {
-	// 小數點後非數字 → 數字止於整數,點獨立為 tokenDot
+	// 小數點後非數字 → 數字止於整數, 點獨立為 tokenDot
 	kind := this.kindOf("2.foo")
 	this.Equal([]tokenKind{tokenNum, tokenDot, tokenIdent}, kind)
 }
@@ -117,7 +117,7 @@ func (this *SuiteLexer) TestIdentTokenKeyword() {
 	this.Equal(tokenNone, result[6].kind) // 不區分大小寫
 }
 
-// kindOf 取出 token 序列的 tokenKind 列表(略去尾端 tokenEOF),方便比對。
+// kindOf 取出 token 序列的 tokenKind 列表(略去尾端 tokenEOF), 方便比對。
 func (this *SuiteLexer) kindOf(source string) []tokenKind {
 	result, err := lex(source)
 	this.Require().NoError(err)

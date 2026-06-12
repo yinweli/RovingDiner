@@ -1,26 +1,41 @@
 @echo off
-REM 編譯表單程序
-set output=output
-set targetCode=../sheet
-set targetData=../sheetdata
+REM ASCII only in this file: cmd parses .bat files with the console codepage, so
+REM UTF-8 CJK comments break parsing on CP950 consoles (DBCS swallows ASCII bytes).
+REM chcp 65001: sheeter/roditool print UTF-8; switch so their output displays right.
+chcp 65001 >nul
 
-REM 產生程式碼與資料檔案
+REM Build sheet code and data, then run the sheet check (roditool).
+REM Shared by the dev repo and the game install package: tools are called bare;
+REM inside the package the PATH line below hits the exes at the package root,
+REM in the dev repo the repo root has no exes so lookup falls through to the
+REM versions installed by task install.
+cd /d %~dp0
+set PATH=%~dp0..;%PATH%
+set output=output
+set targetCode=..\sheet
+set targetData=..\sheetdata
+
 echo # Generate code and json
 sheeter build --tag BS --config sheeter.yaml
+if errorlevel 1 exit /b 1
 
-REM 複製程式碼
-echo # Copy code
-rm -rf %targetCode%
-cp -r %output%/codeGo/ %targetCode%
-
-REM 複製資料檔案
-echo # Copy json
-
-for %%i in (%targetData%) do (
-    rm -rf %%i
-    cp -r %output%/json/ %%i
+REM Copy generated Go code (dev repo only; the package ships no go.mod and the
+REM sheet readers are already compiled into rodi.exe).
+if exist ..\go.mod (
+    echo # Copy code
+    rmdir /s /q %targetCode% 2>nul
+    xcopy %output%\codeGo %targetCode% /e /i /q /y
+    if errorlevel 1 exit /b 1
 )
 
-REM 清理暫存檔案
+echo # Copy json
+rmdir /s /q %targetData% 2>nul
+xcopy %output%\json %targetData% /e /i /q /y
+if errorlevel 1 exit /b 1
+
 echo # Clean up
-rm -rf %output%
+rmdir /s /q %output%
+
+echo # Sheet check
+roditool sheet --data %targetData%
+if errorlevel 1 exit /b 1

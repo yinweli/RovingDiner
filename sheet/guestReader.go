@@ -17,7 +17,7 @@ type Guest struct {
 	Morale int32 `json:"Morale"` // 士氣值
 	MoraleMax int32 `json:"MoraleMax"` // 士氣值上限
 	Name string `json:"Name"` // 名稱
-	SateMax bool `json:"SateMax"` // 飽食值離場線
+	SateMax int32 `json:"SateMax"` // 飽食值離場線
 	SateSeal bool `json:"SateSeal"` // 封印飽食技能
 	SateSkillID []string `json:"SateSkillID"` // 飽食技能列表
 	Score int32 `json:"Score"` // 滿意值

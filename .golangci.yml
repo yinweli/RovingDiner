@@ -41,6 +41,8 @@ linters:
     - whitespace
     - wrapcheck
   settings:
+    exhaustive:
+      default-signifies-exhaustive: true # switch 帶 default 即視為窮舉（運算式 parser / evaluator 僅對相關 token 分派）
     dupl:
       threshold: 400
     dogsled:
@@ -67,7 +69,7 @@ linters:
         - wrapperFunc
       settings:
         hugeParam:
-          sizeThreshold: 128
+          sizeThreshold: 256 # Bubble Tea 值接收器 model（Init/Update/View 回傳修改後拷貝）為框架慣例；M27 model 補 wait 欄後達 128 預設門檻，放寬而非改指標接收器
     gocyclo:
       min-complexity: 50
     mnd:
@@ -107,6 +109,7 @@ linters:
       multi-func: true
     wrapcheck:
       ignore-sigs:
+        - fmt.Errorf( # wrapcheck 預設忽略清單成員（%w 即包裝慣用式）；本清單為覆蓋式設定，須自行補回
         - errors.New(
         - errors.Unwrap(
         - .Wrap(
@@ -157,3 +160,23 @@ linters:
           - dupl
           - funlen
           - goconst
+      # 詞彙表的 map 鍵即名稱 SSOT（鍵與行為配對為單一定義點）：屬性讀寫表跨「全域／引用 × 值／鎖」、
+      # 命令對象表（selector）與操作命令表（command）同名跨來源檔與測試重複是結構必然，非可抽常數的魔法字串。
+      - path: internal/rules/(attr.*|selector|command.*)\.go
+        linters:
+          - goconst
+      # 詞彙對照表（vocab.go）同理：map 鍵即詞條鍵，同名鍵跨全域／引用兩表（morale、score 等
+      # 全域與顧客同名屬性）重複是結構必然，非可抽常數的魔法字串。
+      - path: internal/cores/vocab\.go
+        linters:
+          - goconst
+      # 場外（顧客池）與牌堆（卡牌堆）為同構三列面板：容器型別與識別碼工具不同（Guest／Card）、
+      # 語意各自獨立演化，結構平行屬刻意設計，泛型合一得不償失（M26 R2／R4 確認）。
+      - path: app/rodi/panel(Pool|Pile)\.go
+        linters:
+          - dupl
+      # 單筆檢查引擎的錯誤即交付物：三文法的帶位置 SyntaxError 原樣上交 CLI／表單檢查顯示（企劃白話、
+      # 「第 N 字附近」格式統一），包裝會在可讀訊息前添工程前綴，故不包裝（M28 R5 確認）。
+      - path: app/roditool/field\.go
+        linters:
+          - wrapcheck

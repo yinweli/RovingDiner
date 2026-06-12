@@ -1,1 +1,203 @@
-{}
+{
+    "501": {
+        "Calm": 2,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "1^301"
+        ],
+        "ID": 501,
+        "Morale": 3,
+        "MoraleMax": 5,
+        "Name": "趕時間的上班族",
+        "SateMax": 6,
+        "SateSeal": false,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 2,
+        "ScoreMax": 10
+    },
+    "502": {
+        "Calm": 4,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "2^301",
+            "1^301"
+        ],
+        "ID": 502,
+        "Morale": 5,
+        "MoraleMax": 8,
+        "Name": "嚴格的美食家",
+        "SateMax": 8,
+        "SateSeal": false,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 4,
+        "ScoreMax": 10
+    },
+    "503": {
+        "Calm": 6,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "3^301"
+        ],
+        "ID": 503,
+        "Morale": 2,
+        "MoraleMax": 6,
+        "Name": "悠哉的常客",
+        "SateMax": 6,
+        "SateSeal": false,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 3,
+        "ScoreMax": 10
+    },
+    "511": {
+        "Calm": 4,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "2^301"
+        ],
+        "ID": 511,
+        "Morale": 2,
+        "MoraleMax": 5,
+        "Name": "排隊熟客",
+        "SateMax": 5,
+        "SateSeal": false,
+        "SateSkillID": [
+            "3^352"
+        ],
+        "Score": 3,
+        "ScoreMax": 10
+    },
+    "512": {
+        "Calm": 3,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            ""
+        ],
+        "ID": 512,
+        "Morale": 2,
+        "MoraleMax": 4,
+        "Name": "聞香而來",
+        "SateMax": 4,
+        "SateSeal": false,
+        "SateSkillID": [
+            "2^352"
+        ],
+        "Score": 2,
+        "ScoreMax": 10
+    },
+    "513": {
+        "Calm": 6,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            ""
+        ],
+        "ID": 513,
+        "Morale": 4,
+        "MoraleMax": 8,
+        "Name": "大胃王",
+        "SateMax": 9,
+        "SateSeal": false,
+        "SateSkillID": [
+            "4^311",
+            "8^352"
+        ],
+        "Score": 4,
+        "ScoreMax": 12
+    },
+    "514": {
+        "Calm": 5,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "3^301"
+        ],
+        "ID": 514,
+        "Morale": 2,
+        "MoraleMax": 4,
+        "Name": "路過食客",
+        "SateMax": 5,
+        "SateSeal": false,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 2,
+        "ScoreMax": 8
+    },
+    "515": {
+        "Calm": 5,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "2^301"
+        ],
+        "ID": 515,
+        "Morale": 3,
+        "MoraleMax": 6,
+        "Name": "美食部落客",
+        "SateMax": 6,
+        "SateSeal": false,
+        "SateSkillID": [
+            "3^352"
+        ],
+        "Score": 5,
+        "ScoreMax": 15
+    },
+    "516": {
+        "Calm": 7,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            ""
+        ],
+        "ID": 516,
+        "Morale": 2,
+        "MoraleMax": 5,
+        "Name": "沉默旅人",
+        "SateMax": 6,
+        "SateSeal": true,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 3,
+        "ScoreMax": 10
+    },
+    "517": {
+        "Calm": 3,
+        "CalmSeal": true,
+        "CalmSkillID": [
+            ""
+        ],
+        "ID": 517,
+        "Morale": 3,
+        "MoraleMax": 6,
+        "Name": "急性子情侶",
+        "SateMax": 5,
+        "SateSeal": false,
+        "SateSkillID": [
+            "2^352"
+        ],
+        "Score": 3,
+        "ScoreMax": 10
+    },
+    "518": {
+        "Calm": 8,
+        "CalmSeal": false,
+        "CalmSkillID": [
+            "4^301",
+            "2^301"
+        ],
+        "ID": 518,
+        "Morale": 2,
+        "MoraleMax": 4,
+        "Name": "夜班司機",
+        "SateMax": 6,
+        "SateSeal": false,
+        "SateSkillID": [
+            ""
+        ],
+        "Score": 2,
+        "ScoreMax": 10
+    }
+}

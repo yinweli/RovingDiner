@@ -1,1 +1,314 @@
-{}
+{
+    "1": {
+        "ID": 1,
+        "NearSeatID": [
+            3,
+            4
+        ],
+        "SameSeatID": [
+            1,
+            2
+        ],
+        "TableID": 1
+    },
+    "10": {
+        "ID": 10,
+        "NearSeatID": [
+            7,
+            8,
+            11,
+            12
+        ],
+        "SameSeatID": [
+            9,
+            10
+        ],
+        "TableID": 5
+    },
+    "11": {
+        "ID": 11,
+        "NearSeatID": [
+            9,
+            10,
+            13,
+            14
+        ],
+        "SameSeatID": [
+            11,
+            12
+        ],
+        "TableID": 6
+    },
+    "12": {
+        "ID": 12,
+        "NearSeatID": [
+            9,
+            10,
+            13,
+            14
+        ],
+        "SameSeatID": [
+            11,
+            12
+        ],
+        "TableID": 6
+    },
+    "13": {
+        "ID": 13,
+        "NearSeatID": [
+            11,
+            12,
+            15,
+            16
+        ],
+        "SameSeatID": [
+            13,
+            14
+        ],
+        "TableID": 7
+    },
+    "14": {
+        "ID": 14,
+        "NearSeatID": [
+            11,
+            12,
+            15,
+            16
+        ],
+        "SameSeatID": [
+            13,
+            14
+        ],
+        "TableID": 7
+    },
+    "15": {
+        "ID": 15,
+        "NearSeatID": [
+            13,
+            14,
+            17,
+            18,
+            19
+        ],
+        "SameSeatID": [
+            15,
+            16
+        ],
+        "TableID": 8
+    },
+    "16": {
+        "ID": 16,
+        "NearSeatID": [
+            13,
+            14,
+            17,
+            18,
+            19
+        ],
+        "SameSeatID": [
+            15,
+            16
+        ],
+        "TableID": 8
+    },
+    "17": {
+        "ID": 17,
+        "NearSeatID": [
+            15,
+            16,
+            20,
+            21,
+            22
+        ],
+        "SameSeatID": [
+            17,
+            18,
+            19
+        ],
+        "TableID": 9
+    },
+    "18": {
+        "ID": 18,
+        "NearSeatID": [
+            15,
+            16,
+            20,
+            21,
+            22
+        ],
+        "SameSeatID": [
+            17,
+            18,
+            19
+        ],
+        "TableID": 9
+    },
+    "19": {
+        "ID": 19,
+        "NearSeatID": [
+            15,
+            16,
+            20,
+            21,
+            22
+        ],
+        "SameSeatID": [
+            17,
+            18,
+            19
+        ],
+        "TableID": 9
+    },
+    "2": {
+        "ID": 2,
+        "NearSeatID": [
+            3,
+            4
+        ],
+        "SameSeatID": [
+            1,
+            2
+        ],
+        "TableID": 1
+    },
+    "20": {
+        "ID": 20,
+        "NearSeatID": [
+            17,
+            18,
+            19
+        ],
+        "SameSeatID": [
+            20,
+            21,
+            22
+        ],
+        "TableID": 10
+    },
+    "21": {
+        "ID": 21,
+        "NearSeatID": [
+            17,
+            18,
+            19
+        ],
+        "SameSeatID": [
+            20,
+            21,
+            22
+        ],
+        "TableID": 10
+    },
+    "22": {
+        "ID": 22,
+        "NearSeatID": [
+            17,
+            18,
+            19
+        ],
+        "SameSeatID": [
+            20,
+            21,
+            22
+        ],
+        "TableID": 10
+    },
+    "3": {
+        "ID": 3,
+        "NearSeatID": [
+            1,
+            2,
+            5,
+            6
+        ],
+        "SameSeatID": [
+            3,
+            4
+        ],
+        "TableID": 2
+    },
+    "4": {
+        "ID": 4,
+        "NearSeatID": [
+            1,
+            2,
+            5,
+            6
+        ],
+        "SameSeatID": [
+            3,
+            4
+        ],
+        "TableID": 2
+    },
+    "5": {
+        "ID": 5,
+        "NearSeatID": [
+            3,
+            4,
+            7,
+            8
+        ],
+        "SameSeatID": [
+            5,
+            6
+        ],
+        "TableID": 3
+    },
+    "6": {
+        "ID": 6,
+        "NearSeatID": [
+            3,
+            4,
+            7,
+            8
+        ],
+        "SameSeatID": [
+            5,
+            6
+        ],
+        "TableID": 3
+    },
+    "7": {
+        "ID": 7,
+        "NearSeatID": [
+            5,
+            6,
+            9,
+            10
+        ],
+        "SameSeatID": [
+            7,
+            8
+        ],
+        "TableID": 4
+    },
+    "8": {
+        "ID": 8,
+        "NearSeatID": [
+            5,
+            6,
+            9,
+            10
+        ],
+        "SameSeatID": [
+            7,
+            8
+        ],
+        "TableID": 4
+    },
+    "9": {
+        "ID": 9,
+        "NearSeatID": [
+            7,
+            8,
+            11,
+            12
+        ],
+        "SameSeatID": [
+            9,
+            10
+        ],
+        "TableID": 5
+    }
+}

@@ -16,7 +16,7 @@ func TestSuiteSheet(t *testing.T) {
 	suite.Run(t, new(SuiteSheet))
 }
 
-// SuiteSheet 驗證 sheet 載入：對外 Load 的端到端串接，與內部 loader 的讀取／錯誤累積／執行緒安全。
+// SuiteSheet 驗證 sheet 載入: 對外 Load 的端到端串接, 與內部 loader 的讀取/錯誤累積/執行緒安全。
 type SuiteSheet struct {
 	suite.Suite
 }
@@ -32,18 +32,18 @@ func (this *SuiteSheet) TestLoad() {
 	this.NotNil(data.Setting.Get("RoundMax"))
 	this.Nil(data.Setting.Get("NotExist"))
 
-	// 其餘表格目前無資料，核心直接以 reader.Get 查詢應安全回傳 nil（不 panic）
-	this.Nil(data.Card.Get(1))
-	this.Nil(data.Guest.Get(1))
-	this.Nil(data.Skill.Get(1))
-	this.Nil(data.Effect.Get(1))
-	this.Nil(data.Seat.Get(1))
-	this.Nil(data.Award.Get(1))
+	// 查無編號的查詢應安全回傳 nil(不 panic), 不依賴表格是否已有資料
+	this.Nil(data.Card.Get(9999))
+	this.Nil(data.Guest.Get(9999))
+	this.Nil(data.Skill.Get(9999))
+	this.Nil(data.Effect.Get(9999))
+	this.Nil(data.Seat.Get(9999))
+	this.Nil(data.Award.Get(9999))
 }
 
 func (this *SuiteSheet) TestLoadMissing() {
 	data, err := Load(this.T().TempDir())
-	this.Require().Error(err) // 目錄無任何 json，loader 累積錯誤
+	this.Require().Error(err) // 目錄無任何 json, loader 累積錯誤
 	this.Nil(data)
 }
 
@@ -80,6 +80,7 @@ func (this *SuiteSheet) TestLoaderConcurrent() {
 	load := &loader{dir: this.T().TempDir()}
 
 	var wait sync.WaitGroup
+
 	for i := 0; i < 50; i++ {
 		wait.Add(1)
 		go func() {
@@ -89,5 +90,5 @@ func (this *SuiteSheet) TestLoaderConcurrent() {
 	} // for
 	wait.Wait()
 
-	this.Error(load.Err()) // 併發記錄後仍可安全取得錯誤（搭配 -race 驗證無資料競爭）
+	this.Error(load.Err()) // 併發記錄後仍可安全取得錯誤(搭配 -race 驗證無資料競爭)
 }

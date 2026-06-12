@@ -39,23 +39,23 @@ func (this *SuiteRander) TestRanderIntnDeterministic() {
 func (this *SuiteRander) TestRanderShuffle() {
 	rander := NewRander(1)
 
-	// n = 0：不呼叫 swap、不 panic
+	// n = 0:不呼叫 swap、不 panic
 	swapped := false
 	rander.Shuffle(0, func(i, j int) { swapped = true })
 	this.False(swapped)
 
-	// n = 1：單一元素洗牌後不變
+	// n = 1:單一元素洗牌後不變
 	single := []int{99}
 	rander.Shuffle(len(single), func(i, j int) { single[i], single[j] = single[j], single[i] })
 	this.Equal([]int{99}, single)
 
-	// 洗牌為排列：元素集合不增不減不重複，且確實重排（非 no-op）
+	// 洗牌為排列: 元素集合不增不減不重複, 且確實重排(非 no-op)
 	origin := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	data := make([]int, len(origin))
 	copy(data, origin)
 	rander.Shuffle(len(data), func(i, j int) { data[i], data[j] = data[j], data[i] })
 	this.ElementsMatch(origin, data) // 仍是同一組元素
-	this.NotEqual(origin, data)      // 順序已改變（確認 Shuffle 真的有作用）
+	this.NotEqual(origin, data)      // 順序已改變(確認 Shuffle 真的有作用)
 }
 
 func (this *SuiteRander) TestRanderShuffleDeterministic() {
@@ -72,7 +72,7 @@ func (this *SuiteRander) TestRanderShuffleDeterministic() {
 func (this *SuiteRander) TestRanderWeighted() {
 	rander := NewRander(7)
 
-	// 空 / 零權重回傳 -1（呼叫端據此判定 no-op）
+	// 空 / 零權重回傳 -1(呼叫端據此判定 no-op)
 	this.Equal(-1, rander.Weighted(nil))
 	this.Equal(-1, rander.Weighted([]int32{0, 0}))
 

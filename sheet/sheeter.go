@@ -27,6 +27,7 @@ type Sheeter struct {
 	Seat SeatReader // Seat.xlsx#Seat
 	Setting SettingReader // Setting.xlsx#Setting
 	Skill SkillReader // Skill.xlsx#Skill
+	Stage StageReader // Stage.xlsx#Stage
 }
 
 // FromData 讀取資料處理
@@ -49,6 +50,7 @@ func (this *Sheeter) FromData() bool {
 		&this.Seat,
 		&this.Setting,
 		&this.Skill,
+		&this.Stage,
 	} {
 		waitGroup.Go(func() {
 			filename := itor.FileName()
@@ -80,6 +82,7 @@ func (this *Sheeter) Clear() {
 	this.Seat.Clear()
 	this.Setting.Clear()
 	this.Skill.Clear()
+	this.Stage.Clear()
 }
 
 // Progress 取得進度值

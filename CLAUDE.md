@@ -29,7 +29,7 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
 - `章節編號、章節名稱`: copied from the chapter's `##` heading; separator always `、`. Numbering follows the source doc — Chinese numerals in `營業規格書` / `營業實作規格書`, Arabic in `營業顯示規格書`.
 - `小節` (optional): a number (`### 1.` → `1`), a title (`### 觸發時機` → `觸發時機`), or a named entry inside a list/table (e.g. `phaseJump`).
 - The 編號 is authoritative for locating; the 名稱 is for readability. If they drift, the 編號 wins.
-- Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、事件流的消費：速率與步進】`.
+- Examples: `【營業規格書 | 二十六、內建函式清單】`、`【營業規格書 | 十七、命令 | 1】`、`【營業顯示規格書 | 3、日誌流的消費：速率與步進】`.
 - Why half-width `|` + 檔名: comments aren't inside Markdown tables (no clash), and code always cites across into the docs.
 
 ## Context Management
@@ -68,9 +68,35 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Example: `} // if`
 - Closing comments on functions or methods are forbidden.
 
-- When a function returns more than one value, every return value must be named (single-return functions need not be named). Applies to hand-written code; generated code under `sheet/` is exempt.
+- In comments and string literals, replace these full-width characters with their half-width forms: `（）` → `()`, `：` → `:`, `，` → `,`, `；` → `;`, `／` → `/`. Only the listed characters are replaced (`、`, `。` etc. stay as-is). Exception: text inside a spec citation `【…】` is verbatim — it keeps the doc heading's full-width punctuation.
+  - Example: `// 組裝後呼叫 app(詳見規格), CLI 框架統一用 cobra`
+  - Forbidden: `// 組裝後呼叫 app（詳見規格），CLI 框架統一用 cobra`
+
+- In comments and string literals, `,` / `;` / `:` must be followed by one space when text follows (visual separation).
+  - Example: `// 循序保行序, 依 Init 同註`
+  - Forbidden: `// 循序保行序,依 Init 同註`
+
+- A control-flow block (`if` / `for` / `switch`) must be preceded by a blank line when it follows another statement — never cuddle it against the previous line. (No blank line when it is the first statement in its block, i.e. directly after the opening `{`.)
+  - Example:
+
+    ```go
+    card, ok := asCard(ref)
+
+    if ok == false {
+    ```
+
+  - Forbidden:
+
+    ```go
+    card, ok := asCard(ref)
+    if ok == false {
+    ```
+
+- When a function returns more than one value, every return value must be named; when it returns exactly one value, the return value must NOT be named. Applies to hand-written code; generated code under `sheet/` is exempt.
   - Example: `func Load(dir string) (data *sheeter.Sheeter, err error)`
   - Forbidden: `func Load(dir string) (*sheeter.Sheeter, error)`
+  - Example: `func (this *Value) Add(n float64) bool`
+  - Forbidden: `func (this *Value) Add(n float64) (changed bool)`
 
 - Names must always be singular — variables, struct fields, parameters, and named return values — even for slices, arrays, maps, and other collections.
   - Example: `item := []Item{}`, `guest := []Guest{}`, `err []error`
@@ -92,6 +118,14 @@ Two formats — pick by where the citation lives. Tell at a glance: **full-width
   - Forbidden: `import "fmt"`
 
 - Go source file names: a single word is all-lowercase (`type.go`, `runtime.go`, `selector.go`); a **compound name uses lowerCamelCase** (`commandAssign.go`, `commandOperate.go`), never all-lowercase-concatenated (`commandassign.go`) nor snake_case. Test files keep Go's `_test` suffix (`commandAssign.go` → `commandAssign_test.go`).
+
+- A type's methods live only in that type's own file; concern files express engine-context behaviour as free functions taking the engine as first parameter. Concretely: `Engine`'s methods (the Resolver interface `Attr` / `AttrRef`, the public API `ExecAssign` / `ExecOperate`, core dispatch `selectObject` / `evalAll` / `locateCard` / `locateGuest` / `env`) stay in `engine.go`; every concern file (`attr*.go`, `selector.go`, `command*.go`, …) writes its behaviour and shared helpers as `func foo(eng *Engine, …)`, never `func (this *Engine) foo(…)`. This matches the registry entries (`read*` / `write*` / `select*` / `command*`), which must be free functions to be stored in maps.
+  - Example (in `commandMove.go`): `func placeCard(eng *Engine, dest ContainerKind, card *Card)`
+  - Forbidden (in `commandMove.go`): `func (this *Engine) placeCard(dest ContainerKind, card *Card)`
+
+- Within a file, order a type's declarations **struct → constructor (`New*` / `new*`) → methods** — read the shape first, then how it's built, then its behaviour. Free-function constructors that take `eng` count as the constructor here (e.g. `newCard` sits right after `type Card struct`). Test files mirror this order (constructor test before method tests), per Test Conventions below.
+  - Example: `type Engine struct {…}` then `func NewEngine(…)` then `func (this *Engine) Attr(…)`.
+  - Forbidden: `func NewEngine(…)` declared above `type Engine struct {…}`.
 
 ## Test Conventions
 
@@ -151,11 +185,11 @@ The project is in an early stage. It currently contains the Sheeter-based game-d
 
 The project's design is rooted in three spec docs under `doc/`. They are the source of truth that the code (not yet written) must conform to — consult the relevant one before implementing. Each is large (1000+ lines); read the section you need, not the whole file.
 
-| Doc                 | Role                                                                                                                                                                                                                                                                                                                                                            | Consult when                                                                                                                                       |
-|:--------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|
-| `營業規格書.md`     | **SSOT for all game rules.** Full spec of the 營業 phase: core flow, mechanics (cards / guests / skills / effects / commands), trigger timings, settlement, end conditions, and the 英文詞彙對照 glossary (§二、英文詞彙對照).                                                                                                                                 | Any question about *what the rules are* or the expected behavior. Every rule detail defers to this file.                                           |
-| `營業實作規格書.md` | **Project architecture & engineering decisions.** Package structure, the core engine (yield-per-unit event stream, single seeded PRNG, determinism), behavior ports (`Operator` / `Presenter` / `Rander`) plus static data injected directly as `*sheeter.Sheeter`, core↔display decoupling, the portable C# subset, testing strategy, and test-data builders. | Deciding *where code goes*, package / interface design, the engine / event-stream architecture, decoupling, or how to structure tests / test data. |
-| `營業顯示規格書.md` | **TUI display / operation layer.** The Bubble Tea debug viewer, how the display *consumes* the event stream (fast / slow / step rates), screen layout & panels, event log, interaction & modals, ASCII+CJK rendering policy.                                                                                                                                    | Working on the TUI / display layer, screen rendering, event-log display, or stepping / selection UI.                                               |
+| Doc                 | Role                                                                                                                                                                                                                                                                                                                                    | Consult when                                                                                                                                       |
+|:--------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `營業規格書.md`     | **SSOT for all game rules.** Full spec of the 營業 phase: core flow, mechanics (cards / guests / skills / effects / commands), trigger timings, settlement, end conditions, and the 英文詞彙對照 glossary (§二、英文詞彙對照).                                                                                                         | Any question about *what the rules are* or the expected behavior. Every rule detail defers to this file.                                           |
+| `營業實作規格書.md` | **Project architecture & engineering decisions.** Package structure, the core engine (yield-per-unit event stream, single seeded PRNG, determinism), behavior ports (`Operator` / `Presenter` / `Rander`) plus static data injected directly as `*sheeter.Sheeter`, core↔display decoupling, testing strategy, and test-data builders. | Deciding *where code goes*, package / interface design, the engine / event-stream architecture, decoupling, or how to structure tests / test data. |
+| `營業顯示規格書.md` | **TUI display / operation layer.** The Bubble Tea debug viewer, how the display *consumes* the event stream (fast / slow / step rates), screen layout & panels, event log, interaction & modals, ASCII+CJK rendering policy.                                                                                                            | Working on the TUI / display layer, screen rendering, event-log display, or stepping / selection UI.                                               |
 
 Hierarchy: `營業規格書.md` is the SSOT for *rules*; `營業實作規格書.md` owns the *engine & architecture* (incl. the event-stream definition); `營業顯示規格書.md` only describes how the display *consumes* that engine. An implementation doc must never contradict the rules spec — if it does, the rules spec wins; flag the discrepancy rather than following the implementation doc.
 
@@ -167,14 +201,16 @@ Hierarchy: `營業規格書.md` is the SSOT for *rules*; `營業實作規格書.
 | `sheet/`     | Sheeter-generated Go readers. Generated code — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                    |
 | `sheetdata/` | Sheeter-generated JSON data. Generated — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                          |
 | `doc/`       | Design specs — see [Design Specs](#design-specs-doc). `營業規格書.md` (rules SSOT) · `營業實作規格書.md` (architecture & engine) · `營業顯示規格書.md` (TUI display layer). Build tooling under `doc/build-md/` + `doc/build-html/`; HTML output `doc/營業規格書.html` + `doc/營業實作規格書.html` + `doc/營業顯示規格書.html` — see [Doc Pipeline](#doc-pipeline). |
+| `pack/`      | Game install package materials & scripts: `MANUAL.md` + `play.bat` (shipped into the zip), `build-package.py` (invoked by `task build`), `release-notes.py` (invoked by the release workflow). Output zip lands in `pack/output/` (gitignored).                                                                                                                         |
 
 ## Development / Build / Common Commands
 
 ```bash
-task lint       # Format + lint code, markdownlint --fix all *.md (root + doc/), normalize md tables (doc/*.md + CLAUDE.md + README.md), prettier on yaml
+task lint       # Format + lint code, markdownlint --fix all *.md (root + doc/ + pack/), normalize md tables (doc/*.md + CLAUDE.md + README.md + pack/MANUAL.md), prettier on yaml
 task doc        # Rebuild doc/營業規格書.html from the SSOT
-task sheet      # Regenerate sheet code + data from gamedata/*.xlsx, then lint
-task install    # Install dev tools (golangci-lint, sheeter, markdownlint, prettier)
+task sheet      # Regenerate sheet code + data from gamedata/*.xlsx (build.bat auto-runs the sheet check), then lint
+task build      # Build the game install zip (rodi/roditool/sheeter exes + gamedata + sheetdata + 營業規格書 + MANUAL) into pack/output/
+task install    # Install dev tools (golangci-lint, sheeter pinned to SHEETER_VERSION, roditool from local source, markdownlint, prettier)
 ```
 
 ### Sheet Pipeline

@@ -1,0 +1,155 @@
+package rodi
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/yinweli/RovingDiner/internal/cores"
+)
+
+func TestSuitePanelHand(t *testing.T) {
+	suite.Run(t, new(SuitePanelHand))
+}
+
+// SuitePanelHand 驗證手牌組件(panelHand.go): 3 行卡塊 / cardify 來源段 / 旗標命中才顯 / 截斷記號。
+type SuitePanelHand struct {
+	suite.Suite
+}
+
+// TestPanelHandView 驗證渲染: 標題含上限、卡名行帶費用與 cardify 來源、flag A / B 命中才顯、超寬補右緣 >。
+func (this *SuitePanelHand) TestPanelHandView() {
+	game := testGame()
+	game.GetHandMax().Set(5)
+	game.Hand.Push(cores.NewCard(game, 101))
+	game.Hand.Push(cores.NewCard(game, 103))
+	guest := cores.NewGuest(game, 501)
+	game.Cardify.Push(guest)
+	bound := cores.NewCard(game, 101)
+	bound.CardifyBind(guest)
+	game.Hand.Push(bound)
+
+	this.Equal(strings.Join([]string{ // 手牌序 = 新進入者在前: [綁定卡 103 101]
+		"+- 手牌(3/5) " + strings.Repeat("-", 46) + "+",
+		"| " + padTo("101@上菜[501@老饕] (2)  103@結帳 (1)  101@上菜 (2)", 56) + " |",
+		"| " + padTo("不棄 封印"+strings.Repeat(" ", 15)+"不棄"+strings.Repeat(" ", 10)+"封印", 56) + " |",
+		"| " + padTo("", 56) + " |",
+	}, "\n"), (&panelHand{}).View(game, 60, false)) // 綁定卡: CardifyBind 入不棄鎖 + 資料封印; 103: 資料不棄; 101: 資料封印; flag B 全空留白
+
+	row := strings.Split((&panelHand{}).View(game, 12, false), "\n") // 超寬: 內容寬 8、> 站最後內容格
+	this.Equal("| 101@上 > |", row[1])
+}
+
+// TestPanelHandMove 驗證游標移動: 單列左右、夾界不迴繞; 聚焦時游標卡區塊 3 行反白。
+func (this *SuitePanelHand) TestPanelHandMove() {
+	game := testGame()
+	game.GetEnergy().Set(9) // 出得起且 103 未封印: 游標卡無暗色疊加, 反白單獨可釘
+	game.Hand.Push(cores.NewCard(game, 101))
+	game.Hand.Push(cores.NewCard(game, 103))
+	target := &panelHand{}
+	target.Move(game, "right")
+	this.Equal(1, target.cursor)
+	target.Move(game, "right") // 右端夾住
+	this.Equal(1, target.cursor)
+	target.Move(game, "left")
+	this.Equal(0, target.cursor)
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestFocusView)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	row := strings.Split(target.View(game, 60, true), "\n") // 手牌序 = 新進入者在前: 索引 0 = 103(未封印)
+	this.Contains(row[1], styleCursor.Render(padTo("103@結帳 (1)", 12)))
+	this.Contains(row[2], styleCursor.Render(padTo("不棄", 12))) // 旗標行同卡反白
+
+	row = strings.Split((&panelHand{cursor: 1}).View(game, 16, true), "\n") // 窄寬: 窗格捲到游標、左緣 <
+	this.Contains(row[1], styleLine.Render("| ")+"< ")
+	this.Contains(row[2], styleLine.Render("| ")+"  ") // 旗標行同縮排
+}
+
+// TestPanelHandItem 驗證游標項目: 游標下的卡牌; 空手牌回 nil。
+func (this *SuitePanelHand) TestPanelHandItem() {
+	game := testGame()
+	target := &panelHand{}
+	this.Nil(target.Item(game)) // 空手牌
+
+	game.Hand.Push(cores.NewCard(game, 101))
+	game.Hand.Push(cores.NewCard(game, 103))
+	target.Move(game, "right")
+	this.Equal(game.Hand[1], target.Item(game))
+}
+
+// TestPanelHandPick 驗證選取模式(M27 R4): 游標吸附第一個候選、候選間步進略過非候選、夾界不迴繞、
+// 已選 / 非候選著色路徑(取代出不起暗標)、非本區候選(顧客選取)照常渲染、選取 / 出牌等待標題加註。
+func (this *SuitePanelHand) TestPanelHandPick() {
+	game := testGame()
+	c1 := cores.NewCard(game, 101)
+	c2 := cores.NewCard(game, 103)
+	c3 := cores.NewCard(game, 103)
+	game.Hand = cores.CardList{c1, c2, c3}
+	pick := &pickState{}
+	pick.start(&request{card: []*cores.Card{c1, c3}, count: 1})
+	target := &panelHand{cursor: 1, pick: pick}
+	target.View(game, 60, true) // 游標在非候選(c2)→ 吸附 c1
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "right") // 下一個候選 = c3(略過 c2)
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "right") // 無更右: 不動
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "up") // 上下不動作(原單列語意)
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "left") // 前一個候選 = c1(略過 c2)
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "left") // 無更左: 不動
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "right")
+	this.Equal(2, target.cursor)
+
+	pick.toggle(1) // c3 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
+	this.Contains(target.View(game, 60, false), "103@結帳")
+	this.Contains(target.View(game, 60, false), "(請選卡牌)") // 標題加註等待落點提醒
+
+	pick.start(&request{guest: []*cores.Guest{{}}, count: 1}) // 非本區候選: 照常渲染, 回原出不起 / 封印暗標
+	this.Equal((&panelHand{cursor: 2}).View(game, 60, false), target.View(game, 60, false))
+
+	pick.start(&request{}) // 出牌等待: 標題加註請出牌, 卡列照常渲染
+	this.Contains(target.View(game, 60, false), "(請出牌)")
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestPanelHandMove)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	this.Contains(target.View(game, 60, false), styleNote.Render(notePlay))              // 提醒黃(組件層恆上色)
+	this.NotContains(focusView(target.View(game, 60, true)), styleNote.Render(notePlay)) // 聚焦: 父層反白前剝色讓位
+}
+
+// TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。
+func (this *SuitePanelHand) TestHandDim() {
+	game := testGame()
+	game.GetEnergy().Set(2)
+	sealed := cores.NewCard(game, 101) // 101: 費用 2、資料封印
+	this.True(handDim(game, sealed))
+
+	open := cores.NewCard(game, 103) // 103: 費用 1、未封印
+	this.False(handDim(game, open))
+
+	game.GetEnergy().Set(0) // 出不起
+	this.True(handDim(game, open))
+}
+
+// TestHandFlagB 驗證 flag B: 出放 / 未放命中並列。
+func (this *SuitePanelHand) TestHandFlagB() {
+	card := cores.NewCard(testGame(), 101)
+	this.Equal("", handFlagB(card))
+
+	card.GetPlayExile().Lock()
+	this.Equal("出放", handFlagB(card))
+
+	card.GetUnplayExile().Lock()
+	this.Equal("出放 未放", handFlagB(card))
+}
