@@ -278,15 +278,20 @@ func (this model) push(top modal) model {
 	return this
 }
 
-// advance 推一拍: 同步 Next 收行組入日誌(盤面組件直讀引擎、不持拷貝); 終局回 false(呼叫端據此停止排拍)。
+// advance 推一拍: 同步 Next 收輪次——行組入日誌(盤面組件直讀引擎、不持拷貝); 輸入請求暫以被動答覆立答
+// 再續收(R2 過渡, R3 / R4 換成真等待態); 終局回 false(呼叫端據此停止排拍)。
 func (this model) advance() bool {
-	line, more := this.stepper.Next()
+	next := this.stepper.Next()
 
-	if more == false {
+	for next.role == turnRequest {
+		next = this.stepper.Answer(next.req, passiveAnswer(next.req))
+	} // for
+
+	if next.role == turnOver {
 		return false
 	} // if
 
-	this.log.Append(line...)
+	this.log.Append(next.line...)
 	return true
 }
 
