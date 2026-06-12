@@ -25,6 +25,11 @@ tasks:
       - cmd: cmd /c build.bat
       - task: lint
 
+  # 表單檢查（企劃驗證器掃描 sheetdata 全表；發現問題回非零結束碼）
+  check:
+    cmds:
+      - go run ./cmd/roditool sheet
+
   # 安裝工具
   install:
     ignore_error: true

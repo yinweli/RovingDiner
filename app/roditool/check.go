@@ -1,6 +1,7 @@
 package roditool
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 
@@ -27,6 +28,11 @@ type Issue struct {
 	Row    string // 列編號(主鍵字串形; setting 以鍵名為列)
 	Column string // 欄名(表格英文欄位名)
 	Msg    string // 錯誤訊息(中文白話; 文法錯誤帶「第 N 字附近」)
+}
+
+// String 單筆結果的人類可讀行(CLI 表單檢查逐筆輸出)。
+func (this Issue) String() string {
+	return fmt.Sprintf("表 %v | 列 %v | 欄 %v | %v", this.Table, this.Row, this.Column, this.Msg)
 }
 
 // CheckSheet 表單檢查入口: 逐表(固定表序)逐列(編號升序)逐欄檢查, 彙整全部結果(不發現即空)。

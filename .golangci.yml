@@ -175,3 +175,8 @@ linters:
       - path: app/rodi/panel(Pool|Pile)\.go
         linters:
           - dupl
+      # 單筆檢查引擎的錯誤即交付物：三文法的帶位置 SyntaxError 原樣上交 CLI／表單檢查顯示（企劃白話、
+      # 「第 N 字附近」格式統一），包裝會在可讀訊息前添工程前綴，故不包裝（M28 R5 確認）。
+      - path: app/roditool/field\.go
+        linters:
+          - wrapcheck
