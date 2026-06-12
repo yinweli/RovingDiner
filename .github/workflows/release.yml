@@ -1,0 +1,42 @@
+# 發版 workflow: v tag push 觸發——三檢(重用 ci.yml)→ task build 打包遊戲安裝壓縮包
+# → 自 git log 生成 release 說明(pack/release-notes.py, 不用 generate-notes: 本 repo 不走 PR 會近乎空白)
+# → 建立同名 release 並附上壓縮包。
+# runner 用 windows: 包內三 exe 原生建置(避開交叉編譯時 go install 不准設 GOBIN 的限制)。
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  check:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: check
+    runs-on: windows-latest
+    permissions:
+      contents: write # 建立 release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # release 說明需要完整歷史(上一個 tag 到本 tag)
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: arduino/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build package
+        run: task build -- --version ${{ github.ref_name }}
+
+      - name: release notes
+        run: python pack/release-notes.py ${{ github.ref_name }} --out notes.md
+
+      - name: create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create ${{ github.ref_name }} "pack/output/RovingDiner-${{ github.ref_name }}.zip" --title ${{ github.ref_name }} --notes-file notes.md

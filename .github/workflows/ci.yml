@@ -1,11 +1,14 @@
 # 決定性 CI(M29): Go 三件套——lint / 測試(含 -race, 本機無 gcc 跑不了, 由 CI 補)/ 表單檢查。
 # golden 測試(internal/games TestSuiteGolden)即決定性斷言: 固定 seed×關卡×腳本, 行序列與快照逐 byte 相同。
 # 文件鏈(markdownlint / prettier / task doc)留本機, 不入 CI。
+# 觸發: 只在合併回 dev 後(push to dev); release workflow 以 workflow_call 重用本三檢。
 name: ci
 
 on:
   push:
+    branches: [dev]
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   go:

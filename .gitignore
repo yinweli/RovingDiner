@@ -34,3 +34,6 @@ go.work.sum
 
 # Claude Code 個人本機設定
 .claude/settings.local.json
+
+# 遊戲安裝壓縮包輸出
+pack/output/

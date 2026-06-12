@@ -1,5 +1,8 @@
 version: "3"
 
+vars:
+  SHEETER_VERSION: v3.0.11 # sheeter 版本單一定義點：install（dev 安裝）與 build（打包收 exe）共用
+
 tasks:
   # 程式碼格式化
   lint:
@@ -8,8 +11,8 @@ tasks:
       - golangci-lint fmt # 執行 gofmt + goimports
       - golangci-lint run --color always
       - python doc/build-md/normalize-md-tables.py # 正規化 doc 下所有 md 表格欄寬（CJK 對齊）
-      - python doc/build-md/normalize-md-tables.py CLAUDE.md README.md # 正規化根層 md 表格欄寬（CJK 對齊）
-      - npx markdownlint-cli --fix "*.md" "doc/*.md"
+      - python doc/build-md/normalize-md-tables.py CLAUDE.md README.md pack/MANUAL.md # 正規化根層與 pack 的 md 表格欄寬（CJK 對齊）
+      - npx markdownlint-cli --fix "*.md" "doc/*.md" "pack/*.md"
       - npx prettier --write --log-level warn --end-of-line lf '*.yml' '*.yaml' '**/*.yml' '**/*.yaml' || true
 
   # 文件輸出 HTML
@@ -22,19 +25,21 @@ tasks:
   sheet:
     dir: gamedata
     cmds:
-      - cmd: cmd /c build.bat
+      - cmd: cmd /c ".\build.bat" # 顯式路徑: 系統啟用「不搜尋目前目錄」硬化時裸名會查不到
       - task: lint
 
-  # 表單檢查（企劃驗證器掃描 sheetdata 全表；發現問題回非零結束碼）
-  check:
+  # 建置遊戲安裝壓縮包（目標機器無 Go：rodi / roditool / sheeter 三 exe 直接入包）
+  build:
     cmds:
-      - go run ./cmd/roditool sheet
+      - task: doc
+      - python pack/build-package.py --sheeter {{.SHEETER_VERSION}} {{.CLI_ARGS}}
 
   # 安裝工具
   install:
     ignore_error: true
     cmds:
       - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest # 安裝 lint
-      - go install github.com/yinweli/Sheeter/v3/cmd/sheeter@latest # 安裝 sheeter
+      - go install github.com/yinweli/Sheeter/v3/cmd/sheeter@{{.SHEETER_VERSION}} # 安裝 sheeter（版本釘 SHEETER_VERSION）
+      - go install ./cmd/roditool # 安裝企劃驗證器（本 repo 當前原始碼；gamedata/build.bat 表單檢查裸呼叫用）
       - npm install -g markdownlint-cli # 安裝 markdown 格式化工具
       - npm install -g prettier # 安裝 yaml 格式化工具
