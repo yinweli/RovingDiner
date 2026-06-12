@@ -30,7 +30,9 @@
 
 ## 接續待辦
 
-- **-race 已交 CI**:本機無 gcc 維持不跑;`.github/workflows/ci.yml` 在 ubuntu 跑 `go test -race ./...`,首次執行結果待 push 後確認。
+- **-race 已交 CI**:本機無 gcc 維持不跑;`.github/workflows/ci.yml` 在 ubuntu 跑 `go test -race ./...`。CI 觸發已收斂為 push to dev,首次執行結果待本分支合併回 dev 後確認。
+- **release workflow 首跑待驗**:第一個 `v*` tag 推上後,確認 windows runner 上 三檢(workflow_call 重用 ci)→ `task build` 打包 → git log 分組說明 → release 附包 全鏈跑通。
+- **README 頂部 badge 指向不存在的 lint.yml / test.yml**(workflow 早已併成 ci.yml):待改成 ci/release badge 或移除。
 
 ## 已敲定的設計決策(勿重新爭論;只列規格與程式看不出來的)
 
@@ -38,3 +40,5 @@
 - **rules 盤點全數否決**:維持每詞條一具名函式;詞條工廠化 / 合併 / 預建索引等十項盤點建議全數不採、不再重提。
 - **C#/Unity 移植需求已撤銷**:架構不受可攜性約束,Go 慣用法自由採用。
 - **規格未明處以實作現況為準**(exprs 比較 / 相等 / Truthy 語意、寫入語意走 Value 守衛方法等):規格補強時再對齊,不反向遷就臆測。
+- **發版前提與打包形態**:Taskfile 命令假設機器有 Go;遊戲安裝壓縮包假設目標機無 Go——rodi / roditool / sheeter 三 exe 直接入包,install.bat 不做(dev 端 `task install` 已覆蓋)。sheeter 版本釘在 Taskfile vars `SHEETER_VERSION` 單一定義點(install 與打包共用)。tag 格式不需 semver(無人對本 repo go install,release 觸發 `v*` 即可)。
+- **bat 檔內容限純 ASCII(中文註解規範對 .bat 豁免)**:cmd 以 console codepage 解析 bat,UTF-8 中文註解在 CP950 下會被 DBCS 併位吞掉 ASCII 結構字元(`)` 等)破壞解析;`chcp 65001` 只在有 console 時有效(task / 管線下無效),救不了解析。故 bat 註解一律英文,開頭保留 `chcp 65001 >nul` 供雙擊時正確顯示工具的 UTF-8 中文輸出。另:本機 cmd 裸名不搜目前目錄,Taskfile 呼叫 bat 須帶 `.\` 顯式路徑。

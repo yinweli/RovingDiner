@@ -201,14 +201,16 @@ Hierarchy: `營業規格書.md` is the SSOT for *rules*; `營業實作規格書.
 | `sheet/`     | Sheeter-generated Go readers. Generated code — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                    |
 | `sheetdata/` | Sheeter-generated JSON data. Generated — DO NOT EDIT by hand.                                                                                                                                                                                                                                                                                                          |
 | `doc/`       | Design specs — see [Design Specs](#design-specs-doc). `營業規格書.md` (rules SSOT) · `營業實作規格書.md` (architecture & engine) · `營業顯示規格書.md` (TUI display layer). Build tooling under `doc/build-md/` + `doc/build-html/`; HTML output `doc/營業規格書.html` + `doc/營業實作規格書.html` + `doc/營業顯示規格書.html` — see [Doc Pipeline](#doc-pipeline). |
+| `pack/`      | Game install package materials & scripts: `MANUAL.md` + `play.bat` (shipped into the zip), `build-package.py` (invoked by `task build`), `release-notes.py` (invoked by the release workflow). Output zip lands in `pack/output/` (gitignored).                                                                                                                         |
 
 ## Development / Build / Common Commands
 
 ```bash
-task lint       # Format + lint code, markdownlint --fix all *.md (root + doc/), normalize md tables (doc/*.md + CLAUDE.md + README.md), prettier on yaml
+task lint       # Format + lint code, markdownlint --fix all *.md (root + doc/ + pack/), normalize md tables (doc/*.md + CLAUDE.md + README.md + pack/MANUAL.md), prettier on yaml
 task doc        # Rebuild doc/營業規格書.html from the SSOT
-task sheet      # Regenerate sheet code + data from gamedata/*.xlsx, then lint
-task install    # Install dev tools (golangci-lint, sheeter, markdownlint, prettier)
+task sheet      # Regenerate sheet code + data from gamedata/*.xlsx (build.bat auto-runs the sheet check), then lint
+task build      # Build the game install zip (rodi/roditool/sheeter exes + gamedata + sheetdata + 營業規格書 + MANUAL) into pack/output/
+task install    # Install dev tools (golangci-lint, sheeter pinned to SHEETER_VERSION, roditool from local source, markdownlint, prettier)
 ```
 
 ### Sheet Pipeline
