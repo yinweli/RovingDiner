@@ -26,7 +26,7 @@ func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind[keyModeNormal], 12)
+	this.Len(target.keybar.bind[keyModeNormal], 13)
 	this.Empty(target.modal)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
 	this.Equal(modeFast, target.mode)
@@ -117,7 +117,7 @@ func (this *SuiteModel) TestModelUpdate() {
 	_, _ = target.Update(moveMsg{key: "up"})
 	this.Equal(1, target.log.offset)
 
-	result, cmd = tea.Model(target).Update(countMsg{}) // F1 開計數 modal: 入棧 + 世代 +1(在途拍作廢、暫停消費)
+	result, cmd = tea.Model(target).Update(countMsg{}) // F2 開計數 modal: 入棧 + 世代 +1(在途拍作廢、暫停消費)
 	this.Len(result.(model).modal, 1)
 	this.Equal(1, result.(model).gen)
 	this.Equal(keyModeModal, result.(model).keymode())
@@ -143,6 +143,11 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	result, cmd = result.(model).Update(popMsg{}) // 空棧防呆, 不動作也不重排拍以免雙鏈
 	this.Empty(result.(model).modal)
+	this.Nil(cmd)
+
+	result, cmd = result.(model).Update(helpMsg{}) // F1 開格式說明 modal: 同入棧路徑(開著時暫停消費)
+	this.Equal(modalHelp{}, result.(model).modal[0])
+	this.Equal(keyModeModal, result.(model).keymode())
 	this.Nil(cmd)
 
 	target = newModel(newStepper(1, 601, tester.BuildSheet()))
@@ -317,6 +322,11 @@ func (this *SuiteModel) TestTab() {
 func (this *SuiteModel) TestMove() {
 	this.Equal(moveMsg{key: "up"}, move("up")())
 	this.Equal(moveMsg{key: "left"}, move("left")())
+}
+
+// TestHelp 驗證開格式說明 modal 訊息 Cmd。
+func (this *SuiteModel) TestHelp() {
+	this.Equal(helpMsg{}, help()())
 }
 
 // TestCount 驗證開計數 modal 訊息 Cmd。

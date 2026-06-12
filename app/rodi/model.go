@@ -88,7 +88,7 @@ func (this model) Init() tea.Cmd {
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
 // 新模式為自動即重排拍; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作; 終局後切模式排的拍經 Next
 // 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層 modal、常態分派聚焦區 Move
-// (語意隨區, 狀態列落空不動作); 計數 / 檢視 → 推 modal 入棧(開著時暫停消費); 關閉 → 出棧並恢復排拍;
+// (語意隨區, 狀態列落空不動作); 說明 / 計數 / 檢視 → 推 modal 入棧(開著時暫停消費); 關閉 → 出棧並恢復排拍;
 // 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
 func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 	switch msg := msg.(type) {
@@ -157,6 +157,9 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		} // switch
 
 		return this, nil // 狀態列無游標(聚焦即整列), 落空不動作
+
+	case helpMsg:
+		return this.push(modalHelp{}), nil
 
 	case countMsg:
 		return this.push(modalCount{seed: this.stepper.game.Seed}), nil
@@ -360,10 +363,20 @@ func move(key string) tea.Cmd {
 	}
 }
 
-// countMsg 開計數 modal 訊息([F1] 鍵投遞)。
+// helpMsg 開格式說明 modal 訊息([F1] 鍵投遞)。
+type helpMsg struct{}
+
+// help 排開格式說明 modal 訊息的 Cmd([F1] 鍵綁定)。
+func help() tea.Cmd {
+	return func() tea.Msg {
+		return helpMsg{}
+	}
+}
+
+// countMsg 開計數 modal 訊息([F2] 鍵投遞)。
 type countMsg struct{}
 
-// count 排開計數 modal 訊息的 Cmd([F1] 鍵綁定)。
+// count 排開計數 modal 訊息的 Cmd([F2] 鍵綁定)。
 func count() tea.Cmd {
 	return func() tea.Msg {
 		return countMsg{}
