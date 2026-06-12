@@ -16,15 +16,16 @@ type SuiteBarKey struct {
 	suite.Suite
 }
 
-// TestNewBarKey 驗證建構: 三模式表就位(M27 R4 全鍵終態); 常態表 = tab 雙向切區(shift+tab 併入 tab 標籤
+// TestNewBarKey 驗證建構: 四模式表就位(M27 全鍵終態); 常態表 = tab 雙向切區(shift+tab 併入 tab 標籤
 // 不列示)+ 四方向鍵移游標(down/left/right 併入 up 標籤不列示)+ enter 檢視 + f1 說明 + f2 計數
-// + space 模式循環 + n 步進前進 + p 出牌 + e 結束(M27 R3 點亮)+ q 離開 + ctrl+c 逃生(不列示);
+// + space 模式循環 + n 步進前進 + q 離開 + ctrl+c 逃生(不列示);
 // 選取表 = tab 雙向 + 四方向 + space 加選/取消 + enter 確認 + ctrl+c 逃生(M27 R4);
+// 出牌表 = tab 雙向 + 四方向 + space 出牌 + enter 檢視 + e 結束 + ctrl+c 逃生(M27 拍板);
 // modal 態表 = 上下捲動 + esc 關閉 + ctrl+c 逃生, 順序照【營業顯示規格書 | 6、畫面規格 | 6.11】終態。
 func (this *SuiteBarKey) TestNewBarKey() {
 	target := newBarKey()
-	this.Require().Len(target.bind, 3)
-	this.Require().Len(target.bind[keyModeNormal], 15)
+	this.Require().Len(target.bind, 4)
+	this.Require().Len(target.bind[keyModeNormal], 13)
 	this.Equal("tab", target.bind[keyModeNormal][0].key)
 	this.Equal("shift+tab", target.bind[keyModeNormal][1].key)
 	this.Equal("", target.bind[keyModeNormal][1].label) // 併入 tab 標籤, 有作用不列示
@@ -41,13 +42,9 @@ func (this *SuiteBarKey) TestNewBarKey() {
 	this.Equal("[F2]計數", target.bind[keyModeNormal][8].label) // M26A 計數讓位至 F2
 	this.Equal(" ", target.bind[keyModeNormal][9].key)
 	this.Equal("n", target.bind[keyModeNormal][10].key)
-	this.Equal("p", target.bind[keyModeNormal][11].key)
-	this.Equal("[P]出牌", target.bind[keyModeNormal][11].label) // M27 R3 點亮(玩家行動等待態到位)
-	this.Equal("e", target.bind[keyModeNormal][12].key)
-	this.Equal("[E]結束", target.bind[keyModeNormal][12].label)
-	this.Equal("q", target.bind[keyModeNormal][13].key)
-	this.Equal("ctrl+c", target.bind[keyModeNormal][14].key)
-	this.Equal("", target.bind[keyModeNormal][14].label) // 逃生鍵有作用不列示
+	this.Equal("q", target.bind[keyModeNormal][11].key)
+	this.Equal("ctrl+c", target.bind[keyModeNormal][12].key)
+	this.Equal("", target.bind[keyModeNormal][12].label) // 逃生鍵有作用不列示
 	this.Require().Len(target.bind[keyModePick], 9)
 	this.Equal("tab", target.bind[keyModePick][0].key)
 	this.Equal("shift+tab", target.bind[keyModePick][1].key)
@@ -57,6 +54,15 @@ func (this *SuiteBarKey) TestNewBarKey() {
 	this.Equal("enter", target.bind[keyModePick][7].key)
 	this.Equal("[Enter]確認", target.bind[keyModePick][7].label)
 	this.Equal("ctrl+c", target.bind[keyModePick][8].key)
+	this.Require().Len(target.bind[keyModePlay], 10)
+	this.Equal("tab", target.bind[keyModePlay][0].key)
+	this.Equal(" ", target.bind[keyModePlay][6].key)
+	this.Equal("[Space]出牌", target.bind[keyModePlay][6].label)
+	this.Equal("enter", target.bind[keyModePlay][7].key)
+	this.Equal("[Enter]檢視", target.bind[keyModePlay][7].label)
+	this.Equal("e", target.bind[keyModePlay][8].key)
+	this.Equal("[E]結束", target.bind[keyModePlay][8].label)
+	this.Equal("ctrl+c", target.bind[keyModePlay][9].key)
 	this.Require().Len(target.bind[keyModeModal], 4)
 	this.Equal("up", target.bind[keyModeModal][0].key)
 	this.Equal("esc", target.bind[keyModeModal][2].key)
@@ -66,9 +72,10 @@ func (this *SuiteBarKey) TestNewBarKey() {
 // TestBarKeyView 驗證渲染: 依模式查表固定 2 行、行位照終態安排、空標籤跳過、提示文字取代行 2(選取模式)、
 // 超寬依預算截斷。
 func (this *SuiteBarKey) TestBarKeyView() {
-	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Enter]檢視 [F1]說明 [F2]計數\n[Space]快/慢/步進 [N]前進 [P]出牌 [E]結束 [Q]離開", newBarKey().View(keyModeNormal, 100, ""))
+	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Enter]檢視 [F1]說明 [F2]計數\n[Space]快/慢/步進 [N]前進 [Q]離開", newBarKey().View(keyModeNormal, 100, ""))
 	this.Equal("[Up/Down]欄位捲動 [Esc]關閉\n", newBarKey().View(keyModeModal, 100, ""))                                                                 // modal 態: 行 2 留白
 	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Space]加選/取消 [Enter]確認\n開朗 要求選顧客 (已選 1/2)", newBarKey().View(keyModePick, 100, "開朗 要求選顧客 (已選 1/2)")) // 選取: 行 1 鍵位、行 2 提示
+	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Space]出牌 [Enter]檢視 [E]結束\n", newBarKey().View(keyModePlay, 100, ""))                                // 出牌: 行 2 留白
 
 	target := barKey{bind: map[keyMode][]keyBind{keyModeNormal: { // 行位驗證用假表
 		{key: "t", label: "[T]導覽", row: 1},
@@ -114,10 +121,16 @@ func (this *SuiteBarKey) TestBarKeyFind() {
 	this.Equal(cycleMsg{}, target.Find(keyModeNormal, " ")())
 	this.Require().NotNil(target.Find(keyModeNormal, "n"))
 	this.Equal(stepMsg{}, target.Find(keyModeNormal, "n")())
-	this.Require().NotNil(target.Find(keyModeNormal, "p"))
-	this.Equal(playMsg{}, target.Find(keyModeNormal, "p")())
-	this.Require().NotNil(target.Find(keyModeNormal, "e"))
-	this.Equal(endMsg{}, target.Find(keyModeNormal, "e")())
+	this.Nil(target.Find(keyModeNormal, "p")) // P 鍵退役(出牌歸出牌模式 Space)
+	this.Nil(target.Find(keyModeNormal, "e")) // 結束限出牌模式
+	this.Require().NotNil(target.Find(keyModePlay, " "))
+	this.Equal(playMsg{}, target.Find(keyModePlay, " ")())
+	this.Require().NotNil(target.Find(keyModePlay, "enter"))
+	this.Equal(enterMsg{}, target.Find(keyModePlay, "enter")())
+	this.Require().NotNil(target.Find(keyModePlay, "e"))
+	this.Equal(endMsg{}, target.Find(keyModePlay, "e")())
+	this.Require().NotNil(target.Find(keyModePlay, "right"))
+	this.Equal(moveMsg{key: "right"}, target.Find(keyModePlay, "right")())
 	this.Require().NotNil(target.Find(keyModeNormal, "q"))
 	this.Equal(tea.QuitMsg{}, target.Find(keyModeNormal, "q")())
 	this.Require().NotNil(target.Find(keyModeNormal, "ctrl+c"))

@@ -93,9 +93,9 @@ func (this model) Init() tea.Cmd {
 
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
-// 新模式為自動即重排拍; 玩家行動請求 → 進等待態(不排拍、自動聚焦手牌), [P] 限聚焦手牌時出游標卡
-// (空手牌 / 出不起 / 封印 / 焦點他區 no-op; M27 拍板)、[E] 結束任意聚焦可按, 答覆後依當前模式恢復;
-// 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作;
+// 新模式為自動即重排拍; 玩家行動請求 → 進等待態(不排拍、自動聚焦手牌進出牌模式), [Space] 出游標卡 /
+// [E] 結束皆限出牌模式(焦點離開手牌即退回常態鍵表; 空手牌 / 出不起 / 封印 no-op; M27 拍板),
+// 答覆後依當前模式恢復; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作;
 // 終局後切模式排的拍經 Next 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層
 // modal、常態分派聚焦區 Move(語意隨區, 狀態列落空不動作); 說明 / 計數 / 檢視 → 推 modal 入棧(開著時
 // 暫停消費); 關閉 → 出棧並恢復排拍; 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
@@ -217,8 +217,8 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this.answer(answer{card: []*cores.Card{card}})
 
 	case endMsg:
-		if this.wait == nil || this.pick.active() {
-			return this, nil // 非玩家行動等待: 不動作
+		if this.wait == nil || this.pick.active() || this.focus != focusHand {
+			return this, nil // 非出牌模式: 不動作(結束與出牌同屬手牌區決定; M27 拍板)
 		} // if
 
 		return this.answer(answer{})
@@ -427,8 +427,9 @@ func (this model) tick() tea.Cmd {
 	})
 }
 
-// keymode 當前鍵盤模式(三模式框架; M26 R1 立框架): modal 堆疊非空 = modal 態、
-// 選取請求等待中 = 選取模式(M27 R4), 其餘常態(含玩家行動等待)——模式由 model 狀態導出、不另存欄位。
+// keymode 當前鍵盤模式(四模式; M26 R1 立框架): modal 堆疊非空 = modal 態、選取請求等待中 = 選取模式
+// (M27 R4)、玩家行動等待且聚焦手牌 = 出牌模式(M27 拍板; 焦點離開手牌即退回常態)、其餘常態——
+// 模式由 model 狀態導出、不另存欄位。
 func (this model) keymode() keyMode {
 	if len(this.modal) > 0 {
 		return keyModeModal
@@ -436,6 +437,10 @@ func (this model) keymode() keyMode {
 
 	if this.pick.active() {
 		return keyModePick
+	} // if
+
+	if this.wait != nil && this.focus == focusHand {
+		return keyModePlay
 	} // if
 
 	return keyModeNormal
@@ -521,20 +526,20 @@ func enter() tea.Cmd {
 	}
 }
 
-// playMsg 出牌訊息([P] 鍵投遞): 玩家行動等待中出手牌游標卡; 非等待 / 不可出時無動作。
+// playMsg 出牌訊息(出牌模式 [Space] 鍵投遞): 出手牌游標卡; 非出牌模式 / 不可出時無動作。
 type playMsg struct{}
 
-// play 排出牌訊息的 Cmd([P] 鍵綁定)。
+// play 排出牌訊息的 Cmd(出牌模式 [Space] 鍵綁定)。
 func play() tea.Cmd {
 	return func() tea.Msg {
 		return playMsg{}
 	}
 }
 
-// endMsg 玩家結束訊息([E] 鍵投遞): 玩家行動等待中答覆結束; 非等待時無動作。
+// endMsg 玩家結束訊息(出牌模式 [E] 鍵投遞): 答覆結束; 非出牌模式無動作。
 type endMsg struct{}
 
-// end 排玩家結束訊息的 Cmd([E] 鍵綁定)。
+// end 排玩家結束訊息的 Cmd(出牌模式 [E] 鍵綁定)。
 func end() tea.Cmd {
 	return func() tea.Msg {
 		return endMsg{}

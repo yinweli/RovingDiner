@@ -26,7 +26,7 @@ func (this *SuiteModel) TestNewModel() {
 	target := newModel(nil)
 	this.Nil(target.stepper)
 	this.NotNil(target.log)
-	this.Len(target.keybar.bind[keyModeNormal], 15)
+	this.Len(target.keybar.bind[keyModeNormal], 13)
 	this.Empty(target.modal)
 	this.Nil(target.wait)
 	this.Len(target.comp, 6) // 六區(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆); 狀態列 / 日誌 / 鍵位列為 layout 角色專屬掛點
@@ -104,7 +104,12 @@ func (this *SuiteModel) TestModelUpdate() {
 	hold = result.(model)
 	hold.mode = modeFast
 	hold.focus = focusLog
-	result, cmd = hold.Update(playMsg{}) // 焦點不在手牌: [P] 不動作, 游標不可見不可出
+	this.Equal(keyModeNormal, hold.keymode()) // 焦點離開手牌: 退回常態鍵表
+	result, cmd = hold.Update(playMsg{})      // 焦點不在手牌: 出牌不動作, 游標不可見不可出
+	this.NotNil(result.(model).wait)
+	this.Nil(cmd)
+
+	result, cmd = hold.Update(endMsg{}) // 結束同限出牌模式
 	this.NotNil(result.(model).wait)
 	this.Nil(cmd)
 
@@ -238,6 +243,7 @@ func (this *SuiteModel) TestModelUpdate() {
 	pick := &request{guest: []*cores.Guest{{}, {}}, count: 1, answer: make(chan answer, 1)}
 	fab := newModel(&stepper{turn: make(chan turn, 1)}) // 偽 stepper 預填輪次: 玩家行動答覆後續收選取請求
 	fab.wait = &request{answer: make(chan answer, 1)}
+	fab.focus = focusHand // 出牌模式前提(E 限聚焦手牌)
 	fab.stepper.turn <- turn{role: turnRequest, req: pick}
 	result, cmd = fab.Update(endMsg{})
 	this.Same(pick, result.(model).wait)              // 選取請求接棒成新等待
@@ -254,6 +260,7 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	fab = newModel(&stepper{turn: make(chan turn, 1)})
 	fab.wait = &request{answer: make(chan answer, 1)}
+	fab.focus = focusHand
 	fab.stepper.turn <- turn{role: turnOver, succ: true}
 	result, cmd = fab.Update(endMsg{}) // 答覆後直接終局: 停止排拍
 	this.Nil(result.(model).wait)
@@ -452,19 +459,22 @@ func (this *SuiteModel) TestModelTick() {
 }
 
 // TestModelKeymode 驗證鍵盤模式導出: modal 堆疊非空 = modal 態、選取請求等待中 = 選取模式、
-// 其餘常態(含玩家行動等待)。
+// 玩家行動等待且聚焦手牌 = 出牌模式(焦點離開即退回常態)、其餘常態。
 func (this *SuiteModel) TestModelKeymode() {
 	target := newModel(nil)
 	this.Equal(keyModeNormal, target.keymode())
 
 	target.wait = &request{}
-	this.Equal(keyModeNormal, target.keymode()) // 玩家行動等待 = 常態([P]/[E])
+	this.Equal(keyModeNormal, target.keymode()) // 玩家行動等待但焦點不在手牌: 仍常態
+
+	target.focus = focusHand
+	this.Equal(keyModePlay, target.keymode()) // 聚焦手牌 = 出牌模式
 
 	target.pick.start(&request{guest: []*cores.Guest{{}}, count: 1})
-	this.Equal(keyModePick, target.keymode())
+	this.Equal(keyModePick, target.keymode()) // 選取優先於出牌
 
 	target.modal = []modal{modalCount{}}
-	this.Equal(keyModeModal, target.keymode()) // modal 態優先
+	this.Equal(keyModeModal, target.keymode()) // modal 態最優先
 }
 
 // TestStep 驗證步進訊息 Cmd: 只回推進訊息(不碰引擎)。

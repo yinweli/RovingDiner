@@ -6,16 +6,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// keyMode 鍵盤模式(【營業顯示規格書 | 7、互動規格 | 7.5】): 鍵位分常態 / 選取 / modal 態三張表,
-// 分派與鍵位列顯示都隨當前模式查表(M26 R1 立框架)。模式由 model 自狀態導出(modal 堆疊 / 選取等待),
-// 不另存欄位——與速率模式(mode)是兩回事。
+// keyMode 鍵盤模式(【營業顯示規格書 | 7、互動規格 | 7.5】): 鍵位分常態 / 選取 / 出牌 / modal 態四張表,
+// 分派與鍵位列顯示都隨當前模式查表(M26 R1 立框架)。模式由 model 自狀態導出(modal 堆疊 / 選取等待 /
+// 玩家行動等待 x 聚焦手牌), 不另存欄位——與速率模式(mode)是兩回事。
 type keyMode int
 
 const (
 	keyModeNormal keyMode = iota // 常態(自由切區 / 移動 / 檢視)
-	keyModePick                  // 選取模式(引擎暫停等選; 表留 M27 填)
-	keyModeModal                 // modal 態(檢視 / 計數 modal 開啟中; 表留 M26 R3 填)
+	keyModePick                  // 選取模式(引擎暫停等選; M27 R4)
+	keyModePlay                  // 出牌模式(玩家行動等待且聚焦手牌; M27 拍板——Space 出牌 / E 結束只在此亮)
+	keyModeModal                 // modal 態(檢視 / 計數 / 說明 modal 開啟中)
 )
+
+// keyQuit 終端機慣例逃生鍵(四模式皆有作用、不列示)。
+const keyQuit = "ctrl+c"
 
 // keyBind 鍵綁定: 分派與顯示共用同一張表(單一來源, 鍵位列永不與實際行為漂移; M20 拍板)。
 // label 空字串 = 有作用但不列示(如 ctrl+c 終端機慣例逃生鍵、併入 tab 標籤的 shift+tab);
@@ -48,10 +52,8 @@ func newBarKey() barKey {
 			{key: "f2", label: "[F2]計數", row: 1, cmd: count()},
 			{key: " ", label: "[Space]快/慢/步進", row: 2, cmd: cycle()},
 			{key: "n", label: "[N]前進", row: 2, cmd: step()},
-			{key: "p", label: "[P]出牌", row: 2, cmd: play()},
-			{key: "e", label: "[E]結束", row: 2, cmd: end()},
 			{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},
-			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
+			{key: keyQuit, label: "", row: 2, cmd: tea.Quit},
 		},
 		keyModePick: {
 			{key: "tab", label: "[Tab/Shift+Tab]切區", row: 1, cmd: tab(1)},
@@ -62,13 +64,25 @@ func newBarKey() barKey {
 			{key: keyRight, label: "", row: 1, cmd: move(keyRight)},
 			{key: " ", label: "[Space]加選/取消", row: 1, cmd: toggle()},
 			{key: "enter", label: "[Enter]確認", row: 1, cmd: confirm()},
-			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
+			{key: keyQuit, label: "", row: 2, cmd: tea.Quit},
+		},
+		keyModePlay: {
+			{key: "tab", label: "[Tab/Shift+Tab]切區", row: 1, cmd: tab(1)},
+			{key: "shift+tab", label: "", row: 1, cmd: tab(-1)},
+			{key: keyUp, label: "[Arrow]移動游標", row: 1, cmd: move(keyUp)},
+			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
+			{key: keyLeft, label: "", row: 1, cmd: move(keyLeft)},
+			{key: keyRight, label: "", row: 1, cmd: move(keyRight)},
+			{key: " ", label: "[Space]出牌", row: 1, cmd: play()},
+			{key: "enter", label: "[Enter]檢視", row: 1, cmd: enter()},
+			{key: "e", label: "[E]結束", row: 1, cmd: end()},
+			{key: keyQuit, label: "", row: 2, cmd: tea.Quit},
 		},
 		keyModeModal: {
 			{key: keyUp, label: "[Up/Down]欄位捲動", row: 1, cmd: move(keyUp)},
 			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
 			{key: "esc", label: "[Esc]關閉", row: 1, cmd: pop()},
-			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
+			{key: keyQuit, label: "", row: 2, cmd: tea.Quit},
 		},
 	}}
 }
