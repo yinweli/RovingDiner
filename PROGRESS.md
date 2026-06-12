@@ -31,7 +31,6 @@
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
-- **規格明文回補(M9 旗標確認)**:① morale `-=` 開頭先 `Round(N)` 為整數扣減值;② `cardCost*` 尊重 cost 鎖定;③ `guestSeat` / `guestReturn` / `restore` 入座取隨機空位——三者已實作但規格【十七】/【二十五】條文未明寫,宜回頭補規格明文。
 - **[企劃驗證器 M28] 命令對象參數數量 / 型別校驗**:M8 selector 對 `[...]` 參數採執行期寬鬆(數量 / 型別不符 → 空集合 no-op),未做 Validate 期 arity 檢查(裸寫 `guestPick`、`handAll` 缺卡牌編號等於 Validate 漏過、執行期靜默 no-op);靜態 arity 校驗歸 M28。**開站先拍詞彙 metadata 形狀**:map 值升級為小 struct(具名函式 + arity 欄,單一定義點不漂移)vs 另立表(傾向前者;每詞條一具名函式不變,屬新議題、與 rules 盤點否決不衝突)。
 - **[企劃驗證器 M28] 引用左值的引用基底合法性**:`Validate` 對引用左值只查屬性可寫性(`HasAttrRefWrite`),未查引用基底是否為合法物件引用——`morale.cost = 1` 漏過(執行期安全 no-op);需補匯出述詞(如 `HasObjectRef`)。
 - **[企劃驗證器 M28] 其餘**:門檻配對(`門檻值^技能編號`)的嚴格驗證要與 cores 寬鬆解析共用單一格式來源(抽共用 parse,勿雙寫格式知識);緩議:適用類型矩陣要不要驗(如立即類型填了 TriggerKind 報不報),開站時拍板。
