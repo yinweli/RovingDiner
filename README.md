@@ -57,6 +57,7 @@
 ```bash
 task lint       # 格式化與 lint（golangci-lint fmt + run、markdownlint、prettier）
 task sheet      # 由 gamedata/*.xlsx 重新生成 sheet 程式碼與資料，再 lint
+task check      # 企劃驗證器表單檢查（掃描 sheetdata 全表，發現問題回非零結束碼）
 task install    # 安裝開發工具（golangci-lint、sheeter、markdownlint、prettier）
 ```
 
@@ -66,4 +67,4 @@ task install    # 安裝開發工具（golangci-lint、sheeter、markdownlint、
 
 ## 開發狀態
 
-營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流已收口。TUI debug viewer 的被動觀看（alt-screen 全畫面盤面與事件日誌、停點直讀）、速率控制（快／慢／步進）、互動層（切區聚焦、游標捲動、計數／檢視／格式說明 modal）與鍵盤 Operator（出牌模式、選取模式——可全鍵盤實際遊玩一局）已落地；後續依序為企劃驗證器與 conformance golden。進度詳見 `PROGRESS.md`。
+營業核心（`exprs` 運算式語言、`cores` 引擎本體、`rules` 詞彙與流程、`games` 對外介面）已完成並可跑通完整一局，日誌流已收口。TUI debug viewer 的被動觀看（alt-screen 全畫面盤面與事件日誌、停點直讀）、速率控制（快／慢／步進）、互動層（切區聚焦、游標捲動、計數／檢視／格式說明 modal）與鍵盤 Operator（出牌模式、選取模式——可全鍵盤實際遊玩一局）已落地；企劃驗證器（`cmd/roditool` 單筆／表單檢查 CLI、`task check`）已落地；後續為 conformance golden。進度詳見 `PROGRESS.md`。

@@ -7,8 +7,8 @@
 ## 現況
 
 - **架構已定案**(實作規格書 §一~§四):核心四包依賴 `games → rules → cores → exprs` 一條直線,`internal/infra` 基礎設施、`internal/tester` 跨包測試基建;TUI = `app/rodi`(停點直讀 + 交棒 stepper)+ `cmd/rodi` 瘦進入點。
-- **M0–M27 已落地,M28(企劃驗證器)進行中(R1 完成)**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)→ 格式說明 modal(M26A 插站)→ 選取＋Operator(M27,可全鍵盤跑完整一局)。建置 / golangci-lint(0 issues)/ 測試全綠,cores 與 rules 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
-- **剩餘站序已凍結**(2026-06-11 拍板):M28 企劃驗證器 → M29 conformance golden;細目以實作規格書【九】為準,再插站不改號(M26A 格式說明 modal 即依此插站,後續編號未動)。
+- **M0–M28 已落地,M29(conformance golden)未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)→ 格式說明 modal(M26A 插站)→ 選取＋Operator(M27,可全鍵盤跑完整一局)→ 企劃驗證器(M28,單筆/表單檢查 CLI + `task check`;機制成文於實作規格書【附錄:企劃驗證器】)。建置 / golangci-lint(0 issues)/ 測試全綠,cores / rules / roditool 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
+- **剩餘站序已凍結**(2026-06-11 拍板):M29 conformance golden;細目以實作規格書【九】為準,再插站不改號(M26A、M28 R4A 即依此插站,後續編號未動)。
 
 ## 里程碑進度
 
@@ -25,14 +25,13 @@
 | M26     | ✅   | 互動與 modal(切區游標+框線網格+五 modal)   |
 | M26A    | ✅   | 格式說明 modal(插站; F1 說明/F2 計數)      |
 | M27     | ✅   | 選取＋Operator(交棒廣義化+選取/出牌模式)   |
-| M28     | 🔶   | 企劃驗證器(R1~R4A 完成,僅剩 R5 CLI)        |
+| M28     | ✅   | 企劃驗證器(單筆/表單檢查 CLI+task check)   |
 | M29     | ⬜   | conformance golden(擴充覆蓋) *(prov)*      |
 
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
-- **[企劃驗證器 M28] 切站序(2026-06-12 拍板)**:R1 詞彙 metadata 形狀 + 命令對象 arity 校驗 → R2 `HasObjectRef` 引用基底補強 → R3 門檻配對共用 parse → R4 表單掃描器 → R5 `cmd/roditool` CLI + `task`/CI 接線。**R1、R2 完成**:metadata 形狀拍板為 map 值升級小 struct(具名函式 + metadata 欄,單一定義點;每詞條一具名函式不變)——R1 `selectorEntry`(arity 欄)+ `rules.SelectorArity`,`games.Validate` 依【二十四|參數規則】報數量錯誤;R2 `attrReadEntry`(ref 欄)+ `rules.HasObjectRef`,Validate 對引用左值先驗基底再驗屬性可寫性(`morale.cost` / 未知基底不再漏過)。**R3 完成**:cores 抽單筆 `ParseThreshold` 匯出為門檻配對格式單一定義點(錯誤用 `exprs.SyntaxError` 與兩文法同型、位置指向壞段起點),`prepareGuest` 寬鬆面改呼叫共用 parse 跳筆;驗證器嚴格面(R4 起)同一來源。執行期仍寬鬆 no-op 不變。參數**型別**靜態校驗不做:參數為算術式、值型別屬執行期知識(數值檢查仍由 oneInt / twoInt 執行期把關)。收站時 entry 機制成文於實作規格書。
-- **[企劃驗證器 M28] R4 完成(2026-06-12)**:`app/roditool` 新包(`cmd/roditool` CLI 歸 R5),`CheckSheet` 七表逐欄掃描輸出 `Issue{表/列/欄/中文錯誤}`(表序列序決定性);適用類型矩陣**拍板要驗**(填了不適用欄位即報;首跑真資料即抓到 effect 401/402/411 立即類型填 Group 三筆,待企劃改 xlsx 後 `task sheet` 重生)。**R4A 完成**:exprs 名稱節點帶位置 + `Expr.Names()` 走訪;三讀側詞彙表(attrRead/attrRefRead/builtin)升級 entry 補 arity/minArg,匯出 `AttrReadArity`/`AttrRefReadArity`/`BuiltinMinArg`;`games.ValidateExpr` 查識別子/查詢函式/內建函式/引用屬性的名稱與參數數量(無括號識別子=零參數呼叫,與求值路徑等價),且 `games.Validate` 對命令內嵌算術式(右值/參數/命令對象參數)一律走訪、錯誤位置經 AST 新記錄的偏移回算至命令座標。矩陣反向必填(2026-06-12 拍板)**僅驗單格**:觸發類型缺 TriggerKind 即報(永不觸發、無合法解釋);其餘「適用但空著」不驗——各有合法預設語意(條件恆成立/次數 1/保留/永久)或可為標記效果(無命令掛 Group 供 effectGroup 計數/免疫/effectClear 指名),勿擴張。
+- **[資料] effect 401 / 402 / 411 立即類型填 Group(驗證器發現,2026-06-12)**:Group 對立即效果靜默無效(不入佇列、免疫 / 清除 / 群組查詢皆只作用佇列項);待企劃改 `gamedata/Effect.xlsx`(清 Group 或改類型)後 `task sheet` 重生,`task check` 把關歸零。
 - **[緩議] -race 未跑**:無 gcc 環境;嚴格交棒按構造無並行存取,雙跑同序測試為行為釘。
 
 ## 已敲定的設計決策(勿重新爭論;只列規格與程式看不出來的)
