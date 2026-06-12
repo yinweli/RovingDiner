@@ -25,14 +25,13 @@
 | M26     | ✅   | 互動與 modal(切區游標+框線網格+五 modal)   |
 | M26A    | ✅   | 格式說明 modal(插站; F1 說明/F2 計數)      |
 | M27     | ✅   | 選取＋Operator(交棒廣義化+選取/出牌模式)   |
-| M28     | 🔶   | 企劃驗證器(R1 命令對象 arity 校驗完成)     |
+| M28     | 🔶   | 企劃驗證器(R1 arity+R2 引用基底校驗完成)   |
 | M29     | ⬜   | conformance golden(擴充覆蓋) *(prov)*      |
 
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
-- **[企劃驗證器 M28] 切站序(2026-06-12 拍板)**:R1 詞彙 metadata 形狀 + 命令對象 arity 校驗 → R2 `HasObjectRef` 引用基底補強 → R3 門檻配對共用 parse → R4 表單掃描器 → R5 `cmd/roditool` CLI + `task`/CI 接線。**R1 完成**:metadata 形狀拍板為 map 值升級小 struct `selectorEntry`(具名函式 + arity 欄,單一定義點;每詞條一具名函式不變),`rules.SelectorArity` 匯出、`games.Validate` 依【二十四|參數規則】報數量錯誤(執行期仍寬鬆 no-op 不變)。參數**型別**靜態校驗不做:參數為算術式、值型別屬執行期知識(數值檢查仍由 oneInt / twoInt 執行期把關)。收站時 selectorEntry 機制成文於實作規格書。
-- **[企劃驗證器 M28] 引用左值的引用基底合法性**:`Validate` 對引用左值只查屬性可寫性(`HasAttrRefWrite`),未查引用基底是否為合法物件引用——`morale.cost = 1` 漏過(執行期安全 no-op);需補匯出述詞(如 `HasObjectRef`)。
+- **[企劃驗證器 M28] 切站序(2026-06-12 拍板)**:R1 詞彙 metadata 形狀 + 命令對象 arity 校驗 → R2 `HasObjectRef` 引用基底補強 → R3 門檻配對共用 parse → R4 表單掃描器 → R5 `cmd/roditool` CLI + `task`/CI 接線。**R1、R2 完成**:metadata 形狀拍板為 map 值升級小 struct(具名函式 + metadata 欄,單一定義點;每詞條一具名函式不變)——R1 `selectorEntry`(arity 欄)+ `rules.SelectorArity`,`games.Validate` 依【二十四|參數規則】報數量錯誤;R2 `attrReadEntry`(ref 欄)+ `rules.HasObjectRef`,Validate 對引用左值先驗基底再驗屬性可寫性(`morale.cost` / 未知基底不再漏過)。執行期仍寬鬆 no-op 不變。參數**型別**靜態校驗不做:參數為算術式、值型別屬執行期知識(數值檢查仍由 oneInt / twoInt 執行期把關)。收站時 entry 機制成文於實作規格書。
 - **[企劃驗證器 M28] 其餘**:門檻配對(`門檻值^技能編號`)的嚴格驗證要與 cores 寬鬆解析共用單一格式來源(抽共用 parse,勿雙寫格式知識);緩議:適用類型矩陣要不要驗(如立即類型填了 TriggerKind 報不報),開站時拍板。
 - **[緩議] -race 未跑**:無 gcc 環境;嚴格交棒按構造無並行存取,雙跑同序測試為行為釘。
 
