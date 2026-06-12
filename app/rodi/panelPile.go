@@ -27,7 +27,7 @@ func (this *panelPile) View(game *cores.Game, width int, focus bool) string {
 	title := "牌堆"
 
 	if picking {
-		title += noteView(noteCard, focus) // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+		title += styleNote.Render(noteCard) // 標題提醒: 候選在本區, Tab 切走仍見等待落點(聚焦反白時由 focusView 剝色讓位)
 	} // if
 
 	return strings.Join([]string{
@@ -176,9 +176,9 @@ func (this *panelPile) pileRow(game *cores.Game, label string, member []*cores.C
 
 		if picking {
 			if at := this.pick.cardIndex(itor); at < 0 {
-				text = styleDim.Render(text)
+				text = restyle(&styleDim, text)
 			} else if this.pick.chosen(at) {
-				text = styleChosen.Render(text)
+				text = restyle(&styleChosen, text)
 			} // if
 		} // if
 
@@ -197,7 +197,7 @@ func (this *panelPile) pileRow(game *cores.Game, label string, member []*cores.C
 	if focus && index == this.curRow {
 		cursor := clampIndex(this.curIdx, len(token))
 		first = stripFirst(size, 1, inner-lipgloss.Width(prefix)-1, cursor)
-		token[cursor] = styleCursor.Render(token[cursor])
+		token[cursor] = restyle(&styleCursor, token[cursor])
 	} // if
 
 	if first > 0 {

@@ -32,8 +32,8 @@ func (this *panelAction) View(game *cores.Game, width int, focus bool) string {
 		cell2 := padTo(text2, w)
 
 		if focus && index == cursor {
-			cell1 = styleCursor.Render(cell1)
-			cell2 = styleCursor.Render(cell2)
+			cell1 = restyle(&styleCursor, cell1)
+			cell2 = restyle(&styleCursor, cell2)
 		} // if
 
 		row1 = append(row1, cell1)

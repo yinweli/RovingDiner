@@ -112,12 +112,13 @@ func wrapText(text string) (result []string) {
 }
 
 // modalBottom modal 底框列: 無捲動素線收尾; 有捲動於右下嵌位置指示(仿 less; 格式「- 標示 -+」貼右緣)。
+// 框線變暗、位置指示原色(M27 配色)。
 func modalBottom(width int, label string) string {
 	if label == "" {
-		return "+" + strings.Repeat("-", width-2) + "+"
+		return styleLine.Render("+" + strings.Repeat("-", width-2) + "+")
 	} // if
 
-	return "+" + strings.Repeat("-", width-5-lipgloss.Width(label)) + " " + label + " -+"
+	return styleLine.Render("+"+strings.Repeat("-", width-5-lipgloss.Width(label))+" ") + label + styleLine.Render(" -+")
 }
 
 // overlay 置中疊層: 把盒列疊在底圖正中(相對整個畫面; 【營業顯示規格書 | 7、互動規格 | 7.6】通則),

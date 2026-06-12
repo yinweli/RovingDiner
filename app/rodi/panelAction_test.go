@@ -60,9 +60,9 @@ func (this *SuitePanelAction) TestPanelActionMove() {
 
 	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestFocusView)
 	defer lipgloss.SetColorProfile(termenv.Ascii)
-	row := strings.Split(target.View(game, 17, true), "\n") // 內容寬 13 = 左緣 2 + 欄寬 11: 窗格捲到游標
-	this.Equal("| < "+styleCursor.Render(padTo("301@開朗", 11))+" |", row[1])
-	this.Equal("|   "+styleCursor.Render(padTo("501@老饕 飽", 11))+" |", row[2]) // 第 2 行同縮排對齊
+	row := strings.Split(target.View(game, 17, true), "\n")                                                          // 內容寬 13 = 左緣 2 + 欄寬 11: 窗格捲到游標
+	this.Equal(styleLine.Render("| ")+"< "+styleCursor.Render(padTo("301@開朗", 11))+styleLine.Render(" |"), row[1])   // 框線變暗(M27 配色)
+	this.Equal(styleLine.Render("| ")+"  "+styleCursor.Render(padTo("501@老饕 飽", 11))+styleLine.Render(" |"), row[2]) // 第 2 行同縮排對齊
 }
 
 // TestPanelActionItem 驗證游標項目: 游標下的行動項; 空佇列回 nil。

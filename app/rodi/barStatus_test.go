@@ -41,6 +41,12 @@ func (this *SuiteBarStatus) TestBarStatusView() {
 	row := strings.Split(barStatus{}.View(game, modeFast, 10), "\n") // 超寬: 內容寬 6 純截斷(不補記號)
 	this.Equal("| 回合   |", row[1])
 	this.Equal("| 3/10   |", row[2])
+
+	game.SetPhase(cores.PhaseGameSucc) // 終局階段上狀態語意色(無 TTY 樣式渲原文, 內容不變)
+	this.Contains(barStatus{}.View(game, modeFast, 100), "營業成功")
+
+	game.SetPhase(cores.PhaseGameFail)
+	this.Contains(barStatus{}.View(game, modeFast, 100), "營業失敗")
 }
 
 // TestEnergyText 驗證出牌點數欄: 當前 / 上限; 出牌點數保留鎖定中加「保」。

@@ -113,7 +113,7 @@ func (this barKey) View(keymode keyMode, width int, hint string) string {
 	text := strings.Join(row2, " ")
 
 	if hint != "" {
-		text = hint
+		text = styleNote.Render(hint) // 提示黃: 與等待落點標題提醒同語意同色(M27 配色)
 	} // if
 
 	return truncTo(strings.Join(row1, " "), width) + "\n" + truncTo(text, width)

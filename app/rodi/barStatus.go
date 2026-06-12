@@ -11,7 +11,18 @@ import (
 type barStatus struct{}
 
 // View 渲染標題列 + 兩行對齊表(M26 R1.5 帶框); 超寬依預算截斷(非捲動區, 不補記號)。
+// 終局階段上狀態語意色(成功綠 / 失敗紅; M27 配色), 先對齊後上色不擾欄寬。
 func (this barStatus) View(game *cores.Game, mode mode, width int) string {
+	phase := cores.PhaseName(game.GetPhase())
+
+	if game.GetPhase() == cores.PhaseGameSucc {
+		phase = styleGood.Render(phase)
+	} // if
+
+	if game.GetPhase() == cores.PhaseGameFail {
+		phase = styleBad.Render(phase)
+	} // if
+
 	row1, row2 := alignPair(
 		[]string{"回合", "士氣", "護盾", "格擋", "出牌點數", "滿意", "階段", "模式"},
 		[]string{
@@ -21,7 +32,7 @@ func (this barStatus) View(game *cores.Game, mode mode, width int) string {
 			numFloor(game.GetMoraleBlock().GetValue()),
 			energyText(game),
 			num(game.GetScore().GetValue()),
-			cores.PhaseName(game.GetPhase()),
+			phase,
 			mode.name(),
 		})
 	return panelTitle("狀態列", width) + "\n" + boxTrunc(row1, width) + "\n" + boxTrunc(row2, width)

@@ -76,7 +76,7 @@ func (this *SuitePanelSeat) TestPanelSeatMove() {
 	this.NotContains((&panelSeat{}).View(game, 60, false), styleCursor.Render(padTo("空", seatColumn))) // 未聚焦不顯游標
 
 	row = strings.Split((&panelSeat{curTable: 1}).View(game, 33, true), "\n") // 窄寬: 桌窗格捲到游標桌
-	this.Contains(row[1], "| < 桌2")                                           // 左緣 < 於桌號列
+	this.Contains(row[1], styleLine.Render("| ")+"< 桌2")                      // 左緣 < 於桌號列
 	this.Contains(row[2], styleCursor.Render(padTo("空", seatColumn)))         // 其餘行同縮排, 游標格仍反白
 }
 

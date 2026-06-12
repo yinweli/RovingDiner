@@ -17,13 +17,24 @@ type SuiteStyle struct {
 	suite.Suite
 }
 
-// TestFocusView 驗證聚焦高亮: 僅首行(標題列)上反白、其餘行原樣。臨時升 ANSI profile 使樣式可見、
-// 測畢還原 Ascii(無 TTY 預設), 不擾其他釘字串測試。
+// TestFocusView 驗證聚焦高亮: 僅首行(標題列)上反白、其餘行原樣; 首行既有樣式(標題青 / 提醒黃 /
+// 框線暗)先剝除再反白(讓位)。臨時升 ANSI profile 使樣式可見、測畢還原 Ascii(無 TTY 預設),
+// 不擾其他釘字串測試。
 func (this *SuiteStyle) TestFocusView() {
 	lipgloss.SetColorProfile(termenv.ANSI)
 	defer lipgloss.SetColorProfile(termenv.Ascii)
 	this.Equal(styleFocus.Render("+- 座位 -+")+"\n| 內容 |", focusView("+- 座位 -+\n| 內容 |"))
 	this.Equal(styleFocus.Render("單行"), focusView("單行")) // 無第二行(防禦): 整輸出即首行
+	this.Equal(styleFocus.Render("+- 手牌 (請出牌) -+")+"\n| 內容 |",
+		focusView(styleLine.Render("+- ")+styleTitle.Render("手牌")+styleNote.Render(" (請出牌)")+styleLine.Render(" -+")+"\n| 內容 |")) // 剝色讓位
+}
+
+// TestRestyle 驗證整段重上樣式: 段內既有樣式剝除後上新樣式(嵌套 reset 不切斷整段態); 純文字等同直上。
+func (this *SuiteStyle) TestRestyle() {
+	lipgloss.SetColorProfile(termenv.ANSI)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	this.Equal(styleCursor.Render("不棄 封印"), restyle(&styleCursor, "不棄 "+styleBad.Render("封印")))
+	this.Equal(styleDim.Render("素文字"), restyle(&styleDim, "素文字"))
 }
 
 // TestLineStyle 驗證行角色樣式分派(首字即角色、欄 2 原色)。

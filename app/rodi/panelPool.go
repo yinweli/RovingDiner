@@ -75,7 +75,7 @@ func (this *panelPool) poolRow(game *cores.Game, label string, member []*cores.G
 	if focus && index == this.curRow {
 		cursor := clampIndex(this.curIdx, len(token))
 		first = stripFirst(size, 1, inner-lipgloss.Width(prefix)-1, cursor)
-		token[cursor] = styleCursor.Render(token[cursor])
+		token[cursor] = restyle(&styleCursor, token[cursor])
 	} // if
 
 	if first > 0 {

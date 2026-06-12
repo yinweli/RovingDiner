@@ -64,8 +64,8 @@ func (this *SuitePanelHand) TestPanelHandMove() {
 	this.Contains(row[2], styleCursor.Render(padTo("不棄", 12))) // 旗標行同卡反白
 
 	row = strings.Split((&panelHand{cursor: 1}).View(game, 16, true), "\n") // 窄寬: 窗格捲到游標、左緣 <
-	this.Contains(row[1], "| < ")
-	this.Contains(row[2], "|   ") // 旗標行同縮排
+	this.Contains(row[1], styleLine.Render("| ")+"< ")
+	this.Contains(row[2], styleLine.Render("| ")+"  ") // 旗標行同縮排
 }
 
 // TestPanelHandItem 驗證游標項目: 游標下的卡牌; 空手牌回 nil。
@@ -124,8 +124,8 @@ func (this *SuitePanelHand) TestPanelHandPick() {
 
 	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestPanelHandMove)
 	defer lipgloss.SetColorProfile(termenv.Ascii)
-	this.Contains(target.View(game, 60, false), styleNote.Render(notePlay))   // 非聚焦: 提醒上色
-	this.NotContains(target.View(game, 60, true), styleNote.Render(notePlay)) // 聚焦: 原樣讓位整列反白
+	this.Contains(target.View(game, 60, false), styleNote.Render(notePlay))              // 提醒黃(組件層恆上色)
+	this.NotContains(focusView(target.View(game, 60, true)), styleNote.Render(notePlay)) // 聚焦: 父層反白前剝色讓位
 }
 
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。

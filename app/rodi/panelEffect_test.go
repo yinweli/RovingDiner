@@ -46,8 +46,8 @@ func (this *SuitePanelEffect) TestPanelEffectView() {
 	this.Contains(row[1], styleCursor.Render(padTo("403@立即 (永)", 13)))
 
 	row = strings.Split((&panelEffect{cursor: 2}).View(game, 20, true), "\n") // 窄寬: 窗格捲到游標、左緣 <
-	this.Contains(row[1], "| < ")
-	this.Contains(row[2], "|   ") // 第 2 行同縮排
+	this.Contains(row[1], styleLine.Render("| ")+"< ")
+	this.Contains(row[2], styleLine.Render("| ")+"  ") // 第 2 行同縮排
 }
 
 // TestPanelEffectMove 驗證游標移動: 單列左右、夾界不迴繞。

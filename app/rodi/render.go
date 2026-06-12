@@ -48,27 +48,33 @@ func truncMark(text string, width int) string {
 // panelTitle 面板標題列(【營業顯示規格書 | 4、渲染政策：ASCII + CJK only | 7】標題前後各留 1 空白);
 // 餘寬補橫線、收尾 +(M26 R1.5 框線補齊: 收尾接點即與下方列框 / 中線的交點)、超寬截斷。
 func panelTitle(title string, width int) string {
-	text := "+- " + title + " "
-	gap := width - 1 - lipgloss.Width(text)
-
-	if gap > 0 {
-		text += strings.Repeat("-", gap)
-	} // if
-
-	return truncTo(text, width-1) + "+"
+	return titleRow("+- ", title, width)
 }
 
 // panelTitleSeam 接縫版標題列(無左端 +; 該接點由左欄各行收尾的中線字元供應——M26 R1.5 拍板
 // 「中線歸左欄」, 右欄日誌專用)。
 func panelTitleSeam(title string, width int) string {
-	return panelTitle(title, width+1)[1:] // 首字必為 ASCII '+', 裁 1 byte 安全
+	return titleRow("- ", title, width)
 }
 
-// boxRow 帶框內容行: 內容(呼叫端已截至內容寬)右補空白至內容寬後包「| 」與「 |」——內容寬 = 區寬 - 4
-// (左右框與 cell padding 各 1; 【營業顯示規格書 | 4、渲染政策：ASCII + CJK only | 6】)。
+// titleRow 標題列本體: 頭段 / 橫線 / 收尾 + 變暗(框線退後)、標題青色(同日誌標題色; M27 配色拍板)——
+// 標題若帶提醒後綴(呼叫端已上色)居尾, 青色終止於後綴起點不互踩; 寬度以原文計、樣式最後上。
+func titleRow(head, title string, width int) string {
+	gap := width - 1 - lipgloss.Width(head+title+" ")
+	tail := " "
+
+	if gap > 0 {
+		tail += styleLine.Render(strings.Repeat("-", gap))
+	} // if
+
+	return truncTo(styleLine.Render(head)+styleTitle.Render(title)+tail, width-1) + styleLine.Render("+")
+}
+
+// boxRow 帶框內容行: 內容(呼叫端已截至內容寬)右補空白至內容寬後包「| 」與「 |」(框線變暗; M27 配色)
+// ——內容寬 = 區寬 - 4(左右框與 cell padding 各 1; 【營業顯示規格書 | 4、渲染政策：ASCII + CJK only | 6】)。
 // 左欄各行收尾的框字元即左欄與日誌的共用中線(M26 R1.5 拍板「中線歸左欄」)。
 func boxRow(text string, width int) string {
-	return "| " + padTo(text, width-4) + " |"
+	return styleLine.Render("| ") + padTo(text, width-4) + styleLine.Render(" |")
 }
 
 // boxMark 帶框內容行(截斷補右緣 > 版): 超寬截至內容寬並於最後內容格補 >, padding 與框保留(即「 > |」,
@@ -83,9 +89,9 @@ func boxTrunc(text string, width int) string {
 }
 
 // boxRowSeam 接縫版帶框內容行(無左框; 左緣由左欄中線供應, 右欄日誌專用): 左 padding 1 +
-// 內容補白至內容寬(= 區寬 - 3)+ 右 padding 1 + 右框。
+// 內容補白至內容寬(= 區寬 - 3)+ 右 padding 1 + 右框(變暗; M27 配色)。
 func boxRowSeam(text string, width int) string {
-	return " " + padTo(text, width-3) + " |"
+	return " " + padTo(text, width-3) + styleLine.Render(" |")
 }
 
 // num 整數屬性值轉顯示字串(屬性容器為整數, 直讀 GetValue 即 int32)。

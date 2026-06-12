@@ -303,7 +303,7 @@ func (this model) View() string {
 	default: // 常態 / modal 態無提示, 行 2 照模式表
 	} // switch
 
-	bottom := "+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+"
+	bottom := styleLine.Render("+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+") // 框線變暗(M27 配色)
 	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(keymode, this.width, hint)
 
 	if size := len(this.modal); size > 0 { // 頂層 modal 置中疊在全畫面上(M26 R3)

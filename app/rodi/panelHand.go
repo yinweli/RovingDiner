@@ -43,23 +43,23 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 		switch {
 		case picking: // 三視覺態: 非候選整卡變暗、已選選取色底(先著色後游標, 樣式不動寬度)
 			if at := this.pick.cardIndex(itor); at < 0 {
-				cell1 = styleDim.Render(cell1)
-				cell2 = styleDim.Render(cell2)
-				cell3 = styleDim.Render(cell3)
+				cell1 = restyle(&styleDim, cell1)
+				cell2 = restyle(&styleDim, cell2)
+				cell3 = restyle(&styleDim, cell3)
 			} else if this.pick.chosen(at) {
-				cell1 = styleChosen.Render(cell1)
-				cell2 = styleChosen.Render(cell2)
-				cell3 = styleChosen.Render(cell3)
+				cell1 = restyle(&styleChosen, cell1)
+				cell2 = restyle(&styleChosen, cell2)
+				cell3 = restyle(&styleChosen, cell3)
 			} // if
 
 		case handDim(game, itor):
-			cell1 = styleDim.Render(cell1) // 排版先完成、樣式最後上(寬度不受擾)
+			cell1 = restyle(&styleDim, cell1) // 排版先完成、樣式最後上(寬度不受擾)
 		} // switch
 
 		if focus && index == cursor {
-			cell1 = styleCursor.Render(cell1)
-			cell2 = styleCursor.Render(cell2)
-			cell3 = styleCursor.Render(cell3)
+			cell1 = restyle(&styleCursor, cell1)
+			cell2 = restyle(&styleCursor, cell2)
+			cell3 = restyle(&styleCursor, cell3)
 		} // if
 
 		row1 = append(row1, cell1)
@@ -77,12 +77,12 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 
 	title := fmt.Sprintf("手牌(%v/%v)", len(game.Hand), num(game.GetHandMax().GetValue()))
 
-	switch { // 標題提醒: 候選 / 出牌等待在本區, Tab 切走仍見等待落點
+	switch { // 標題提醒: 候選 / 出牌等待在本區, Tab 切走仍見等待落點(聚焦反白時由 focusView 剝色讓位)
 	case picking:
-		title += noteView(noteCard, focus)
+		title += styleNote.Render(noteCard)
 
 	case this.pick.playing():
-		title += noteView(notePlay, focus)
+		title += styleNote.Render(notePlay)
 	} // switch
 
 	return strings.Join([]string{
@@ -182,7 +182,8 @@ func handDim(game *cores.Game, card *cores.Card) bool {
 }
 
 // handFlagA flag A 行: 不棄(keep 鎖定中; 綁卡牌化來源的 +1 由 CardifyBind 入鎖, 直讀即涵蓋)/
-// 封印(cardSeal 鎖定中); 命中以空白並列、全空回空字串。
+// 封印(cardSeal 鎖定中); 命中以空白並列、全空回空字串。封印上紅(負面狀態語意色; M27 配色),
+// 卡格被變暗 / 選取色底 / 游標反白時經 restyle 讓位。
 func handFlagA(card *cores.Card) string {
 	flag := []string{}
 
@@ -191,7 +192,7 @@ func handFlagA(card *cores.Card) string {
 	} // if
 
 	if card.GetSeal().IsLock() {
-		flag = append(flag, "封印")
+		flag = append(flag, styleBad.Render("封印"))
 	} // if
 
 	return strings.Join(flag, " ")

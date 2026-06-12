@@ -59,22 +59,22 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 				base := 1 + s*2
 
 				if at < 0 {
-					col[base] = styleDim.Render(col[base])
-					col[base+1] = styleDim.Render(col[base+1])
+					col[base] = restyle(&styleDim, col[base])
+					col[base+1] = restyle(&styleDim, col[base+1])
 					continue
 				} // if
 
 				if this.pick.chosen(at) {
-					col[base] = styleChosen.Render(col[base])
-					col[base+1] = styleChosen.Render(col[base+1])
+					col[base] = restyle(&styleChosen, col[base])
+					col[base+1] = restyle(&styleChosen, col[base+1])
 				} // if
 			} // for
 		} // if
 
 		if focus && index == cursor {
 			base := 1 + clampIndex(this.curSeat, len(itor.seat))*2
-			col[base] = styleCursor.Render(col[base])
-			col[base+1] = styleCursor.Render(col[base+1])
+			col[base] = restyle(&styleCursor, col[base])
+			col[base+1] = restyle(&styleCursor, col[base+1])
 		} // if
 
 		cell = append(cell, col)
@@ -107,7 +107,7 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 	title := "座位"
 
 	if picking {
-		title += noteView(noteGuest, focus) // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+		title += styleNote.Render(noteGuest) // 標題提醒: 候選在本區, Tab 切走仍見等待落點(聚焦反白時由 focusView 剝色讓位)
 	} // if
 
 	text := []string{panelTitle(title, width), boxMark(row[0], width)}
@@ -303,23 +303,25 @@ func seatGuest(game *cores.Game, seatID int32) (row1, row2 string) {
 
 // seatFlag 旗標列(封 免 效 三槽、各 2 格, 命中才顯、未命中該槽留白、全空回空字串):
 // 封 = 任一封印技能鎖定中; 免 = 任一免疫群組計數 > 0(M22 拍板); 效 = 顧客身上有 active 效果。
+// 狀態語意色(M27 配色): 封 紅(負面)/ 免 青(保護)/ 效 綠(同日誌效果綠); 先排序定槽、樣式最後上,
+// 顧客格被變暗 / 選取色底 / 游標反白時經 restyle 讓位。
 func seatFlag(game *cores.Game, guest *cores.Guest) string {
 	seal := flagNone
 
 	if guest.GetSateSeal().IsLock() || guest.GetCalmSeal().IsLock() {
-		seal = "封"
+		seal = styleBad.Render("封")
 	} // if
 
 	immune := flagNone
 
 	if guest.GetEffectImmune().Any() || guest.GetSkillImmune().Any() {
-		immune = "免"
+		immune = styleWard.Render("免")
 	} // if
 
 	effect := flagNone
 
 	if hasEffect(game, guest) {
-		effect = "效"
+		effect = styleGood.Render("效")
 	} // if
 
 	return strings.TrimRight(seal+immune+effect, " ")
