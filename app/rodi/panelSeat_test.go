@@ -94,3 +94,40 @@ func (this *SuitePanelSeat) TestPanelSeatItem() {
 	empty := cores.NewGame(0, 0, cores.NewData(&sheeter.Sheeter{}, nil), nil, nil, nil) // 防禦: 座位表無桌
 	this.Nil(target.Item(empty))
 }
+
+// TestPanelSeatPick 驗證選取模式(M27 R4): 游標吸附第一個候選、候選間步進略過非候選(空位)、夾界不迴繞、
+// 已選 / 非候選著色路徑、非本區候選(卡牌選取)照常渲染、stop 後回原語意。
+func (this *SuitePanelSeat) TestPanelSeatPick() {
+	game := testGame()
+	g1 := cores.NewGuest(game, 501)
+	g2 := cores.NewGuest(game, 501)
+	game.Seat.Place(1, g1) // 桌1 上座(桌1 下座空位 = 非候選)
+	game.Seat.Place(3, g2) // 桌2
+	pick := &pickState{}
+	pick.start(&request{guest: []*cores.Guest{g1, g2}, count: 1})
+	target := &panelSeat{curSeat: 1, pick: pick}
+	target.View(game, 60, true) // 游標在空位(非候選)→ 吸附桌1 上座
+	this.Equal(0, target.curTable)
+	this.Equal(0, target.curSeat)
+
+	target.Move(game, "right") // 下一個候選 = 桌2(略過桌1 空位)
+	this.Equal(1, target.curTable)
+	this.Equal(0, target.curSeat)
+
+	target.Move(game, "down") // 末端夾住
+	this.Equal(1, target.curTable)
+
+	target.Move(game, "up") // 前一個候選 = 桌1 上座
+	this.Equal(0, target.curTable)
+
+	pick.toggle(0) // g1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
+	this.Contains(target.View(game, 60, false), "501@老饕")
+
+	pick.start(&request{card: []*cores.Card{{}}, count: 1}) // 非本區候選: 照常渲染
+	this.Equal((&panelSeat{}).View(game, 60, false), (&panelSeat{pick: pick}).View(game, 60, false))
+
+	pick.stop()
+	target.curTable, target.curSeat = 0, 0
+	target.Move(game, "down") // 非選取模式: 回切座原語意
+	this.Equal(1, target.curSeat)
+}

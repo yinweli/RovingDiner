@@ -228,15 +228,21 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Empty(result.(model).modal)
 
 	pick := &request{guest: []*cores.Guest{{}, {}}, count: 1, answer: make(chan answer, 1)}
-	fab := newModel(&stepper{turn: make(chan turn, 2)}) // 偽 stepper 預填輪次: 驗答覆後續收的 Pick 被動立答
+	fab := newModel(&stepper{turn: make(chan turn, 1)}) // 偽 stepper 預填輪次: 玩家行動答覆後續收選取請求
 	fab.wait = &request{answer: make(chan answer, 1)}
 	fab.stepper.turn <- turn{role: turnRequest, req: pick}
-	fab.stepper.turn <- turn{role: turnLine, line: []string{"x"}}
 	result, cmd = fab.Update(endMsg{})
-	this.Nil(result.(model).wait)
-	this.NotNil(cmd)                                         // 行組後依快速恢復排拍
-	this.Equal(answer{guest: pick.guest[:1]}, <-pick.answer) // Pick 請求已被動立答(R4 換真選取前的過渡)
-	this.NotEmpty(result.(model).log.line)
+	this.Same(pick, result.(model).wait)              // 選取請求接棒成新等待
+	this.Equal(keyModePick, result.(model).keymode()) // 進選取模式
+	this.Equal(focusSeat, result.(model).focus)       // 聚焦跳含候選區(顧客 = 座位)
+	this.Nil(cmd)                                     // 等待輸入不排拍
+
+	_, cmd = result.(model).Update(playMsg{}) // 選取模式中 [P]/[E] 不動作(等待非玩家行動)
+	this.Nil(cmd)
+
+	_, cmd = result.(model).Update(endMsg{})
+	this.Nil(cmd)
+	result.(model).pick.stop() // 收回共享狀態, 後續測試不受擾
 
 	fab = newModel(&stepper{turn: make(chan turn, 1)})
 	fab.wait = &request{answer: make(chan answer, 1)}
@@ -255,6 +261,77 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	_, cmd = newModel(nil).Update(endMsg{})
 	this.Nil(cmd)
+
+	_, cmd = newModel(nil).Update(toggleMsg{}) // 非選取模式: 加選 / 確認不動作
+	this.Nil(cmd)
+
+	_, cmd = newModel(nil).Update(confirmMsg{})
+	this.Nil(cmd)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet())) // 選取模式全流程(候選 = 入座顧客)
+	game = target.stepper.game
+	g1 := cores.NewGuest(game, 501)
+	g2 := cores.NewGuest(game, 501)
+	g3 := cores.NewGuest(game, 502)
+	game.Seat.Place(1, g1)
+	game.Seat.Place(2, g2)
+	game.Seat.Place(3, g3)
+	target.stepper = &stepper{game: game, turn: make(chan turn, 1)} // 偽 stepper: 確認答覆後續收行組
+	req := &request{prompt: "開朗 要求選顧客", guest: []*cores.Guest{g1, g2, g3}, count: 2, answer: make(chan answer, 1)}
+	target = target.arrive(req)
+	this.Equal(keyModePick, target.keymode())
+	this.Equal(focusSeat, target.focus)
+	this.Contains(target.View(), "開朗 要求選顧客 (已選 0/2)") // 鍵位列行 2 = 選取提示
+
+	result, cmd = target.Update(tabMsg{delta: 1}) // 選取模式 Tab 定錨: 含候選區僅一區
+	this.Equal(focusSeat, result.(model).focus)
+	this.Nil(cmd)
+
+	result, cmd = result.(model).Update(confirmMsg{}) // 未選滿 N: 不確認
+	this.Same(req, result.(model).wait)
+	this.Nil(cmd)
+
+	result, _ = result.(model).Update(toggleMsg{}) // 游標候選(桌1 上座 g1)加選
+	this.Equal(1, result.(model).pick.count())
+
+	result, _ = result.(model).Update(moveMsg{key: keyDown}) // 候選間步進: 下一個 = 桌1 下座 g2
+	this.Equal(1, result.(model).comp[focusSeat].(*panelSeat).curSeat)
+
+	result, _ = result.(model).Update(toggleMsg{}) // 加選 g2 → 滿 2
+	this.Equal(2, result.(model).pick.count())
+
+	result, _ = result.(model).Update(moveMsg{key: keyRight}) // 下一個候選 = 桌2 g3
+	this.Equal(1, result.(model).comp[focusSeat].(*panelSeat).curTable)
+
+	result, _ = result.(model).Update(toggleMsg{}) // 已滿 N 再加選: no-op(須先取消其一)
+	this.Equal(2, result.(model).pick.count())
+
+	target = result.(model)
+	target.stepper.turn <- turn{role: turnLine, line: []string{"y"}}
+	result, cmd = target.Update(confirmMsg{}) // 選滿確認: 答覆依候選序、續收行組、離開選取模式恢復排拍
+	this.Equal(answer{guest: []*cores.Guest{g1, g2}}, <-req.answer)
+	this.Nil(result.(model).wait)
+	this.Equal(keyModeNormal, result.(model).keymode())
+	this.NotNil(cmd)
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet())) // 卡牌候選: 手牌容器 → 聚焦手牌、toggle 辨型卡牌
+	game = target.stepper.game
+	c1 := cores.NewCard(game, 101)
+	game.Hand = cores.CardList{c1, cores.NewCard(game, 102)}
+	target = target.arrive(&request{prompt: "手牌指定 要求選手牌", card: []*cores.Card{c1}, count: 1, answer: make(chan answer, 1)})
+	this.Equal(focusHand, target.focus)
+
+	result, _ = target.Update(toggleMsg{}) // 游標手牌卡加選
+	this.Equal(1, result.(model).pick.count())
+	result.(model).pick.stop()
+
+	target = newModel(newStepper(1, 601, tester.BuildSheet())) // 卡牌候選: 牌堆容器 → 聚焦牌堆
+	game = target.stepper.game
+	e1 := cores.NewCard(game, 101)
+	game.Exile = cores.CardList{e1}
+	target = target.arrive(&request{prompt: "流放堆指定 要求選牌堆卡", card: []*cores.Card{e1}, count: 1, answer: make(chan answer, 1)})
+	this.Equal(focusPile, target.focus)
+	target.pick.stop()
 
 	result, cmd = newModel(nil).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	this.Equal(120, result.(model).width)
@@ -365,13 +442,20 @@ func (this *SuiteModel) TestModelTick() {
 	this.Nil(target.tick()) // 等待輸入不排拍(引擎停在 Operator)
 }
 
-// TestModelKeymode 驗證鍵盤模式導出: modal 堆疊非空 = modal 態、否則常態(選取等待 M27 補來源)。
+// TestModelKeymode 驗證鍵盤模式導出: modal 堆疊非空 = modal 態、選取請求等待中 = 選取模式、
+// 其餘常態(含玩家行動等待)。
 func (this *SuiteModel) TestModelKeymode() {
 	target := newModel(nil)
 	this.Equal(keyModeNormal, target.keymode())
 
+	target.wait = &request{}
+	this.Equal(keyModeNormal, target.keymode()) // 玩家行動等待 = 常態([P]/[E])
+
+	target.pick.start(&request{guest: []*cores.Guest{{}}, count: 1})
+	this.Equal(keyModePick, target.keymode())
+
 	target.modal = []modal{modalCount{}}
-	this.Equal(keyModeModal, target.keymode())
+	this.Equal(keyModeModal, target.keymode()) // modal 態優先
 }
 
 // TestStep 驗證步進訊息 Cmd: 只回推進訊息(不碰引擎)。
@@ -419,6 +503,16 @@ func (this *SuiteModel) TestPlay() {
 // TestEnd 驗證玩家結束訊息 Cmd。
 func (this *SuiteModel) TestEnd() {
 	this.Equal(endMsg{}, end()())
+}
+
+// TestToggle 驗證加選 / 取消訊息 Cmd。
+func (this *SuiteModel) TestToggle() {
+	this.Equal(toggleMsg{}, toggle()())
+}
+
+// TestConfirm 驗證確認訊息 Cmd。
+func (this *SuiteModel) TestConfirm() {
+	this.Equal(confirmMsg{}, confirm()())
 }
 
 // TestPop 驗證關閉 modal 訊息 Cmd。

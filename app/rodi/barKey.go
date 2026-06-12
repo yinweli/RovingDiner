@@ -28,8 +28,8 @@ type keyBind struct {
 }
 
 // barKey 鍵位列組件(【營業顯示規格書 | 6、畫面規格 | 6.11】): 常駐底部、固定 2 行、橫跨全寬、非聚焦
-// (不入 Tab 循環); 誠實列鍵——只列當前真有行為的鍵, 內容隨里程碑成長、M27 收斂成 §6.11 常態全鍵(M20 拍板)。
-// 綁定表為自持 UI 狀態(不讀盤面, View 只吃模式與寬度預算), 父層 Update 經 Find 分派按鍵。
+// (不入 Tab 循環); 誠實列鍵——只列當前真有行為的鍵, M27 收斂成 §6.11 全鍵終態(M20 拍板)。
+// 綁定表為自持 UI 狀態(不讀盤面, View 只吃模式 / 寬度預算 / 提示文字), 父層 Update 經 Find 分派按鍵。
 type barKey struct {
 	bind map[keyMode][]keyBind // 鍵綁定表(per-mode; M26 R1)
 }
@@ -53,7 +53,17 @@ func newBarKey() barKey {
 			{key: "q", label: "[Q]離開", row: 2, cmd: tea.Quit},
 			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
 		},
-		keyModePick: {},
+		keyModePick: {
+			{key: "tab", label: "[Tab/Shift+Tab]切區", row: 1, cmd: tab(1)},
+			{key: "shift+tab", label: "", row: 1, cmd: tab(-1)},
+			{key: keyUp, label: "[Arrow]移動游標", row: 1, cmd: move(keyUp)},
+			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
+			{key: keyLeft, label: "", row: 1, cmd: move(keyLeft)},
+			{key: keyRight, label: "", row: 1, cmd: move(keyRight)},
+			{key: " ", label: "[Space]加選/取消", row: 1, cmd: toggle()},
+			{key: "enter", label: "[Enter]確認", row: 1, cmd: confirm()},
+			{key: "ctrl+c", label: "", row: 2, cmd: tea.Quit},
+		},
 		keyModeModal: {
 			{key: keyUp, label: "[Up/Down]欄位捲動", row: 1, cmd: move(keyUp)},
 			{key: keyDown, label: "", row: 1, cmd: move(keyDown)},
@@ -63,8 +73,9 @@ func newBarKey() barKey {
 	}}
 }
 
-// View 渲染當前模式表固定 2 行(鍵少的行留白, 高度穩定不抖); 同行鍵以空白分隔, 超寬依預算截斷。
-func (this barKey) View(keymode keyMode, width int) string {
+// View 渲染當前模式表固定 2 行(鍵少的行留白, 高度穩定不抖); 同行鍵以空白分隔, 超寬依預算截斷;
+// hint 非空時取代行 2(選取模式的選取提示; 【營業顯示規格書 | 6、畫面規格 | 6.11】行 1 鍵位、行 2 提示)。
+func (this barKey) View(keymode keyMode, width int, hint string) string {
 	row1 := []string{}
 	row2 := []string{}
 
@@ -80,7 +91,13 @@ func (this barKey) View(keymode keyMode, width int) string {
 		} // if
 	} // for
 
-	return truncTo(strings.Join(row1, " "), width) + "\n" + truncTo(strings.Join(row2, " "), width)
+	text := strings.Join(row2, " ")
+
+	if hint != "" {
+		text = hint
+	} // if
+
+	return truncTo(strings.Join(row1, " "), width) + "\n" + truncTo(text, width)
 }
 
 // Find 依當前模式表查按鍵綁定行為; 未綁定回 nil(父層據此不動作)。

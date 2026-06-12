@@ -26,7 +26,9 @@ const (
 // 0..5 對應 comp 堆疊順序(座位 / 場外 / 行動 / 效果 / 手牌 / 牌堆), 狀態列與事件日誌為專屬掛點接末;
 // 起始聚焦 = 座位(0)且恆有聚焦區(不設無聚焦態)。鍵位列非聚焦元件, 不入循環。
 const (
+	focusSeat   = 0 // 座位區(顧客候選的選取定錨)
 	focusHand   = 4 // 手牌區([P] 出牌取其游標卡)
+	focusPile   = 5 // 牌堆區(牌堆卡候選的選取定錨)
 	focusStatus = 6 // 狀態列
 	focusLog    = 7 // 事件日誌
 	focusCount  = 8 // 循環模數
@@ -59,7 +61,8 @@ type model struct {
 	status   barStatus   // 狀態列(左欄釘底)
 	comp     []component // 左欄堆疊組件(六區; 順序 = 堆疊順序)
 	mode     mode        // 執行模式(model 持有的 UI 狀態; [Space] 經 cycleMsg 切換, 排拍節奏據此)
-	wait     *request    // 玩家行動等待中的輸入請求(M27 R3; 非 nil 時不排拍不放行, [P]/[E] 答覆後恢復)
+	wait     *request    // 輸入等待中的請求(M27 R3/R4; 非 nil 時不排拍不放行, 答覆後恢復——玩家行動走 [P]/[E]、選取走選取模式)
+	pick     *pickState  // 選取模式共享狀態(M27 R4; 與候選面板共持, 詳見 pick.go)
 	gen      int         // 排拍世代(切模式 / 開 modal +1; tickMsg 載章比對, 在途舊拍作廢——模式值當章不夠, 快→步→快 回同名模式會雙鏈)
 	focus    int         // 聚焦區索引(model 持有的跨組件 UI 狀態; Tab 經 tabMsg 循環 8 區, 聚焦高亮據此)
 	modal    []modal     // modal 堆疊(M26 R3; 開著時暫停消費、鍵盤入 modal 態, 頂層互動)
@@ -69,13 +72,15 @@ type model struct {
 }
 
 func newModel(stepper *stepper) model {
+	pick := &pickState{}
 	return model{
 		stepper: stepper,
 		log:     newPanelLog(),
 		keybar:  newBarKey(),
 		status:  barStatus{},
-		comp:    []component{&panelSeat{}, &panelPool{}, &panelAction{}, &panelEffect{}, &panelHand{}, &panelPile{}},
+		comp:    []component{&panelSeat{pick: pick}, &panelPool{}, &panelAction{}, &panelEffect{}, &panelHand{pick: pick}, &panelPile{pick: pick}},
 		mode:    modeFast,
+		pick:    pick,
 		width:   minWidth,
 		height:  minHeight,
 	}
@@ -101,7 +106,7 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		} // if
 
 		wait, more := this.advance()
-		this.wait = wait
+		this = this.arrive(wait)
 
 		if more == false {
 			return this, nil
@@ -114,8 +119,8 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 			return this, nil // 非步進模式不插拍; 等待輸入不放行(引擎停在 Operator, 再放行會卡死)
 		} // if
 
-		this.wait, _ = this.advance()
-		return this, nil
+		wait, _ := this.advance()
+		return this.arrive(wait), nil
 
 	case cycleMsg:
 		this.mode = this.mode.next()
@@ -123,6 +128,10 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this, this.tick()
 
 	case tabMsg:
+		if this.pick.active() {
+			return this, nil // 選取模式: 含候選區僅一區(顧客限座位、卡牌單一容器), 切區退化為定錨(【7.4】)
+		} // if
+
 		this.focus = (this.focus + msg.delta + focusCount) % focusCount
 		return this, nil
 
@@ -194,8 +203,8 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this, nil // 游標下無項目 / 事件日誌無 modal: 不動作
 
 	case playMsg:
-		if this.wait == nil {
-			return this, nil // 非等待輸入: 不動作
+		if this.wait == nil || this.pick.active() {
+			return this, nil // 非玩家行動等待: 不動作
 		} // if
 
 		card, ok := this.comp[focusHand].Item(this.stepper.game).(*cores.Card)
@@ -207,11 +216,35 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this.answer(answer{card: []*cores.Card{card}})
 
 	case endMsg:
-		if this.wait == nil {
-			return this, nil // 非等待輸入: 不動作
+		if this.wait == nil || this.pick.active() {
+			return this, nil // 非玩家行動等待: 不動作
 		} // if
 
 		return this.answer(answer{})
+
+	case toggleMsg:
+		if this.pick.active() == false {
+			return this, nil // 非選取模式: 不動作
+		} // if
+
+		switch item := this.comp[this.focus].Item(this.stepper.game).(type) {
+		case *cores.Guest:
+			this.pick.toggle(this.pick.guestIndex(item))
+
+		case *cores.Card:
+			this.pick.toggle(this.pick.cardIndex(item))
+		} // switch
+
+		return this, nil
+
+	case confirmMsg:
+		if this.pick.full() == false {
+			return this, nil // 非選取模式 / 未選滿 N: 不確認(候選 > N 必選得滿; 【7.4】選滿才可確認)
+		} // if
+
+		ans := this.pick.result()
+		this.pick.stop()
+		return this.answer(ans)
 
 	case popMsg:
 		if size := len(this.modal); size > 0 {
@@ -257,8 +290,14 @@ func (this model) View() string {
 		logview = focusView(logview)
 	} // if
 
+	hint := ""
+
+	if this.pick.active() {
+		hint = this.pick.hint() // 選取提示佔鍵位列行 2(【營業顯示規格書 | 6、畫面規格 | 6.11】)
+	} // if
+
 	bottom := "+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+"
-	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width)
+	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width, hint)
 
 	if size := len(this.modal); size > 0 { // 頂層 modal 置中疊在全畫面上(M26 R3)
 		view = overlay(view, modalView(this.stepper.game, this.modal[size-1], this.modalOff), this.width, this.height)
@@ -309,34 +348,56 @@ func (this model) advance() (wait *request, more bool) {
 	return this.consume(this.stepper.Next())
 }
 
-// consume 消化輪次至停點: 行組入日誌(盤面組件直讀引擎、不持拷貝); 玩家行動請求回傳等待(不立答,
-// 等 [P]/[E] 答覆; M27 R3)、Pick 請求暫以被動答覆立答再續收(R4 換真選取模式); 終局回 more == false
-// (呼叫端據此停止排拍)。
+// consume 消化輪次至停點: 行組入日誌(盤面組件直讀引擎、不持拷貝); 輸入請求回傳等待(不立答——
+// 玩家行動走 [P]/[E]、選取請求由 arrive 進選取模式; M27 R3/R4); 終局回 more == false(呼叫端據此停止排拍)。
 func (this model) consume(next turn) (wait *request, more bool) {
-	for {
-		switch next.role {
-		case turnLine:
-			this.log.Append(next.line...)
-			return nil, true
+	switch next.role {
+	case turnLine:
+		this.log.Append(next.line...)
+		return nil, true
 
-		case turnRequest:
-			if next.req.guest == nil && next.req.card == nil {
-				return next.req, true // 玩家行動: 進等待態
-			} // if
+	case turnRequest:
+		return next.req, true
 
-			next = this.stepper.Answer(next.req, passiveAnswer(next.req))
-
-		case turnOver:
-			return nil, false
-		} // switch
-	} // for
+	default: // turnOver(turnRole 三值窮舉)
+		return nil, false
+	} // switch
 }
 
-// answer 答覆玩家行動等待並消化續收輪次: 答覆即恢復訊號(stepper.Answer 不經 gate), 之後依當前模式
+// arrive 收下消化結果: 選取請求進選取模式(共享狀態就位、聚焦跳含候選區; 【營業顯示規格書 | 7、互動規格 |
+// 7.4】), 玩家行動請求為常態等待([P]/[E]), nil(行組 / 終局)照常。
+func (this model) arrive(wait *request) model {
+	this.wait = wait
+
+	if wait != nil && (wait.guest != nil || wait.card != nil) {
+		this.pick.start(wait)
+		this.focus = this.pickFocus(wait)
+	} // if
+
+	return this
+}
+
+// pickFocus 含候選的聚焦區: 顧客候選限座位區(營業規格書【二十、獨立流程】候選範圍); 卡牌候選看容器——
+// 手牌或牌堆(單一請求單一容器, [Tab] 切含候選區退化為定錨)。
+func (this model) pickFocus(wait *request) int {
+	if wait.guest != nil {
+		return focusSeat
+	} // if
+
+	for _, itor := range this.stepper.game.Hand {
+		if this.pick.cardIndex(itor) >= 0 {
+			return focusHand
+		} // if
+	} // for
+
+	return focusPile
+}
+
+// answer 答覆輸入等待並消化續收輪次: 答覆即恢復訊號(stepper.Answer 不經 gate), 之後依當前模式
 // 恢復排拍(再遇請求繼續等待、終局停止)。
 func (this model) answer(ans answer) (result tea.Model, cmd tea.Cmd) {
 	wait, more := this.consume(this.stepper.Answer(this.wait, ans))
-	this.wait = wait
+	this = this.arrive(wait)
 
 	if more == false {
 		return this, nil
@@ -359,10 +420,14 @@ func (this model) tick() tea.Cmd {
 }
 
 // keymode 當前鍵盤模式(三模式框架; M26 R1 立框架): modal 堆疊非空 = modal 態、
-// 選取等待 = 選取模式(M27 補來源), 其餘常態——模式由 model 狀態導出、不另存欄位。
+// 選取請求等待中 = 選取模式(M27 R4), 其餘常態(含玩家行動等待)——模式由 model 狀態導出、不另存欄位。
 func (this model) keymode() keyMode {
 	if len(this.modal) > 0 {
 		return keyModeModal
+	} // if
+
+	if this.pick.active() {
+		return keyModePick
 	} // if
 
 	return keyModeNormal
@@ -465,6 +530,26 @@ type endMsg struct{}
 func end() tea.Cmd {
 	return func() tea.Msg {
 		return endMsg{}
+	}
+}
+
+// toggleMsg 加選 / 取消訊息(選取模式 [Space] 鍵投遞): 對游標候選 toggle; 非選取模式無動作。
+type toggleMsg struct{}
+
+// toggle 排加選 / 取消訊息的 Cmd(選取模式 [Space] 鍵綁定)。
+func toggle() tea.Cmd {
+	return func() tea.Msg {
+		return toggleMsg{}
+	}
+}
+
+// confirmMsg 確認訊息(選取模式 [Enter] 鍵投遞): 選滿 N 時答覆已選集合; 未滿 / 非選取模式無動作。
+type confirmMsg struct{}
+
+// confirm 排確認訊息的 Cmd(選取模式 [Enter] 鍵綁定)。
+func confirm() tea.Cmd {
+	return func() tea.Msg {
+		return confirmMsg{}
 	}
 }
 

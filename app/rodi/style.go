@@ -17,9 +17,10 @@ var (
 	styleEffect  = lipgloss.NewStyle().Foreground(lipgloss.Color("2")) // 效果 -: green
 	styleFlow    = lipgloss.NewStyle().Foreground(lipgloss.Color("5")) // 流程直屬 $: magenta
 	styleField   = lipgloss.NewStyle()                                 // 效果欄位(欄 2): 原色
-	styleDim     = lipgloss.NewStyle().Faint(true)                     // 手牌暗色標記(出不起 / 封印)
+	styleDim     = lipgloss.NewStyle().Faint(true)                     // 手牌暗色標記(出不起 / 封印)+ 選取模式非候選態(M27 R4)
 	styleFocus   = lipgloss.NewStyle().Reverse(true)                   // 聚焦區標題列反白(M26 R1)
 	styleCursor  = lipgloss.NewStyle().Reverse(true)                   // 游標態反白(聚焦區內游標停駐項目; M26 R2)
+	styleChosen  = lipgloss.NewStyle().Background(lipgloss.Color("4")) // 選取模式已選態選取色底(M27 R4)
 )
 
 // focusView 聚焦高亮: 區輸出首行(面板標題列 / 狀態列標籤行)整列反白, 其餘行原樣——

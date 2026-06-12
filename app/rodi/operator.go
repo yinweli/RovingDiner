@@ -56,17 +56,3 @@ type answer struct {
 	guest []*cores.Guest // 選中顧客
 	card  []*cores.Card  // 選中卡牌 / 出牌
 }
-
-// passiveAnswer 被動答覆(R2 過渡; R3 / R4 換成真等待態後刪): 玩家行動 = 結束、選取 = 候選前綴,
-// 行為與已退役的 passiveOperator / tester.FakeOperator 同形——先換交棒機制、TUI 行為與 M26 被動觀看不變。
-func passiveAnswer(req *request) answer {
-	if req.guest != nil {
-		return answer{guest: req.guest[:req.count]}
-	} // if
-
-	if req.card != nil {
-		return answer{card: req.card[:req.count]}
-	} // if
-
-	return answer{}
-}

@@ -80,6 +80,33 @@ func (this *SuitePanelHand) TestPanelHandItem() {
 	this.Equal(game.Hand[1], target.Item(game))
 }
 
+// TestPanelHandPick 驗證選取模式(M27 R4): 游標吸附第一個候選、候選間步進略過非候選、夾界不迴繞、
+// 已選 / 非候選著色路徑(取代出不起暗標)、非本區候選(顧客選取)照常渲染。
+func (this *SuitePanelHand) TestPanelHandPick() {
+	game := testGame()
+	c1 := cores.NewCard(game, 101)
+	c2 := cores.NewCard(game, 103)
+	c3 := cores.NewCard(game, 103)
+	game.Hand = cores.CardList{c1, c2, c3}
+	pick := &pickState{}
+	pick.start(&request{card: []*cores.Card{c1, c3}, count: 1})
+	target := &panelHand{cursor: 1, pick: pick}
+	target.View(game, 60, true) // 游標在非候選(c2)→ 吸附 c1
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "right") // 下一個候選 = c3(略過 c2)
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "right") // 末端夾住
+	this.Equal(2, target.cursor)
+
+	pick.toggle(1) // c3 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
+	this.Contains(target.View(game, 60, false), "103@結帳")
+
+	pick.start(&request{guest: []*cores.Guest{{}}, count: 1}) // 非本區候選: 照常渲染, 回原出不起 / 封印暗標
+	this.Equal((&panelHand{cursor: 2}).View(game, 60, false), target.View(game, 60, false))
+}
+
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。
 func (this *SuitePanelHand) TestHandDim() {
 	game := testGame()

@@ -12,8 +12,8 @@ func TestSuiteOperator(t *testing.T) {
 	suite.Run(t, new(SuiteOperator))
 }
 
-// SuiteOperator 驗證鍵盤玩家輸入(operator.go): 暫停點包成輸入請求輪次、阻塞等答覆、答覆原樣回引擎;
-// 被動答覆的過渡行為。各測試以 goroutine 模擬引擎端呼叫、主 goroutine 扮演 UI 端答覆。
+// SuiteOperator 驗證鍵盤玩家輸入(operator.go): 暫停點包成輸入請求輪次、阻塞等答覆、答覆原樣回引擎。
+// 各測試以 goroutine 模擬引擎端呼叫、主 goroutine 扮演 UI 端答覆。
 type SuiteOperator struct {
 	suite.Suite
 }
@@ -87,13 +87,4 @@ func (this *SuiteOperator) TestKeyboardOperatorPickDiscard() {
 	this.Equal(1, next.req.count)
 	next.req.answer <- answer{card: card[:1]}
 	this.Equal(card[:1], <-result)
-}
-
-// TestPassiveAnswer 驗證被動答覆(R2 過渡): 顧客 / 卡牌選取取候選前綴、玩家行動回空(結束)。
-func (this *SuiteOperator) TestPassiveAnswer() {
-	guest := []*cores.Guest{{}, {}, {}}
-	card := []*cores.Card{{}, {}, {}}
-	this.Equal(answer{guest: guest[:2]}, passiveAnswer(&request{guest: guest, count: 2}))
-	this.Equal(answer{card: card[:1]}, passiveAnswer(&request{card: card, count: 1}))
-	this.Equal(answer{}, passiveAnswer(&request{}))
 }

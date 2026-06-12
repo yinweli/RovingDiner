@@ -72,3 +72,35 @@ func (this *SuitePanelPile) TestPanelPileItem() {
 	target.Move(game, "down") // 棄牌堆空
 	this.Nil(target.Item(game))
 }
+
+// TestPanelPilePick 驗證選取模式(M27 R4): 游標吸附跳到含候選堆、候選間步進略過非候選、夾界不迴繞、
+// 已選 / 非候選著色路徑、非本區候選(顧客選取)照常渲染。
+func (this *SuitePanelPile) TestPanelPilePick() {
+	game := testGame()
+	c1 := cores.NewCard(game, 101)
+	c2 := cores.NewCard(game, 103)
+	c3 := cores.NewCard(game, 103)
+	game.Drop = cores.CardList{c1, c2, c3}
+	pick := &pickState{}
+	pick.start(&request{card: []*cores.Card{c1, c3}, count: 1})
+	target := &panelPile{pick: pick} // 游標在抽牌堆(無候選)→ 吸附棄牌堆第一個候選
+	target.View(game, 60, true)
+	this.Equal(1, target.curRow)
+	this.Equal(0, target.curIdx)
+
+	target.Move(game, "right") // 下一個候選 = c3(略過 c2)
+	this.Equal(2, target.curIdx)
+
+	target.Move(game, "left") // 前一個候選 = c1
+	this.Equal(0, target.curIdx)
+
+	target.Move(game, "up") // 前端夾住
+	this.Equal(0, target.curIdx)
+	this.Equal(1, target.curRow)
+
+	pick.toggle(0) // c1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
+	this.Contains(target.View(game, 60, false), "棄牌堆(3): 101@上菜")
+
+	pick.start(&request{guest: []*cores.Guest{{}}, count: 1}) // 非本區候選: 照常渲染
+	this.Equal((&panelPile{curRow: 1}).View(game, 60, false), target.View(game, 60, false))
+}

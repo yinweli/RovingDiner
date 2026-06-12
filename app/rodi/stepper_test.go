@@ -78,7 +78,7 @@ func (this *SuiteStepper) TestGatePresenterEmit() {
 	this.Empty(gate) // 放行訊號已被消費
 }
 
-// drain 排水收集: 逐拍 Next 收行組、輸入請求以被動答覆立答, 到終局為止, 回傳行組序列與成敗。
+// drain 排水收集: 逐拍 Next 收行組、輸入請求以候選前綴立答, 到終局為止, 回傳行組序列與成敗。
 func drain(target *stepper) (line [][]string, succ bool) {
 	next := target.Next()
 
@@ -89,10 +89,23 @@ func drain(target *stepper) (line [][]string, succ bool) {
 			next = target.Next()
 
 		case turnRequest:
-			next = target.Answer(next.req, passiveAnswer(next.req))
+			next = target.Answer(next.req, prefixAnswer(next.req))
 
 		case turnOver:
 			return line, next.succ
 		} // switch
 	} // for
+}
+
+// prefixAnswer 候選前綴答覆(排水用): 玩家行動 = 結束、選取 = 候選前綴, 與雙跑基準 tester.FakeOperator 同形。
+func prefixAnswer(req *request) answer {
+	if req.guest != nil {
+		return answer{guest: req.guest[:req.count]}
+	} // if
+
+	if req.card != nil {
+		return answer{card: req.card[:req.count]}
+	} // if
+
+	return answer{}
 }

@@ -22,14 +22,17 @@ const flagNone = "  "
 // 每桌 2 座位上下疊、每位顧客 2 行摘要(識別碼 + 飽耐 / 旗標列)、空位顯「空」; 桌欄固定寬 25、欄距 2。
 // 游標 = 桌 x 座(左右換桌、上下切座; M26 R2), 游標態反白整個顧客格 2 行(【營業顯示規格書 | 7、互動規格 | 7.4】
 // 粒度); 桌窗格跟游標捲、左緣 < 全行縮排對齊、桌號列補右緣 >。
+// 選取模式(M27 R4; 顧客候選限座位區): 非候選(含空位)變暗、已選選取色底、游標只在候選間吸附步進。
 type panelSeat struct {
-	curTable int // 游標桌索引(自持 UI 狀態; 讀取時夾界)
-	curSeat  int // 游標桌內座索引(0 上 / 1 下; 讀取時夾界)
+	curTable int        // 游標桌索引(自持 UI 狀態; 讀取時夾界)
+	curSeat  int        // 游標桌內座索引(0 上 / 1 下; 讀取時夾界)
+	pick     *pickState // 選取模式共享狀態(newModel 注入, 唯讀)
 }
 
 // View 渲染標題列 + 5 行(桌號列 1 + 桌內 2 座各 2 行)。
 func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 	table := seatTable(game.GetSheet())
+	picking := this.pickSnap(game, table)
 	cursor := clampIndex(this.curTable, len(table))
 	cell := [][]string{}
 	size := []int{}
@@ -48,6 +51,24 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 		for r := range col {
 			col[r] = padTo(col[r], seatColumn)
 		} // for
+
+		if picking { // 三視覺態: 非候選(含空位)變暗、已選選取色底(先著色後游標, 樣式不動寬度)
+			for s, seatID := range itor.seat {
+				at := this.pick.guestIndex(game.Seat[seatID])
+				base := 1 + s*2
+
+				if at < 0 {
+					col[base] = styleDim.Render(col[base])
+					col[base+1] = styleDim.Render(col[base+1])
+					continue
+				} // if
+
+				if this.pick.chosen(at) {
+					col[base] = styleChosen.Render(col[base])
+					col[base+1] = styleChosen.Render(col[base+1])
+				} // if
+			} // for
+		} // if
 
 		if focus && index == cursor {
 			base := 1 + clampIndex(this.curSeat, len(itor.seat))*2
@@ -92,8 +113,16 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 }
 
 // Move 游標移動: 左右換桌、上下切桌內 2 座(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
+// 選取模式: 候選位置序列(桌序 x 座序)上前後步進, 自動略過非候選(【7.4】)。
 func (this *panelSeat) Move(game *cores.Game, key string) {
 	table := seatTable(game.GetSheet())
+
+	if this.pickSnap(game, table) {
+		spot := this.pickSpot(game, table)
+		next := spot[pickStep(this.pickAt(game, table), key, len(spot))]
+		this.curTable, this.curSeat = next[0], next[1]
+		return
+	} // if
 
 	switch key {
 	case keyLeft:
@@ -133,6 +162,50 @@ func (this *panelSeat) Item(game *cores.Game) any {
 	} // if
 
 	return guest
+}
+
+// pickSnap 選取模式吸附判定: 本區含候選時若游標不在候選上, 吸到第一個候選(游標只在候選間;
+// 【營業顯示規格書 | 7、互動規格 | 7.4】); 回報本區是否處於選取著色狀態(無候選即非本區選取, 照常渲染)。
+func (this *panelSeat) pickSnap(game *cores.Game, table []tableInfo) bool {
+	if this.pick.active() == false {
+		return false
+	} // if
+
+	spot := this.pickSpot(game, table)
+
+	if len(spot) == 0 {
+		return false
+	} // if
+
+	if this.pickAt(game, table) < 0 {
+		this.curTable, this.curSeat = spot[0][0], spot[0][1]
+	} // if
+
+	return true
+}
+
+// pickSpot 候選位置序列(桌索引 x 桌內座索引, 桌序為主序; 候選身分 = 實例指標)。
+func (this *panelSeat) pickSpot(game *cores.Game, table []tableInfo) (result [][2]int) {
+	for index, itor := range table {
+		for s, seatID := range itor.seat {
+			if this.pick.guestIndex(game.Seat[seatID]) >= 0 {
+				result = append(result, [2]int{index, s})
+			} // if
+		} // for
+	} // for
+
+	return result
+}
+
+// pickAt 游標在候選位置序列的索引(不在候選上回 -1)。
+func (this *panelSeat) pickAt(game *cores.Game, table []tableInfo) int {
+	for index, itor := range this.pickSpot(game, table) {
+		if itor[0] == clampIndex(this.curTable, len(table)) && itor[1] == this.curSeat {
+			return index
+		} // if
+	} // for
+
+	return -1
 }
 
 // tableInfo 單一桌次(桌次編號 + 桌內座位編號, 升序)。

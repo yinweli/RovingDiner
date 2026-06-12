@@ -15,12 +15,16 @@ import (
 // 命中才顯、未命中留白; 欄寬 content-fit、欄距 2。出不起 / 封印的卡名行上暗色標記(顏色與排版正交; M22 拍板)。
 // 游標單列左右移(M26 R2), 游標態反白整張卡區塊(3 行; 【營業顯示規格書 | 7、互動規格 | 7.4】粒度);
 // 窗格跟游標捲、左緣 < 三行同縮排、超寬補右緣 >。
+// 選取模式且候選在手牌(M27 R4): 非候選整卡變暗(取代出不起暗標——候選可選與否以候選身分為準)、
+// 已選選取色底、游標只在候選間吸附步進。
 type panelHand struct {
-	cursor int // 游標索引(自持 UI 狀態; 讀取時夾界)
+	cursor int        // 游標索引(自持 UI 狀態; 讀取時夾界)
+	pick   *pickState // 選取模式共享狀態(newModel 注入, 唯讀)
 }
 
 // View 渲染標題列(手牌(N/上限)) + 3 行; 空手牌三行留白(高度穩定)。
 func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
+	picking := this.pickSnap(game)
 	cursor := clampIndex(this.cursor, len(game.Hand))
 	row1 := []string{}
 	row2 := []string{}
@@ -36,9 +40,21 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 		cell2 := padTo(text2, w)
 		cell3 := padTo(text3, w)
 
-		if handDim(game, itor) {
+		switch {
+		case picking: // 三視覺態: 非候選整卡變暗、已選選取色底(先著色後游標, 樣式不動寬度)
+			if at := this.pick.cardIndex(itor); at < 0 {
+				cell1 = styleDim.Render(cell1)
+				cell2 = styleDim.Render(cell2)
+				cell3 = styleDim.Render(cell3)
+			} else if this.pick.chosen(at) {
+				cell1 = styleChosen.Render(cell1)
+				cell2 = styleChosen.Render(cell2)
+				cell3 = styleChosen.Render(cell3)
+			} // if
+
+		case handDim(game, itor):
 			cell1 = styleDim.Render(cell1) // 排版先完成、樣式最後上(寬度不受擾)
-		} // if
+		} // switch
 
 		if focus && index == cursor {
 			cell1 = styleCursor.Render(cell1)
@@ -68,7 +84,14 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 }
 
 // Move 游標移動: 單列左右(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
+// 選取模式: 候選索引序列上前後步進, 自動略過非候選(【7.4】)。
 func (this *panelHand) Move(game *cores.Game, key string) {
+	if this.pickSnap(game) {
+		spot := this.pickSpot(game)
+		this.cursor = spot[pickStep(this.pickAt(game), key, len(spot))]
+		return
+	} // if
+
 	this.cursor = moveIndex(this.cursor, key, len(game.Hand))
 }
 
@@ -79,6 +102,48 @@ func (this *panelHand) Item(game *cores.Game) any {
 	} // if
 
 	return game.Hand[clampIndex(this.cursor, len(game.Hand))]
+}
+
+// pickSnap 選取模式吸附判定: 本區含候選時若游標不在候選上, 吸到第一個候選; 回報本區是否處於
+// 選取著色狀態(無候選即非本區選取, 照常渲染; 規則同 panelSeat)。
+func (this *panelHand) pickSnap(game *cores.Game) bool {
+	if this.pick.active() == false {
+		return false
+	} // if
+
+	spot := this.pickSpot(game)
+
+	if len(spot) == 0 {
+		return false
+	} // if
+
+	if this.pickAt(game) < 0 {
+		this.cursor = spot[0]
+	} // if
+
+	return true
+}
+
+// pickSpot 候選索引序列(手牌序; 候選身分 = 實例指標)。
+func (this *panelHand) pickSpot(game *cores.Game) (result []int) {
+	for index, itor := range game.Hand {
+		if this.pick.cardIndex(itor) >= 0 {
+			result = append(result, index)
+		} // if
+	} // for
+
+	return result
+}
+
+// pickAt 游標在候選索引序列的索引(不在候選上回 -1)。
+func (this *panelHand) pickAt(game *cores.Game) int {
+	for index, itor := range this.pickSpot(game) {
+		if itor == this.cursor {
+			return index
+		} // if
+	} // for
+
+	return -1
 }
 
 // handCard 卡名行: 識別碼(主畫面省實例段) + cardify 來源段(已綁才有) + (出牌費用)。
