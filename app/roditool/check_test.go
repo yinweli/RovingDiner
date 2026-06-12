@@ -19,8 +19,8 @@ type SuiteCheck struct {
 
 // TestIssueString 驗證單筆結果的人類可讀行格式(CLI 表單檢查輸出)。
 func (this *SuiteCheck) TestIssueString() {
-	this.Equal("表 award | 列 3 | 欄 CardID | 查無卡牌編號:999",
-		Issue{Table: tableAward, Row: "3", Column: "CardID", Msg: "查無卡牌編號:999"}.String())
+	this.Equal("表 card | 列 3 | 欄 SkillID | 查無技能編號:888",
+		Issue{Table: tableCard, Row: "3", Column: "SkillID", Msg: "查無技能編號:888"}.String())
 }
 
 // TestCheckSheet 驗證入口: nil 防禦、跨表彙整依固定表序輸出。
