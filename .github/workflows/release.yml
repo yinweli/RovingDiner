@@ -18,11 +18,11 @@ jobs:
     permissions:
       contents: write # 建立 release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # release 說明需要完整歷史(上一個 tag 到本 tag)
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
