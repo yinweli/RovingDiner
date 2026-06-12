@@ -30,6 +30,19 @@ func (this *SuiteAttrRead) TestAttrReadHasObjectRef() {
 	this.False(HasObjectRef("nope"))      // 未登錄
 }
 
+// TestAttrReadArity 驗證讀詞條參數數量查詢: 一般屬性 0、查詢函式依詞條(1 / 2), 未登錄回 ok=false。
+func (this *SuiteAttrRead) TestAttrReadArity() {
+	this.Equal(0, this.arity("morale"))
+	this.Equal(0, this.arity("self"))
+	this.Equal(1, this.arity("tableGuest"))
+	this.Equal(2, this.arity("tableCount"))
+	this.Equal(1, this.arity("handSize"))
+	this.Equal(1, this.arity("drawTotal"))
+
+	_, ok := AttrReadArity("nope")
+	this.False(ok) // 未登錄
+}
+
 func (this *SuiteAttrRead) TestAttrReadValue() {
 	game := newGame()
 	game.GetMorale().Set(25)
@@ -263,6 +276,13 @@ func (this *SuiteAttrRead) TestAttrReadGroupQuery() {
 	this.False(ok)
 	_, ok = game.Attr("drawTotal", nil) // 缺參數
 	this.False(ok)
+}
+
+// arity 查讀詞條 arity 並斷言已登錄(聚焦於數量斷言)。
+func (this *SuiteAttrRead) arity(name string) int {
+	arity, ok := AttrReadArity(name)
+	this.Require().True(ok, name)
+	return arity
 }
 
 // num 取全域屬性求值結果的數字; 斷言命中且為數值。

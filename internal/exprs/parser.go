@@ -271,7 +271,7 @@ func (this *parser) parseIdent(ident token) (result node, err error) {
 			return nil, errArg
 		} // if
 
-		return nodeRef{name: name, attr: attr.text, arg: arg}, nil
+		return nodeRef{name: name, pos: ident.pos, attr: attr.text, attrPos: attr.pos, arg: arg}, nil
 
 	case tokenLParen:
 		arg, errArg := this.parseArgs()
@@ -280,10 +280,10 @@ func (this *parser) parseIdent(ident token) (result node, err error) {
 			return nil, errArg
 		} // if
 
-		return nodeCall{name: name, arg: arg}, nil
+		return nodeCall{name: name, pos: ident.pos, arg: arg}, nil
 
 	default:
-		return nodeIdent{name: name}, nil
+		return nodeIdent{name: name, pos: ident.pos}, nil
 	} // switch
 }
 

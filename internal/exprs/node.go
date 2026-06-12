@@ -46,6 +46,7 @@ func (nodeTernary) isNode() {}
 // 求值時交由 Resolver.Attr 解析(對齊【營業規格書 | 二十七、運算式 | 5】屬性 / self)。
 type nodeIdent struct {
 	name string
+	pos  int // name 於來源的 rune 位置(供 Names 走訪的詞彙錯誤定位; M28 R4A)
 }
 
 func (nodeIdent) isNode() {}
@@ -54,6 +55,7 @@ func (nodeIdent) isNode() {}
 // 視為 Resolver 的查詢函式(對齊【營業規格書 | 二十六、內建函式清單】與【二十七、運算式 | 9】)。
 type nodeCall struct {
 	name string
+	pos  int // name 於來源的 rune 位置(同 nodeIdent.pos)
 	arg  []node
 }
 
@@ -62,9 +64,11 @@ func (nodeCall) isNode() {}
 // nodeRef 引用屬性 / 引用查詢函式節點: name.attr 或 name.attr(args)。求值時先以 Resolver.Attr
 // 解析引用主體、再以 Resolver.AttrRef 取其子屬性(對齊【營業規格書 | 二十七、運算式 | 5】引用屬性)。
 type nodeRef struct {
-	name string
-	attr string
-	arg  []node
+	name    string
+	pos     int // name 於來源的 rune 位置(同 nodeIdent.pos)
+	attr    string
+	attrPos int // attr 於來源的 rune 位置
+	arg     []node
 }
 
 func (nodeRef) isNode() {}

@@ -50,6 +50,26 @@ func (this *SuiteExpr) TestParseTrailing() {
 	this.Equal(2, syntaxError.Pos) // 指向多餘的第二個 token
 }
 
+// TestExprNames 驗證名稱使用走訪: 識別子 / 函式 / 引用各型帶位置與參數個數、依來源出現順序;
+// 純字面值回空、nil 防禦。
+func (this *SuiteExpr) TestExprNames() {
+	expr, err := Parse("morale + min(1, handSize(2)) > self.effectGroup(5)")
+	this.Require().NoError(err)
+	this.Equal([]NameUse{
+		{Name: "morale", Pos: 0},
+		{Name: "min", Pos: 9, Argc: 2},
+		{Name: "handSize", Pos: 16, Argc: 1},
+		{Ref: true, Name: "self", Pos: 31, Attr: "effectGroup", AttrPos: 36, Argc: 1},
+	}, expr.Names())
+
+	literal, errLiteral := Parse("-(1 + 2) > 0 ? 'a' : 'b'") // 純字面值(含一元 / 二元 / 三元節點)→ 空
+	this.Require().NoError(errLiteral)
+	this.Empty(literal.Names())
+
+	var none *Expr
+	this.Empty(none.Names()) // nil 防禦
+}
+
 func (this *SuiteExpr) TestExprReuse() {
 	// parse 一次、求值多次, 結果穩定一致(對齊 parse-once / eval-many 設計)
 	expr, err := Parse("(2 + 3) * 4")

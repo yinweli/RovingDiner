@@ -16,7 +16,7 @@ func Register(game *cores.Game) {
 	} // for
 
 	for k, v := range attrRefRead {
-		game.RegisterAttrRefRead(k, v)
+		game.RegisterAttrRefRead(k, v.resolve) // 引擎只需讀取行為; arity 屬 Validate 期靜態知識, 不入 Game
 	} // for
 
 	for k, v := range attrRefWrite {
@@ -32,6 +32,6 @@ func Register(game *cores.Game) {
 	} // for
 
 	for k, v := range builtin {
-		game.RegisterBuiltin(k, v)
+		game.RegisterBuiltin(k, v.run) // 引擎只需運算行為; minArg 屬 Validate 期靜態知識, 不入 Game
 	} // for
 }

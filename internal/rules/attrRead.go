@@ -5,11 +5,12 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrReadEntry 全域屬性讀詞條: 讀取行為 + 是否產出物件引用。行為與 metadata 同詞條單一定義點
-// (比照 selectorEntry; M28 R2), 供 games.Validate 靜態查引用左值的引用基底合法性。
+// attrReadEntry 全域屬性讀詞條: 讀取行為 + 是否產出物件引用 + 參數數量。行為與 metadata 同詞條單一定義點
+// (比照 selectorEntry; M28 R2 / R4A), 供 games.Validate / ValidateExpr 靜態查引用基底合法性與運算式詞彙。
 type attrReadEntry struct {
 	resolve cores.AttrReadFunc // 讀取行為(read* 具名函式)
 	ref     bool               // 產出物件引用(對齊【營業規格書 | 二十三、屬性清單】類別欄為引用者; 引用左值的合法基底)
+	arity   int                // 參數數量(查詢函式非 0; 一般屬性 0, 識別子與零參數呼叫等價)
 }
 
 // attrRead 全域屬性值讀取詞彙表(名稱 → 詞條); 服務 exprs.Resolver。
@@ -79,20 +80,20 @@ var attrRead = map[string]attrReadEntry{
 	"tableSize": {resolve: readTableSize},
 
 	// 查詢函式: 桌次
-	"tableGuest": {resolve: readTableGuest},
-	"tableCount": {resolve: readTableCount},
+	"tableGuest": {resolve: readTableGuest, arity: 1},
+	"tableCount": {resolve: readTableCount, arity: 2},
 
 	// 查詢函式: 各牌堆 / 手牌的卡牌群組張數
-	"handSize":  {resolve: readHandSize},
-	"deckSize":  {resolve: readDeckSize},
-	"dropSize":  {resolve: readDropSize},
-	"exileSize": {resolve: readExileSize},
+	"handSize":  {resolve: readHandSize, arity: 1},
+	"deckSize":  {resolve: readDeckSize, arity: 1},
+	"dropSize":  {resolve: readDropSize, arity: 1},
+	"exileSize": {resolve: readExileSize, arity: 1},
 
 	// 查詢函式: 整場累積分組張數
-	"drawTotal":  {resolve: readDrawTotal},
-	"dropTotal":  {resolve: readDropTotal},
-	"playTotal":  {resolve: readPlayTotal},
-	"exileTotal": {resolve: readExileTotal},
+	"drawTotal":  {resolve: readDrawTotal, arity: 1},
+	"dropTotal":  {resolve: readDropTotal, arity: 1},
+	"playTotal":  {resolve: readPlayTotal, arity: 1},
+	"exileTotal": {resolve: readExileTotal, arity: 1},
 
 	// 鎖定計數讀取(Lock 全名詞條; 僅【二十三】存取欄為「寫鎖 / 鎖」的屬性)
 	"moraleLock":       {resolve: readMoraleLock},
@@ -112,6 +113,18 @@ var attrRead = map[string]attrReadEntry{
 func HasObjectRef(name string) bool {
 	entry, ok := attrRead[name]
 	return ok && entry.ref
+}
+
+// AttrReadArity 回報全域屬性讀詞條的參數數量(查無回 ok=false); 供 games.ValidateExpr 靜態校驗
+// 運算式識別子 / 查詢函式(M28 R4A; 一般屬性 0、查詢函式依詞條, 執行期仍寬鬆評估失敗)。
+func AttrReadArity(name string) (arity int, ok bool) {
+	entry, okEntry := attrRead[name]
+
+	if okEntry == false {
+		return 0, false
+	} // if
+
+	return entry.arity, true
 }
 
 // === 餐廳 / 出牌全域數值屬性 ===

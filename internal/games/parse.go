@@ -89,13 +89,15 @@ func (this *commandParser) parseAssign(base string, baseStart int) (result Comma
 	} // if
 
 	this.skipSpace()
-	value, errValue := this.parseExprRest(this.pos)
+	start := this.pos
+	value, errValue := this.parseExprRest(start)
 
 	if errValue != nil {
 		return nil, errValue
 	} // if
 
 	command.value = value
+	command.valuePos = start
 	return command, nil
 }
 
@@ -110,17 +112,19 @@ func (this *commandParser) parseOperate(verb string, verbStart int) (result Comm
 	} // if
 
 	arg := []*exprs.Expr{}
+	argPos := []int{}
 	this.skipSpace()
 
 	for this.peek() == ',' {
 		this.pos++ // 吃掉 ','
-		value, errValue := this.parseArg()
+		value, start, errValue := this.parseArg()
 
 		if errValue != nil {
 			return nil, errValue
 		} // if
 
 		arg = append(arg, value)
+		argPos = append(argPos, start)
 		this.skipSpace()
 	} // for
 
@@ -129,7 +133,7 @@ func (this *commandParser) parseOperate(verb string, verbStart int) (result Comm
 	} // if
 
 	this.pos++ // 吃掉 ')'
-	return commandOperate{verb: verb, verbPos: verbStart, selector: selector, arg: arg}, nil
+	return commandOperate{verb: verb, verbPos: verbStart, selector: selector, arg: arg, argPos: argPos}, nil
 }
 
 // parseSelector 解析命令對象: 命令對象名稱, 後接可選的 [<參數>, ...]。
@@ -147,36 +151,39 @@ func (this *commandParser) parseSelector() (result selectorArg, err error) {
 
 	if this.peek() == '[' {
 		this.pos++ // 吃掉 '['
-		param, errParam := this.parseSelectorParam()
+		param, paramPos, errParam := this.parseSelectorParam()
 
 		if errParam != nil {
 			return selectorArg{}, errParam
 		} // if
 
 		result.param = param
+		result.paramPos = paramPos
 	} // if
 
 	return result, nil
 }
 
 // parseSelectorParam 解析命令對象 [...] 內以 , 分隔的參數算術式列表('[' 已消耗、消耗對應的 ']')。
-func (this *commandParser) parseSelectorParam() (result []*exprs.Expr, err error) {
+func (this *commandParser) parseSelectorParam() (result []*exprs.Expr, resultPos []int, err error) {
 	result = []*exprs.Expr{}
+	resultPos = []int{}
 	this.skipSpace()
 
 	if this.peek() == ']' {
 		this.pos++ // 空參數列表(數量是否合法留待命令對象 M8 驗證)
-		return result, nil
+		return result, resultPos, nil
 	} // if
 
 	for {
-		value, errValue := this.parseArg()
+		value, start, errValue := this.parseArg()
 
 		if errValue != nil {
-			return nil, errValue
+			return nil, nil, errValue
 		} // if
 
 		result = append(result, value)
+		resultPos = append(resultPos, start)
 		this.skipSpace()
 
 		switch this.peek() {
@@ -185,33 +192,34 @@ func (this *commandParser) parseSelectorParam() (result []*exprs.Expr, err error
 
 		case ']':
 			this.pos++
-			return result, nil
+			return result, resultPos, nil
 
 		default:
-			return nil, this.errorAt(this.pos, "命令對象參數需以 , 分隔、並以 ] 結束")
+			return nil, nil, this.errorAt(this.pos, "命令對象參數需以 , 分隔、並以 ] 結束")
 		} // switch
 	} // for
 }
 
-// parseArg 解析單一參數算術式: 掃描至深度 0 的 , ) ] 或來源結尾為界, 委由 exprs.Parse 解析。
-func (this *commandParser) parseArg() (result *exprs.Expr, err error) {
+// parseArg 解析單一參數算術式: 掃描至深度 0 的 , ) ] 或來源結尾為界, 委由 exprs.Parse 解析;
+// start 回傳算術式於命令來源的起始 rune 索引(供 Validate 把內嵌詞彙錯誤回算至命令座標)。
+func (this *commandParser) parseArg() (result *exprs.Expr, start int, err error) {
 	this.skipSpace()
-	start := this.pos
+	start = this.pos
 	end := this.scanArg(start)
 	sub := string(this.char[start:end])
 
 	if strings.TrimSpace(sub) == "" {
-		return nil, this.errorAt(start, "缺少參數內容")
+		return nil, start, this.errorAt(start, "缺少參數內容")
 	} // if
 
 	expr, errParse := exprs.Parse(sub)
 
 	if errParse != nil {
-		return nil, offsetError(errParse, start)
+		return nil, start, offsetError(errParse, start)
 	} // if
 
 	this.pos = end
-	return expr, nil
+	return expr, start, nil
 }
 
 // parseExprRest 把 start 起至來源結尾整段視為一段算術式(屬性修改命令的右值), 委由 exprs.Parse 解析。
@@ -393,6 +401,7 @@ type commandAssign struct {
 	isRef      bool             // 左值為 <基底>.<引用屬性> 形式時為真
 	op         cores.AssignKind // 賦值符(下沉 cores、命令執行據此分派)
 	value      *exprs.Expr      // 右值算術式; 鎖定 / 解鎖(@ #)時為 nil
+	valuePos   int              // value 於來源的起始 rune 位置(內嵌詞彙錯誤回算用)
 }
 
 // isCommand 標記 commandAssign 為 Command 封閉介面成員。
@@ -404,6 +413,7 @@ type commandOperate struct {
 	verbPos  int           // verb 於來源的 rune 位置
 	selector selectorArg   // 命令對象(固定的第一參數)
 	arg      []*exprs.Expr // 命令對象之後的其餘參數算術式(含 varargs)
+	argPos   []int         // 各參數於來源的起始 rune 位置(與 arg 同索引; 內嵌詞彙錯誤回算用)
 }
 
 // isCommand 標記 commandOperate 為 Command 封閉介面成員。
@@ -414,6 +424,7 @@ type selectorArg struct {
 	selector    string
 	selectorPos int
 	param       []*exprs.Expr
+	paramPos    []int // 各參數於來源的起始 rune 位置(與 param 同索引)
 }
 
 // offsetError 把內嵌算術式的 SyntaxError 位置加上偏移, 回算至命令來源的 rune 索引;

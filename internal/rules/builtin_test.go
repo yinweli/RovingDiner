@@ -17,9 +17,22 @@ type SuiteBuiltin struct {
 	suite.Suite
 }
 
+// TestBuiltinMinArg 驗證內建函式最少參數數量查詢: min / max 為 2, 未登錄回 ok=false。
+func (this *SuiteBuiltin) TestBuiltinMinArg() {
+	minArg, ok := BuiltinMinArg("min")
+	this.True(ok)
+	this.Equal(2, minArg)
+	minArg, ok = BuiltinMinArg("max")
+	this.True(ok)
+	this.Equal(2, minArg)
+
+	_, ok = BuiltinMinArg("nope")
+	this.False(ok) // 未登錄
+}
+
 func (this *SuiteBuiltin) TestBuiltinMinMax() {
-	maxFunc := builtin["max"]
-	minFunc := builtin["min"]
+	maxFunc := builtin["max"].run
+	minFunc := builtin["min"].run
 	this.Require().NotNil(maxFunc)
 	this.Require().NotNil(minFunc)
 

@@ -5,69 +5,88 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// attrRefRead 引用屬性值讀取詞彙表(名稱 → 讀取行為); 服務 exprs.Resolver 的 AttrRef。
+// attrRefReadEntry 引用屬性讀詞條: 讀取行為 + 參數數量。行為與 metadata 同詞條單一定義點
+// (比照 attrReadEntry; M28 R4A), 供 games.ValidateExpr 靜態查引用屬性詞彙與參數數量。
+type attrRefReadEntry struct {
+	resolve cores.AttrRefReadFunc // 讀取行為(readRef* 具名函式)
+	arity   int                   // 參數數量(引用查詢函式非 0; 一般引用屬性 0)
+}
+
+// attrRefRead 引用屬性值讀取詞彙表(名稱 → 詞條); 服務 exprs.Resolver 的 AttrRef。
 // 涵蓋【營業規格書 | 二十三、屬性清單】卡牌引用屬性 / 顧客引用屬性兩子表; 型別不符的引用回 ok=false。
 // effectStack / effectGroup 卡牌、顧客共用同一詞條(以 Ref.IsSame 比對所屬對象)。
 // 每一詞條對應一個獨立的 readRef* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
-var attrRefRead = map[string]cores.AttrRefReadFunc{
+var attrRefRead = map[string]attrRefReadEntry{
 	// 卡牌引用屬性
-	"cardID":      readRefCardID,
-	"cost":        readRefCost,
-	"extraRunMin": readRefExtraRunMin,
-	"extraRunMax": readRefExtraRunMax,
-	"cardSeal":    readRefCardSeal,
-	"keep":        readRefKeep,
-	"playExile":   readRefPlayExile,
-	"unplayExile": readRefUnplayExile,
-	"cardify":     readRefCardify,
-	"cardGroup":   readRefCardGroup,
-	"cardEffect":  readRefCardEffect,
-	"inHand":      readRefInHand,
-	"inDeck":      readRefInDeck,
-	"inDrop":      readRefInDrop,
-	"inExile":     readRefInExile,
+	"cardID":      {resolve: readRefCardID},
+	"cost":        {resolve: readRefCost},
+	"extraRunMin": {resolve: readRefExtraRunMin},
+	"extraRunMax": {resolve: readRefExtraRunMax},
+	"cardSeal":    {resolve: readRefCardSeal},
+	"keep":        {resolve: readRefKeep},
+	"playExile":   {resolve: readRefPlayExile},
+	"unplayExile": {resolve: readRefUnplayExile},
+	"cardify":     {resolve: readRefCardify},
+	"cardGroup":   {resolve: readRefCardGroup},
+	"cardEffect":  {resolve: readRefCardEffect, arity: 1},
+	"inHand":      {resolve: readRefInHand},
+	"inDeck":      {resolve: readRefInDeck},
+	"inDrop":      {resolve: readRefInDrop},
+	"inExile":     {resolve: readRefInExile},
 
 	// 顧客引用屬性
-	"calm":         readRefCalm,
-	"sate":         readRefSate,
-	"sateMax":      readRefSateMax,
-	"morale":       readRefMorale,
-	"moraleMax":    readRefMoraleMax,
-	"score":        readRefScore,
-	"scoreMax":     readRefScoreMax,
-	"sateSeal":     readRefSateSeal,
-	"calmSeal":     readRefCalmSeal,
-	"seatID":       readRefSeatID,
-	"guestID":      readRefGuestID,
-	"freeze":       readRefFreeze,
-	"calmHit":      readRefCalmHit,
-	"sateHit":      readRefSateHit,
-	"effectImmune": readRefEffectImmune,
-	"skillImmune":  readRefSkillImmune,
-	"sameSize":     readRefSameSize,
-	"nearSize":     readRefNearSize,
+	"calm":         {resolve: readRefCalm},
+	"sate":         {resolve: readRefSate},
+	"sateMax":      {resolve: readRefSateMax},
+	"morale":       {resolve: readRefMorale},
+	"moraleMax":    {resolve: readRefMoraleMax},
+	"score":        {resolve: readRefScore},
+	"scoreMax":     {resolve: readRefScoreMax},
+	"sateSeal":     {resolve: readRefSateSeal},
+	"calmSeal":     {resolve: readRefCalmSeal},
+	"seatID":       {resolve: readRefSeatID},
+	"guestID":      {resolve: readRefGuestID},
+	"freeze":       {resolve: readRefFreeze},
+	"calmHit":      {resolve: readRefCalmHit},
+	"sateHit":      {resolve: readRefSateHit},
+	"effectImmune": {resolve: readRefEffectImmune, arity: 1},
+	"skillImmune":  {resolve: readRefSkillImmune, arity: 1},
+	"sameSize":     {resolve: readRefSameSize},
+	"nearSize":     {resolve: readRefNearSize},
 
 	// 卡牌 / 顧客共用查詢函式(以 self 比對所屬對象)
-	"effectStack": readRefEffectStack,
-	"effectGroup": readRefEffectGroup,
+	"effectStack": {resolve: readRefEffectStack, arity: 1},
+	"effectGroup": {resolve: readRefEffectGroup, arity: 1},
 
 	// 鎖定計數讀取(Lock 全名詞條; 僅【二十三】子表存取欄為「寫鎖 / 鎖」的屬性)
-	"costLock":        readRefCostLock,
-	"extraRunMinLock": readRefExtraRunMinLock,
-	"extraRunMaxLock": readRefExtraRunMaxLock,
-	"cardSealLock":    readRefCardSealLock,
-	"keepLock":        readRefKeepLock,
-	"playExileLock":   readRefPlayExileLock,
-	"unplayExileLock": readRefUnplayExileLock,
-	"calmLock":        readRefCalmLock,
-	"sateLock":        readRefSateLock,
-	"sateMaxLock":     readRefSateMaxLock,
-	"moraleLock":      readRefMoraleLock,
-	"moraleMaxLock":   readRefMoraleMaxLock,
-	"scoreLock":       readRefScoreLock,
-	"scoreMaxLock":    readRefScoreMaxLock,
-	"sateSealLock":    readRefSateSealLock,
-	"calmSealLock":    readRefCalmSealLock,
+	"costLock":        {resolve: readRefCostLock},
+	"extraRunMinLock": {resolve: readRefExtraRunMinLock},
+	"extraRunMaxLock": {resolve: readRefExtraRunMaxLock},
+	"cardSealLock":    {resolve: readRefCardSealLock},
+	"keepLock":        {resolve: readRefKeepLock},
+	"playExileLock":   {resolve: readRefPlayExileLock},
+	"unplayExileLock": {resolve: readRefUnplayExileLock},
+	"calmLock":        {resolve: readRefCalmLock},
+	"sateLock":        {resolve: readRefSateLock},
+	"sateMaxLock":     {resolve: readRefSateMaxLock},
+	"moraleLock":      {resolve: readRefMoraleLock},
+	"moraleMaxLock":   {resolve: readRefMoraleMaxLock},
+	"scoreLock":       {resolve: readRefScoreLock},
+	"scoreMaxLock":    {resolve: readRefScoreMaxLock},
+	"sateSealLock":    {resolve: readRefSateSealLock},
+	"calmSealLock":    {resolve: readRefCalmSealLock},
+}
+
+// AttrRefReadArity 回報引用屬性讀詞條的參數數量(查無回 ok=false); 供 games.ValidateExpr 靜態校驗
+// 引用屬性 / 引用查詢函式(M28 R4A; 規則同 AttrReadArity)。
+func AttrRefReadArity(name string) (arity int, ok bool) {
+	entry, okEntry := attrRefRead[name]
+
+	if okEntry == false {
+		return 0, false
+	} // if
+
+	return entry.arity, true
 }
 
 // === 卡牌引用屬性 ===

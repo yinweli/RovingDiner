@@ -85,14 +85,20 @@ func checkEffect(sheet *sheeter.Sheeter) (result []Issue) {
 	return result
 }
 
-// checkExprField 檢查運算式欄: 空 = 未填合法; 非空驗文法(exprs.Parse)。
-// 識別子詞彙查名待 R4A(運算式詞彙走訪), 本站先攔文法錯。
+// checkExprField 檢查運算式欄: 空 = 未填合法; 非空驗文法(exprs.Parse)+ 詞彙
+// (games.ValidateExpr: 識別子 / 查詢函式 / 內建函式 / 引用屬性的名稱與參數數量; M28 R4A)。
 func checkExprField(row, column, source string) (result []Issue) {
 	if source == "" {
 		return nil
 	} // if
 
-	if _, err := exprs.Parse(source); err != nil {
+	expr, err := exprs.Parse(source)
+
+	if err != nil {
+		return append(result, Issue{Table: tableEffect, Row: row, Column: column, Msg: err.Error()})
+	} // if
+
+	if err = games.ValidateExpr(expr); err != nil {
 		result = append(result, Issue{Table: tableEffect, Row: row, Column: column, Msg: err.Error()})
 	} // if
 

@@ -74,13 +74,18 @@ func (this *SuiteCheckEffect) TestCheckEffectMatrix() {
 	}, column)
 }
 
-// TestCheckExprField 驗證運算式欄: 空欄未填通過、文法錯回報(識別子詞彙查名屬 R4A)。
+// TestCheckExprField 驗證運算式欄: 空欄未填通過、文法錯與詞彙錯(games.ValidateExpr; M28 R4A)各自回報。
 func (this *SuiteCheckEffect) TestCheckExprField() {
 	this.Empty(checkExprField("401", "TriggerCond", ""))
 	this.Empty(checkExprField("401", "TriggerCond", "morale > 0"))
-	issue := checkExprField("401", "TriggerCond", "1 +")
+
+	issue := checkExprField("401", "TriggerCond", "1 +") // 文法錯
 	this.Require().Len(issue, 1)
 	this.Equal("TriggerCond", issue[0].Column)
+
+	issue = checkExprField("401", "TriggerCond", "morale2 > 1") // 詞彙錯(M28 R4A)
+	this.Require().Len(issue, 1)
+	this.Contains(issue[0].Msg, "未知的屬性名稱:morale2")
 }
 
 // TestCheckCommandField 驗證命令欄: 空欄未填通過、文法錯與詞彙 / arity 錯(games.Validate)各自回報。

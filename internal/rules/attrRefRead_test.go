@@ -20,6 +20,22 @@ type SuiteAttrRefRead struct {
 	suite.Suite
 }
 
+// TestAttrRefReadArity 驗證引用讀詞條參數數量查詢: 一般引用屬性 0、引用查詢函式 1, 未登錄回 ok=false。
+func (this *SuiteAttrRefRead) TestAttrRefReadArity() {
+	arity, ok := AttrRefReadArity("calm")
+	this.True(ok)
+	this.Equal(0, arity)
+	arity, ok = AttrRefReadArity("effectGroup")
+	this.True(ok)
+	this.Equal(1, arity)
+	arity, ok = AttrRefReadArity("effectImmune")
+	this.True(ok)
+	this.Equal(1, arity)
+
+	_, ok = AttrRefReadArity("nope")
+	this.False(ok) // 未登錄
+}
+
 func (this *SuiteAttrRefRead) TestAttrRefReadCard() {
 	game := newGame()
 	card := cores.NewCard(game, 101) // 卡 101:群組 1
