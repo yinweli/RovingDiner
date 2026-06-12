@@ -313,32 +313,19 @@ func (this model) View() string {
 	return view
 }
 
-// leftView 左欄主畫面(共 height 行): 六區堆疊 + 帶框空行墊高(格線不開洞; M26 R1.5)+ 狀態列釘底
-// (【營業顯示規格書 | 6、畫面規格 | 6.2】置底); 各區固定高、唯一會變長的日誌在右欄, 內容超高(防禦)不裁。
-// 盤面直讀暫停機的營業實例(停點間引擎必停)。聚焦六區之一時該組件標題列高亮(經 composeView)、
-// 聚焦狀態列時其標題列高亮。
+// leftView 左欄主畫面(共 height 行): 六區堆疊墊高至扣除狀態列的預算(餘高平均分配各區、格線不開洞;
+// 詳見 composeView)+ 狀態列釘底(【營業顯示規格書 | 6、畫面規格 | 6.2】置底); 各區固定高、
+// 唯一會變長的日誌在右欄, 內容超高(防禦)不裁。盤面直讀暫停機的營業實例(停點間引擎必停)。
+// 聚焦六區之一時該組件標題列高亮(經 composeView)、聚焦狀態列時其標題列高亮。
 func (this model) leftView(width, height int) string {
-	stack := composeView(this.stepper.game, width, this.comp, this.focus)
 	status := this.status.View(this.stepper.game, this.mode, width)
 
 	if this.focus == focusStatus {
 		status = focusView(status)
 	} // if
 
-	gap := height - strings.Count(stack, "\n") - strings.Count(status, "\n") - 2
-
-	if gap < 0 {
-		gap = 0
-	} // if
-
-	row := []string{stack}
-
-	for i := 0; i < gap; i++ {
-		row = append(row, boxRow("", width))
-	} // for
-
-	row = append(row, status)
-	return strings.Join(row, "\n")
+	stack := composeView(this.stepper.game, width, height-strings.Count(status, "\n")-1, this.comp, this.focus)
+	return stack + "\n" + status
 }
 
 // push 開 modal: 疊層入棧、捲動歸零、世代 +1 作廢在途拍(開著時 tick 門控停排——

@@ -403,11 +403,13 @@ func (this *SuiteModel) TestModelView() {
 	this.Equal("+"+strings.Repeat("-", 68)+"+"+strings.Repeat("-", 29)+"+", row[minHeight-3]) // 父層全寬底框列(左欄 70 + 日誌 30)
 	this.Contains(row[minHeight-1], "[Q]離開")                                                  // 鍵位列固定 2 行
 
-	target.height = 40 // 更高: 帶框空行墊在六區與狀態列之間(格線不開洞), 狀態列仍釘底
+	target.height = 40 // 更高: 餘高帶框空行平均分配墊在各區之後(10 行 → 前 4 區各 2、後 2 區各 1), 狀態列仍釘底
 	row = strings.Split(target.View(), "\n")
 	this.Len(row, 40)
 	this.Contains(row[36], "快速")
-	this.Equal(boxRow("", 70)+boxRowSeam("", 30), row[30]) // gap 帶框空行 + 同列的日誌接縫空行
+	this.Equal(boxRow("", 70)+boxRowSeam("", 30), row[6])  // 座位後的 gap 帶框空行 + 同列的日誌接縫空行
+	this.Equal(boxRow("", 70)+boxRowSeam("", 30), row[33]) // 牌堆後的 gap 帶框空行(末區 1 行)
+	this.Contains(row[30], "抽牌堆")                          // 牌堆隨平均分配下移
 
 	target.width = 130 // 更寬: 餘寬先給日誌(130-70 = 60 → 上限 50), 之後才給左欄(80)
 	row = strings.Split(target.View(), "\n")
