@@ -33,8 +33,8 @@ var effectMatrix = []effectColumn{
 }
 
 // checkEffect 檢查效果表: 編碼範圍(Kind / TargetKind / TriggerAfter / StackTime)、TriggerKind 非空時的
-// 成員資格(cores.TriggerKindLegal)、運算式欄文法(exprs.Parse)、命令欄文法 + 詞彙(games.Parse + Validate;
-// 引擎編譯只 Parse, 詞彙錯僅在此攔)、適用類型矩陣(僅 Kind 合法時)。
+// 成員資格(cores.TriggerKindLegal)與觸發類型缺漏(反向必填單格)、運算式欄文法(exprs.Parse)、
+// 命令欄文法 + 詞彙(games.Parse + Validate; 引擎編譯只 Parse, 詞彙錯僅在此攔)、適用類型矩陣(僅 Kind 合法時)。
 func checkEffect(sheet *sheeter.Sheeter) (result []Issue) {
 	for _, itor := range sortedKey(sheet.Effect.Data) {
 		meta := sheet.Effect.Data[itor]
@@ -58,6 +58,12 @@ func checkEffect(sheet *sheeter.Sheeter) (result []Issue) {
 
 		if meta.TriggerKind != "" && cores.TriggerKindLegal[cores.TriggerKind(meta.TriggerKind)] == false {
 			result = append(result, Issue{Table: tableEffect, Row: row, Column: columnTriggerKind, Msg: "未知的觸發時機名稱:" + meta.TriggerKind})
+		} // if
+
+		// 反向必填僅驗此一格(2026-06-12 拍板): 觸發類型缺觸發時機無任何合法解釋(進佇列但永不觸發), 必為漏填;
+		// 其餘「適用但空著」各有合法預設語意(條件恆成立 / 次數 1 / 保留 / 永久)或可為標記效果, 不驗。
+		if meta.Kind == int32(cores.EffectTrigger) && meta.TriggerKind == "" {
+			result = append(result, Issue{Table: tableEffect, Row: row, Column: columnTriggerKind, Msg: "觸發類型缺觸發時機, 效果永不觸發"})
 		} // if
 
 		result = append(result, checkExprField(row, "TriggerCond", meta.TriggerCond)...)
