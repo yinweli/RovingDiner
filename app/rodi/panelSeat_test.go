@@ -95,30 +95,55 @@ func (this *SuitePanelSeat) TestPanelSeatItem() {
 	this.Nil(target.Item(empty))
 }
 
-// TestPanelSeatPick 驗證選取模式(M27 R4): 游標吸附第一個候選、候選間步進略過非候選(空位)、夾界不迴繞、
-// 已選 / 非候選著色路徑、非本區候選(卡牌選取)照常渲染、stop 後回原語意。
+// TestPanelSeatPick 驗證選取模式(M27 R4): 游標吸附第一個候選; 方向語意保留——左右沿同座位列掃描換桌
+// (略過非候選 / 無此座位的桌)、上下限桌內(掃過非候選), 掃不到不動; 已選 / 非候選著色路徑、
+// 非本區候選(卡牌選取)照常渲染、stop 後回原語意。
 func (this *SuitePanelSeat) TestPanelSeatPick() {
 	game := testGame()
 	g1 := cores.NewGuest(game, 501)
 	g2 := cores.NewGuest(game, 501)
-	game.Seat.Place(1, g1) // 桌1 上座(桌1 下座空位 = 非候選)
-	game.Seat.Place(3, g2) // 桌2
+	g3 := cores.NewGuest(game, 501)
+	game.Seat.Place(1, g1) // 桌1 上座
+	game.Seat.Place(2, g2) // 桌1 下座(先作非候選)
+	game.Seat.Place(3, g3) // 桌2(單座)
 	pick := &pickState{}
-	pick.start(&request{guest: []*cores.Guest{g1, g2}, count: 1})
-	target := &panelSeat{curSeat: 1, pick: pick}
-	target.View(game, 60, true) // 游標在空位(非候選)→ 吸附桌1 上座
+	pick.start(&request{guest: []*cores.Guest{g1, g3}, count: 1})
+	target := &panelSeat{curTable: 1, curSeat: 1, pick: pick}
+	target.View(game, 60, true) // 游標在桌2 無此座位 → 吸附桌1 上座
 	this.Equal(0, target.curTable)
 	this.Equal(0, target.curSeat)
 
-	target.Move(game, "right") // 下一個候選 = 桌2(略過桌1 空位)
+	target.Move(game, "down") // 桌1 下座非候選且無更下: 不動(上下限桌內)
+	this.Equal(0, target.curSeat)
+
+	target.Move(game, "up") // 無更上: 不動
+	this.Equal(0, target.curSeat)
+
+	target.Move(game, "left") // 無更左: 不動
+	this.Equal(0, target.curTable)
+
+	target.Move(game, "right") // 同座位列右掃: 桌2 上座 g3
 	this.Equal(1, target.curTable)
 	this.Equal(0, target.curSeat)
 
-	target.Move(game, "down") // 末端夾住
+	target.Move(game, "right") // 無更右: 不動
 	this.Equal(1, target.curTable)
 
-	target.Move(game, "up") // 前一個候選 = 桌1 上座
+	target.Move(game, "down") // 桌2 無下座: 不動
+	this.Equal(0, target.curSeat)
+
+	target.Move(game, "left") // 同座位列左掃: 回桌1 上座
 	this.Equal(0, target.curTable)
+
+	pick.start(&request{guest: []*cores.Guest{g1, g2, g3}, count: 1}) // 三人皆候選: 驗下座視角
+	target.curTable, target.curSeat = 0, 1                            // 游標在桌1 下座 g2
+
+	target.Move(game, "right") // 桌2 無下座: 不動(左右不跨座位列)
+	this.Equal(0, target.curTable)
+	this.Equal(1, target.curSeat)
+
+	target.Move(game, "up") // 桌內上掃: 桌1 上座 g1
+	this.Equal(0, target.curSeat)
 
 	pick.toggle(0) // g1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
 	this.Contains(target.View(game, 60, false), "501@老饕")

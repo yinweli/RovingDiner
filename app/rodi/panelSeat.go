@@ -113,14 +113,13 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 }
 
 // Move 游標移動: 左右換桌、上下切桌內 2 座(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
-// 選取模式: 候選位置序列(桌序 x 座序)上前後步進, 自動略過非候選(【7.4】)。
+// 選取模式: 方向語意保留, 沿方向掃描至下一個候選、無則不動(【7.4】自動略過非候選; M27 拍板——
+// 左右不跨座位列、上下不跨桌)。
 func (this *panelSeat) Move(game *cores.Game, key string) {
 	table := seatTable(game.GetSheet())
 
 	if this.pickSnap(game, table) {
-		spot := this.pickSpot(game, table)
-		next := spot[pickStep(this.pickAt(game, table), key, len(spot))]
-		this.curTable, this.curSeat = next[0], next[1]
+		this.pickMove(game, table, key)
 		return
 	} // if
 
@@ -206,6 +205,51 @@ func (this *panelSeat) pickAt(game *cores.Game, table []tableInfo) int {
 	} // for
 
 	return -1
+}
+
+// pickMove 候選間方向移動: 左右沿同座位列掃描換桌、上下沿桌內座序掃描切座, 掃到候選即停、
+// 掃不到不動(方向語意與非選取模式一致, 僅略過非候選)。
+func (this *panelSeat) pickMove(game *cores.Game, table []tableInfo, key string) {
+	at := clampIndex(this.curTable, len(table))
+
+	switch key {
+	case keyLeft:
+		for i := at - 1; i >= 0; i-- {
+			if this.pickHit(game, table, i, this.curSeat) {
+				this.curTable = i
+				return
+			} // if
+		} // for
+
+	case keyRight:
+		for i := at + 1; i < len(table); i++ {
+			if this.pickHit(game, table, i, this.curSeat) {
+				this.curTable = i
+				return
+			} // if
+		} // for
+
+	case keyUp:
+		for i := this.curSeat - 1; i >= 0; i-- {
+			if this.pickHit(game, table, at, i) {
+				this.curSeat = i
+				return
+			} // if
+		} // for
+
+	case keyDown:
+		for i := this.curSeat + 1; i < len(table[at].seat); i++ {
+			if this.pickHit(game, table, at, i) {
+				this.curSeat = i
+				return
+			} // if
+		} // for
+	} // switch
+}
+
+// pickHit 回報桌 t 座 s 存在且坐著候選顧客。
+func (this *panelSeat) pickHit(game *cores.Game, table []tableInfo, t, s int) bool {
+	return s < len(table[t].seat) && this.pick.guestIndex(game.Seat[table[t].seat[s]]) >= 0
 }
 
 // tableInfo 單一桌次(桌次編號 + 桌內座位編號, 升序)。

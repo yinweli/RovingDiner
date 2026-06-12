@@ -97,7 +97,19 @@ func (this *SuitePanelHand) TestPanelHandPick() {
 	target.Move(game, "right") // 下一個候選 = c3(略過 c2)
 	this.Equal(2, target.cursor)
 
-	target.Move(game, "right") // 末端夾住
+	target.Move(game, "right") // 無更右: 不動
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "up") // 上下不動作(原單列語意)
+	this.Equal(2, target.cursor)
+
+	target.Move(game, "left") // 前一個候選 = c1(略過 c2)
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "left") // 無更左: 不動
+	this.Equal(0, target.cursor)
+
+	target.Move(game, "right")
 	this.Equal(2, target.cursor)
 
 	pick.toggle(1) // c3 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)

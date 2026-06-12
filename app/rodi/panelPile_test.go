@@ -88,16 +88,36 @@ func (this *SuitePanelPile) TestPanelPilePick() {
 	this.Equal(1, target.curRow)
 	this.Equal(0, target.curIdx)
 
-	target.Move(game, "right") // 下一個候選 = c3(略過 c2)
+	target.Move(game, "right") // 堆內右掃: 下一個候選 = c3(略過 c2)
 	this.Equal(2, target.curIdx)
 
-	target.Move(game, "left") // 前一個候選 = c1
+	target.Move(game, "right") // 無更右: 不動
+	this.Equal(2, target.curIdx)
+
+	target.Move(game, "left") // 堆內左掃: 回 c1(略過 c2)
 	this.Equal(0, target.curIdx)
 
-	target.Move(game, "up") // 前端夾住
-	this.Equal(0, target.curIdx)
+	target.Move(game, "up") // 抽牌堆無候選: 不動
 	this.Equal(1, target.curRow)
 
+	target.Move(game, "down") // 流放堆無候選: 不動
+	this.Equal(1, target.curRow)
+
+	c4 := cores.NewCard(game, 101) // 跨堆候選(防禦泛化): 上下掃描落點 = 該堆第一個候選
+	game.Exile = cores.CardList{c4}
+	pick.start(&request{card: []*cores.Card{c1, c4}, count: 1})
+	target.curRow, target.curIdx = 1, 0
+
+	target.Move(game, "down")
+	this.Equal(2, target.curRow)
+	this.Equal(0, target.curIdx)
+
+	target.Move(game, "up")
+	this.Equal(1, target.curRow)
+	this.Equal(0, target.curIdx)
+
+	pick.start(&request{card: []*cores.Card{c1, c3}, count: 1})
+	game.Exile = nil
 	pick.toggle(0) // c1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
 	this.Contains(target.View(game, 60, false), "棄牌堆(3): 101@上菜")
 

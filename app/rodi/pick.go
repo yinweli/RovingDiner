@@ -121,13 +121,3 @@ func (this *pickState) result() (ans answer) {
 func (this *pickState) hint() string {
 	return fmt.Sprintf("%v (已選 %v/%v)", this.req.prompt, this.count(), this.req.count)
 }
-
-// pickStep 候選序列步進原語(面板共通): 方向鍵壓平為 前一個(left / up)/ 後一個(right / down),
-// 夾界不迴繞——游標只在候選間移動、自動略過非候選(【營業顯示規格書 | 7、互動規格 | 7.4】)。
-func pickStep(at int, key string, size int) int {
-	if key == keyLeft || key == keyUp {
-		return clampIndex(at-1, size)
-	} // if
-
-	return clampIndex(at+1, size)
-}

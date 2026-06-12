@@ -316,7 +316,8 @@ func (this *SuiteModel) TestModelUpdate() {
 	result, _ = result.(model).Update(toggleMsg{}) // 加選 g2 → 滿 2
 	this.Equal(2, result.(model).pick.count())
 
-	result, _ = result.(model).Update(moveMsg{key: keyRight}) // 下一個候選 = 桌2 g3
+	result, _ = result.(model).Update(moveMsg{key: keyUp}) // 回上座(桌2 無下座, 右掃須沿上座列)
+	result, _ = result.(model).Update(moveMsg{key: keyRight})
 	this.Equal(1, result.(model).comp[focusSeat].(*panelSeat).curTable)
 
 	result, _ = result.(model).Update(toggleMsg{}) // 已滿 N 再加選: no-op(須先取消其一)

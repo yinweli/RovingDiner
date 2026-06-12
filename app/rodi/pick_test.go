@@ -111,11 +111,3 @@ func (this *SuitePick) TestPickStateHint() {
 	target.toggle(0)
 	this.Equal("開朗 要求選顧客 (已選 1/2)", target.hint())
 }
-
-// TestPickStep 驗證候選步進原語: left/up 前一個、right/down 後一個、夾界不迴繞。
-func (this *SuitePick) TestPickStep() {
-	this.Equal(0, pickStep(1, keyLeft, 3))
-	this.Equal(0, pickStep(0, keyUp, 3))
-	this.Equal(2, pickStep(1, keyRight, 3))
-	this.Equal(2, pickStep(2, keyDown, 3))
-}

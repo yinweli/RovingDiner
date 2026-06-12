@@ -33,12 +33,10 @@ func (this *panelPile) View(game *cores.Game, width int, focus bool) string {
 }
 
 // Move 游標移動: 上下換堆、左右堆內移(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
-// 選取模式: 候選位置序列(堆序 x 堆內序)上前後步進, 自動略過非候選(【7.4】)。
+// 選取模式: 方向語意保留, 沿方向掃描至下一個候選、無則不動(【7.4】自動略過非候選)。
 func (this *panelPile) Move(game *cores.Game, key string) {
 	if this.pickSnap(game) {
-		spot := this.pickSpot(game)
-		next := spot[pickStep(this.pickAt(game), key, len(spot))]
-		this.curRow, this.curIdx = next[0], next[1]
+		this.pickMove(game, key)
 		return
 	} // if
 
@@ -102,6 +100,58 @@ func (this *panelPile) pickSpot(game *cores.Game) (result [][2]int) {
 func (this *panelPile) pickAt(game *cores.Game) int {
 	for index, itor := range this.pickSpot(game) {
 		if itor[0] == clampIndex(this.curRow, 3) && itor[1] == this.curIdx {
+			return index
+		} // if
+	} // for
+
+	return -1
+}
+
+// pickMove 候選間方向移動: 左右沿堆內序掃描、上下沿堆序掃描(跨堆落點 = 該堆第一個候選),
+// 掃到候選即停、掃不到不動(方向語意與非選取模式一致, 僅略過非候選)。
+func (this *panelPile) pickMove(game *cores.Game, key string) {
+	member := [][]*cores.Card{game.Deck, game.Drop, game.Exile}
+	row := clampIndex(this.curRow, 3)
+
+	switch key {
+	case keyLeft:
+		for i := this.curIdx - 1; i >= 0; i-- {
+			if this.pick.cardIndex(member[row][i]) >= 0 {
+				this.curIdx = i
+				return
+			} // if
+		} // for
+
+	case keyRight:
+		for i := this.curIdx + 1; i < len(member[row]); i++ {
+			if this.pick.cardIndex(member[row][i]) >= 0 {
+				this.curIdx = i
+				return
+			} // if
+		} // for
+
+	case keyUp:
+		for r := row - 1; r >= 0; r-- {
+			if at := this.rowFirst(member[r]); at >= 0 {
+				this.curRow, this.curIdx = r, at
+				return
+			} // if
+		} // for
+
+	case keyDown:
+		for r := row + 1; r < 3; r++ {
+			if at := this.rowFirst(member[r]); at >= 0 {
+				this.curRow, this.curIdx = r, at
+				return
+			} // if
+		} // for
+	} // switch
+}
+
+// rowFirst 單堆第一個候選索引(無候選回 -1)。
+func (this *panelPile) rowFirst(member []*cores.Card) int {
+	for index, itor := range member {
+		if this.pick.cardIndex(itor) >= 0 {
 			return index
 		} // if
 	} // for

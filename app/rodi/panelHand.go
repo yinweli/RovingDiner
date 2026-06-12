@@ -84,11 +84,20 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 }
 
 // Move 游標移動: 單列左右(【營業顯示規格書 | 7、互動規格 | 7.2】); 夾界不迴繞。
-// 選取模式: 候選索引序列上前後步進, 自動略過非候選(【7.4】)。
+// 選取模式: 方向語意保留(左右跳下一個候選、自動略過非候選, 上下不動作; 【7.4】)。
 func (this *panelHand) Move(game *cores.Game, key string) {
 	if this.pickSnap(game) {
 		spot := this.pickSpot(game)
-		this.cursor = spot[pickStep(this.pickAt(game), key, len(spot))]
+		at := this.pickAt(game)
+
+		if key == keyLeft && at > 0 {
+			this.cursor = spot[at-1]
+		} // if
+
+		if key == keyRight && at < len(spot)-1 {
+			this.cursor = spot[at+1]
+		} // if
+
 		return
 	} // if
 
