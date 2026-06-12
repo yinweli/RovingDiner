@@ -712,7 +712,7 @@ type Presenter interface {
 - `FakeOperator`／`FakeRander`：決定性替身（Pick 取候選前綴、`Intn` 固定、`Shuffle` 恆等、`Weighted` 取首位）。
 
 L3 基建之日誌流錄製已備（`tester.RecordPresenter`，M17 事件版、M24 換軌為行組版：`Line [][]string` + `Flat()`）且全引擎發射點已接線並逐行釘住行文（M18 接線、M24 字串斷言）；scripted `Operator` 輸入佇列到站再補；初始盤面組裝已由關卡表格 + `StageID` 取代（M15）。
-**行歷史 golden 已常駐**（M24 拍板④）：`internal/games/golden_test.go` + `testdata/golden_{關卡}_{seed}.txt`——固定 seed×關卡跑完整營業，引擎直出的行序列與快照逐 byte 比對；改文案＝`-update` 重錄（diff 可審閱）。原 M29 conformance golden 站改為擴充覆蓋（輸入腳本維度）。
+**行歷史 golden 已常駐**（M24 拍板④）：`internal/games/golden_test.go` + `internal/tester/golden_{關卡}_{seed}.txt`（快照檔與其錄製來源 `BuildSheet`／替身同放 `tester`；2026-06-12 自 `games/testdata` 搬遷）——固定 seed×關卡跑完整營業，引擎直出的行序列與快照逐 byte 比對；改文案＝`-update` 重錄（diff 可審閱）。原 M29 conformance golden 站改為擴充覆蓋（輸入腳本維度）。
 單一 seeded `Rander` 確保 L3 決定性、assertion 穩定。
 
 ---
