@@ -258,7 +258,7 @@ func shuffleCard(game *cores.Game, card []*cores.Card) {
 // moraleDamage 餐廳士氣值 -= 特例(【十七、命令 | 1】特例): 依 格擋 → 護盾 → morale 順序消耗扣減值 N;
 // 實際扣減 > 0 時設置 damageValue / damageGuest(來源 source 由呼叫端決定: 命令路徑取 self 顧客、guestExit 取離場顧客), 並標記士氣受損時機。
 // morale 鎖定時格擋 / 護盾仍消耗、morale 不動、無實際扣減(對齊目前解讀)。
-// N 先四捨五入為整數扣減值, 使格擋 / 護盾 / morale 的整數消耗自洽(小數扣減值的捨入時點待規格確認)。
+// N 先四捨五入為整數扣減值(捨入提前至消耗鏈之前, 依【營業規格書 | 十七、命令 | 1】特例), 使格擋 / 護盾 / morale 的整數消耗自洽。
 // 三段消耗皆經守衛寫入、各自鎖定時不消耗: 格擋鎖定仍無視本次 N 但不減層、護盾鎖定則殘餘全進 morale、morale 鎖定不扣。
 func moraleDamage(game *cores.Game, n float64, source *cores.Guest) bool {
 	damage := exprs.Round(n)

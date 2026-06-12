@@ -8,60 +8,79 @@ import (
 	"github.com/yinweli/RovingDiner/internal/exprs"
 )
 
-// selector 命令對象詞彙表(名稱 → 解析行為); 對應【營業規格書 | 二十四、命令對象清單】。
+// selectorEntry 命令對象詞條: 解析行為 + [...] 參數數量(arity)。行為與 arity 同詞條單一定義點,
+// 供 games.Validate 靜態校驗參數數量(M28; 執行期解析仍寬鬆: 數量 / 型別不符 → 空集合)。
+type selectorEntry struct {
+	resolve cores.SelectorFunc // 解析行為(select* 具名函式)
+	arity   int                // [...] 參數數量(對齊【營業規格書 | 二十四、命令對象清單】參數欄; 無參數為 0)
+}
+
+// selector 命令對象詞彙表(名稱 → 詞條); 對應【營業規格書 | 二十四、命令對象清單】。
 // 每一詞條對應一個獨立的 select* 具名函式(比照讀寫詞彙表), 容器來源 / filter / N 規則 / 座位鄰接 / auto-shuffle 共用 helper。
 // 多數詞條只讀; deckTop 為唯一在解析時會修改狀態者(auto-shuffle 補牌)。
-var selector = map[string]cores.SelectorFunc{
+var selector = map[string]selectorEntry{
 	// 無對象 / self 系
-	cores.SelectorNone: selectNone,
-	"self":             selectSelf,
-	"selfNear":         selectSelfNear,
-	"selfSame":         selectSelfSame,
+	cores.SelectorNone: {selectNone, 0},
+	"self":             {selectSelf, 0},
+	"selfNear":         {selectSelfNear, 0},
+	"selfSame":         {selectSelfSame, 0},
 
 	// 事件單例(取 Game 上最近一次事件的引用)
-	"damageGuest": selectDamageGuest,
-	"drawLast":    selectDrawLast,
-	"dropLast":    selectDropLast,
-	"exileLast":   selectExileLast,
-	"exitLast":    selectExitLast,
-	"morphLast":   selectMorphLast,
-	"playLast":    selectPlayLast,
-	"seatLast":    selectSeatLast,
-	"taskGuest":   selectTaskGuest,
+	"damageGuest": {selectDamageGuest, 0},
+	"drawLast":    {selectDrawLast, 0},
+	"dropLast":    {selectDropLast, 0},
+	"exileLast":   {selectExileLast, 0},
+	"exitLast":    {selectExitLast, 0},
+	"morphLast":   {selectMorphLast, 0},
+	"playLast":    {selectPlayLast, 0},
+	"seatLast":    {selectSeatLast, 0},
+	"taskGuest":   {selectTaskGuest, 0},
 
-	// 顧客: 座位群與排隊
-	"guestAll":  selectGuestAll,
-	"guestPick": selectGuestPick,
-	"guestRand": selectGuestRand,
-	"guestWait": selectGuestWait,
+	// 顧客: 座位群與排隊(Pick / Rand / Wait 帶 N)
+	"guestAll":  {selectGuestAll, 0},
+	"guestPick": {selectGuestPick, 1},
+	"guestRand": {selectGuestRand, 1},
+	"guestWait": {selectGuestWait, 1},
 
 	// 顧客: 鄰桌 / 同桌(先選 1 錨點顧客, 再展開其鄰 / 同桌)
-	"nearPick": selectNearPick,
-	"nearRand": selectNearRand,
-	"samePick": selectSamePick,
-	"sameRand": selectSameRand,
+	"nearPick": {selectNearPick, 0},
+	"nearRand": {selectNearRand, 0},
+	"samePick": {selectSamePick, 0},
+	"sameRand": {selectSameRand, 0},
 
-	// 卡牌容器: 手牌 / 抽牌 / 棄牌 / 流放(All 取全 + filter、Pick 玩家選、Rand 隨機)
-	"handAll":   selectHandAll,
-	"handPick":  selectHandPick,
-	"handRand":  selectHandRand,
-	"deckAll":   selectDeckAll,
-	"deckPick":  selectDeckPick,
-	"deckRand":  selectDeckRand,
-	"deckTop":   selectDeckTop,
-	"dropAll":   selectDropAll,
-	"dropPick":  selectDropPick,
-	"dropRand":  selectDropRand,
-	"dropTop":   selectDropTop,
-	"exileAll":  selectExileAll,
-	"exilePick": selectExilePick,
-	"exileRand": selectExileRand,
+	// 卡牌容器: 手牌 / 抽牌 / 棄牌 / 流放(All 帶卡牌編號、Pick / Rand 帶 N + 卡牌編號、Top 帶 N)
+	"handAll":   {selectHandAll, 1},
+	"handPick":  {selectHandPick, 2},
+	"handRand":  {selectHandRand, 2},
+	"deckAll":   {selectDeckAll, 1},
+	"deckPick":  {selectDeckPick, 2},
+	"deckRand":  {selectDeckRand, 2},
+	"deckTop":   {selectDeckTop, 1},
+	"dropAll":   {selectDropAll, 1},
+	"dropPick":  {selectDropPick, 2},
+	"dropRand":  {selectDropRand, 2},
+	"dropTop":   {selectDropTop, 1},
+	"exileAll":  {selectExileAll, 1},
+	"exilePick": {selectExilePick, 2},
+	"exileRand": {selectExileRand, 2},
 }
 
 // HasSelector 回報命令對象詞彙表是否登錄 name; 供 games.Validate 檢查命令對象。
 func HasSelector(name string) bool {
 	_, ok := selector[name]
 	return ok
+}
+
+// SelectorArity 回報命令對象詞條的 [...] 參數數量(查無回 ok=false); 供 games.Validate 靜態校驗
+// (依【營業規格書 | 二十四、命令對象清單 | 參數規則】裸寫 / 數量不符視為語法錯誤; 執行期仍寬鬆 no-op)。
+func SelectorArity(name string) (arity int, ok bool) {
+	entry, okEntry := selector[name]
+
+	if okEntry == false {
+		return 0, false
+	} // if
+
+	return entry.arity, true
 }
 
 // === 無對象 / self 系 ===

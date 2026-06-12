@@ -26,6 +26,20 @@ func (this *SuiteSelector) TestSelectorHas() {
 	this.False(HasSelector("nope")) // 未登錄
 }
 
+// TestSelectorArity 驗證詞條 arity 查詢: 無參數 / N / 卡牌編號 / N + 卡牌編號 各代表一型, 未登錄回 ok=false。
+func (this *SuiteSelector) TestSelectorArity() {
+	this.Equal(0, this.arity("self"))
+	this.Equal(0, this.arity("guestAll"))
+	this.Equal(1, this.arity("guestPick"))
+	this.Equal(1, this.arity("handAll"))
+	this.Equal(1, this.arity("deckTop"))
+	this.Equal(2, this.arity("handPick"))
+	this.Equal(2, this.arity("exileRand"))
+
+	_, ok := SelectorArity("nope")
+	this.False(ok) // 未登錄
+}
+
 func (this *SuiteSelector) TestSelectNone() {
 	this.Empty(this.must(newGame(), "none", nil))
 }
@@ -321,11 +335,18 @@ func (this *SuiteSelector) TestSelectDropTop() {
 
 // === 測試輔助(置尾) ===
 
+// arity 查詞條 arity 並斷言已登錄(聚焦於數量斷言)。
+func (this *SuiteSelector) arity(name string) int {
+	arity, ok := SelectorArity(name)
+	this.Require().True(ok, name)
+	return arity
+}
+
 // must 自詞彙表取出命令對象詞條並斷言已登錄, 派發回作用對象集合(聚焦於結果斷言)。
 func (this *SuiteSelector) must(game *cores.Game, name string, arg []exprs.Value) (result []cores.InstanceID) {
-	resolve, ok := selector[name]
+	entry, ok := selector[name]
 	this.Require().True(ok, name)
-	return resolve(game, arg)
+	return entry.resolve(game, arg)
 }
 
 // seatGuest 對營業實例佈置 3 位在座顧客(座1=g1 / 座2=g2 / 座3=g3; 桌1=座1,2、桌2=座3, 對齊迷你表座位佈局)。

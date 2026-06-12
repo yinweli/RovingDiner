@@ -11,7 +11,7 @@ func TestSuiteValidate(t *testing.T) {
 }
 
 // SuiteValidate 驗證命令語言詞彙表的 Validate(validate.go)逐名查全域表。
-// 操作命令詞彙表 M8 / M9 前為空故 verb 一律未知; 屬性修改命令查左值可寫性(M7 生效)。
+// 操作命令查 verb / 命令對象 / 命令對象 [...] 參數數量(M28); 屬性修改命令查左值可寫性(M7 生效)。
 type SuiteValidate struct {
 	suite.Suite
 }
@@ -23,6 +23,20 @@ func (this *SuiteValidate) TestValidateOperate() {
 	this.Error(Validate(this.parse("noSuchCommand(none)")))
 	// 未登錄命令對象 → 報錯
 	this.Error(Validate(this.parse("handAdd(noSuchSelector)")))
+}
+
+// TestValidateArity 驗證命令對象 [...] 參數數量校驗(M28; 依【二十四、命令對象清單 | 參數規則】裸寫 / 數量不符即報錯)。
+func (this *SuiteValidate) TestValidateArity() {
+	// 數量相符 → 通過(參數為算術式, 數量看 token 個數不看值)
+	this.NoError(Validate(this.parse("guestExit(guestPick[1], 1, 1)")))
+	this.NoError(Validate(this.parse("handToDrop(handAll[0])")))
+	this.NoError(Validate(this.parse("handToDrop(handPick[1 + 1, 0])")))
+	// 裸寫缺參數 → 報錯
+	this.Error(Validate(this.parse("guestExit(guestPick, 1, 1)")))
+	this.Error(Validate(this.parse("handToDrop(handAll)")))
+	// 數量不足 / 過多 → 報錯
+	this.Error(Validate(this.parse("handToDrop(handPick[2])")))
+	this.Error(Validate(this.parse("handAdd(none[1], 10031, 1)")))
 }
 
 func (this *SuiteValidate) TestValidateAssign() {

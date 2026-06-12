@@ -28,7 +28,7 @@ func Register(game *cores.Game) {
 	} // for
 
 	for k, v := range selector {
-		game.RegisterSelector(k, v)
+		game.RegisterSelector(k, v.resolve) // 引擎只需解析行為; arity 屬 Validate 期靜態知識, 不入 Game
 	} // for
 
 	for k, v := range builtin {
