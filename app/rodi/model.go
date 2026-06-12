@@ -292,13 +292,20 @@ func (this model) View() string {
 	} // if
 
 	hint := ""
+	keymode := this.keymode()
 
-	if this.pick.active() {
-		hint = this.pick.hint() // 選取提示佔鍵位列行 2(【營業顯示規格書 | 6、畫面規格 | 6.11】)
-	} // if
+	switch keymode { // 提示佔鍵位列行 2(【營業顯示規格書 | 6、畫面規格 | 6.11】)
+	case keyModePick:
+		hint = this.pick.hint() // 選取提示, 前文由引擎下傳
+
+	case keyModePlay:
+		hint = playHint // 出牌提示, 顯示端自持固定文字
+
+	default: // 常態 / modal 態無提示, 行 2 照模式表
+	} // switch
 
 	bottom := "+" + strings.Repeat("-", this.width-logw-2) + "+" + strings.Repeat("-", logw-1) + "+"
-	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(this.keymode(), this.width, hint)
+	view := lipgloss.JoinHorizontal(lipgloss.Top, left, logview) + "\n" + bottom + "\n" + this.keybar.View(keymode, this.width, hint)
 
 	if size := len(this.modal); size > 0 { // 頂層 modal 置中疊在全畫面上(M26 R3)
 		view = overlay(view, modalView(this.stepper.game, this.modal[size-1], this.modalOff), this.width, this.height)

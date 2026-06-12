@@ -94,6 +94,7 @@ func (this *SuiteModel) TestModelUpdate() {
 	this.Nil(cmd)                                                               // 等待輸入: 不排拍
 	this.Equal(cores.PhasePlayerAction, result.(model).stepper.game.GetPhase()) // 引擎停在 PlayerAction 暫停點
 	this.Equal(focusHand, result.(model).focus)                                 // 玩家行動等待: 自動聚焦手牌, 游標可見
+	this.Contains(result.(model).View(), playHint)                              // 鍵位列行 2 = 出牌提示
 
 	hold := result.(model)
 	hold.mode = modeStep
@@ -105,6 +106,7 @@ func (this *SuiteModel) TestModelUpdate() {
 	hold.mode = modeFast
 	hold.focus = focusLog
 	this.Equal(keyModeNormal, hold.keymode()) // 焦點離開手牌: 退回常態鍵表
+	this.NotContains(hold.View(), playHint)   // 退回常態: 行 2 回常態鍵位、提示不顯
 	result, cmd = hold.Update(playMsg{})      // 焦點不在手牌: 出牌不動作, 游標不可見不可出
 	this.NotNil(result.(model).wait)
 	this.Nil(cmd)

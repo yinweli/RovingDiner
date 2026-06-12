@@ -69,13 +69,13 @@ func (this *SuiteBarKey) TestNewBarKey() {
 	this.Equal("ctrl+c", target.bind[keyModeModal][3].key)
 }
 
-// TestBarKeyView 驗證渲染: 依模式查表固定 2 行、行位照終態安排、空標籤跳過、提示文字取代行 2(選取模式)、
-// 超寬依預算截斷。
+// TestBarKeyView 驗證渲染: 依模式查表固定 2 行、行位照終態安排、空標籤跳過、提示文字取代行 2
+// (選取 / 出牌模式)、超寬依預算截斷。
 func (this *SuiteBarKey) TestBarKeyView() {
 	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Enter]檢視 [F1]說明 [F2]計數\n[Space]快/慢/步進 [N]前進 [Q]離開", newBarKey().View(keyModeNormal, 100, ""))
 	this.Equal("[Up/Down]欄位捲動 [Esc]關閉\n", newBarKey().View(keyModeModal, 100, ""))                                                                 // modal 態: 行 2 留白
 	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Space]加選/取消 [Enter]確認\n開朗 要求選顧客 (已選 1/2)", newBarKey().View(keyModePick, 100, "開朗 要求選顧客 (已選 1/2)")) // 選取: 行 1 鍵位、行 2 提示
-	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Space]出牌 [Enter]檢視 [E]結束\n", newBarKey().View(keyModePlay, 100, ""))                                // 出牌: 行 2 留白
+	this.Equal("[Tab/Shift+Tab]切區 [Arrow]移動游標 [Space]出牌 [Enter]檢視 [E]結束\n"+playHint, newBarKey().View(keyModePlay, 100, playHint))                 // 出牌: 行 1 鍵位、行 2 提示
 
 	target := barKey{bind: map[keyMode][]keyBind{keyModeNormal: { // 行位驗證用假表
 		{key: "t", label: "[T]導覽", row: 1},
