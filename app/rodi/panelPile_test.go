@@ -120,6 +120,7 @@ func (this *SuitePanelPile) TestPanelPilePick() {
 	game.Exile = nil
 	pick.toggle(0) // c1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
 	this.Contains(target.View(game, 60, false), "棄牌堆(3): 101@上菜")
+	this.Contains(target.View(game, 60, false), "牌堆 (請選卡牌)") // 標題加註等待落點提醒
 
 	pick.start(&request{guest: []*cores.Guest{{}}, count: 1}) // 非本區候選: 照常渲染
 	this.Equal((&panelPile{curRow: 1}).View(game, 60, false), target.View(game, 60, false))

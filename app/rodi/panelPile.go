@@ -14,7 +14,7 @@ import (
 // 游標 = 堆 x 張(上下換堆、左右堆內移; M26 R2), 游標態反白整張卡 token(【營業顯示規格書 | 7、互動規格 | 7.4】
 // 粒度); 游標堆窗格跟游標捲(左緣 < 緊接標籤後), 其餘堆固定窗、超寬補右緣 >。
 // 選取模式且候選在牌堆(M27 R4): 全區非候選 token 變暗(候選堆的落選卡與其餘堆一視同仁)、
-// 已選選取色底、游標只在候選間吸附步進。
+// 已選選取色底、游標只在候選間吸附步進、標題加註 (請選卡牌)。
 type panelPile struct {
 	curRow int        // 游標堆索引(0 抽 / 1 棄 / 2 流放; 自持 UI 狀態)
 	curIdx int        // 游標堆內索引(讀取時夾界)
@@ -24,8 +24,14 @@ type panelPile struct {
 // View 渲染標題列 + 3 列。
 func (this *panelPile) View(game *cores.Game, width int, focus bool) string {
 	picking := this.pickSnap(game)
+	title := "牌堆"
+
+	if picking {
+		title += noteCard // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+	} // if
+
 	return strings.Join([]string{
-		panelTitle("牌堆", width),
+		panelTitle(title, width),
 		boxMark(this.pileRow(game, "抽牌堆", game.Deck, 0, width-4, focus, picking), width),
 		boxMark(this.pileRow(game, "棄牌堆", game.Drop, 1, width-4, focus, picking), width),
 		boxMark(this.pileRow(game, "流放堆", game.Exile, 2, width-4, focus, picking), width),

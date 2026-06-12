@@ -147,6 +147,7 @@ func (this *SuitePanelSeat) TestPanelSeatPick() {
 
 	pick.toggle(0) // g1 已選 → 已選色底路徑(無 TTY 樣式渲原文, 內容不變)
 	this.Contains(target.View(game, 60, false), "501@老饕")
+	this.Contains(target.View(game, 60, false), "座位 (請選顧客)") // 標題加註等待落點提醒
 
 	pick.start(&request{card: []*cores.Card{{}}, count: 1}) // 非本區候選: 照常渲染
 	this.Equal((&panelSeat{}).View(game, 60, false), (&panelSeat{pick: pick}).View(game, 60, false))

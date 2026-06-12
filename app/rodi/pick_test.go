@@ -12,13 +12,14 @@ func TestSuitePick(t *testing.T) {
 	suite.Run(t, new(SuitePick))
 }
 
-// SuitePick 驗證選取模式共享狀態(pick.go): 起停、候選索引(指標相等)、toggle 規則、滿選與答覆組裝、
-// 選取提示、候選步進原語。
+// SuitePick 驗證輸入等待共享狀態(pick.go): 起停、出牌等待判定、候選索引(指標相等)、toggle 規則、
+// 滿選與答覆組裝、選取提示。
 type SuitePick struct {
 	suite.Suite
 }
 
-// TestPickStateStart 驗證起停: start 配已選標記、stop 清空、active 隨之; nil 接收器安全(未注入面板)。
+// TestPickStateStart 驗證起停: start 配已選標記、stop 清空、active 隨之(請求帶候選才算選取模式);
+// nil 接收器安全(未注入面板)。
 func (this *SuitePick) TestPickStateStart() {
 	target := &pickState{}
 	this.False(target.active())
@@ -28,7 +29,23 @@ func (this *SuitePick) TestPickStateStart() {
 	target.stop()
 	this.False(target.active())
 	this.Nil(target.picked)
+	target.start(&request{}) // 出牌等待(玩家行動, 無候選): 不啟動選取模式
+	this.False(target.active())
 	this.False((*pickState)(nil).active()) // nil 接收器走非選取路徑
+}
+
+// TestPickStatePlaying 驗證出牌等待判定: 玩家行動請求(無候選)true、選取請求 false、
+// 未等待 / nil 接收器 false。
+func (this *SuitePick) TestPickStatePlaying() {
+	target := &pickState{}
+	this.False(target.playing())
+	target.start(&request{})
+	this.True(target.playing())
+	target.start(&request{card: []*cores.Card{{}}, count: 1})
+	this.False(target.playing())
+	target.stop()
+	this.False(target.playing())
+	this.False((*pickState)(nil).playing()) // nil 接收器安全
 }
 
 // TestPickStateGuestIndex 驗證顧客候選索引: 指標相等; 非候選 / nil / 非選取模式回 -1。
@@ -78,7 +95,8 @@ func (this *SuitePick) TestPickStateToggle() {
 	this.False(target.chosen(9))
 }
 
-// TestPickStateFull 驗證滿選判定([Enter] 確認條件): 非選取模式 false、選滿 N true。
+// TestPickStateFull 驗證滿選判定([Enter] 確認條件): 非選取模式 false、選滿 N true、
+// 出牌等待恆 false(count 0 = 0 不可視為滿)。
 func (this *SuitePick) TestPickStateFull() {
 	target := &pickState{}
 	this.False(target.full())
@@ -86,6 +104,8 @@ func (this *SuitePick) TestPickStateFull() {
 	this.False(target.full())
 	target.toggle(1)
 	this.True(target.full())
+	target.start(&request{}) // 出牌等待: 非選取模式, 不可確認
+	this.False(target.full())
 }
 
 // TestPickStateResult 驗證答覆組裝: 依候選序收已選(與加選順序無關、保決定性); 顧客 / 卡牌兩型。

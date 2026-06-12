@@ -16,7 +16,7 @@ import (
 // 游標單列左右移(M26 R2), 游標態反白整張卡區塊(3 行; 【營業顯示規格書 | 7、互動規格 | 7.4】粒度);
 // 窗格跟游標捲、左緣 < 三行同縮排、超寬補右緣 >。
 // 選取模式且候選在手牌(M27 R4): 非候選整卡變暗(取代出不起暗標——候選可選與否以候選身分為準)、
-// 已選選取色底、游標只在候選間吸附步進。
+// 已選選取色底、游標只在候選間吸附步進、標題加註 (請選卡牌); 出牌等待標題加註 (請出牌)。
 type panelHand struct {
 	cursor int        // 游標索引(自持 UI 狀態; 讀取時夾界)
 	pick   *pickState // 選取模式共享狀態(newModel 注入, 唯讀)
@@ -75,8 +75,18 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 		head1, head2 = markHead, markIndent // 左緣記號佔位: 三行同縮排, 卡區塊上下對齊
 	} // if
 
+	title := fmt.Sprintf("手牌(%v/%v)", len(game.Hand), num(game.GetHandMax().GetValue()))
+
+	switch { // 標題提醒: 候選 / 出牌等待在本區, Tab 切走仍見等待落點
+	case picking:
+		title += noteCard
+
+	case this.pick.playing():
+		title += notePlay
+	} // switch
+
 	return strings.Join([]string{
-		panelTitle(fmt.Sprintf("手牌(%v/%v)", len(game.Hand), num(game.GetHandMax().GetValue())), width),
+		panelTitle(title, width),
 		boxMark(head1+strings.Join(row1[first:], "  "), width),
 		boxTrunc(head2+strings.Join(row2[first:], "  "), width),
 		boxTrunc(head2+strings.Join(row3[first:], "  "), width),

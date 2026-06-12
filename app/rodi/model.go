@@ -244,8 +244,7 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		} // if
 
 		ans := this.pick.result()
-		this.pick.stop()
-		return this.answer(ans)
+		return this.answer(ans) // 共享狀態由 answer 統一清空
 
 	case popMsg:
 		if size := len(this.modal); size > 0 {
@@ -372,9 +371,9 @@ func (this model) consume(next turn) (wait *request, more bool) {
 	} // switch
 }
 
-// arrive 收下消化結果: 選取請求進選取模式(共享狀態就位、聚焦跳含候選區; 【營業顯示規格書 | 7、互動規格 |
-// 7.4】); 玩家行動請求為常態等待並自動聚焦手牌——游標可見, 「先選卡再出」成為可見流程(M27 拍板);
-// nil(行組 / 終局)照常。
+// arrive 收下消化結果: 任一輸入請求都進共享狀態(候選面板據此著色與標題提醒; 出牌等待僅標題提醒)——
+// 選取請求進選取模式(聚焦跳含候選區; 【營業顯示規格書 | 7、互動規格 | 7.4】)、玩家行動請求為常態等待
+// 並自動聚焦手牌——游標可見, 「先選卡再出」成為可見流程(M27 拍板); nil(行組 / 終局)照常。
 func (this model) arrive(wait *request) model {
 	this.wait = wait
 
@@ -382,8 +381,9 @@ func (this model) arrive(wait *request) model {
 		return this
 	} // if
 
+	this.pick.start(wait)
+
 	if wait.guest != nil || wait.card != nil {
-		this.pick.start(wait)
 		this.focus = this.pickFocus(wait)
 		return this
 	} // if
@@ -411,6 +411,7 @@ func (this model) pickFocus(wait *request) int {
 // answer 答覆輸入等待並消化續收輪次: 答覆即恢復訊號(stepper.Answer 不經 gate), 之後依當前模式
 // 恢復排拍(再遇請求繼續等待、終局停止)。
 func (this model) answer(ans answer) (result tea.Model, cmd tea.Cmd) {
+	this.pick.stop() // 答覆即離開等待(共享狀態清空, 著色與標題提醒消失; 下一個請求由 arrive 重新就位)
 	wait, more := this.consume(this.stepper.Answer(this.wait, ans))
 	this = this.arrive(wait)
 

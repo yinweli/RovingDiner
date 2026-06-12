@@ -22,7 +22,8 @@ const flagNone = "  "
 // 每桌 2 座位上下疊、每位顧客 2 行摘要(識別碼 + 飽耐 / 旗標列)、空位顯「空」; 桌欄固定寬 25、欄距 2。
 // 游標 = 桌 x 座(左右換桌、上下切座; M26 R2), 游標態反白整個顧客格 2 行(【營業顯示規格書 | 7、互動規格 | 7.4】
 // 粒度); 桌窗格跟游標捲、左緣 < 全行縮排對齊、桌號列補右緣 >。
-// 選取模式(M27 R4; 顧客候選限座位區): 非候選(含空位)變暗、已選選取色底、游標只在候選間吸附步進。
+// 選取模式(M27 R4; 顧客候選限座位區): 非候選(含空位)變暗、已選選取色底、游標只在候選間吸附步進、
+// 標題加註 (請選顧客)。
 type panelSeat struct {
 	curTable int        // 游標桌索引(自持 UI 狀態; 讀取時夾界)
 	curSeat  int        // 游標桌內座索引(0 上 / 1 下; 讀取時夾界)
@@ -103,7 +104,13 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 		row[r] = head + strings.Join(part, "  ")
 	} // for
 
-	text := []string{panelTitle("座位", width), boxMark(row[0], width)}
+	title := "座位"
+
+	if picking {
+		title += noteGuest // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+	} // if
+
+	text := []string{panelTitle(title, width), boxMark(row[0], width)}
 
 	for _, itor := range row[1:] {
 		text = append(text, boxTrunc(itor, width))
