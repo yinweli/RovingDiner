@@ -23,15 +23,15 @@ func (this *SuiteOperator) TestPassiveOperatorPlayerAction() {
 
 func (this *SuiteOperator) TestPassiveOperatorPickGuest() {
 	guest := []*cores.Guest{{}, {}, {}}
-	this.Equal(guest[:2], passiveOperator{}.PickGuest(guest, 2))
+	this.Equal(guest[:2], passiveOperator{}.PickGuest("", guest, 2))
 }
 
 func (this *SuiteOperator) TestPassiveOperatorPickCard() {
 	card := []*cores.Card{{}, {}, {}}
-	this.Equal(card[:2], passiveOperator{}.PickCard(card, 2))
+	this.Equal(card[:2], passiveOperator{}.PickCard("", card, 2))
 }
 
 func (this *SuiteOperator) TestPassiveOperatorPickDiscard() {
 	card := []*cores.Card{{}, {}, {}}
-	this.Equal(card[:1], passiveOperator{}.PickDiscard(card, 1))
+	this.Equal(card[:1], passiveOperator{}.PickDiscard("", card, 1))
 }

@@ -193,6 +193,6 @@ type badOperator struct {
 	tester.FakeOperator
 }
 
-func (this badOperator) PickDiscard(source []*cores.Card, over int) []*cores.Card {
+func (this badOperator) PickDiscard(prompt string, source []*cores.Card, over int) []*cores.Card {
 	return []*cores.Card{{}}
 }

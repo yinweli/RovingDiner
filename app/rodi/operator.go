@@ -14,14 +14,14 @@ func (this passiveOperator) PlayerAction(game *cores.Game) *cores.Card {
 	return nil
 }
 
-func (this passiveOperator) PickGuest(source []*cores.Guest, count int) []*cores.Guest {
+func (this passiveOperator) PickGuest(prompt string, source []*cores.Guest, count int) []*cores.Guest {
 	return source[:count]
 }
 
-func (this passiveOperator) PickCard(source []*cores.Card, count int) []*cores.Card {
+func (this passiveOperator) PickCard(prompt string, source []*cores.Card, count int) []*cores.Card {
 	return source[:count]
 }
 
-func (this passiveOperator) PickDiscard(source []*cores.Card, over int) []*cores.Card {
+func (this passiveOperator) PickDiscard(prompt string, source []*cores.Card, over int) []*cores.Card {
 	return source[:over]
 }

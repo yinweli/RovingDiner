@@ -473,7 +473,7 @@ func sameOf(game *cores.Game, guest *cores.Guest) (result []*cores.Guest) {
 }
 
 // pickCard 套用 Pick 的 N 規則於卡牌候選: N <= 0 空集合; 候選 <= N 退化取全部(不彈介面); 否則委由 Operator 暫停玩家挑 N 張。
-// 真選取發玩家輸入紀錄(source 為命令對象詞條鍵; 退化全取不經 Operator 不記; M18 拍板)。
+// 真選取發玩家輸入紀錄(source 為命令對象詞條鍵, 兼組提示前文; 退化全取不經 Operator 不記; M18 拍板)。
 func pickCard(game *cores.Game, card []*cores.Card, n int32, source string) (result []cores.InstanceID) {
 	if n <= 0 { // N = 0 空集合; N < 0 對 Pick 視為空集合
 		return nil
@@ -483,7 +483,7 @@ func pickCard(game *cores.Game, card []*cores.Card, n int32, source string) (res
 		return cardIDs(card)
 	} // if
 
-	chosen := game.GetOperator().PickCard(card, int(n))
+	chosen := game.GetOperator().PickCard(promptText(cores.SourceText(source), pickObject(source)), card, int(n))
 	emitSelect(game, source, 0, cardIdentList(game, chosen))
 	return cardIDs(chosen)
 }
@@ -498,7 +498,7 @@ func pickGuest(game *cores.Game, guest []*cores.Guest, n int32, source string) (
 		return guestIDs(guest)
 	} // if
 
-	chosen := game.GetOperator().PickGuest(guest, int(n))
+	chosen := game.GetOperator().PickGuest(promptText(cores.SourceText(source), "顧客"), guest, int(n))
 	emitSelect(game, source, 0, guestIdentList(game, chosen))
 	return guestIDs(chosen)
 }
@@ -514,7 +514,7 @@ func pickGuestOne(game *cores.Game, guest []*cores.Guest, source string) (result
 		return guest[0]
 	} // if
 
-	chosen := game.GetOperator().PickGuest(guest, 1)
+	chosen := game.GetOperator().PickGuest(promptText(cores.SourceText(source), "顧客"), guest, 1)
 	emitSelect(game, source, 0, guestIdentList(game, chosen))
 
 	if len(chosen) == 0 {

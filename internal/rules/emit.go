@@ -100,3 +100,28 @@ func guestIdentList(game *cores.Game, guest []*cores.Guest) (result []string) {
 
 	return result
 }
+
+// promptText 組選取提示前文(`<來源名> 要求選<對象>`; 【營業顯示規格書 | 6、畫面規格 | 6.11】):
+// 引擎直出、顯示端只附加已選進度(M27 拍板); 來源名 = 效果名稱(目標選取)或命令對象 / 流程中文名,
+// 名稱不帶識別碼(與 emitSelect 的識別碼形式受眾不同、不衝突)。
+func promptText(source, object string) string {
+	return source + " 要求選" + object
+}
+
+// effectName 效果名稱(選取提示的來源名; 查無資料顯 ?)。
+func effectName(game *cores.Game, effectID int32) string {
+	if meta := game.GetSheet().Effect.Get(effectID); meta != nil {
+		return meta.Name
+	} // if
+
+	return "?"
+}
+
+// pickObject Pick 詞條鍵轉提示對象詞: 手牌類選手牌、牌堆類選牌堆卡。
+func pickObject(source string) string {
+	if source == "handPick" {
+		return "手牌"
+	} // if
+
+	return "牌堆卡"
+}

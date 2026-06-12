@@ -216,7 +216,7 @@ func discardOver(game *cores.Game) {
 	for int32(len(game.Hand)) > game.GetHandMax().GetValue() {
 		over := len(game.Hand) - int(game.GetHandMax().GetValue())
 		before := len(game.Hand)
-		chosen := game.GetOperator().PickDiscard(append(cores.CardList{}, game.Hand...), over)
+		chosen := game.GetOperator().PickDiscard(promptText(cores.SourceText("discardOver"), "手牌"), append(cores.CardList{}, game.Hand...), over)
 		emitSelect(game, "discardOver", 0, cardIdentList(game, chosen))
 
 		for _, itor := range chosen {

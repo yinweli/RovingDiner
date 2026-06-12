@@ -840,15 +840,15 @@ func (this fakeOperator) PlayerAction(game *Game) *Card {
 	return nil
 }
 
-func (this fakeOperator) PickGuest(source []*Guest, count int) []*Guest {
+func (this fakeOperator) PickGuest(prompt string, source []*Guest, count int) []*Guest {
 	return source[:count]
 }
 
-func (this fakeOperator) PickCard(source []*Card, count int) []*Card {
+func (this fakeOperator) PickCard(prompt string, source []*Card, count int) []*Card {
 	return source[:count]
 }
 
-func (this fakeOperator) PickDiscard(source []*Card, over int) []*Card {
+func (this fakeOperator) PickDiscard(prompt string, source []*Card, over int) []*Card {
 	return nil
 }
 

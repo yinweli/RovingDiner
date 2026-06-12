@@ -61,7 +61,8 @@ func BuildData() *cores.Data {
 	return cores.NewData(BuildSheet(), nil)
 }
 
-// FakeOperator 決定性玩家輸入替身: Pick 取候選前綴; EmptyPick 為真時 PickGuest 回空(驗證防禦分支)。
+// FakeOperator 決定性玩家輸入替身: Pick 取候選前綴(提示前文不消費——替身無顯示);
+// EmptyPick 為真時 PickGuest 回空(驗證防禦分支)。
 type FakeOperator struct {
 	EmptyPick bool
 }
@@ -70,7 +71,7 @@ func (this FakeOperator) PlayerAction(game *cores.Game) *cores.Card {
 	return nil // 恆回玩家結束; 出牌序列由各測試自備腳本 Operator
 }
 
-func (this FakeOperator) PickGuest(source []*cores.Guest, count int) []*cores.Guest {
+func (this FakeOperator) PickGuest(prompt string, source []*cores.Guest, count int) []*cores.Guest {
 	if this.EmptyPick {
 		return nil
 	} // if
@@ -78,12 +79,12 @@ func (this FakeOperator) PickGuest(source []*cores.Guest, count int) []*cores.Gu
 	return source[:count]
 }
 
-func (this FakeOperator) PickCard(source []*cores.Card, count int) []*cores.Card {
+func (this FakeOperator) PickCard(prompt string, source []*cores.Card, count int) []*cores.Card {
 	return source[:count]
 }
 
 // PickDiscard 良性版棄牌選擇——棄掉候選的前 over 張; 行為不良分支由各測試自備替身驗證。
-func (this FakeOperator) PickDiscard(source []*cores.Card, over int) []*cores.Card {
+func (this FakeOperator) PickDiscard(prompt string, source []*cores.Card, over int) []*cores.Card {
 	return source[:over]
 }
 

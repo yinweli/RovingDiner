@@ -124,3 +124,24 @@ func (this *SuiteEmit) TestGuestIdentList() {
 	this.Equal([]string{"501@#1"}, guestIdentList(game, []*cores.Guest{cores.NewGuest(game, 501)}))
 	this.Empty(guestIdentList(game, nil))
 }
+
+// TestPromptText 驗證選取提示前文組字(<來源名> 要求選<對象>)。
+func (this *SuiteEmit) TestPromptText() {
+	this.Equal("開朗 要求選顧客", promptText("開朗", "顧客"))
+	this.Equal("手牌上限 要求選手牌", promptText("手牌上限", "手牌"))
+}
+
+// TestEffectName 驗證效果名稱查表: 取靜態名稱(迷你表無名稱欄顯空)、查無資料顯 ?。
+func (this *SuiteEmit) TestEffectName() {
+	game := newGame()
+	this.Equal("", effectName(game, 401))
+	this.Equal("?", effectName(game, 999))
+}
+
+// TestPickObject 驗證 Pick 詞條鍵對象詞: 手牌類選手牌、牌堆類選牌堆卡。
+func (this *SuiteEmit) TestPickObject() {
+	this.Equal("手牌", pickObject("handPick"))
+	this.Equal("牌堆卡", pickObject("deckPick"))
+	this.Equal("牌堆卡", pickObject("dropPick"))
+	this.Equal("牌堆卡", pickObject("exilePick"))
+}

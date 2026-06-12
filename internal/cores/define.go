@@ -56,12 +56,13 @@ type Rander interface {
 	Weighted(weight []int32) int        // 抽獎 weighted random; 回傳命中索引
 }
 
-// Operator 玩家輸入; 對應所有「暫停流程」點。
+// Operator 玩家輸入; 對應所有「暫停流程」點。Pick* 首參 prompt 為引擎組好的選取提示前文
+// (`<來源名> 要求選<對象>`, 顯示端只附加已選進度; M27 拍板、【營業顯示規格書 | 6、畫面規格 | 6.11】)。
 type Operator interface {
-	PlayerAction(game *Game) *Card                 // 玩家行動: 出牌回該手牌卡、nil 即玩家結束(【營業規格書 | 十九、核心流程 | 3】)
-	PickGuest(source []*Guest, count int) []*Guest // 新選顧客 / guestPick / nearPick / samePick
-	PickCard(source []*Card, count int) []*Card    // 新選手牌 / *Pick 牌堆類
-	PickDiscard(source []*Card, over int) []*Card  // 手牌上限棄牌
+	PlayerAction(game *Game) *Card                                // 玩家行動: 出牌回該手牌卡、nil 即玩家結束(【營業規格書 | 十九、核心流程 | 3】)
+	PickGuest(prompt string, source []*Guest, count int) []*Guest // 新選顧客 / guestPick / nearPick / samePick
+	PickCard(prompt string, source []*Card, count int) []*Card    // 新選手牌 / *Pick 牌堆類
+	PickDiscard(prompt string, source []*Card, over int) []*Card  // 手牌上限棄牌
 }
 
 // Presenter 日誌流輸出(yield-per-unit; 步進時可阻塞): 一個語意單位(一個命令 / 一次觸發 / 一個玩家動作)

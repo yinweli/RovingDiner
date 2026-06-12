@@ -105,7 +105,7 @@ func setInherit(inherit *[]cores.Ref, target []cores.Ref) []cores.Ref {
 // pickGuestSelf 自座位候選(排除 skillImmune)選 count 位顧客為 self; random 為系統隨機、否則暫停由玩家選。
 // 真選取(交到 Operator 手上)發玩家輸入紀錄(目標類型鍵 guestPick; 退化全取 / 系統隨機由 seed 涵蓋, 不記)。
 func pickGuestSelf(game *cores.Game, effectID, skillGroup, count int32, random bool) []cores.Ref {
-	chosen, picked := selectN(game, guestCandidate(game, skillGroup), count, random, game.GetOperator().PickGuest)
+	chosen, picked := selectN(game, guestCandidate(game, skillGroup), count, random, promptText(effectName(game, effectID), "顧客"), game.GetOperator().PickGuest)
 
 	if picked {
 		emitSelect(game, "guestPick", effectID, guestIdentList(game, chosen))
@@ -117,7 +117,7 @@ func pickGuestSelf(game *cores.Game, effectID, skillGroup, count int32, random b
 // pickCardSelf 自手牌候選選 count 張手牌為 self; random 為系統隨機、否則暫停由玩家選。
 // 真選取發玩家輸入紀錄(目標類型鍵 cardPick), 規則同 pickGuestSelf。
 func pickCardSelf(game *cores.Game, effectID, count int32, random bool) []cores.Ref {
-	chosen, picked := selectN(game, cardCandidate(game), count, random, game.GetOperator().PickCard)
+	chosen, picked := selectN(game, cardCandidate(game), count, random, promptText(effectName(game, effectID), "手牌"), game.GetOperator().PickCard)
 
 	if picked {
 		emitSelect(game, "cardPick", effectID, cardIdentList(game, chosen))
@@ -143,8 +143,8 @@ func cardCandidate(game *cores.Game) []*cores.Card {
 }
 
 // selectN 依【營業規格書 | 九、目標數量】退化規則選 count 個: 候選 ≤ count → 全取; 否則 random 走 randSubset、新選交 pick(玩家)。
-// picked 回報是否真的交到 pick(Operator)手上(玩家輸入紀錄只記真選取; M18 拍板)。
-func selectN[T any](game *cores.Game, candidate []T, count int32, random bool, pick func([]T, int) []T) (result []T, picked bool) {
+// picked 回報是否真的交到 pick(Operator)手上(玩家輸入紀錄只記真選取; M18 拍板); prompt 為選取提示前文, 真選取時下傳。
+func selectN[T any](game *cores.Game, candidate []T, count int32, random bool, prompt string, pick func(string, []T, int) []T) (result []T, picked bool) {
 	if int32(len(candidate)) <= count {
 		return candidate, false // 退化: 候選不足 → 全取
 	} // if
@@ -153,7 +153,7 @@ func selectN[T any](game *cores.Game, candidate []T, count int32, random bool, p
 		return randSubset(game, candidate, int(count)), false
 	} // if
 
-	return pick(candidate, int(count)), true
+	return pick(prompt, candidate, int(count)), true
 }
 
 // guestSelf 把顧客列表包成 self 集合(每位顧客一個 self)。
