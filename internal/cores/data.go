@@ -222,6 +222,31 @@ type Threshold struct {
 	SkillID int32 // 門檻技能編號
 }
 
+// ParseThreshold 解析單筆「門檻值^技能編號」配對; 壞格式(缺 ^ / 多段 / 兩段非整數)回帶位置錯誤
+// (exprs.SyntaxError, 與運算式 / 命令兩文法同型)。格式知識的單一定義點(M28 R3):
+// prepareGuest 寬鬆載入(錯誤即跳筆)與企劃驗證器嚴格檢查(錯誤即報告)共用, 不雙寫。
+func ParseThreshold(source string) (result Threshold, err error) {
+	part := strings.Split(source, "^")
+
+	if len(part) != 2 {
+		return Threshold{}, &exprs.SyntaxError{Pos: 0, Msg: "門檻配對需為「門檻值^技能編號」兩段:" + source}
+	} // if
+
+	value, errValue := strconv.ParseInt(part[0], 10, 32)
+
+	if errValue != nil {
+		return Threshold{}, &exprs.SyntaxError{Pos: 0, Msg: "門檻值需為整數:" + part[0]}
+	} // if
+
+	skillID, errSkill := strconv.ParseInt(part[1], 10, 32)
+
+	if errSkill != nil {
+		return Threshold{}, &exprs.SyntaxError{Pos: len([]rune(part[0])) + 1, Msg: "技能編號需為整數:" + part[1]}
+	} // if
+
+	return Threshold{Value: int32(value), SkillID: int32(skillID)}, nil
+}
+
 // prepareGuest 自 Guest 表建「顧客編號 → 門檻配對」衍生索引: 解析 SateSkillID / CalmSkillID 的「門檻值^技能編號」字串並排序;
 // 壞格式(缺 ^ / 非數字)跳過該筆(寬鬆, 比照 prepareAward / prepareEffect, 嚴格把關交企劃驗證器); 無門檻的顧客不建項。
 func prepareGuest(data *sheeter.Sheeter) map[int32]GuestData {
@@ -248,23 +273,17 @@ func prepareGuest(data *sheeter.Sheeter) map[int32]GuestData {
 	return result
 }
 
-// parseThreshold 解析「門檻值^技能編號」配對列表; 壞格式跳過該筆。供 prepareGuest 的飽食 / 耐心兩欄共用。
+// parseThreshold 解析「門檻值^技能編號」配對列表; 壞格式跳過該筆(寬鬆面; 格式知識在 ParseThreshold)。
+// 供 prepareGuest 的飽食 / 耐心兩欄共用。
 func parseThreshold(source []string) (result []Threshold) {
 	for _, itor := range source {
-		part := strings.Split(itor, "^")
+		threshold, err := ParseThreshold(itor)
 
-		if len(part) != 2 {
-			continue // 缺 ^ 分隔 → 跳過該筆
+		if err != nil {
+			continue // 壞格式 → 跳過該筆
 		} // if
 
-		value, errValue := strconv.ParseInt(part[0], 10, 32)
-		skillID, errSkill := strconv.ParseInt(part[1], 10, 32)
-
-		if errValue != nil || errSkill != nil {
-			continue // 非數字 / 超出 int32 → 跳過該筆
-		} // if
-
-		result = append(result, Threshold{Value: int32(value), SkillID: int32(skillID)})
+		result = append(result, threshold)
 	} // for
 
 	return result

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/yinweli/RovingDiner/internal/exprs"
 	sheeter "github.com/yinweli/RovingDiner/sheet"
 )
 
@@ -155,6 +156,31 @@ func (this *SuiteData) TestPrepareEffect() {
 	this.NotNil(result[700].Start)
 
 	this.Empty(prepareEffect(nil, stub)) // data nil → 空
+}
+
+// TestParseThreshold 驗證單筆門檻配對解析: 好格式回配對、壞格式(缺 ^ / 多段 / 非整數 / 空字串)回帶位置錯誤。
+func (this *SuiteData) TestParseThreshold() {
+	threshold, err := ParseThreshold("6^301")
+	this.NoError(err)
+	this.Equal(Threshold{Value: 6, SkillID: 301}, threshold)
+
+	_, err = ParseThreshold("3") // 缺 ^
+	this.Error(err)
+
+	_, err = ParseThreshold("4^5^6") // 多段
+	this.Error(err)
+
+	_, err = ParseThreshold("x^1") // 門檻值非整數
+	this.Error(err)
+
+	_, err = ParseThreshold("") // 空字串: 未填即跳筆的通則由呼叫端把關
+	this.Error(err)
+
+	_, err = ParseThreshold("12^y") // 技能編號非整數: 位置指向第二段起點
+	this.Require().Error(err)
+	syntaxError := &exprs.SyntaxError{}
+	this.Require().True(errors.As(err, &syntaxError))
+	this.Equal(3, syntaxError.Pos)
 }
 
 // TestPrepareGuest 驗證顧客門檻衍生索引: 解析「門檻值^技能編號」、飽食升序 / 耐心降序、壞格式跳過該筆、無門檻不建項。
