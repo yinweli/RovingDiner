@@ -74,6 +74,9 @@ func (this *SuiteAttrWrite) TestAttrWriteClamp() {
 
 	this.True(writeMoraleBlock(game, cores.AssignSet, -5)) // 夾 0
 	this.Equal(int32(0), game.GetMoraleBlock().GetValue())
+
+	this.True(writeScore(game, cores.AssignSet, -5)) // score 下限夾 0
+	this.Equal(int32(0), game.GetScore().GetValue())
 }
 
 func (this *SuiteAttrWrite) TestAttrWriteLockOnly() {
@@ -112,6 +115,13 @@ func (this *SuiteAttrWrite) TestAttrWriteRound() {
 	this.Equal(int32(2), game.GetRound().GetValue())
 	this.False(writeRound(game, cores.AssignMod, 0)) // 取餘 0 → no-op
 	this.Equal(int32(2), game.GetRound().GetValue())
+
+	this.True(writeRound(game, cores.AssignSet, 99)) // 超過 roundMax → 夾上限
+	this.Equal(int32(12), game.GetRound().GetValue())
+	this.True(writeRound(game, cores.AssignSet, 0)) // 低於 1 → 夾 1(範圍 1 ~ roundMax)
+	this.Equal(int32(1), game.GetRound().GetValue())
+	this.True(writeRoundMax(game, cores.AssignSet, -3)) // 回合上限負值 → 夾 0
+	this.Equal(int32(0), game.GetRoundMax().GetValue())
 }
 
 func (this *SuiteAttrWrite) TestAttrWriteRoundLeft() {
@@ -133,12 +143,17 @@ func (this *SuiteAttrWrite) TestAttrWriteRoundLeft() {
 
 func (this *SuiteAttrWrite) TestAttrWriteMoraleNormal() {
 	game := newGame()
+	game.GetMoraleMax().Set(50) // 先佈上限(morale 範圍 0 ~ moraleMax)
 	game.GetMorale().Set(20)
 
 	this.True(writeMorale(game, cores.AssignSet, 30)) // 非 -= → 一般寫鎖運算
 	this.Equal(int32(30), game.GetMorale().GetValue())
 	this.True(writeMorale(game, cores.AssignAdd, 5))
 	this.Equal(int32(35), game.GetMorale().GetValue())
+	this.True(writeMorale(game, cores.AssignAdd, 99)) // 超過 moraleMax → 夾上限
+	this.Equal(int32(50), game.GetMorale().GetValue())
+	this.True(writeMorale(game, cores.AssignSet, -5)) // 負值 → 夾 0(-= 之外的負值路徑)
+	this.Equal(int32(0), game.GetMorale().GetValue())
 	this.True(writeMorale(game, cores.AssignLock, 0)) // @ 鎖定
 	this.Equal(int32(1), game.GetMorale().GetLock())
 }
@@ -229,6 +244,10 @@ func (this *SuiteAttrWrite) TestAttrWriteMoraleDamageNoSource() {
 
 	this.False(writeMorale(game, cores.AssignSub, 0)) // N=0 → 無消耗、無變更
 	this.Equal(int32(15), game.GetMorale().GetValue())
+
+	this.True(writeMorale(game, cores.AssignSub, 99)) // 超殺 → morale 夾下限 0、實扣 = 夾後差值
+	this.Equal(int32(0), game.GetMorale().GetValue())
+	this.Equal(int32(15), game.GetDamageValue())
 }
 
 func (this *SuiteAttrWrite) TestAttrWriteFields() {
@@ -236,14 +255,27 @@ func (this *SuiteAttrWrite) TestAttrWriteFields() {
 
 	this.True(writeMoraleMax(game, cores.AssignSet, 50))
 	this.Equal(int32(50), game.GetMoraleMax().GetValue())
+	this.True(writeEnergyMax(game, cores.AssignSet, 6)) // 先佈上限再寫值(energy 範圍 0 ~ energyMax)
+	this.Equal(int32(6), game.GetEnergyMax().GetValue())
 	this.True(writeEnergy(game, cores.AssignSet, 3))
 	this.Equal(int32(3), game.GetEnergy().GetValue())
-	this.True(writeEnergyMax(game, cores.AssignSet, 6))
-	this.Equal(int32(6), game.GetEnergyMax().GetValue())
+	this.True(writeEnergy(game, cores.AssignAdd, 99)) // 超過 energyMax → 夾上限
+	this.Equal(int32(6), game.GetEnergy().GetValue())
+	this.True(writeEnergy(game, cores.AssignSub, 99)) // 負值 → 夾 0
+	this.Equal(int32(0), game.GetEnergy().GetValue())
 	this.True(writeHandMax(game, cores.AssignSet, 10))
 	this.Equal(int32(10), game.GetHandMax().GetValue())
 	this.True(writeDrawMax(game, cores.AssignSet, 5))
 	this.Equal(int32(5), game.GetDrawMax().GetValue())
+
+	this.True(writeMoraleMax(game, cores.AssignSet, -5)) // 上限類負值 → 一律夾 0
+	this.Equal(int32(0), game.GetMoraleMax().GetValue())
+	this.True(writeEnergyMax(game, cores.AssignSet, -5))
+	this.Equal(int32(0), game.GetEnergyMax().GetValue())
+	this.True(writeHandMax(game, cores.AssignSet, -5))
+	this.Equal(int32(0), game.GetHandMax().GetValue())
+	this.True(writeDrawMax(game, cores.AssignSet, -5))
+	this.Equal(int32(0), game.GetDrawMax().GetValue())
 }
 
 func (this *SuiteAttrWrite) TestHasAttrWrite() {

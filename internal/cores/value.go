@@ -156,10 +156,17 @@ func (this *Value) ApplyValueOnly(op AssignKind, n float64) bool {
 	return this.Apply(op, n)
 }
 
-// Clamp 夾下限至 low(運算後低於 low 時夾為 low); 夾值政策在詞條、僅護盾 / 格擋 chain。
+// Clamp 夾下限至 low(運算後低於 low 時夾為 low); 夾值政策在詞條(範圍規則詳見【營業規格書 | 二十三、屬性清單】)。
 func (this *Value) Clamp(low int32) {
 	if this.value < low {
 		this.value = low
+	} // if
+}
+
+// ClampMax 夾上限至 high(運算後高於 high 時夾為 high); 夾值政策在詞條, 與 Clamp 成對。
+func (this *Value) ClampMax(high int32) {
+	if this.value > high {
+		this.value = high
 	} // if
 }
 

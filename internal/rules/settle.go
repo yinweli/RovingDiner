@@ -13,7 +13,7 @@ type gameEnd struct {
 
 // Settle 執行結算(【營業規格書 | 二十、獨立流程 | 執行結算】): 結算旗標已立則 no-op(執行命令結算尾的不重入保證);
 // 無事結算(settleBusy 預判全不中)靜默 no-op、不發題(M18 拍板: 命令結算尾高頻呼叫, 空題灌爆日誌)。
-// 流程: 立旗標 → 發範圍標題 → 終止判定 → 飽食門檻 → 飽食離場 → 終止判定 → 耐心門檻 → 生氣離場 → 終止判定 → 手牌上限棄牌 → 除旗標。
+// 流程: 立旗標 → 發範圍標題 → 範圍壓回 → 終止判定 → 飽食門檻 → 飽食離場 → 終止判定 → 耐心門檻 → 生氣離場 → 終止判定 → 手牌上限棄牌 → 除旗標。
 // 終止判定命中以 panic(gameEnd 哨兵)跳出、RunPhase recover。供 games 的編譯命令結算尾與 phaseRoundEnd 呼叫。
 func Settle(game *cores.Game) {
 	if game.Settling {
@@ -21,11 +21,12 @@ func Settle(game *cores.Game) {
 	} // if
 
 	if settleBusy(game) == false {
-		return // 無事結算(判定不會中、門檻離場棄牌全無)→ 靜默 no-op, 不發題
+		return // 無事結算(判定不會中、壓回門檻離場棄牌全無)→ 靜默 no-op, 不發題
 	} // if
 
 	game.Settling = true
 	cores.EmitTitle(game, "執行結算") // 範圍標題: 執行結算(有事才發; M18 拍板)
+	clampOver(game)
 	judgeEnd(game)
 	hitSate(game)
 	exitSate(game)
@@ -38,21 +39,52 @@ func Settle(game *cores.Game) {
 }
 
 // settleBusy 廉價預判本次結算是否會有動作(有事才發範圍標題; M18 拍板):
-// 終止判定會中 / 門檻待標記 / 離場線已達 / 手牌超上限, 任一成立即有事; 全不中 → Settle 靜默 no-op(各步皆 no-op, 行為等價)。
+// 終止判定會中 / 範圍待壓回 / 門檻待標記 / 離場線已達 / 手牌超上限, 任一成立即有事; 全不中 → Settle 靜默 no-op(各步皆 no-op, 行為等價)。
 // 判定點在進場、狀態未變: 前段預測必準; 前段真有動作則題已該發, 後段預測失準無影響——「預判有事 ↔ 實際有事」一致。
-// 判式與正式迴圈共用同一組述詞(reach* / exitable* / end*), 避免兩份邏輯漂移。
+// 判式與正式迴圈共用同一組述詞(overMax / reach* / exitable* / end*), 避免兩份邏輯漂移。
 func settleBusy(game *cores.Game) bool {
 	if endFail(game) || endSucc(game) {
 		return true
 	} // if
 
+	if overMax(game.GetMorale(), game.GetMoraleMax()) || overMax(game.GetEnergy(), game.GetEnergyMax()) {
+		return true
+	} // if
+
 	for _, itor := range allGuest(game) {
-		if pendingSate(game, itor) || pendingCalm(game, itor) || exitableSate(itor) || exitableCalm(itor) {
+		if overMax(itor.GetMorale(), itor.GetMoraleMax()) || pendingSate(game, itor) || pendingCalm(game, itor) || exitableSate(itor) || exitableCalm(itor) {
 			return true
 		} // if
 	} // for
 
 	return int32(len(game.Hand)) > game.GetHandMax().GetValue()
+}
+
+// overMax 範圍壓回述詞: 當前值超過上限且未鎖定(鎖定 = 拒寫, 解鎖後下次結算壓回); clampOver 與 settleBusy 預判共用。
+func overMax(value, high *cores.Value) bool {
+	return value.IsLock() == false && value.GetValue() > high.GetValue()
+}
+
+// clampOver 範圍壓回(【營業規格書 | 二十、獨立流程 | 執行結算】首步): 上限縮減使當前值超標時壓回至上限並發屬性行
+// (全域士氣 / 出牌點數、顧客士氣); 下限與寫入當下的範圍在詞條夾(【營業規格書 | 二十三、屬性清單 | 寫入範圍】), 此處僅收上限連動。
+// 置於終止判定之前: moraleMax 歸零 → morale 壓 0 → 緊接的失敗判定即收場; 離場扣士氣亦用壓回後的顧客 morale。
+func clampOver(game *cores.Game) {
+	if overMax(game.GetMorale(), game.GetMoraleMax()) {
+		game.GetMorale().Set(float64(game.GetMoraleMax().GetValue()))
+		cores.EmitProperty(game, 0, cores.NoneID, "morale", cores.AssignSet, float64(game.GetMorale().GetValue()), float64(game.GetMorale().GetValue()))
+	} // if
+
+	if overMax(game.GetEnergy(), game.GetEnergyMax()) {
+		game.GetEnergy().Set(float64(game.GetEnergyMax().GetValue()))
+		cores.EmitProperty(game, 0, cores.NoneID, "energy", cores.AssignSet, float64(game.GetEnergy().GetValue()), float64(game.GetEnergy().GetValue()))
+	} // if
+
+	for _, itor := range allGuest(game) {
+		if overMax(itor.GetMorale(), itor.GetMoraleMax()) {
+			itor.GetMorale().Set(float64(itor.GetMoraleMax().GetValue()))
+			cores.EmitProperty(game, itor.GetGuestID(), itor.GetInstanceID(), "morale", cores.AssignSet, float64(itor.GetMorale().GetValue()), float64(itor.GetMorale().GetValue()))
+		} // if
+	} // for
 }
 
 // judgeEnd [終止判定](【營業規格書 | 二十、獨立流程 | [終止判定]】): 失敗優先於成功; 命中 → 清結算旗標、panic 哨兵跳出。

@@ -24,10 +24,16 @@ func (this *SuiteAttrRefWrite) TestAttrRefWriteCard() {
 
 	this.True(writeRefCost(game, ref, cores.AssignSet, 4)) // 寫鎖: 帶值
 	this.Equal(int32(4), card.GetCost().GetValue())
+	this.True(writeRefCost(game, ref, cores.AssignSub, 99)) // 下限夾 0
+	this.Equal(int32(0), card.GetCost().GetValue())
 	this.True(writeRefExtraRunMin(game, ref, cores.AssignAdd, 2))
 	this.Equal(int32(2), card.GetExtraRunMin().GetValue())
+	this.True(writeRefExtraRunMin(game, ref, cores.AssignSub, 99)) // 下限夾 0
+	this.Equal(int32(0), card.GetExtraRunMin().GetValue())
 	this.True(writeRefExtraRunMax(game, ref, cores.AssignSet, 9))
 	this.Equal(int32(9), card.GetExtraRunMax().GetValue())
+	this.True(writeRefExtraRunMax(game, ref, cores.AssignSet, -2)) // 下限夾 0
+	this.Equal(int32(0), card.GetExtraRunMax().GetValue())
 
 	this.True(writeRefCardSeal(game, ref, cores.AssignLock, 0)) // 純鎖: @
 	this.Equal(int32(1), card.GetSeal().GetLock())
@@ -48,20 +54,36 @@ func (this *SuiteAttrRefWrite) TestAttrRefWriteGuest() {
 
 	this.True(writeRefCalm(game, ref, cores.AssignSet, 8))
 	this.Equal(int32(8), guest.GetCalm().GetValue())
+	this.True(writeRefCalm(game, ref, cores.AssignSub, 99)) // 下限夾 0
+	this.Equal(int32(0), guest.GetCalm().GetValue())
+	this.True(writeRefSateMax(game, ref, cores.AssignSet, 20)) // 先佈離場線再寫值(sate 範圍 0 ~ sateMax)
+	this.Equal(int32(20), guest.GetSateMax().GetValue())
 	this.True(writeRefSate(game, ref, cores.AssignSet, 5))
 	this.Equal(int32(5), guest.GetSate().GetValue())
-	this.True(writeRefSateMax(game, ref, cores.AssignSet, 20))
-	this.Equal(int32(20), guest.GetSateMax().GetValue())
-	this.True(writeRefMorale(game, ref, cores.AssignSet, 6)) // 引用 morale 走一般運算(無餐廳特例)
+	this.True(writeRefSate(game, ref, cores.AssignAdd, 99)) // 超過 sateMax → 夾上限
+	this.Equal(int32(20), guest.GetSate().GetValue())
+	this.True(writeRefSate(game, ref, cores.AssignSet, -5)) // 負值 → 夾 0
+	this.Equal(int32(0), guest.GetSate().GetValue())
+	this.True(writeRefMoraleMax(game, ref, cores.AssignSet, 15))
+	this.Equal(int32(15), guest.GetMoraleMax().GetValue())
+	this.True(writeRefMorale(game, ref, cores.AssignSet, 6)) // 引用 morale 走一般運算(無餐廳特例; 範圍 0 ~ moraleMax)
 	this.Equal(int32(6), guest.GetMorale().GetValue())
 	this.True(writeRefMorale(game, ref, cores.AssignSub, 2)) // 引用 -= 為一般減
 	this.Equal(int32(4), guest.GetMorale().GetValue())
-	this.True(writeRefMoraleMax(game, ref, cores.AssignSet, 15))
-	this.Equal(int32(15), guest.GetMoraleMax().GetValue())
+	this.True(writeRefMorale(game, ref, cores.AssignAdd, 99)) // 超過 moraleMax → 夾上限
+	this.Equal(int32(15), guest.GetMorale().GetValue())
 	this.True(writeRefScore(game, ref, cores.AssignSet, 9))
 	this.Equal(int32(9), guest.GetScore().GetValue())
+	this.True(writeRefScore(game, ref, cores.AssignSub, 99)) // 下限夾 0
+	this.Equal(int32(0), guest.GetScore().GetValue())
 	this.True(writeRefScoreMax(game, ref, cores.AssignSet, 30))
 	this.Equal(int32(30), guest.GetScoreMax().GetValue())
+	this.True(writeRefSateMax(game, ref, cores.AssignSet, -1)) // 上限類負值 → 夾 0
+	this.Equal(int32(0), guest.GetSateMax().GetValue())
+	this.True(writeRefMoraleMax(game, ref, cores.AssignSet, -1))
+	this.Equal(int32(0), guest.GetMoraleMax().GetValue())
+	this.True(writeRefScoreMax(game, ref, cores.AssignSet, -1))
+	this.Equal(int32(0), guest.GetScoreMax().GetValue())
 
 	this.True(writeRefSateSeal(game, ref, cores.AssignLock, 0)) // 純鎖
 	this.Equal(int32(1), guest.GetSateSeal().GetLock())

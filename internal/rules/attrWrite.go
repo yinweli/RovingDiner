@@ -9,7 +9,8 @@ import (
 // 寫側不需讀側的 Lock 後綴路由——鎖定變更由賦值符 @ # 表達, 左值名即屬性名(無 moraleLock 這類左值)。
 // 每一詞條對應一個獨立的 write* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
 var attrWrite = map[string]cores.AttrWriteFunc{
-	// 餐廳 / 出牌全域數值屬性(寫鎖; morale 帶 -= 特例、護盾 / 格擋夾下限 0、energyKeep 為純鎖)
+	// 餐廳 / 出牌全域數值屬性(寫鎖; morale 帶 -= 特例、energyKeep 為純鎖; 範圍依【營業規格書 | 二十三、屬性清單】
+	// 於命令寫入路徑夾值, 上限縮減的連動壓回在執行結算)
 	"morale":       writeMorale,
 	"moraleMax":    writeMoraleMax,
 	"moraleShield": writeMoraleShield,
@@ -35,19 +36,24 @@ func HasAttrWrite(name string) bool {
 
 // === 餐廳 / 出牌全域數值屬性 ===
 
-// writeMorale 寫餐廳士氣值; -= 走士氣受損特例(格擋 → 護盾 → morale), 其餘為一般寫鎖運算。
+// writeMorale 寫餐廳士氣值(範圍 0 ~ moraleMax); -= 走士氣受損特例(格擋 → 護盾 → morale, 該路徑自夾下限 0), 其餘為一般寫鎖運算。
 // 屬性修改命令路徑的受損來源取 self 顧客(damageSource); guestExit 等流程改傳離場顧客為來源, 直接呼叫 moraleDamage。
 func writeMorale(game *cores.Game, op cores.AssignKind, n float64) bool {
 	if op == cores.AssignSub {
 		return moraleDamage(game, n, damageSource(game.GetSelf()))
 	} // if
 
-	return game.GetMorale().Apply(op, n)
+	changed := game.GetMorale().Apply(op, n)
+	game.GetMorale().Clamp(0)
+	game.GetMorale().ClampMax(game.GetMoraleMax().GetValue())
+	return changed
 }
 
-// writeMoraleMax 寫餐廳士氣上限。
+// writeMoraleMax 寫餐廳士氣上限(下限夾 0; 縮減使 morale 超標時由執行結算壓回)。
 func writeMoraleMax(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetMoraleMax().Apply(op, n)
+	changed := game.GetMoraleMax().Apply(op, n)
+	game.GetMoraleMax().Clamp(0)
+	return changed
 }
 
 // writeMoraleShield 寫餐廳士氣護盾(下限夾 0)。
@@ -64,19 +70,26 @@ func writeMoraleBlock(game *cores.Game, op cores.AssignKind, n float64) bool {
 	return changed
 }
 
-// writeScore 寫餐廳滿意值。
+// writeScore 寫餐廳滿意值(下限夾 0)。
 func writeScore(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetScore().Apply(op, n)
+	changed := game.GetScore().Apply(op, n)
+	game.GetScore().Clamp(0)
+	return changed
 }
 
-// writeEnergy 寫出牌點數。
+// writeEnergy 寫出牌點數(範圍 0 ~ energyMax)。
 func writeEnergy(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetEnergy().Apply(op, n)
+	changed := game.GetEnergy().Apply(op, n)
+	game.GetEnergy().Clamp(0)
+	game.GetEnergy().ClampMax(game.GetEnergyMax().GetValue())
+	return changed
 }
 
-// writeEnergyMax 寫出牌點數上限。
+// writeEnergyMax 寫出牌點數上限(下限夾 0; 縮減使 energy 超標時由執行結算壓回)。
 func writeEnergyMax(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetEnergyMax().Apply(op, n)
+	changed := game.GetEnergyMax().Apply(op, n)
+	game.GetEnergyMax().Clamp(0)
+	return changed
 }
 
 // writeEnergyKeep 寫出牌點數保留(純鎖屬性, 數值固定 0, 僅 @ #)。
@@ -84,26 +97,35 @@ func writeEnergyKeep(game *cores.Game, op cores.AssignKind, n float64) bool {
 	return game.GetEnergyKeep().ApplyLockOnly(op)
 }
 
-// writeHandMax 寫手牌張數上限。
+// writeHandMax 寫手牌張數上限(下限夾 0)。
 func writeHandMax(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetHandMax().Apply(op, n)
+	changed := game.GetHandMax().Apply(op, n)
+	game.GetHandMax().Clamp(0)
+	return changed
 }
 
-// writeDrawMax 寫補牌張數上限。
+// writeDrawMax 寫補牌張數上限(下限夾 0)。
 func writeDrawMax(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetDrawMax().Apply(op, n)
+	changed := game.GetDrawMax().Apply(op, n)
+	game.GetDrawMax().Clamp(0)
+	return changed
 }
 
 // === 回合 ===
 
-// writeRound 寫當前回合數(寫屬性、無鎖定語意)。
+// writeRound 寫當前回合數(寫屬性、無鎖定語意; 範圍 1 ~ roundMax——命令路徑限定, 開局系統歸零不經此)。
 func writeRound(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetRound().ApplyValueOnly(op, n)
+	changed := game.GetRound().ApplyValueOnly(op, n)
+	game.GetRound().Clamp(1)
+	game.GetRound().ClampMax(game.GetRoundMax().GetValue())
+	return changed
 }
 
-// writeRoundMax 寫回合上限(寫屬性、無鎖定語意)。
+// writeRoundMax 寫回合上限(寫屬性、無鎖定語意; 下限夾 0——縮減至低於 round 時不壓回 round, 由終止判定收場)。
 func writeRoundMax(game *cores.Game, op cores.AssignKind, n float64) bool {
-	return game.GetRoundMax().ApplyValueOnly(op, n)
+	changed := game.GetRoundMax().ApplyValueOnly(op, n)
+	game.GetRoundMax().Clamp(0)
+	return changed
 }
 
 // writeRoundLeft 寫剩餘回合(衍生): 轉譯為對回合上限的調整(剩餘回合 = N → 回合上限 = 回合 + N),

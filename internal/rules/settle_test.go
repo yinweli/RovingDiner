@@ -24,6 +24,7 @@ func (this *SuiteSettle) TestSettle() {
 	data := tester.BuildData()
 	game := newGameData(data)
 	game.GetRoundMax().Set(99)
+	game.GetMoraleMax().Set(50) // 範圍壓回步看 morale <= moraleMax, 佈置須成對
 	game.GetMorale().Set(30)
 	game.GetHandMax().Set(10)
 
@@ -82,6 +83,7 @@ func (this *SuiteSettle) TestSettle() {
 func (this *SuiteSettle) TestSettleEmit() {
 	game, record := newGameRecord()
 	game.GetRoundMax().Set(99)
+	game.GetMoraleMax().Set(50)
 	game.GetMorale().Set(30)
 	game.GetHandMax().Set(2)
 	game.Seat.Place(1, cores.NewGuest(game, 502)) // 高耐心、無門檻
@@ -114,6 +116,35 @@ func (this *SuiteSettle) TestSettleEmit() {
 	action := filterLine(record, "$ "+cores.IdentGuest(game.GetSheet(), 501, hit.GetInstanceID())+" >> 行動佇列(")
 	this.Require().Len(action, 1)
 	this.Equal("$ "+cores.IdentGuest(game.GetSheet(), 501, hit.GetInstanceID())+" >> 行動佇列(耐心)", action[0])
+}
+
+// TestClampOver 驗證範圍壓回(結算首步): 上限縮減後超標的全域士氣 / 出牌點數 / 顧客士氣壓回至上限並發屬性行;
+// 鎖定中不壓(解鎖後下次結算再收); 預判 settleBusy 與正式步共用 overMax 述詞。
+func (this *SuiteSettle) TestClampOver() {
+	game, record := newGameRecord()
+	game.GetRoundMax().Set(99)
+	game.GetMoraleMax().Set(30)
+	game.GetMorale().Set(35) // 直接佈置超標態: 模擬上限縮減後
+	game.GetEnergyMax().Set(3)
+	game.GetEnergy().Set(5)
+	guest := cores.NewGuest(game, 501) // 迷你表 MoraleMax 8
+	guest.GetMorale().Set(9)
+	game.Seat.Place(1, guest)
+
+	this.True(settleBusy(game)) // 範圍待壓回即有事
+	Settle(game)
+	this.Equal(int32(30), game.GetMorale().GetValue())
+	this.Equal(int32(3), game.GetEnergy().GetValue())
+	this.Equal(int32(8), guest.GetMorale().GetValue())
+	this.Contains(record.Flat(), "$ 餐廳士氣值 = 30 >> 30") // 壓回發屬性行(非靜默)
+	this.Contains(record.Flat(), "$ 出牌點數 = 3 >> 3")
+	this.Contains(record.Flat(), "$ "+cores.IdentGuest(game.GetSheet(), 501, guest.GetInstanceID())+" 士氣值 = 8 >> 8")
+
+	game.GetMorale().Set(35)
+	game.GetMorale().Lock() // 鎖定 = 拒寫 → 不壓回、不視為有事
+	this.False(settleBusy(game))
+	clampOver(game)
+	this.Equal(int32(35), game.GetMorale().GetValue())
 }
 
 // TestJudgeEnd 驗證終止判定: 失敗(回合上限 / 士氣歸零, 失敗優先)與成功(全場清空)以哨兵跳出、命中前清旗標; 未命中無事。

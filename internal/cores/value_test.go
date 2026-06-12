@@ -214,3 +214,14 @@ func (this *SuiteValue) TestValueClamp() {
 	high.Clamp(0)
 	this.Equal(int32(5), high.GetValue()) // 不低於下限 → 不動
 }
+
+// TestValueClampMax 驗證 ClampMax 夾上限。
+func (this *SuiteValue) TestValueClampMax() {
+	over := NewValue(35, 0)
+	over.ClampMax(30)
+	this.Equal(int32(30), over.GetValue()) // 高於上限 → 夾
+
+	under := NewValue(5, 0)
+	under.ClampMax(30)
+	this.Equal(int32(5), under.GetValue()) // 不高於上限 → 不動
+}

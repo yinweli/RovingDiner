@@ -10,7 +10,8 @@ import (
 // 型別不符的引用(以顧客引用寫卡牌屬性等)回 changed=false。寫側不需 Lock 後綴路由(鎖定變更由 @ # 表達)。
 // 每一詞條對應一個獨立的 writeRef* 函式(便於逐條單元測試); 本表僅作名稱 → 行為的索引。
 var attrRefWrite = map[string]cores.AttrRefWriteFunc{
-	// 卡牌引用屬性(cost / extraRun* 寫鎖; cardSeal / keep / playExile / unplayExile 純鎖)
+	// 卡牌引用屬性(cost / extraRun* 寫鎖; cardSeal / keep / playExile / unplayExile 純鎖;
+	// 範圍依【營業規格書 | 二十三、屬性清單】於命令寫入路徑夾值, 上限縮減的連動壓回在執行結算)
 	"cost":        writeRefCost,
 	"extraRunMin": writeRefExtraRunMin,
 	"extraRunMax": writeRefExtraRunMax,
@@ -39,7 +40,7 @@ func HasAttrRefWrite(name string) bool {
 
 // === 卡牌引用屬性 ===
 
-// writeRefCost 寫卡牌出牌費用(寫鎖)。
+// writeRefCost 寫卡牌出牌費用(寫鎖; 下限夾 0, 與 cardCost* 命令同則)。
 func writeRefCost(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -47,10 +48,12 @@ func writeRefCost(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float6
 		return false
 	} // if
 
-	return card.GetCost().Apply(op, n)
+	changed := card.GetCost().Apply(op, n)
+	card.GetCost().Clamp(0)
+	return changed
 }
 
-// writeRefExtraRunMin 寫卡牌額外發動次數下限(寫鎖)。
+// writeRefExtraRunMin 寫卡牌額外發動次數下限(寫鎖; 下限夾 0)。
 func writeRefExtraRunMin(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -58,10 +61,12 @@ func writeRefExtraRunMin(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n
 		return false
 	} // if
 
-	return card.GetExtraRunMin().Apply(op, n)
+	changed := card.GetExtraRunMin().Apply(op, n)
+	card.GetExtraRunMin().Clamp(0)
+	return changed
 }
 
-// writeRefExtraRunMax 寫卡牌額外發動次數上限(寫鎖)。
+// writeRefExtraRunMax 寫卡牌額外發動次數上限(寫鎖; 下限夾 0)。
 func writeRefExtraRunMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	card, ok := cores.AsCard(ref)
 
@@ -69,7 +74,9 @@ func writeRefExtraRunMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n
 		return false
 	} // if
 
-	return card.GetExtraRunMax().Apply(op, n)
+	changed := card.GetExtraRunMax().Apply(op, n)
+	card.GetExtraRunMax().Clamp(0)
+	return changed
 }
 
 // writeRefCardSeal 寫卡牌封印(純鎖, 僅 @ #)。
@@ -118,7 +125,7 @@ func writeRefUnplayExile(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n
 
 // === 顧客引用屬性 ===
 
-// writeRefCalm 寫顧客耐心值(寫鎖)。
+// writeRefCalm 寫顧客耐心值(寫鎖; 下限夾 0)。
 func writeRefCalm(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -126,10 +133,12 @@ func writeRefCalm(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float6
 		return false
 	} // if
 
-	return guest.GetCalm().Apply(op, n)
+	changed := guest.GetCalm().Apply(op, n)
+	guest.GetCalm().Clamp(0)
+	return changed
 }
 
-// writeRefSate 寫顧客飽食值(寫鎖)。
+// writeRefSate 寫顧客飽食值(寫鎖; 範圍 0 ~ sateMax)。
 func writeRefSate(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -137,10 +146,13 @@ func writeRefSate(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float6
 		return false
 	} // if
 
-	return guest.GetSate().Apply(op, n)
+	changed := guest.GetSate().Apply(op, n)
+	guest.GetSate().Clamp(0)
+	guest.GetSate().ClampMax(guest.GetSateMax().GetValue())
+	return changed
 }
 
-// writeRefSateMax 寫顧客飽食值離場線(寫鎖)。
+// writeRefSateMax 寫顧客飽食值離場線(寫鎖; 下限夾 0——縮減使 sate 達線時由飽食離場收場, 不壓回)。
 func writeRefSateMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -148,10 +160,12 @@ func writeRefSateMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n flo
 		return false
 	} // if
 
-	return guest.GetSateMax().Apply(op, n)
+	changed := guest.GetSateMax().Apply(op, n)
+	guest.GetSateMax().Clamp(0)
+	return changed
 }
 
-// writeRefMorale 寫顧客士氣值(寫鎖); 引用屬性的 -= 走一般運算, 不啟動餐廳 morale 特例。
+// writeRefMorale 寫顧客士氣值(寫鎖; 範圍 0 ~ 該顧客 moraleMax); 引用屬性的 -= 走一般運算, 不啟動餐廳 morale 特例。
 func writeRefMorale(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -159,10 +173,13 @@ func writeRefMorale(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n floa
 		return false
 	} // if
 
-	return guest.GetMorale().Apply(op, n)
+	changed := guest.GetMorale().Apply(op, n)
+	guest.GetMorale().Clamp(0)
+	guest.GetMorale().ClampMax(guest.GetMoraleMax().GetValue())
+	return changed
 }
 
-// writeRefMoraleMax 寫顧客士氣值上限(寫鎖)。
+// writeRefMoraleMax 寫顧客士氣值上限(寫鎖; 下限夾 0; 縮減使該顧客 morale 超標時由執行結算壓回)。
 func writeRefMoraleMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -170,10 +187,12 @@ func writeRefMoraleMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n f
 		return false
 	} // if
 
-	return guest.GetMoraleMax().Apply(op, n)
+	changed := guest.GetMoraleMax().Apply(op, n)
+	guest.GetMoraleMax().Clamp(0)
+	return changed
 }
 
-// writeRefScore 寫顧客滿意值(寫鎖)。
+// writeRefScore 寫顧客滿意值(寫鎖; 下限夾 0)。
 func writeRefScore(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -181,10 +200,12 @@ func writeRefScore(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float
 		return false
 	} // if
 
-	return guest.GetScore().Apply(op, n)
+	changed := guest.GetScore().Apply(op, n)
+	guest.GetScore().Clamp(0)
+	return changed
 }
 
-// writeRefScoreMax 寫顧客滿意值上限(寫鎖)。
+// writeRefScoreMax 寫顧客滿意值上限(寫鎖; 下限夾 0)。
 func writeRefScoreMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n float64) bool {
 	guest, ok := cores.AsGuest(ref)
 
@@ -192,7 +213,9 @@ func writeRefScoreMax(game *cores.Game, ref exprs.Ref, op cores.AssignKind, n fl
 		return false
 	} // if
 
-	return guest.GetScoreMax().Apply(op, n)
+	changed := guest.GetScoreMax().Apply(op, n)
+	guest.GetScoreMax().Clamp(0)
+	return changed
 }
 
 // writeRefSateSeal 寫顧客封印飽食技能(純鎖, 僅 @ #)。

@@ -260,6 +260,7 @@ func shuffleCard(game *cores.Game, card []*cores.Card) {
 // morale 鎖定時格擋 / 護盾仍消耗、morale 不動、無實際扣減(對齊目前解讀)。
 // N 先四捨五入為整數扣減值(捨入提前至消耗鏈之前, 依【營業規格書 | 十七、命令 | 1】特例), 使格擋 / 護盾 / morale 的整數消耗自洽。
 // 三段消耗皆經守衛寫入、各自鎖定時不消耗: 格擋鎖定仍無視本次 N 但不減層、護盾鎖定則殘餘全進 morale、morale 鎖定不扣。
+// morale 段夾下限 0(【營業規格書 | 二十三、屬性清單 | 寫入範圍】), 實際扣減 = 夾後差值(失敗判定在 0 照樣命中)。
 func moraleDamage(game *cores.Game, n float64, source *cores.Guest) bool {
 	damage := exprs.Round(n)
 	changed := false
@@ -277,9 +278,10 @@ func moraleDamage(game *cores.Game, n float64, source *cores.Guest) bool {
 		} // if
 	} // if
 
-	if damage > 0 && game.GetMorale().IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣)
+	if damage > 0 && game.GetMorale().IsLock() == false { // 殘餘對 morale 一般 -= 運算(鎖定 → 不扣; 下限夾 0)
 		before := game.GetMorale().GetValue()
 		game.GetMorale().Sub(float64(damage))
+		game.GetMorale().Clamp(0)
 		actual := before - game.GetMorale().GetValue()
 
 		if actual > 0 {
