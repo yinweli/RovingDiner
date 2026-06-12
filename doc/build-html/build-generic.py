@@ -21,6 +21,10 @@ import re
 import sys
 from pathlib import Path
 
+# 訊息含中文：管線下 stdout/stderr 預設跟系統碼頁（CI runner cp1252、本機 cp950），改 UTF-8 避免編碼失敗
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
+
 HERE = Path(__file__).parent
 SRC = HERE.parent  # doc/
 
