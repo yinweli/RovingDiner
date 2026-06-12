@@ -7,8 +7,8 @@
 ## 現況
 
 - **架構已定案**(實作規格書 §一~§四):核心四包依賴 `games → rules → cores → exprs` 一條直線,`internal/infra` 基礎設施、`internal/tester` 跨包測試基建;TUI = `app/rodi`(停點直讀 + 交棒 stepper)+ `cmd/rodi` 瘦進入點。
-- **M0–M28 已落地,M29(conformance golden)未動**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)→ 格式說明 modal(M26A 插站)→ 選取＋Operator(M27,可全鍵盤跑完整一局)→ 企劃驗證器(M28,單筆/表單檢查 CLI + `task check`;機制成文於實作規格書【附錄:企劃驗證器】)。建置 / golangci-lint(0 issues)/ 測試全綠,cores / rules / roditool 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
-- **剩餘站序已凍結**(2026-06-11 拍板):M29 conformance golden;細目以實作規格書【九】為準,再插站不改號(M26A、M28 R4A 即依此插站,後續編號未動)。
+- **M0–M29 全數落地**:核心線(M0–M16)→ 事件流收口(M17–M18)→ TUI 被動觀看(M19–M22)→ 暫停機重構(M23)→ 日誌流換軌(M24)→ 速率(M25)→ 互動與 modal(M26)→ 格式說明 modal(M26A 插站)→ 選取＋Operator(M27,可全鍵盤跑完整一局)→ 企劃驗證器(M28,單筆/表單檢查 CLI + `task check`)→ conformance golden(M29,ScriptOperator 腳本替身+關卡 604 入 golden 矩陣+決定性 CI;機制成文於實作規格書【7.3】)。建置 / golangci-lint(0 issues)/ 測試全綠,cores / rules / roditool 覆蓋率 100%(app/rodi 除 TTY 組裝入口 Run 外 100%)。
+- **編號里程碑收官**:後續站待規格待定區(表演資訊 / guestPart / guestSkin / clamp 補強)成文後再議;再插站不改號慣例不變。
 
 ## 里程碑進度
 
@@ -26,12 +26,12 @@
 | M26A    | ✅   | 格式說明 modal(插站; F1 說明/F2 計數)      |
 | M27     | ✅   | 選取＋Operator(交棒廣義化+選取/出牌模式)   |
 | M28     | ✅   | 企劃驗證器(單筆/表單檢查 CLI+task check)   |
-| M29     | ⬜   | conformance golden(擴充覆蓋) *(prov)*      |
+| M29     | ✅   | conformance golden(腳本維度+決定性 CI)     |
 
 ## 接續待辦
 
 - **clamp 範圍只做規格明寫者**:屬性修改僅 護盾 / 格擋 夾下限 0(`Value.Clamp`);其餘(morale 對 moraleMax 上限、sate / calm 下限等)規格未明寫,不臆測,跑流程時補。
-- **[緩議] -race 未跑**:無 gcc 環境;嚴格交棒按構造無並行存取,雙跑同序測試為行為釘。
+- **-race 已交 CI**:本機無 gcc 維持不跑;`.github/workflows/ci.yml` 在 ubuntu 跑 `go test -race ./...`,首次執行結果待 push 後確認。
 
 ## 已敲定的設計決策(勿重新爭論;只列規格與程式看不出來的)
 
