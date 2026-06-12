@@ -79,10 +79,10 @@ func (this *panelHand) View(game *cores.Game, width int, focus bool) string {
 
 	switch { // 標題提醒: 候選 / 出牌等待在本區, Tab 切走仍見等待落點
 	case picking:
-		title += noteCard
+		title += noteView(noteCard, focus)
 
 	case this.pick.playing():
-		title += notePlay
+		title += noteView(notePlay, focus)
 	} // switch
 
 	return strings.Join([]string{

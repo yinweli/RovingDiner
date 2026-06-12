@@ -107,7 +107,7 @@ func (this *panelSeat) View(game *cores.Game, width int, focus bool) string {
 	title := "座位"
 
 	if picking {
-		title += noteGuest // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+		title += noteView(noteGuest, focus) // 標題提醒: 候選在本區, Tab 切走仍見等待落點
 	} // if
 
 	text := []string{panelTitle(title, width), boxMark(row[0], width)}

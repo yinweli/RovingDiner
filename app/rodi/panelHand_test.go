@@ -121,6 +121,11 @@ func (this *SuitePanelHand) TestPanelHandPick() {
 
 	pick.start(&request{}) // 出牌等待: 標題加註請出牌, 卡列照常渲染
 	this.Contains(target.View(game, 60, false), "(請出牌)")
+
+	lipgloss.SetColorProfile(termenv.ANSI) // 臨時升 profile 使樣式可見(同 TestPanelHandMove)
+	defer lipgloss.SetColorProfile(termenv.Ascii)
+	this.Contains(target.View(game, 60, false), styleNote.Render(notePlay))   // 非聚焦: 提醒上色
+	this.NotContains(target.View(game, 60, true), styleNote.Render(notePlay)) // 聚焦: 原樣讓位整列反白
 }
 
 // TestHandDim 驗證暗色標記判定: 出不起(費用 > 出牌點數)或封印命中、付得起且未封印不命中。

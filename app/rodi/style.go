@@ -21,6 +21,7 @@ var (
 	styleFocus   = lipgloss.NewStyle().Reverse(true)                   // 聚焦區標題列反白(M26 R1)
 	styleCursor  = lipgloss.NewStyle().Reverse(true)                   // 游標態反白(聚焦區內游標停駐項目; M26 R2)
 	styleChosen  = lipgloss.NewStyle().Background(lipgloss.Color("4")) // 選取模式已選態選取色底(M27 R4)
+	styleNote    = lipgloss.NewStyle().Foreground(lipgloss.Color("3")) // 等待落點標題提醒(M27): yellow 醒目
 )
 
 // focusView 聚焦高亮: 區輸出首行(面板標題列 / 狀態列標籤行)整列反白, 其餘行原樣——
@@ -30,6 +31,16 @@ func focusView(view string) string {
 	row := strings.SplitN(view, "\n", 2)
 	row[0] = styleFocus.Render(row[0])
 	return strings.Join(row, "\n")
+}
+
+// noteView 等待落點標題提醒上色(M27; 提醒文字見 pick.go): 非聚焦時上提醒色——Tab 切走仍醒目,
+// 正是提醒的主場景; 聚焦時原樣讓位——標題列整列反白(focusView), 內嵌樣式的 reset 會切斷反白。
+func noteView(note string, focus bool) string {
+	if focus == false {
+		return styleNote.Render(note)
+	} // if
+
+	return note
 }
 
 // lineStyle 依日誌行角色取樣式(首字即角色, 欄 2 為效果欄位)。

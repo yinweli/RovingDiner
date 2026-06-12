@@ -27,7 +27,7 @@ func (this *panelPile) View(game *cores.Game, width int, focus bool) string {
 	title := "牌堆"
 
 	if picking {
-		title += noteCard // 標題提醒: 候選在本區, Tab 切走仍見等待落點
+		title += noteView(noteCard, focus) // 標題提醒: 候選在本區, Tab 切走仍見等待落點
 	} // if
 
 	return strings.Join([]string{
