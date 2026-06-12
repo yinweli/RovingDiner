@@ -93,8 +93,9 @@ func (this model) Init() tea.Cmd {
 
 // Update 訊息分派: timer 拍 → 驗章後推一拍再排下一拍(過期世代 = 切模式前的在途舊拍, 丟棄斷鏈);
 // 步進拍 → 步進模式才推一拍、不排拍([N] 為步進專用, 自動模式下不插拍); 模式循環 → 換模式 + 世代 +1,
-// 新模式為自動即重排拍; 玩家行動請求 → 進等待態(不排拍), [P] 出手牌游標卡(空手牌 / 出不起 / 封印 no-op;
-// M27 拍板)、[E] 結束, 答覆後依當前模式恢復; 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作;
+// 新模式為自動即重排拍; 玩家行動請求 → 進等待態(不排拍、自動聚焦手牌), [P] 限聚焦手牌時出游標卡
+// (空手牌 / 出不起 / 封印 / 焦點他區 no-op; M27 拍板)、[E] 結束任意聚焦可按, 答覆後依當前模式恢復;
+// 終局停止推進(成敗活在狀態列階段欄直讀, 不另動作;
 // 終局後切模式排的拍經 Next 防呆自然 no-op); 切區 → 聚焦索引循環移動(迴繞); 游標 → modal 態捲動頂層
 // modal、常態分派聚焦區 Move(語意隨區, 狀態列落空不動作); 說明 / 計數 / 檢視 → 推 modal 入棧(開著時
 // 暫停消費); 關閉 → 出棧並恢復排拍; 視窗尺寸 → 更新寬高預算; 按鍵 → 查當前鍵盤模式的綁定表分派(未綁定不動作)。
@@ -203,8 +204,8 @@ func (this model) Update(msg tea.Msg) (result tea.Model, cmd tea.Cmd) {
 		return this, nil // 游標下無項目 / 事件日誌無 modal: 不動作
 
 	case playMsg:
-		if this.wait == nil || this.pick.active() {
-			return this, nil // 非玩家行動等待: 不動作
+		if this.wait == nil || this.pick.active() || this.focus != focusHand {
+			return this, nil // 非玩家行動等待 / 焦點不在手牌(游標不可見不可出; M27 拍板): 不動作
 		} // if
 
 		card, ok := this.comp[focusHand].Item(this.stepper.game).(*cores.Card)
@@ -365,15 +366,22 @@ func (this model) consume(next turn) (wait *request, more bool) {
 }
 
 // arrive 收下消化結果: 選取請求進選取模式(共享狀態就位、聚焦跳含候選區; 【營業顯示規格書 | 7、互動規格 |
-// 7.4】), 玩家行動請求為常態等待([P]/[E]), nil(行組 / 終局)照常。
+// 7.4】); 玩家行動請求為常態等待並自動聚焦手牌——游標可見, 「先選卡再出」成為可見流程(M27 拍板);
+// nil(行組 / 終局)照常。
 func (this model) arrive(wait *request) model {
 	this.wait = wait
 
-	if wait != nil && (wait.guest != nil || wait.card != nil) {
-		this.pick.start(wait)
-		this.focus = this.pickFocus(wait)
+	if wait == nil {
+		return this
 	} // if
 
+	if wait.guest != nil || wait.card != nil {
+		this.pick.start(wait)
+		this.focus = this.pickFocus(wait)
+		return this
+	} // if
+
+	this.focus = focusHand // 玩家行動等待: 聚焦手牌
 	return this
 }
 

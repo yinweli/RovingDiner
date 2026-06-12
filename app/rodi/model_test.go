@@ -93,6 +93,7 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	this.Nil(cmd)                                                               // 等待輸入: 不排拍
 	this.Equal(cores.PhasePlayerAction, result.(model).stepper.game.GetPhase()) // 引擎停在 PlayerAction 暫停點
+	this.Equal(focusHand, result.(model).focus)                                 // 玩家行動等待: 自動聚焦手牌, 游標可見
 
 	hold := result.(model)
 	hold.mode = modeStep
@@ -102,6 +103,13 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	hold = result.(model)
 	hold.mode = modeFast
+	hold.focus = focusLog
+	result, cmd = hold.Update(playMsg{}) // 焦點不在手牌: [P] 不動作, 游標不可見不可出
+	this.NotNil(result.(model).wait)
+	this.Nil(cmd)
+
+	hold = result.(model)
+	hold.focus = focusHand
 	hold.stepper.game.Hand[0].GetSeal().Lock() // 游標卡封印 → [P] no-op(M27 拍板; 暗色已提示)
 	result, cmd = hold.Update(playMsg{})
 	this.NotNil(result.(model).wait)
@@ -253,6 +261,7 @@ func (this *SuiteModel) TestModelUpdate() {
 
 	fab = newModel(newStepper(1, 601, tester.BuildSheet())) // 未推進: 空白盤面空手牌
 	fab.wait = &request{answer: make(chan answer, 1)}
+	fab.focus = focusHand
 	_, cmd = fab.Update(playMsg{}) // 游標下無卡: no-op
 	this.Nil(cmd)
 
